@@ -246,7 +246,7 @@ export const QueueManagement: React.FC = () => {
           <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
             {/* Currently Serving Counter Card */}
             <div className="glass-card" style={{
-              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(6, 182, 212, 0.04))',
+              background: '#ffffff',
               border: '1px solid var(--border-highlight)',
               display: 'flex',
               flexDirection: 'column',
@@ -340,36 +340,36 @@ export const QueueManagement: React.FC = () => {
             {/* Counter Summary Stats */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div className="glass-card" style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-                <div style={{ padding: '14px', background: 'rgba(16, 185, 129, 0.15)', borderRadius: '12px', color: '#10b981' }}>
-                  <Clock size={28} />
+                <div style={{ padding: '8px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'var(--accent-emerald)' }}>
+                  <Clock size={22} />
                 </div>
                 <div>
                   <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
                     Est. Wait for New Arrival
                   </span>
-                  <h3 style={{ fontSize: '1.6rem', fontWeight: 800 }}>
+                  <h3 style={{ fontSize: '1.5rem', fontWeight: 800 }}>
                     ~{queueData?.estimated_wait_minutes_for_new || 0} mins
                   </h3>
                 </div>
               </div>
 
               <div className="glass-card" style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-                <div style={{ padding: '14px', background: 'rgba(6, 182, 212, 0.15)', borderRadius: '12px', color: '#06b6d4' }}>
-                  <User size={28} />
+                <div style={{ padding: '8px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'var(--accent-cyan)' }}>
+                  <User size={22} />
                 </div>
                 <div>
                   <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
                     Waiting in Queue
                   </span>
-                  <h3 style={{ fontSize: '1.6rem', fontWeight: 800 }}>
+                  <h3 style={{ fontSize: '1.5rem', fontWeight: 800 }}>
                     {queueData?.total_waiting || 0} patients
                   </h3>
                 </div>
               </div>
 
               <div className="glass-card" style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-                <div style={{ padding: '14px', background: 'rgba(59, 130, 246, 0.15)', borderRadius: '12px', color: '#3b82f6' }}>
-                  <CheckCircle2 size={28} />
+                <div style={{ padding: '8px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'var(--accent-primary)' }}>
+                  <CheckCircle2 size={22} />
                 </div>
                 <div>
                   <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
@@ -468,8 +468,7 @@ export const QueueManagement: React.FC = () => {
         <div style={{
           position: 'fixed',
           inset: 0,
-          background: 'rgba(5, 10, 20, 0.75)',
-          backdropFilter: 'blur(8px)',
+          background: 'rgba(15, 23, 42, 0.45)',
           zIndex: 100,
           display: 'flex',
           alignItems: 'center',
@@ -485,17 +484,14 @@ export const QueueManagement: React.FC = () => {
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Chan Samnang"
+                  placeholder="Enter full name"
                   value={walkInName}
                   onChange={(e) => setWalkInName(e.target.value)}
                   required
                   style={{
                     width: '100%',
                     padding: '0.75rem',
-                    background: 'rgba(0,0,0,0.3)',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: '8px',
-                    color: '#fff',
+                    fontSize: '0.9rem',
                   }}
                 />
               </div>
@@ -505,16 +501,13 @@ export const QueueManagement: React.FC = () => {
                 </label>
                 <input
                   type="text"
-                  placeholder="+855..."
+                  placeholder="Enter phone number"
                   value={walkInPhone}
                   onChange={(e) => setWalkInPhone(e.target.value)}
                   style={{
                     width: '100%',
                     padding: '0.75rem',
-                    background: 'rgba(0,0,0,0.3)',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: '8px',
-                    color: '#fff',
+                    fontSize: '0.9rem',
                   }}
                 />
               </div>

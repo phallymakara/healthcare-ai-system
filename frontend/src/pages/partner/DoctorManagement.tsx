@@ -51,19 +51,20 @@ export const DoctorManagement: React.FC = () => {
             <div key={doc.id} className="glass-card">
               <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', marginBottom: '1rem' }}>
                 <div style={{
-                  width: '54px',
-                  height: '54px',
-                  borderRadius: '12px',
-                  background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(6, 182, 212, 0.2))',
+                  width: '46px',
+                  height: '46px',
+                  borderRadius: '8px',
+                  background: 'var(--bg-secondary)',
+                  border: '1px solid var(--border-color)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: '#10b981',
+                  color: 'var(--accent-primary)',
                 }}>
-                  <Stethoscope size={28} />
+                  <Stethoscope size={24} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <h3 style={{ fontSize: '1.2rem', fontWeight: 700 }}>{doc.full_name}</h3>
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: 700 }}>{doc.full_name}</h3>
                   <span style={{ color: 'var(--accent-primary)', fontSize: '0.85rem', fontWeight: 600 }}>
                     {doc.specialty}
                   </span>
@@ -86,10 +87,10 @@ export const DoctorManagement: React.FC = () => {
                         key={dayName}
                         className="badge"
                         style={{
-                          background: hasDay ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.05)',
-                          color: hasDay ? '#34d399' : 'var(--text-dim)',
-                          border: hasDay ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid transparent',
-                          padding: '0.3rem 0.6rem',
+                          background: 'transparent',
+                          color: hasDay ? '#059669' : 'var(--text-dim)',
+                          border: hasDay ? '1px solid #059669' : '1px solid var(--border-color)',
+                          padding: '0.2rem 0.5rem',
                         }}
                       >
                         {dayName}

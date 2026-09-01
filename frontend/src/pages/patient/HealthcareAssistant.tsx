@@ -26,13 +26,15 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({ onTick
   const [selectedMatch, setSelectedMatch] = useState<any>(null);
   const [patientName, setPatientName] = useState('');
   const [patientPhone, setPatientPhone] = useState('');
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
   const [bookingLoading, setBookingLoading] = useState(false);
-  const [bookingError, setBookingError] = useState<string | null>(null);
+  const [bookingFormError, setBookingFormError] = useState<string | null>(null);
 
   const handleTriageSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!symptoms.trim() || symptoms.trim().length < 3) {
-      setInputError('Please describe your symptoms in a few words before submitting.');
+      setInputError('Please describe your symptoms in a few words.');
       return;
     }
 
@@ -46,11 +48,11 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({ onTick
       });
 
       if (!res.ok) {
-        setInputError('Unable to analyze symptoms. Please try rephrasing your description.');
+        setInputError('Unable to evaluate symptoms. Please describe with different words.');
         return;
       }
       setResult(await res.json());
-    } catch (err) {
+    } catch {
       setInputError('Connection issue. Please check your network and try again.');
     } finally {
       setLoading(false);
@@ -62,15 +64,34 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({ onTick
     setSelectedMatch(match);
     setPatientName(user?.full_name || '');
     setPatientPhone(user?.phone_number || '');
-    setBookingError(null);
+    setNameError(null);
+    setPhoneError(null);
+    setBookingFormError(null);
     setBookingModalOpen(true);
   };
 
   const handleConfirmBooking = async (e: React.FormEvent) => {
     e.preventDefault();
-    setBookingError(null);
-    setBookingLoading(true);
+    setNameError(null);
+    setPhoneError(null);
+    setBookingFormError(null);
 
+    let hasErr = false;
+    if (!patientName.trim()) {
+      setNameError('Please enter your full name');
+      hasErr = true;
+    }
+    if (!patientPhone.trim()) {
+      setPhoneError('Please enter your phone number');
+      hasErr = true;
+    } else if (patientPhone.trim().length < 6) {
+      setPhoneError('Please enter a valid phone number');
+      hasErr = true;
+    }
+
+    if (hasErr) return;
+
+    setBookingLoading(true);
     try {
       const res = await fetch(`${API_BASE}/tickets/book`, {
         method: 'POST',
@@ -81,21 +102,21 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({ onTick
         body: JSON.stringify({
           hospital_id: selectedMatch.hospital_id,
           department_id: selectedMatch.department_id,
-          patient_name: patientName.trim() || undefined,
-          patient_phone: patientPhone.trim() || undefined,
+          patient_name: patientName.trim(),
+          patient_phone: patientPhone.trim(),
         }),
       });
 
       if (!res.ok) {
-        setBookingError('Unable to reserve ticket for this queue. Please try again.');
+        setBookingFormError('Unable to reserve ticket right now. Please try again.');
         return;
       }
 
       const ticket = await res.json();
       setBookingModalOpen(false);
       onTicketBooked(ticket);
-    } catch (err) {
-      setBookingError('Connection issue reserving ticket. Please try again.');
+    } catch {
+      setBookingFormError('Connection issue. Please check your network and try again.');
     } finally {
       setBookingLoading(false);
     }
@@ -130,7 +151,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({ onTick
               background: 'var(--bg-secondary)',
               border: '1px solid var(--border-color)',
               borderRadius: '8px',
-              color: '#fff',
+              color: 'var(--text-main)',
               fontSize: '0.9rem',
               resize: 'vertical',
               marginBottom: '4px',
@@ -240,7 +261,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({ onTick
         <div style={{
           position: 'fixed',
           inset: 0,
-          background: 'rgba(5, 10, 20, 0.75)',
+          background: 'rgba(15, 23, 42, 0.5)',
           zIndex: 100,
           display: 'flex',
           alignItems: 'center',
@@ -264,7 +285,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({ onTick
             </button>
 
             <h3 style={{ fontSize: '1.3rem', fontWeight: 800, marginBottom: '0.25rem' }}>
-              Reserve Queue Ticket
+              Reserve Recommended Slot
             </h3>
             <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
               {selectedMatch.hospital_name} • <span style={{ color: 'var(--accent-primary)', fontWeight: 600 }}>{selectedMatch.department_name}</span>
@@ -277,21 +298,17 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({ onTick
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Dararith Ken"
+                  placeholder="Enter full name"
                   value={patientName}
-                  onChange={(e) => { setPatientName(e.target.value); setBookingError(null); }}
-                  required
-                  className={bookingError ? 'input-error' : ''}
+                  onChange={(e) => { setPatientName(e.target.value); setNameError(null); }}
+                  className={nameError ? 'input-error' : ''}
                   style={{
                     width: '100%',
                     padding: '0.75rem',
-                    background: 'var(--bg-secondary)',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: '8px',
-                    color: '#fff',
                     fontSize: '0.9rem',
                   }}
                 />
+                {nameError && <span className="error-text">{nameError}</span>}
               </div>
 
               <div>
@@ -300,35 +317,30 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({ onTick
                 </label>
                 <input
                   type="text"
-                  placeholder="+855..."
+                  placeholder="Enter phone number"
                   value={patientPhone}
-                  onChange={(e) => { setPatientPhone(e.target.value); setBookingError(null); }}
-                  required
-                  className={bookingError ? 'input-error' : ''}
+                  onChange={(e) => { setPatientPhone(e.target.value); setPhoneError(null); }}
+                  className={phoneError ? 'input-error' : ''}
                   style={{
                     width: '100%',
                     padding: '0.75rem',
-                    background: 'var(--bg-secondary)',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: '8px',
-                    color: '#fff',
                     fontSize: '0.9rem',
                   }}
                 />
-                {/* Inline Error at field location */}
-                {bookingError && <span className="error-text">{bookingError}</span>}
+                {phoneError && <span className="error-text">{phoneError}</span>}
               </div>
 
               <div style={{
-                padding: '0.85rem',
-                background: 'var(--bg-secondary)',
-                borderRadius: '8px',
+                padding: '0.75rem',
                 border: '1px solid var(--border-color)',
+                borderRadius: '6px',
                 fontSize: '0.8rem',
                 color: 'var(--text-muted)',
               }}>
-                Estimated wait: <strong style={{ color: 'var(--accent-primary)' }}>~{selectedMatch.estimated_wait_minutes} mins</strong> ({selectedMatch.waiting_patients} patients ahead).
+                Current estimated wait: <strong style={{ color: 'var(--accent-primary)' }}>~{selectedMatch.estimated_wait_minutes} mins</strong> ({selectedMatch.waiting_count} waiting).
               </div>
+
+              {bookingFormError && <span className="error-text">{bookingFormError}</span>}
 
               <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
                 <button

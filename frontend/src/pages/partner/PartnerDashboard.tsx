@@ -65,42 +65,42 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateTo
         <>
           <div className="grid-3" style={{ marginBottom: '2.5rem' }}>
             <div className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-              <div style={{ padding: '14px', background: 'rgba(16, 185, 129, 0.15)', borderRadius: '12px', color: '#10b981' }}>
-                <Users size={26} />
+              <div style={{ padding: '10px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--accent-emerald)' }}>
+                <Users size={22} />
               </div>
               <div>
                 <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
                   Currently Waiting
                 </span>
-                <h2 style={{ fontSize: '1.75rem', fontWeight: 800 }}>
+                <h2 style={{ fontSize: '1.6rem', fontWeight: 800 }}>
                   {metrics?.currently_waiting || 0}
                 </h2>
               </div>
             </div>
 
             <div className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-              <div style={{ padding: '14px', background: 'rgba(6, 182, 212, 0.15)', borderRadius: '12px', color: '#06b6d4' }}>
-                <Clock size={26} />
+              <div style={{ padding: '10px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--accent-cyan)' }}>
+                <Clock size={22} />
               </div>
               <div>
                 <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
                   Avg. Waiting Time
                 </span>
-                <h2 style={{ fontSize: '1.75rem', fontWeight: 800 }}>
+                <h2 style={{ fontSize: '1.6rem', fontWeight: 800 }}>
                   ~{metrics?.average_wait_minutes || 0} mins
                 </h2>
               </div>
             </div>
 
             <div className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-              <div style={{ padding: '14px', background: 'rgba(59, 130, 246, 0.15)', borderRadius: '12px', color: '#3b82f6' }}>
-                <CheckCircle2 size={26} />
+              <div style={{ padding: '10px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--accent-primary)' }}>
+                <CheckCircle2 size={22} />
               </div>
               <div>
                 <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
                   Total Visits Today
                 </span>
-                <h2 style={{ fontSize: '1.75rem', fontWeight: 800 }}>
+                <h2 style={{ fontSize: '1.6rem', fontWeight: 800 }}>
                   {metrics?.total_tickets_today || 0}
                 </h2>
               </div>
