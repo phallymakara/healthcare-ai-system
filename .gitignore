@@ -1,0 +1,111 @@
+# ==============================================================================
+# CareQueue AI - Comprehensive Git Ignore Rules
+# ==============================================================================
+
+# --- 1. Environment Files & Secrets (NEVER COMMIT) ---
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+backend/.env
+frontend/.env
+!*.env.example
+
+# --- 2. Python Virtual Environments & Dependencies ---
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+bin/
+lib/
+lib64/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# --- 3. Python Bytecode & Compilation Artifacts ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.dylib
+*.dll
+.Python
+build/
+develop-eggs/
+eggs/
+.eggs/
+parts/
+sdist/
+var/
+wheels/
+
+# --- 4. Node.js & Frontend Dependencies / Bundles ---
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+dist-ssr/
+frontend/dist-ssr/
+.pnpm-store/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# --- 5. Test Caches & Coverage Reports ---
+.pytest_cache/
+backend/.pytest_cache/
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache/
+.hypothesis/
+coverage.xml
+nosetests.xml
+*.cover
+*.py,cover
+
+# --- 6. Database & Local Storage Volumes ---
+postgres_data/
+redis_data/
+*.sqlite
+*.sqlite3
+*.db
+
+# --- 7. Operating System & Editor Files ---
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+
+# --- 8. Log Files & Scratch Dumps ---
+*.log
+logs/
+*.tmp
+*.bak
+*.orig
+scratch/
