@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Activity, LogIn, LogOut, User, Shield, Stethoscope, Bell, X } from 'lucide-react';
+import { LogIn, LogOut, User, Shield, Stethoscope, Bell, X } from 'lucide-react';
 import { UserProfile } from '../services/auth';
+import prosethLogo from '../assets/ProsethBot.svg';
 
 export type NavTab = 
   | 'landing'
@@ -72,12 +73,14 @@ export const Header: React.FC<HeaderProps> = ({
             className="brand-logo"
             style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
           >
-            <div className="logo-icon">
-              <Activity size={20} />
-            </div>
+            <img 
+              src={prosethLogo} 
+              alt="Proseth Logo" 
+              style={{ height: '36px', width: 'auto', objectFit: 'contain' }} 
+            />
             <div>
-              <span>CareQueue</span>
-              <span style={{ fontSize: '0.75rem', color: 'var(--accent-primary)', marginLeft: '6px', fontWeight: 700 }}>AI</span>
+              <span>Health AI</span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--accent-primary)', marginLeft: '6px', fontWeight: 700 }}>Assistant</span>
             </div>
           </button>
 

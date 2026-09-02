@@ -9,8 +9,15 @@ from app.models.enums import UserRole, VerificationStatus
 # --- Request Schemas ---
 
 class LoginRequest(BaseModel):
-    account: str = Field(..., description="Email address or phone number")
-    password: str = Field(..., min_length=6, description="User password")
+    account: Optional[str] = None
+    email: Optional[str] = None
+    username: Optional[str] = None
+    password: str = ""
+
+    @property
+    def identifier(self) -> str:
+        return (self.account or self.email or self.username or "").strip()
+
 
 
 class PatientRegisterRequest(BaseModel):

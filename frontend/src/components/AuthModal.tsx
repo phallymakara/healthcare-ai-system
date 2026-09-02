@@ -30,18 +30,31 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    if (!account.trim()) {
+      setError('Please enter your email or phone number.');
+      return;
+    }
+    if (!password || password.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
+
     setLoading(true);
     try {
-      const res = await AuthService.login(account, password);
+      const res = await AuthService.login(account.trim(), password);
       onSuccess(res.user);
       onClose();
     } catch (err: any) {
-      // Human-readable, non-technical error message
       const rawMsg = err.message || '';
-      if (rawMsg.includes('401') || rawMsg.includes('Invalid credentials')) {
+      if (rawMsg.includes('401') || rawMsg.includes('Invalid credentials') || rawMsg.includes('Incorrect') || rawMsg.includes('not found')) {
         setError('Incorrect email, phone number, or password. Please try again.');
+      } else if (rawMsg.includes('at least 6 characters') || rawMsg.includes('too_short')) {
+        setError('Password must be at least 6 characters.');
+      } else if (rawMsg.includes('Failed to fetch') || rawMsg.includes('NetworkError')) {
+        setError('Unable to reach the server. Please ensure the backend is running.');
       } else {
-        setError('Unable to sign in. Please check your information and try again.');
+        setError(rawMsg || 'Unable to sign in. Please check your information and try again.');
       }
     } finally {
       setLoading(false);
@@ -50,13 +63,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
 
   const handleQuickDemo = async (demoAccount: string, demoPass: string) => {
     setError(null);
+    setAccount(demoAccount);
+    setPassword(demoPass);
     setLoading(true);
     try {
       const res = await AuthService.login(demoAccount, demoPass);
       onSuccess(res.user);
       onClose();
     } catch (err: any) {
-      setError('Could not switch to demo user. Please try again.');
+      setError('Could not sign in with demo user. Please try again.');
     } finally {
       setLoading(false);
     }

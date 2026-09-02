@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
+import { API_BASE } from './api';
 
 export interface UserProfile {
   id: string;
@@ -68,7 +68,13 @@ export class AuthService {
 
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
-      throw new Error(errorData.detail || 'Login failed');
+      let msg = 'Login failed';
+      if (typeof errorData.detail === 'string') {
+        msg = errorData.detail;
+      } else if (Array.isArray(errorData.detail) && errorData.detail.length > 0) {
+        msg = errorData.detail[0]?.msg || 'Invalid login details';
+      }
+      throw new Error(msg);
     }
 
     const data: AuthTokens = await res.json();
@@ -92,7 +98,13 @@ export class AuthService {
 
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
-      throw new Error(errorData.detail || 'Registration failed');
+      let msg = 'Registration failed';
+      if (typeof errorData.detail === 'string') {
+        msg = errorData.detail;
+      } else if (Array.isArray(errorData.detail) && errorData.detail.length > 0) {
+        msg = errorData.detail[0]?.msg || 'Invalid registration details';
+      }
+      throw new Error(msg);
     }
 
     const data: AuthTokens = await res.json();

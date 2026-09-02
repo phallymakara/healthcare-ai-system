@@ -34,8 +34,15 @@ def generate_slug(name: str) -> str:
 class AuthService:
     @staticmethod
     async def authenticate_user(session: AsyncSession, data: LoginRequest) -> TokenResponse:
-        account_clean = data.account.strip()
+        account_clean = data.identifier
         
+        if not account_clean or not data.password:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect email/phone or password",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
         # Query user by email or phone number
         query = (
             select(User)

@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Header, NavTab } from './components/Header';
+import { Sidebar, NavTab } from './components/Sidebar';
 import { AuthModal } from './components/AuthModal';
 import { NotificationBanner } from './components/NotificationBanner';
 import { AuthService, UserProfile } from './services/auth';
+import { API_BASE } from './services/api';
 import { RealTimeQueueClient } from './services/websocket';
 import { LandingPage } from './pages/LandingPage';
 import { HospitalDiscovery } from './pages/patient/HospitalDiscovery';
@@ -14,8 +15,6 @@ import { QueueManagement } from './pages/partner/QueueManagement';
 import { DoctorManagement } from './pages/partner/DoctorManagement';
 import { DepartmentManagement } from './pages/partner/DepartmentManagement';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
 
 export const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
@@ -105,8 +104,9 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div>
-      <Header
+    <div className="app-layout">
+      {/* Left Sidebar on Desktop / Drawer on Mobile */}
+      <Sidebar
         currentUser={currentUser}
         notifications={notifications}
         activeTab={activeTab}
@@ -115,66 +115,69 @@ export const App: React.FC = () => {
         onLogout={handleLogout}
       />
 
-      <NotificationBanner
-        notification={activeBanner}
-        onDismiss={() => setActiveBanner(null)}
-      />
+      {/* Main Content Area */}
+      <div className="app-main-content">
+        <NotificationBanner
+          notification={activeBanner}
+          onDismiss={() => setActiveBanner(null)}
+        />
 
-      <main className="app-container">
-        {/* --- VIEW ROUTING --- */}
-        {activeTab === 'landing' && (
-          <LandingPage
-            onOpenAuth={() => setAuthModalOpen(true)}
-          />
-        )}
+        <main className="app-content-inner">
+          {/* --- VIEW ROUTING --- */}
+          {activeTab === 'landing' && (
+            <LandingPage
+              onOpenAuth={() => setAuthModalOpen(true)}
+            />
+          )}
 
-        {activeTab === 'patient_discovery' && (
-          <HospitalDiscovery
-            onTicketBooked={handleTicketBooked}
-            onNavigateToTriage={() => setActiveTab('patient_triage')}
-            onNavigateToTracker={() => setActiveTab('patient_live_ticket')}
-          />
-        )}
+          {activeTab === 'patient_discovery' && (
+            <HospitalDiscovery
+              onTicketBooked={handleTicketBooked}
+              onNavigateToTriage={() => setActiveTab('patient_triage')}
+              onNavigateToTracker={() => setActiveTab('patient_live_ticket')}
+            />
+          )}
 
-        {activeTab === 'patient_triage' && (
-          <HealthcareAssistant
-            onTicketBooked={handleTicketBooked}
-          />
-        )}
+          {activeTab === 'patient_triage' && (
+            <HealthcareAssistant
+              onTicketBooked={handleTicketBooked}
+            />
+          )}
 
-        {activeTab === 'patient_live_ticket' && (
-          <LiveTicketTracker
-            initialTicketId={selectedTicketId}
-            onExploreHospitals={() => setActiveTab('patient_discovery')}
-          />
-        )}
+          {activeTab === 'patient_live_ticket' && (
+            <LiveTicketTracker
+              initialTicketId={selectedTicketId}
+              onExploreHospitals={() => setActiveTab('patient_discovery')}
+            />
+          )}
 
-        {activeTab === 'patient_history' && (
-          <PatientHistory
-            onSelectTicket={handleSelectHistoryTicket}
-          />
-        )}
+          {activeTab === 'patient_history' && (
+            <PatientHistory
+              onSelectTicket={handleSelectHistoryTicket}
+            />
+          )}
 
-        {activeTab === 'partner_dashboard' && (
-          <PartnerDashboard onNavigateToQueue={() => setActiveTab('partner_counter')} />
-        )}
+          {activeTab === 'partner_dashboard' && (
+            <PartnerDashboard onNavigateToQueue={() => setActiveTab('partner_counter')} />
+          )}
 
-        {activeTab === 'partner_counter' && (
-          <QueueManagement />
-        )}
+          {activeTab === 'partner_counter' && (
+            <QueueManagement />
+          )}
 
-        {activeTab === 'partner_doctors' && (
-          <DoctorManagement />
-        )}
+          {activeTab === 'partner_doctors' && (
+            <DoctorManagement />
+          )}
 
-        {activeTab === 'partner_departments' && (
-          <DepartmentManagement />
-        )}
+          {activeTab === 'partner_departments' && (
+            <DepartmentManagement />
+          )}
 
-        {activeTab === 'admin_center' && (
-          <AdminDashboard />
-        )}
-      </main>
+          {activeTab === 'admin_center' && (
+            <AdminDashboard />
+          )}
+        </main>
+      </div>
 
       <AuthModal
         isOpen={authModalOpen}
