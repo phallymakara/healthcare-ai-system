@@ -8,8 +8,7 @@ import {
   formatSpecialty,
   formatCategory,
 } from '../../i18n/formatters';
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
+import { API_BASE } from '../../services/api';
 
 interface HospitalDiscoveryProps {
   onTicketBooked: (ticket: any) => void;

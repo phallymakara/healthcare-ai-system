@@ -10,8 +10,8 @@ class Settings(BaseSettings):
     DEBUG: bool = True
     API_V1_STR: str = "/api/v1"
     
-    # Auth & JWT
-    SECRET_KEY: str = "healthcare-super-secret-jwt-key-change-in-production"
+    # Auth & JWT (must be set in .env)
+    SECRET_KEY: str = ""
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 1 day
     
@@ -19,9 +19,9 @@ class Settings(BaseSettings):
     POSTGRES_HOST: str = "127.0.0.1"
     POSTGRES_PORT: int = 5432
     POSTGRES_USER: str = "postgres"
-    POSTGRES_PASSWORD: str = "postgres123"
+    POSTGRES_PASSWORD: str = ""
     POSTGRES_DB: str = "healthcare_ai_db"
-    DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres123@127.0.0.1:5432/healthcare_ai_db"
+    DATABASE_URL: str = ""
 
     # Redis
     REDIS_HOST: str = "127.0.0.1"
@@ -59,8 +59,8 @@ class Settings(BaseSettings):
     MICROSOFT_FOUNDRY_BASE_URL: str = ""
     MICROSOFT_FOUNDRY_MODEL: str = "gpt-4o"
 
-    # LangGraph Configuration
-    LANGGRAPH_CHECKPOINT_DATABASE_URL: str = "postgresql://postgres:postgrespassword@localhost:5433/healthcare_ai"
+    # LangGraph Configuration (set in .env)
+    LANGGRAPH_CHECKPOINT_DATABASE_URL: str = ""
     LANGGRAPH_STRICT_MSGPACK: bool = True
 
     model_config = SettingsConfigDict(

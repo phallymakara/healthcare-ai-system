@@ -74,14 +74,14 @@ services:
     env_file:
       - ./backend/.env.docker
     environment:
-      # Override with root .env values if provided
+      # These MUST be set in the root .env file (see .env.production template)
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres123}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
       POSTGRES_DB: ${POSTGRES_DB:-healthcare_ai_db}
-      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres123}@postgres:5432/${POSTGRES_DB:-healthcare_ai_db}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-healthcare_ai_db}
       REDIS_URL: redis://redis:6379/0
-      LANGGRAPH_CHECKPOINT_DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres123}@postgres:5432/${POSTGRES_DB:-healthcare_ai_db}
-      SECRET_KEY: ${SECRET_KEY:-healthcare-super-secret-jwt-key-change-in-production}
+      LANGGRAPH_CHECKPOINT_DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-healthcare_ai_db}
+      SECRET_KEY: ${SECRET_KEY:?Set SECRET_KEY in .env}
       SEED_DATA: ${SEED_DATA:-false}
     ports:
       - "${BACKEND_PORT:-9000}:8000"

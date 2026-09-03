@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { AuthService } from '../../services/auth';
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
+import { API_BASE } from '../../services/api';
 
 const DAYS = [
   { dayIndex: 0, label: 'Mon', full: 'Monday' },

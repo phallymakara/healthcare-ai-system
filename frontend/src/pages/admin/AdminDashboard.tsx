@@ -10,8 +10,7 @@ import {
   RefreshCw,
   Search
 } from 'lucide-react';
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
+import { API_BASE } from '../../services/api';
 
 export const AdminDashboard: React.FC = () => {
   const [summary, setSummary] = useState<any>(null);

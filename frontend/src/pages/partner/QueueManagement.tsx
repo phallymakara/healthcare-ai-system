@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { AuthService } from '../../services/auth';
 import { RealTimeQueueClient } from '../../services/websocket';
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
+import { API_BASE } from '../../services/api';
 
 export const QueueManagement: React.FC = () => {
   const [departments, setDepartments] = useState<any[]>([]);
