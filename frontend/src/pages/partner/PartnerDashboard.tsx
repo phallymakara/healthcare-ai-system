@@ -1,22 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { AuthService } from '../../services/auth';
-import { 
-  Building2, 
-  Users, 
-  Clock, 
-  CheckCircle2, 
-  ArrowRight, 
-  Radio,
-  Layers
-} from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
 
 interface PartnerDashboardProps {
-  onNavigateToQueue: (deptId?: string) => void;
+  onNavigateToQueue?: (deptId?: string) => void;
 }
 
-export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateToQueue }) => {
+export const PartnerDashboard: React.FC<PartnerDashboardProps> = () => {
   const [metrics, setMetrics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -29,8 +20,8 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateTo
       if (res.ok) {
         setMetrics(await res.json());
       }
-    } catch (e) {
-      console.error(e);
+    } catch {
+      // Ignore background error
     } finally {
       setLoading(false);
     }
@@ -41,120 +32,260 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateTo
   }, []);
 
   return (
-    <div>
-      {/* Header Banner */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-primary)', fontSize: '0.85rem', fontWeight: 700, marginBottom: '4px' }}>
-            <Building2 size={16} /> {metrics?.hospital_name || 'Hospital Partner Platform'}
-          </div>
-          <h1 style={{ fontSize: '1.85rem', fontWeight: 800 }}>Partner Operations Overview</h1>
-        </div>
-
-        <button onClick={() => onNavigateToQueue()} className="btn btn-primary" style={{ padding: '0.75rem 1.25rem' }}>
-          Open Live Counter Console <ArrowRight size={16} />
-        </button>
-      </div>
-
+    <div style={{ width: '100%' }}>
       {/* Summary Stat Cards */}
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-dim)' }}>
+        <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
           Loading operational metrics...
         </div>
       ) : (
         <>
-          <div className="grid-3" style={{ marginBottom: '2.5rem' }}>
-            <div className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-              <div style={{ padding: '10px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--accent-emerald)' }}>
-                <Users size={22} />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '2.5rem' }}>
+            <div style={{
+              background: '#ffffff',
+              border: '1px solid var(--border-color)',
+              borderRadius: '6px',
+              padding: '1.25rem',
+              boxShadow: 'none',
+            }}>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, marginBottom: '0.35rem' }}>
+                Currently Waiting
               </div>
-              <div>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
-                  Currently Waiting
-                </span>
-                <h2 style={{ fontSize: '1.6rem', fontWeight: 800 }}>
-                  {metrics?.currently_waiting || 0}
-                </h2>
-              </div>
-            </div>
-
-            <div className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-              <div style={{ padding: '10px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--accent-cyan)' }}>
-                <Clock size={22} />
-              </div>
-              <div>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
-                  Avg. Waiting Time
-                </span>
-                <h2 style={{ fontSize: '1.6rem', fontWeight: 800 }}>
-                  ~{metrics?.average_wait_minutes || 0} mins
-                </h2>
+              <div style={{ fontSize: '1.85rem', fontWeight: 400, color: 'var(--text-main)' }}>
+                {metrics?.currently_waiting || 0}
               </div>
             </div>
 
-            <div className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-              <div style={{ padding: '10px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--accent-primary)' }}>
-                <CheckCircle2 size={22} />
+            <div style={{
+              background: '#ffffff',
+              border: '1px solid var(--border-color)',
+              borderRadius: '6px',
+              padding: '1.25rem',
+              boxShadow: 'none',
+            }}>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, marginBottom: '0.35rem' }}>
+                Avg. Waiting Time
               </div>
-              <div>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
-                  Total Visits Today
-                </span>
-                <h2 style={{ fontSize: '1.6rem', fontWeight: 800 }}>
-                  {metrics?.total_tickets_today || 0}
-                </h2>
+              <div style={{ fontSize: '1.85rem', fontWeight: 400, color: 'var(--text-main)' }}>
+                ~{metrics?.average_wait_minutes || 0} mins
+              </div>
+            </div>
+
+            <div style={{
+              background: '#ffffff',
+              border: '1px solid var(--border-color)',
+              borderRadius: '6px',
+              padding: '1.25rem',
+              boxShadow: 'none',
+            }}>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, marginBottom: '0.35rem' }}>
+                Total Visits Today
+              </div>
+              <div style={{ fontSize: '1.85rem', fontWeight: 400, color: 'var(--text-main)' }}>
+                {metrics?.total_tickets_today || 0}
               </div>
             </div>
           </div>
 
-          {/* Department Queues Status Grid */}
+          {/* Booking Channel Distribution & Operations Resolution */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', marginBottom: '2.5rem' }}>
+            <div style={{
+              background: '#ffffff',
+              border: '1px solid var(--border-color)',
+              borderRadius: '6px',
+              padding: '1.25rem',
+              boxShadow: 'none',
+            }}>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, marginBottom: '0.5rem' }}>
+                Intake Channels
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                <div>
+                  <div style={{ fontSize: '1.2rem', fontWeight: 400, color: 'var(--text-main)' }}>
+                    {metrics?.online_bookings_today || 0}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Online Remote Bookings</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '1.2rem', fontWeight: 400, color: 'var(--text-main)' }}>
+                    {metrics?.walkin_tickets_today || 0}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Walk-In Physical Arrivals</div>
+                </div>
+              </div>
+              {/* Proportional bar indicator */}
+              <div style={{ display: 'flex', height: '6px', borderRadius: '3px', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
+                <div style={{
+                  flex: Math.max(1, metrics?.online_bookings_today || 0),
+                  background: 'var(--text-main)',
+                }} />
+                <div style={{
+                  flex: Math.max(1, metrics?.walkin_tickets_today || 0),
+                  background: 'var(--border-color)',
+                }} />
+              </div>
+            </div>
+
+            <div style={{
+              background: '#ffffff',
+              border: '1px solid var(--border-color)',
+              borderRadius: '6px',
+              padding: '1.25rem',
+              boxShadow: 'none',
+            }}>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, marginBottom: '0.5rem' }}>
+                Consultation Resolution
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                <div>
+                  <div style={{ fontSize: '1.2rem', fontWeight: 400, color: 'var(--text-main)' }}>
+                    {metrics?.completed_today || 0}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Completed Consultations</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '1.2rem', fontWeight: 400, color: 'var(--text-main)' }}>
+                    {metrics?.skipped_no_show_today || 0}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Skipped / No Shows</div>
+                </div>
+              </div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                {metrics?.total_tickets_today > 0
+                  ? `${Math.round(((metrics?.completed_today || 0) / metrics?.total_tickets_today) * 100)}% daily completion rate`
+                  : 'No visits recorded yet today'}
+              </div>
+            </div>
+          </div>
+
+          {/* Hourly Patient Flow Breakdown */}
+          <div style={{
+            background: '#ffffff',
+            border: '1px solid var(--border-color)',
+            borderRadius: '6px',
+            padding: '1.25rem',
+            marginBottom: '2.5rem',
+            boxShadow: 'none',
+          }}>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, marginBottom: '1.25rem' }}>
+              Hourly Patient Flow
+            </div>
+            <div style={{
+              display: 'flex',
+              alignItems: 'flex-end',
+              justifyContent: 'space-between',
+              height: '120px',
+              gap: '0.5rem',
+              paddingTop: '1rem',
+              borderBottom: '1px solid var(--border-color)',
+            }}>
+              {(metrics?.hourly_flow || []).map((item: any) => {
+                const maxCount = Math.max(1, ...(metrics?.hourly_flow || []).map((f: any) => f.count));
+                const heightPercent = Math.max(8, Math.round((item.count / maxCount) * 100));
+
+                return (
+                  <div
+                    key={item.hour}
+                    style={{
+                      flex: 1,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      height: '100%',
+                      justifyContent: 'flex-end',
+                    }}
+                  >
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
+                      {item.count}
+                    </span>
+                    <div
+                      style={{
+                        width: '100%',
+                        maxWidth: '24px',
+                        height: `${heightPercent}%`,
+                        background: item.count > 0 ? 'var(--text-main)' : 'transparent',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: '2px 2px 0 0',
+                      }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              gap: '0.5rem',
+              marginTop: '0.5rem',
+            }}>
+              {(metrics?.hourly_flow || []).map((item: any) => (
+                <div
+                  key={item.hour}
+                  style={{
+                    flex: 1,
+                    textAlign: 'center',
+                    fontSize: '0.7rem',
+                    color: 'var(--text-muted)',
+                  }}
+                >
+                  {item.hour.slice(0, 2)}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Department Queues Status Grid without icons */}
           <section>
-            <h2 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Layers size={18} color="#10b981" /> Department Live Counter Status
+            <h2 style={{ fontSize: '1.15rem', fontWeight: 400, marginBottom: '1rem', color: 'var(--text-main)' }}>
+              Department Live Counter Status
             </h2>
 
-            <div className="grid-2">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '1rem' }}>
               {(metrics?.departments || []).map((dept: any) => (
-                <div key={dept.department_id} className="glass-card">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-                    <div>
-                      <h3 style={{ fontSize: '1.15rem', fontWeight: 700 }}>{dept.department_name}</h3>
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                        Code: {dept.code || 'DEPT'}
-                      </span>
+                <div
+                  key={dept.department_id}
+                  style={{
+                    background: '#ffffff',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '6px',
+                    padding: '1.25rem',
+                    boxShadow: 'none',
+                  }}
+                >
+                  <div style={{ marginBottom: '0.75rem' }}>
+                    <div style={{ fontSize: '1.05rem', fontWeight: 400, color: 'var(--text-main)' }}>
+                      {dept.department_name}
                     </div>
-                    <span className="badge badge-healthy">
-                      <Radio size={12} /> {dept.queue_status}
-                    </span>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'monospace', marginTop: '2px' }}>
+                      Code: {dept.code || 'DEPT'}
+                    </div>
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', padding: '1rem 0', borderTop: '1px solid var(--border-color)', borderBottom: '1px solid var(--border-color)', margin: '1rem 0' }}>
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '1rem',
+                    paddingTop: '0.75rem',
+                    borderTop: '1px solid var(--border-color)',
+                  }}>
                     <div>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', textTransform: 'uppercase', fontWeight: 700 }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>
                         Serving Now
-                      </span>
-                      <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--accent-primary)', fontFamily: 'var(--font-mono)' }}>
+                      </div>
+                      <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'monospace' }}>
                         {dept.current_serving_number || '—'}
                       </div>
                     </div>
 
                     <div>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', textTransform: 'uppercase', fontWeight: 700 }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>
                         In Line / Waiting
-                      </span>
-                      <div style={{ fontSize: '1.5rem', fontWeight: 800 }}>
+                      </div>
+                      <div style={{ fontSize: '1.5rem', fontWeight: 400, color: 'var(--text-main)' }}>
                         {dept.waiting_count} patients
                       </div>
                     </div>
                   </div>
-
-                  <button
-                    onClick={() => onNavigateToQueue(dept.department_id)}
-                    className="btn btn-outline"
-                    style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px' }}
-                  >
-                    Launch Counter Console <ArrowRight size={14} />
-                  </button>
                 </div>
               ))}
             </div>

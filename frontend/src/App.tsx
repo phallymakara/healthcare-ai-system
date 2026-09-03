@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Header } from './components/Header';
 import { Sidebar, NavTab } from './components/Sidebar';
 import { AuthModal } from './components/AuthModal';
 import { NotificationBanner } from './components/NotificationBanner';
@@ -14,14 +15,24 @@ import { PartnerDashboard } from './pages/partner/PartnerDashboard';
 import { QueueManagement } from './pages/partner/QueueManagement';
 import { DoctorManagement } from './pages/partner/DoctorManagement';
 import { DepartmentManagement } from './pages/partner/DepartmentManagement';
+import { StaffManagement } from './pages/partner/StaffManagement';
+import { HospitalProfile } from './pages/partner/HospitalProfile';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 
 export const App: React.FC = () => {
-  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
+  const storedUser = AuthService.getStoredUser();
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(storedUser);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [activeBanner, setActiveBanner] = useState<any | null>(null);
-  const [activeTab, setActiveTab] = useState<NavTab>('landing');
+  const [activeTab, setActiveTab] = useState<NavTab>(() => {
+    if (!storedUser) return 'landing';
+    if (storedUser.role === 'SUPER_ADMIN') return 'admin_center';
+    if (storedUser.role === 'DOCTOR' || storedUser.role === 'HOSPITAL_ADMIN' || storedUser.role === 'RECEPTIONIST') {
+      return 'partner_counter';
+    }
+    return 'patient_triage';
+  });
   const [selectedTicketId, setSelectedTicketId] = useState<string | undefined>();
 
   const loadNotifications = async () => {
@@ -47,12 +58,15 @@ export const App: React.FC = () => {
       } else if (user.role === 'DOCTOR' || user.role === 'HOSPITAL_ADMIN' || user.role === 'RECEPTIONIST') {
         setActiveTab('partner_counter');
       } else {
-        setActiveTab('patient_discovery');
+        setActiveTab('patient_triage');
       }
       AuthService.fetchMe().then((fresh) => {
         if (fresh) setCurrentUser(fresh);
       });
       loadNotifications();
+    } else {
+      setCurrentUser(null);
+      setActiveTab('landing');
     }
 
     // 2. Initialize WebSocket connection for background alerts
@@ -60,9 +74,12 @@ export const App: React.FC = () => {
     ws.connect();
     const unsubscribe = ws.subscribe((data) => {
       if (data && typeof data === 'object') {
-        if (data.type === 'NOTIFICATION') {
-          setActiveBanner(data.data);
-          setNotifications((prev) => [data.data, ...prev]);
+        if (data.event === 'TICKET_CALLED' || data.event === 'TICKET_SERVING') {
+          setActiveBanner({
+            title: `Ticket Called: ${data.data?.ticket_number || ''}`,
+            message: `Please proceed to counter. Room: ${data.data?.room || 'Main Desk'}`,
+            type: 'urgent',
+          });
         }
       }
     });
@@ -87,7 +104,7 @@ export const App: React.FC = () => {
     } else if (user.role === 'DOCTOR' || user.role === 'HOSPITAL_ADMIN' || user.role === 'RECEPTIONIST') {
       setActiveTab('partner_counter');
     } else {
-      setActiveTab('patient_discovery');
+      setActiveTab('patient_triage');
     }
     loadNotifications();
   };
@@ -103,87 +120,131 @@ export const App: React.FC = () => {
     setActiveTab('patient_live_ticket');
   };
 
+  const handleSelectTab = (tab: NavTab) => {
+    if (!currentUser && tab !== 'landing') {
+      setActiveTab('landing');
+      return;
+    }
+    setActiveTab(tab);
+  };
+
+  const isLandingView = !currentUser || activeTab === 'landing';
+
   return (
-    <div className="app-layout">
-      {/* Left Sidebar on Desktop / Drawer on Mobile */}
-      <Sidebar
-        currentUser={currentUser}
-        notifications={notifications}
-        activeTab={activeTab}
-        onSelectTab={setActiveTab}
-        onOpenAuth={() => setAuthModalOpen(true)}
-        onLogout={handleLogout}
-      />
+    <>
+      {isLandingView ? (
+        <div className="landing-layout">
+          {/* Top Header shown on Landing Page */}
+          <Header
+            currentUser={currentUser}
+            notifications={notifications}
+            activeTab={activeTab}
+            onSelectTab={handleSelectTab}
+            onOpenAuth={() => setAuthModalOpen(true)}
+            onLogout={handleLogout}
+          />
 
-      {/* Main Content Area */}
-      <div className="app-main-content">
-        <NotificationBanner
-          notification={activeBanner}
-          onDismiss={() => setActiveBanner(null)}
-        />
+          <NotificationBanner
+            notification={activeBanner}
+            onDismiss={() => setActiveBanner(null)}
+          />
 
-        <main className="app-content-inner">
-          {/* --- VIEW ROUTING --- */}
-          {activeTab === 'landing' && (
+          <main className="landing-content-container">
             <LandingPage
               onOpenAuth={() => setAuthModalOpen(true)}
+              currentUser={currentUser}
+              onSelectTab={handleSelectTab}
             />
-          )}
+          </main>
+        </div>
+      ) : (
+        <div className="app-layout">
+          {/* Left Sidebar on Desktop / Drawer on Mobile only at User Portal */}
+          <Sidebar
+            currentUser={currentUser}
+            notifications={notifications}
+            activeTab={activeTab}
+            onSelectTab={setActiveTab}
+            onOpenAuth={() => setAuthModalOpen(true)}
+            onLogout={handleLogout}
+          />
 
-          {activeTab === 'patient_discovery' && (
-            <HospitalDiscovery
-              onTicketBooked={handleTicketBooked}
-              onNavigateToTriage={() => setActiveTab('patient_triage')}
-              onNavigateToTracker={() => setActiveTab('patient_live_ticket')}
+          {/* Main Content Area */}
+          <div className="app-main-content">
+            <NotificationBanner
+              notification={activeBanner}
+              onDismiss={() => setActiveBanner(null)}
             />
-          )}
 
-          {activeTab === 'patient_triage' && (
-            <HealthcareAssistant
-              onTicketBooked={handleTicketBooked}
-            />
-          )}
+            <main className="app-content-inner">
+              {/* --- PORTAL VIEW ROUTING --- */}
+              {activeTab === 'patient_discovery' && (
+                <HospitalDiscovery
+                  onTicketBooked={handleTicketBooked}
+                  onNavigateToTriage={() => setActiveTab('patient_triage')}
+                  onNavigateToTracker={() => setActiveTab('patient_live_ticket')}
+                />
+              )}
 
-          {activeTab === 'patient_live_ticket' && (
-            <LiveTicketTracker
-              initialTicketId={selectedTicketId}
-              onExploreHospitals={() => setActiveTab('patient_discovery')}
-            />
-          )}
+              {activeTab === 'patient_triage' && (
+                <HealthcareAssistant
+                  onTicketBooked={handleTicketBooked}
+                  onNavigateToDiscovery={() => setActiveTab('patient_discovery')}
+                  onNavigateToTracker={() => setActiveTab('patient_live_ticket')}
+                />
+              )}
 
-          {activeTab === 'patient_history' && (
-            <PatientHistory
-              onSelectTicket={handleSelectHistoryTicket}
-            />
-          )}
+              {activeTab === 'patient_live_ticket' && (
+                <LiveTicketTracker
+                  initialTicketId={selectedTicketId}
+                  onExploreHospitals={() => setActiveTab('patient_discovery')}
+                />
+              )}
 
-          {activeTab === 'partner_dashboard' && (
-            <PartnerDashboard onNavigateToQueue={() => setActiveTab('partner_counter')} />
-          )}
+              {activeTab === 'patient_history' && (
+                <PatientHistory
+                  onSelectTicket={handleSelectHistoryTicket}
+                  onExploreHospitals={() => setActiveTab('patient_discovery')}
+                />
+              )}
 
-          {activeTab === 'partner_counter' && (
-            <QueueManagement />
-          )}
+              {activeTab === 'partner_dashboard' && (
+                <PartnerDashboard onNavigateToQueue={() => setActiveTab('partner_counter')} />
+              )}
 
-          {activeTab === 'partner_doctors' && (
-            <DoctorManagement />
-          )}
+              {activeTab === 'partner_counter' && (
+                <QueueManagement />
+              )}
 
-          {activeTab === 'partner_departments' && (
-            <DepartmentManagement />
-          )}
+              {activeTab === 'partner_doctors' && (
+                <DoctorManagement />
+              )}
 
-          {activeTab === 'admin_center' && (
-            <AdminDashboard />
-          )}
-        </main>
-      </div>
+              {activeTab === 'partner_departments' && (
+                <DepartmentManagement />
+              )}
+
+              {activeTab === 'partner_staff' && (
+                <StaffManagement />
+              )}
+
+              {activeTab === 'partner_profile' && (
+                <HospitalProfile />
+              )}
+
+              {activeTab === 'admin_center' && (
+                <AdminDashboard />
+              )}
+            </main>
+          </div>
+        </div>
+      )}
 
       <AuthModal
         isOpen={authModalOpen}
         onClose={() => setAuthModalOpen(false)}
         onSuccess={handleUserLoginSuccess}
       />
-    </div>
+    </>
   );
 };

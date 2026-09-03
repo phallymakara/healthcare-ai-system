@@ -1,4 +1,27 @@
+# ==============================================================================
+# Healthcare AI System — Full Stack Docker Compose
+# ==============================================================================
+# All ports are configurable via .env file to avoid conflicts with other
+# projects running on the same VM.
+#
+# Default ports:
+#   Frontend (Nginx): 9080
+#   Backend  (API):   9000 (direct access, optional — Nginx proxies internally)
+#   PostgreSQL:       5440
+#   Redis:            6380
+#
+# Usage:
+#   docker-compose up --build -d        # Start all services
+#   docker-compose logs -f              # Follow all logs
+#   docker-compose logs -f backend      # Follow backend logs only
+#   docker-compose down                 # Stop all services
+#   docker-compose down -v              # Stop + remove volumes (data reset)
+# ==============================================================================
+
 services:
+  # ============================================================
+  # PostgreSQL Database
+  # ============================================================
   postgres:
     image: postgres:16-alpine
     container_name: healthcare_postgres
@@ -16,14 +39,19 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - healthcare_net
 
+  # ============================================================
+  # Redis Cache
+  # ============================================================
   redis:
     image: redis:7-alpine
     container_name: healthcare_redis
     restart: unless-stopped
     command: redis-server --appendonly yes
     ports:
-      - "${REDIS_PORT:-6379}:6379"
+      - "${REDIS_PORT:-6380}:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -31,9 +59,65 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - healthcare_net
 
+  # ============================================================
+  # Backend — FastAPI Application
+  # ============================================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: healthcare_backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env.docker
+    environment:
+      # Override with root .env values if provided
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres123}
+      POSTGRES_DB: ${POSTGRES_DB:-healthcare_ai_db}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres123}@postgres:5432/${POSTGRES_DB:-healthcare_ai_db}
+      REDIS_URL: redis://redis:6379/0
+      LANGGRAPH_CHECKPOINT_DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres123}@postgres:5432/${POSTGRES_DB:-healthcare_ai_db}
+      SECRET_KEY: ${SECRET_KEY:-healthcare-super-secret-jwt-key-change-in-production}
+      SEED_DATA: ${SEED_DATA:-false}
+    ports:
+      - "${BACKEND_PORT:-9000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - healthcare_net
+
+  # ============================================================
+  # Frontend — Nginx + React SPA
+  # ============================================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: healthcare_frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-9080}:80"
+    depends_on:
+      - backend
+    networks:
+      - healthcare_net
+
+# ============================================================
+# Volumes & Networks
+# ============================================================
 volumes:
   postgres_data:
     driver: local
   redis_data:
     driver: local
+
+networks:
+  healthcare_net:
+    driver: bridge

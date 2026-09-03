@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { AuthService, UserProfile } from '../services/auth';
-import { X, LogIn, UserPlus } from 'lucide-react';
+import { X } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -9,6 +10,7 @@ interface AuthModalProps {
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => {
+  const { language } = useLanguage();
   const [tab, setTab] = useState<'login' | 'register'>('login');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -22,8 +24,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [regPassword, setRegPassword] = useState('');
-  const [gender, setGender] = useState('Male');
-  const [bloodType, setBloodType] = useState('O+');
 
   if (!isOpen) return null;
 
@@ -61,21 +61,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
     }
   };
 
-  const handleQuickDemo = async (demoAccount: string, demoPass: string) => {
-    setError(null);
-    setAccount(demoAccount);
-    setPassword(demoPass);
-    setLoading(true);
-    try {
-      const res = await AuthService.login(demoAccount, demoPass);
-      onSuccess(res.user);
-      onClose();
-    } catch (err: any) {
-      setError('Could not sign in with demo user. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,8 +72,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
         phone_number: phone,
         email: email || undefined,
         password: regPassword,
-        gender,
-        blood_type: bloodType,
+        gender: 'Other',
+        blood_type: 'Unknown',
       });
       onSuccess(res.user);
       onClose();
@@ -139,42 +124,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
           <X size={20} />
         </button>
 
-        {/* Tab Header */}
-        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
-          <button
-            type="button"
-            onClick={() => { setTab('login'); setError(null); }}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              fontSize: '1.1rem',
-              fontWeight: 700,
-              color: tab === 'login' ? 'var(--accent-primary)' : 'var(--text-muted)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-            }}
-          >
-            <LogIn size={18} /> Sign In
-          </button>
-          <button
-            type="button"
-            onClick={() => { setTab('register'); setError(null); }}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              fontSize: '1.1rem',
-              fontWeight: 700,
-              color: tab === 'register' ? 'var(--accent-primary)' : 'var(--text-muted)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-            }}
-          >
-            <UserPlus size={18} /> Register Patient
-          </button>
+        {/* Header Title */}
+        <div style={{ marginBottom: '1.25rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
+          <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 600, color: 'var(--text-main)', fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit' }}>
+            {tab === 'login' ? (language === 'km' ? 'ចូលប្រើប្រាស់' : 'Sign In') : (language === 'km' ? 'បង្កើតគណនី' : 'Register Account')}
+          </h3>
         </div>
 
         {/* Login Form */}
@@ -182,11 +136,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
           <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>
-                Email or Phone Number
+                {language === 'km' ? 'អ៊ីមែល ឬ លេខទូរស័ព្ទ' : 'Email or Phone Number'}
               </label>
               <input
                 type="text"
-                placeholder="e.g. admin@carequeue.ai or +85512999001"
+                placeholder={language === 'km' ? 'ឧ. admin@carequeue.ai ឬ 012999001' : 'e.g. admin@carequeue.ai or +85512999001'}
                 value={account}
                 onChange={(e) => { setAccount(e.target.value); setError(null); }}
                 required
@@ -205,11 +159,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
 
             <div>
               <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>
-                Password
+                {language === 'km' ? 'ពាក្យសម្ងាត់' : 'Password'}
               </label>
               <input
                 type="password"
-                placeholder="Enter password"
+                placeholder={language === 'km' ? 'បញ្ចូលពាក្យសម្ងាត់' : 'Enter password'}
                 value={password}
                 onChange={(e) => { setPassword(e.target.value); setError(null); }}
                 required
@@ -232,42 +186,31 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
               type="submit"
               disabled={loading}
               className="btn btn-primary"
-              style={{ width: '100%', marginTop: '0.5rem' }}
+              style={{ width: '100%', marginTop: '0.5rem', fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit' }}
             >
-              {loading ? 'Authenticating...' : 'Sign In'}
+              {loading
+                ? (language === 'km' ? 'កំពុងផ្ទៀងផ្ទាត់...' : 'Authenticating...')
+                : (language === 'km' ? 'ចូលប្រើប្រាស់' : 'Sign In')}
             </button>
 
-            {/* Quick Demo Access */}
-            <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color)' }}>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>
-                Demo Accounts
-              </span>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', marginTop: '0.5rem' }}>
-                <button
-                  type="button"
-                  onClick={() => handleQuickDemo('admin@carequeue.ai', 'admin123!')}
-                  className="btn btn-outline"
-                  style={{ fontSize: '0.75rem', padding: '0.4rem 0.5rem' }}
-                >
-                  Admin
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleQuickDemo('dr.sokha@royalcityhospital.com', 'doctor123!')}
-                  className="btn btn-outline"
-                  style={{ fontSize: '0.75rem', padding: '0.4rem 0.5rem' }}
-                >
-                  Doctor
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleQuickDemo('patient.dararith@gmail.com', 'patient123!')}
-                  className="btn btn-outline"
-                  style={{ fontSize: '0.75rem', padding: '0.4rem 0.5rem' }}
-                >
-                  Patient
-                </button>
-              </div>
+            {/* Register Patient Action at Bottom */}
+            <div style={{ marginTop: '0.75rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color)', textAlign: 'center' }}>
+              <button
+                type="button"
+                onClick={() => { setTab('register'); setError(null); }}
+                className="btn btn-outline"
+                style={{
+                  width: '100%',
+                  padding: '0.65rem 1rem',
+                  fontSize: '0.9rem',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  boxShadow: 'none',
+                  fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
+                }}
+              >
+                {language === 'km' ? 'បង្កើតគណនី' : 'Register Account'}
+              </button>
             </div>
           </form>
         ) : (
@@ -362,55 +305,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
               />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>
-                  Gender
-                </label>
-                <select
-                  value={gender}
-                  onChange={(e) => setGender(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '0.65rem 0.85rem',
-                    background: 'var(--bg-secondary)',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: '8px',
-                    color: 'var(--text-main)',
-                    fontSize: '0.85rem',
-                  }}
-                >
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>
-                  Blood Type
-                </label>
-                <select
-                  value={bloodType}
-                  onChange={(e) => setBloodType(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '0.65rem 0.85rem',
-                    background: 'var(--bg-secondary)',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: '8px',
-                    color: 'var(--text-main)',
-                    fontSize: '0.85rem',
-                  }}
-                >
-                  <option value="O+">O+</option>
-                  <option value="A+">A+</option>
-                  <option value="B+">B+</option>
-                  <option value="AB+">AB+</option>
-                  <option value="O-">O-</option>
-                </select>
-              </div>
-            </div>
-
             {/* Inline Error at form location */}
             {error && <span className="error-text">{error}</span>}
 
@@ -418,10 +312,32 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
               type="submit"
               disabled={loading}
               className="btn btn-primary"
-              style={{ width: '100%', marginTop: '0.5rem' }}
+              style={{ width: '100%', marginTop: '0.5rem', fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit' }}
             >
-              {loading ? 'Creating Account...' : 'Register Account'}
+              {loading
+                ? (language === 'km' ? 'កំពុងបង្កើតគណនី...' : 'Creating Account...')
+                : (language === 'km' ? 'បង្កើតគណនី' : 'Register Account')}
             </button>
+
+            {/* Back to Sign In at Bottom */}
+            <div style={{ marginTop: '0.75rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color)', textAlign: 'center' }}>
+              <button
+                type="button"
+                onClick={() => { setTab('login'); setError(null); }}
+                className="btn btn-outline"
+                style={{
+                  width: '100%',
+                  padding: '0.65rem 1rem',
+                  fontSize: '0.9rem',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  boxShadow: 'none',
+                  fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
+                }}
+              >
+                {language === 'km' ? 'មានគណនីរួចហើយ? ចូលប្រើប្រាស់' : 'Already have an account? Sign In'}
+              </button>
+            </div>
           </form>
         )}
       </div>

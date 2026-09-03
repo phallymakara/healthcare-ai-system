@@ -100,6 +100,7 @@ class LiveQueueStatusResponse(BaseModel):
     total_completed_today: int
     estimated_wait_minutes_for_new: int
     active_tickets: List[TicketResponse]
+    skipped_tickets: List[TicketResponse] = []
 
 
 class QueueSessionResponse(BaseModel):

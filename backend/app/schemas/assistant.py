@@ -36,10 +36,21 @@ class TriageResponse(BaseModel):
     matching_hospitals: List[TriageHospitalMatch] = []
 
 
+class ChatHistoryItem(BaseModel):
+    role: str  # "user" or "assistant"
+    content: str
+
+
 class AssistantChatRequest(BaseModel):
     message: str
+    history: Optional[List[ChatHistoryItem]] = []
+    language: Optional[str] = "en"
 
 
 class AssistantChatResponse(BaseModel):
     reply: str
+    urgency_level: Optional[UrgencyLevel] = None
+    recommended_specialty: Optional[str] = None
+    matching_hospitals: List[TriageHospitalMatch] = []
+    booked_ticket: Optional[dict] = None
     suggested_actions: List[str] = []

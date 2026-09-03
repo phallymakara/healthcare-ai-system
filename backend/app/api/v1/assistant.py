@@ -10,6 +10,12 @@ from app.schemas.assistant import (
 )
 from app.services.triage_assistant import TriageAssistantService
 
+from typing import Optional
+from app.core.deps import get_optional_current_user
+from app.models.user import User
+from app.services.langchain_agent import HealthcareAgentService
+from app.schemas.assistant import TriageHospitalMatch
+
 router = APIRouter(prefix="/assistant", tags=["AI Healthcare Assistant"])
 
 
@@ -30,6 +36,36 @@ async def triage_symptoms(
 @router.post("/chat", response_model=AssistantChatResponse)
 async def assistant_chat(
     data: AssistantChatRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: Optional[User] = Depends(get_optional_current_user),
 ):
-    """Healthcare guidance, queue inquiries, and platform assistance"""
-    return TriageAssistantService.get_chat_reply(data.message)
+    """Healthcare guidance, system search (doctors, clinics, wait times), and autonomous booking via LangChain Agent"""
+    user_context = None
+    if current_user:
+        user_context = {
+            "full_name": current_user.full_name,
+            "phone_number": current_user.phone_number or "",
+            "user_id": str(current_user.id),
+        }
+
+    agent_result = await HealthcareAgentService.run_agent(
+        message=data.message,
+        history=data.history or [],
+        db=db,
+        user_context=user_context,
+        language=data.language or "en",
+    )
+
+    matching_objs = []
+    for m in agent_result.get("matching_hospitals", []):
+        try:
+            matching_objs.append(TriageHospitalMatch(**m))
+        except Exception:
+            pass
+
+    return AssistantChatResponse(
+        reply=agent_result["reply"],
+        booked_ticket=agent_result.get("booked_ticket"),
+        matching_hospitals=matching_objs,
+        suggested_actions=agent_result.get("suggested_actions", []),
+    )

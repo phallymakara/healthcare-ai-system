@@ -2,7 +2,7 @@ import uuid
 from datetime import date
 from typing import List, Optional
 from fastapi import APIRouter, Depends, status, HTTPException
-from sqlalchemy import select, and_, func
+from sqlalchemy import select, and_, func, delete
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -18,6 +18,7 @@ from app.models import (
     DoctorSchedule,
     QueueSession,
     Ticket,
+    TicketSource,
     User,
     UserRole,
     TicketStatus,
@@ -25,15 +26,25 @@ from app.models import (
 )
 from app.schemas.partner import (
     DepartmentCreateSchema,
+    DepartmentUpdateSchema,
     DepartmentResponse,
     ServiceCreateSchema,
+    ServiceUpdateSchema,
     ServiceResponse,
     DoctorCreateSchema,
+    DoctorUpdateSchema,
     DoctorResponse,
     DoctorScheduleSchema,
     DoctorScheduleResponse,
+    DoctorSchedulesBatchUpdateSchema,
     DepartmentQueueSummary,
+    HourlyFlowItem,
     PartnerDashboardMetricsResponse,
+    StaffCreateSchema,
+    StaffUpdateSchema,
+    StaffResponse,
+    HospitalProfileResponse,
+    HospitalProfileUpdateSchema,
 )
 
 router = APIRouter(prefix="/partners", tags=["Hospital & Clinic Partner Platform"])
@@ -119,6 +130,16 @@ async def get_partner_dashboard(
 
     avg_wait = int(total_wait_minutes / max(1, total_wait_samples)) if total_wait_samples > 0 else 15
 
+    online_bookings = len([t for t in today_tickets if t.ticket_source == TicketSource.ONLINE])
+    walkin_tickets = len([t for t in today_tickets if t.ticket_source == TicketSource.WALK_IN])
+
+    # Hourly flow for hours 08:00 to 18:00
+    hourly_flow: List[HourlyFlowItem] = []
+    for h in range(8, 19):
+        hour_label = f"{h:02d}:00"
+        h_count = len([t for t in today_tickets if t.created_at.hour == h])
+        hourly_flow.append(HourlyFlowItem(hour=hour_label, count=h_count))
+
     return PartnerDashboardMetricsResponse(
         hospital_id=hospital.id,
         hospital_name=hospital.name,
@@ -128,6 +149,9 @@ async def get_partner_dashboard(
         completed_today=completed_count,
         skipped_no_show_today=skipped_no_show,
         average_wait_minutes=avg_wait,
+        online_bookings_today=online_bookings,
+        walkin_tickets_today=walkin_tickets,
+        hourly_flow=hourly_flow,
         departments=dept_summaries,
     )
 
@@ -170,6 +194,68 @@ async def create_partner_department(
     return dept
 
 
+@router.put("/departments/{department_id}", response_model=DepartmentResponse)
+async def update_partner_department(
+    department_id: uuid.UUID,
+    data: DepartmentUpdateSchema,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_hospital_staff),
+):
+    hospital_id = current_user.hospital_id or (await db.execute(select(Hospital.id))).scalar()
+    res = await db.execute(
+        select(Department).where(
+            and_(
+                Department.id == department_id,
+                Department.hospital_id == hospital_id,
+            )
+        )
+    )
+    dept = res.scalar_one_or_none()
+    if not dept:
+        raise HTTPException(status_code=404, detail="Department not found")
+
+    if data.name is not None:
+        dept.name = data.name.strip()
+    if data.code is not None:
+        dept.code = data.code.strip().upper()
+    if data.description is not None:
+        dept.description = data.description
+    if data.floor_room is not None:
+        dept.floor_room = data.floor_room
+    if data.avg_consultation_minutes is not None:
+        dept.avg_consultation_minutes = data.avg_consultation_minutes
+    if data.is_active is not None:
+        dept.is_active = data.is_active
+
+    await db.commit()
+    await db.refresh(dept)
+    return dept
+
+
+@router.delete("/departments/{department_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_partner_department(
+    department_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_hospital_staff),
+):
+    hospital_id = current_user.hospital_id or (await db.execute(select(Hospital.id))).scalar()
+    res = await db.execute(
+        select(Department).where(
+            and_(
+                Department.id == department_id,
+                Department.hospital_id == hospital_id,
+            )
+        )
+    )
+    dept = res.scalar_one_or_none()
+    if not dept:
+        raise HTTPException(status_code=404, detail="Department not found")
+
+    await db.delete(dept)
+    await db.commit()
+    return None
+
+
 # --- Services ---
 
 @router.get("/services", response_model=List[ServiceResponse])
@@ -202,6 +288,44 @@ async def create_partner_service(
         is_active=True,
     )
     db.add(srv)
+    await db.commit()
+    await db.refresh(srv)
+    return srv
+
+
+@router.put("/services/{service_id}", response_model=ServiceResponse)
+async def update_partner_service(
+    service_id: uuid.UUID,
+    data: ServiceUpdateSchema,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_hospital_staff),
+):
+    hospital_id = current_user.hospital_id or (await db.execute(select(Hospital.id))).scalar()
+    res = await db.execute(
+        select(Service).where(
+            and_(
+                Service.id == service_id,
+                Service.hospital_id == hospital_id,
+            )
+        )
+    )
+    srv = res.scalar_one_or_none()
+    if not srv:
+        raise HTTPException(status_code=404, detail="Service not found")
+
+    if data.department_id is not None:
+        srv.department_id = data.department_id
+    if data.name is not None:
+        srv.name = data.name.strip()
+    if data.description is not None:
+        srv.description = data.description
+    if data.duration_minutes is not None:
+        srv.duration_minutes = data.duration_minutes
+    if data.price is not None:
+        srv.price = data.price
+    if data.is_active is not None:
+        srv.is_active = data.is_active
+
     await db.commit()
     await db.refresh(srv)
     return srv
@@ -296,3 +420,267 @@ async def add_doctor_schedule(
     await db.commit()
     await db.refresh(sched)
     return sched
+
+
+@router.put("/doctors/{doctor_id}", response_model=DoctorResponse)
+async def update_partner_doctor(
+    doctor_id: uuid.UUID,
+    data: DoctorUpdateSchema,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_hospital_staff),
+):
+    hospital_id = current_user.hospital_id or (await db.execute(select(Hospital.id))).scalar()
+    res = await db.execute(
+        select(Doctor)
+        .where(and_(Doctor.id == doctor_id, Doctor.hospital_id == hospital_id))
+        .options(selectinload(Doctor.schedules))
+    )
+    doc = res.scalar_one_or_none()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Doctor not found")
+
+    if data.department_id is not None:
+        doc.department_id = data.department_id
+    if data.full_name is not None:
+        doc.full_name = data.full_name.strip()
+    if data.specialty is not None:
+        doc.specialty = data.specialty.strip()
+    if data.license_number is not None:
+        doc.license_number = data.license_number
+    if data.bio is not None:
+        doc.bio = data.bio
+    if data.photo_url is not None:
+        doc.photo_url = data.photo_url
+    if data.room_number is not None:
+        doc.room_number = data.room_number
+    if data.avg_consultation_minutes is not None:
+        doc.avg_consultation_minutes = data.avg_consultation_minutes
+    if data.is_available is not None:
+        doc.is_available = data.is_available
+    if data.is_active is not None:
+        doc.is_active = data.is_active
+
+    await db.commit()
+    await db.refresh(doc)
+    return doc
+
+
+@router.put("/doctors/{doctor_id}/schedules", response_model=List[DoctorScheduleResponse])
+async def update_doctor_schedules(
+    doctor_id: uuid.UUID,
+    data: DoctorSchedulesBatchUpdateSchema,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_hospital_staff),
+):
+    hospital_id = current_user.hospital_id or (await db.execute(select(Hospital.id))).scalar()
+    res = await db.execute(
+        select(Doctor).where(and_(Doctor.id == doctor_id, Doctor.hospital_id == hospital_id))
+    )
+    doc = res.scalar_one_or_none()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Doctor not found")
+
+    # Clear existing schedules for this doctor
+    await db.execute(delete(DoctorSchedule).where(DoctorSchedule.doctor_id == doctor_id))
+
+    # Add new schedules
+    new_schedules: List[DoctorSchedule] = []
+    for s in data.schedules:
+        sched = DoctorSchedule(
+            id=uuid.uuid4(),
+            doctor_id=doctor_id,
+            day_of_week=s.day_of_week,
+            start_time=s.start_time,
+            end_time=s.end_time,
+            max_patients_per_slot=s.max_patients_per_slot,
+            is_active=s.is_active,
+        )
+        db.add(sched)
+        new_schedules.append(sched)
+
+    await db.commit()
+    return new_schedules
+
+
+@router.delete("/doctors/{doctor_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_partner_doctor(
+    doctor_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_hospital_staff),
+):
+    hospital_id = current_user.hospital_id or (await db.execute(select(Hospital.id))).scalar()
+    res = await db.execute(
+        select(Doctor).where(and_(Doctor.id == doctor_id, Doctor.hospital_id == hospital_id))
+    )
+    doc = res.scalar_one_or_none()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Doctor not found")
+
+    await db.delete(doc)
+    await db.commit()
+    return None
+
+
+# --- Staff Management ---
+
+@router.get("/staff", response_model=List[StaffResponse])
+async def list_partner_staff(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_hospital_staff),
+):
+    hospital_id = current_user.hospital_id or (await db.execute(select(Hospital.id))).scalar()
+    res = await db.execute(
+        select(User)
+        .where(
+            and_(
+                User.hospital_id == hospital_id,
+                User.role != UserRole.PATIENT,
+            )
+        )
+        .order_by(User.created_at.desc())
+    )
+    return res.scalars().all()
+
+
+@router.post("/staff", response_model=StaffResponse, status_code=status.HTTP_201_CREATED)
+async def create_partner_staff(
+    data: StaffCreateSchema,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_hospital_staff),
+):
+    hospital_id = current_user.hospital_id or (await db.execute(select(Hospital.id))).scalar()
+
+    # Check if email already exists
+    existing = await db.execute(select(User).where(User.email == data.email.strip().lower()))
+    if existing.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="A user with this email address already exists")
+
+    new_staff = User(
+        id=uuid.uuid4(),
+        hospital_id=hospital_id,
+        full_name=data.full_name.strip(),
+        email=data.email.strip().lower(),
+        phone_number=data.phone_number.strip() if data.phone_number else None,
+        role=data.role,
+        hashed_password=get_password_hash(data.password),
+        is_active=True,
+        is_verified=True,
+    )
+    db.add(new_staff)
+    await db.commit()
+    await db.refresh(new_staff)
+    return new_staff
+
+
+@router.put("/staff/{user_id}", response_model=StaffResponse)
+async def update_partner_staff(
+    user_id: uuid.UUID,
+    data: StaffUpdateSchema,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_hospital_staff),
+):
+    hospital_id = current_user.hospital_id or (await db.execute(select(Hospital.id))).scalar()
+    res = await db.execute(
+        select(User).where(and_(User.id == user_id, User.hospital_id == hospital_id))
+    )
+    staff = res.scalar_one_or_none()
+    if not staff:
+        raise HTTPException(status_code=404, detail="Staff member not found")
+
+    if data.full_name is not None:
+        staff.full_name = data.full_name.strip()
+    if data.email is not None:
+        email_clean = data.email.strip().lower()
+        if email_clean != staff.email:
+            existing = await db.execute(select(User).where(and_(User.email == email_clean, User.id != user_id)))
+            if existing.scalar_one_or_none():
+                raise HTTPException(status_code=400, detail="This email address is already in use")
+            staff.email = email_clean
+    if data.phone_number is not None:
+        staff.phone_number = data.phone_number.strip() if data.phone_number else None
+    if data.role is not None:
+        staff.role = data.role
+    if data.is_active is not None:
+        staff.is_active = data.is_active
+    if data.password:
+        staff.hashed_password = get_password_hash(data.password)
+
+    await db.commit()
+    await db.refresh(staff)
+    return staff
+
+
+@router.delete("/staff/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_partner_staff(
+    user_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_hospital_staff),
+):
+    if user_id == current_user.id:
+        raise HTTPException(status_code=400, detail="Cannot delete your own active account")
+
+    hospital_id = current_user.hospital_id or (await db.execute(select(Hospital.id))).scalar()
+    res = await db.execute(
+        select(User).where(and_(User.id == user_id, User.hospital_id == hospital_id))
+    )
+    staff = res.scalar_one_or_none()
+    if not staff:
+        raise HTTPException(status_code=404, detail="Staff member not found")
+
+    await db.delete(staff)
+    await db.commit()
+    return None
+
+
+# --- Hospital Profile ---
+
+@router.get("/profile", response_model=HospitalProfileResponse)
+async def get_partner_hospital_profile(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_hospital_staff),
+):
+    hospital_id = current_user.hospital_id or (await db.execute(select(Hospital.id))).scalar()
+    res = await db.execute(select(Hospital).where(Hospital.id == hospital_id))
+    hosp = res.scalar_one_or_none()
+    if not hosp:
+        raise HTTPException(status_code=404, detail="Hospital not found")
+    return hosp
+
+
+@router.put("/profile", response_model=HospitalProfileResponse)
+async def update_partner_hospital_profile(
+    data: HospitalProfileUpdateSchema,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_hospital_staff),
+):
+    hospital_id = current_user.hospital_id or (await db.execute(select(Hospital.id))).scalar()
+    res = await db.execute(select(Hospital).where(Hospital.id == hospital_id))
+    hosp = res.scalar_one_or_none()
+    if not hosp:
+        raise HTTPException(status_code=404, detail="Hospital not found")
+
+    if data.name is not None:
+        hosp.name = data.name.strip()
+    if data.description is not None:
+        hosp.description = data.description
+    if data.address is not None:
+        hosp.address = data.address
+    if data.city is not None:
+        hosp.city = data.city
+    if data.contact_phone is not None:
+        hosp.contact_phone = data.contact_phone
+    if data.contact_email is not None:
+        hosp.contact_email = data.contact_email
+    if data.emergency_phone is not None:
+        hosp.emergency_phone = data.emergency_phone
+    if data.latitude is not None:
+        hosp.latitude = data.latitude
+    if data.longitude is not None:
+        hosp.longitude = data.longitude
+
+    await db.commit()
+    await db.refresh(hosp)
+    return hosp
+
+
+

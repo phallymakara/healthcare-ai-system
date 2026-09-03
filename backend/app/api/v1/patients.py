@@ -1,4 +1,5 @@
 import uuid
+import re
 from typing import List, Optional
 from fastapi import APIRouter, Depends, status, HTTPException, Query
 from sqlalchemy import select, and_, or_, func
@@ -28,6 +29,28 @@ router = APIRouter(prefix="/patients", tags=["Patient Platform"])
 
 # --- Schemas ---
 
+class ServiceDiscoveryItem(BaseModel):
+    id: uuid.UUID
+    name: str
+    description: Optional[str] = None
+    price: float
+    duration_minutes: int
+    is_active: bool = True
+
+    model_config = {"from_attributes": True}
+
+
+class DoctorDiscoveryItem(BaseModel):
+    id: uuid.UUID
+    full_name: str
+    specialty: str
+    bio: Optional[str] = None
+    room_number: Optional[str] = None
+    is_available: bool = True
+
+    model_config = {"from_attributes": True}
+
+
 class DepartmentDiscoveryItem(BaseModel):
     id: uuid.UUID
     name: str
@@ -36,16 +59,20 @@ class DepartmentDiscoveryItem(BaseModel):
     avg_consultation_minutes: int
     waiting_count: int
     estimated_wait_minutes: int
+    doctors: List[DoctorDiscoveryItem] = []
 
 
 class HospitalDiscoveryResponse(BaseModel):
     id: uuid.UUID
     name: str
     slug: str
+    category: str = "General Hospital"
     address: Optional[str] = None
     city: Optional[str] = None
     phone: Optional[str] = None
+    emergency_service_available: bool = True
     departments: List[DepartmentDiscoveryItem] = []
+    services: List[ServiceDiscoveryItem] = []
 
     model_config = {"from_attributes": True}
 
@@ -88,6 +115,7 @@ class PatientProfileResponse(BaseModel):
 @router.get("/discovery/hospitals", response_model=List[HospitalDiscoveryResponse])
 async def search_hospitals(
     q: Optional[str] = Query(None, description="Search query for hospital name, city, or specialty"),
+    category: Optional[str] = Query(None, description="Category filter (e.g. Hospital, Clinic, Animal)"),
     db: AsyncSession = Depends(get_db),
 ):
     """Public search and discovery of verified hospitals, branches, and live department queues"""
@@ -96,6 +124,8 @@ async def search_hospitals(
         .where(Hospital.is_active == True)
         .options(
             selectinload(Hospital.departments).selectinload(Department.queue_sessions),
+            selectinload(Hospital.departments).selectinload(Department.doctors),
+            selectinload(Hospital.services),
         )
     )
 
@@ -113,6 +143,27 @@ async def search_hospitals(
 
     result = []
     for h in hospitals:
+        # Determine facility category
+        name_lower = h.name.lower()
+        desc_lower = (h.description or "").lower()
+        full_text = f"{name_lower} {desc_lower}"
+
+        # 1. Animal / Veterinary Clinic
+        if "សត្វ" in full_text or re.search(r"\b(animal|animals|vet|veterinary|vets|pet|pets|dog|dogs|canine|feline)\b", full_text):
+            cat = "Animal Clinic"
+        # 2. General Hospital (explicit general hospital or hospital in title, not dental/clinic/eye)
+        elif "hospital" in name_lower and not any(w in name_lower for w in ["dental", "clinic", "eye", "maternity", "polyclinic"]):
+            cat = "General Hospital"
+        # 3. Medical / Specialty Clinic
+        elif any(w in full_text for w in ["clinic", "specialty", "dental", "dermatology", "eye", "skin", "maternity", "polyclinic", "institute", "គ្លីនិក", "វិទ្យាស្ថាន"]):
+            cat = "Medical Clinic"
+        else:
+            cat = "General Hospital"
+
+        if category and category.lower() not in "all":
+            if category.lower() not in cat.lower():
+                continue
+
         dept_items = []
         for d in h.departments:
             if not d.is_active:
@@ -137,6 +188,19 @@ async def search_hospitals(
                 is_serving_in_progress=True,
             )
 
+            doc_items = [
+                DoctorDiscoveryItem(
+                    id=doc.id,
+                    full_name=doc.full_name,
+                    specialty=doc.specialty,
+                    bio=doc.bio,
+                    room_number=doc.room_number,
+                    is_available=doc.is_available,
+                )
+                for doc in getattr(d, "doctors", [])
+                if getattr(doc, "is_active", True)
+            ]
+
             dept_items.append(
                 DepartmentDiscoveryItem(
                     id=d.id,
@@ -146,18 +210,35 @@ async def search_hospitals(
                     avg_consultation_minutes=d.avg_consultation_minutes,
                     waiting_count=waiting_count,
                     estimated_wait_minutes=est_wait,
+                    doctors=doc_items,
                 )
             )
+
+        service_items = [
+            ServiceDiscoveryItem(
+                id=s.id,
+                name=s.name,
+                description=s.description,
+                price=float(s.price),
+                duration_minutes=s.duration_minutes,
+                is_active=s.is_active,
+            )
+            for s in getattr(h, "services", [])
+            if s.is_active
+        ]
 
         result.append(
             HospitalDiscoveryResponse(
                 id=h.id,
                 name=h.name,
                 slug=h.slug,
+                category=cat,
                 address=h.address,
                 city=None,
                 phone=h.phone,
+                emergency_service_available=h.emergency_service_available,
                 departments=dept_items,
+                services=service_items,
             )
         )
 

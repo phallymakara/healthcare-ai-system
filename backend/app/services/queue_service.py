@@ -368,6 +368,71 @@ class QueueService:
         return ticket
 
     @staticmethod
+    async def recall_ticket(
+        session: AsyncSession,
+        ticket_id: uuid.UUID,
+        staff_user: User,
+        note: Optional[str] = None,
+    ) -> Ticket:
+        ticket = await QueueService._get_ticket_with_lock(session, ticket_id)
+        if ticket.status != TicketStatus.SKIPPED:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Ticket is currently {ticket.status.value}, only SKIPPED tickets can be recalled",
+            )
+
+        from_status = ticket.status
+        ticket.status = TicketStatus.CALLED
+        ticket.called_at = datetime.now(timezone.utc).replace(tzinfo=None)
+        ticket.position = 0
+        ticket.estimated_wait_minutes = 0
+
+        # Update session current serving
+        q_res = await session.execute(
+            select(QueueSession).where(QueueSession.id == ticket.queue_session_id)
+        )
+        queue_sess = q_res.scalar_one()
+        queue_sess.current_serving_ticket_id = ticket.id
+        queue_sess.current_serving_number = ticket.ticket_number
+
+        log = TicketLog(
+            id=uuid.uuid4(),
+            ticket_id=ticket.id,
+            from_status=from_status,
+            to_status=TicketStatus.CALLED,
+            actor_id=staff_user.id,
+            note=note or f"Patient recalled to counter by {staff_user.full_name}",
+        )
+        session.add(log)
+        await session.commit()
+
+        # WebSocket broadcast
+        await manager.dispatch_queue_event(
+            event_type="PATIENT_CALLED",
+            session_id=ticket.queue_session_id,
+            hospital_id=ticket.hospital_id,
+            data={
+                "ticket_id": str(ticket.id),
+                "ticket_number": ticket.ticket_number,
+                "patient_name": ticket.patient_name,
+                "called_by": staff_user.full_name,
+                "is_recalled": True,
+            },
+            ticket_id=ticket.id,
+        )
+
+        await NotificationService.dispatch(
+            title="Ticket Recalled",
+            message=f"Ticket {ticket.ticket_number} has been recalled! Please proceed to the consultation room.",
+            notification_type=NotificationType.TURN_APPROACHING,
+            user_id=ticket.patient_id,
+            phone_number=ticket.patient_phone,
+            ticket_id=ticket.id,
+        )
+
+        return ticket
+
+    @staticmethod
     async def mark_no_show(
         session: AsyncSession,
         ticket_id: uuid.UUID,
@@ -419,7 +484,7 @@ class QueueService:
             from_status=from_status,
             to_status=TicketStatus.CANCELLED,
             actor_id=user.id,
-            note=note or f"Cancelled by {user.full_name}",
+            note=note or "Ticket cancelled",
         )
         session.add(log)
         await QueueService._recalculate_waiting_positions(session, ticket.queue_session_id)
@@ -463,6 +528,20 @@ class QueueService:
         )
         active_tickets = tickets_res.scalars().all()
 
+        # Load skipped tickets
+        skipped_res = await session.execute(
+            select(Ticket)
+            .where(
+                and_(
+                    Ticket.queue_session_id == queue_session_id,
+                    Ticket.status == TicketStatus.SKIPPED,
+                )
+            )
+            .order_by(Ticket.updated_at.desc())
+            .options(selectinload(Ticket.logs))
+        )
+        skipped_tickets = skipped_res.scalars().all()
+
         # Count completed
         completed_res = await session.execute(
             select(func.count(Ticket.id)).where(
@@ -495,6 +574,7 @@ class QueueService:
             "total_completed_today": total_completed,
             "estimated_wait_minutes_for_new": est_for_new,
             "active_tickets": active_tickets,
+            "skipped_tickets": skipped_tickets,
         }
 
     # --- Internal Helpers ---

@@ -158,24 +158,114 @@ class TriageAssistantService:
         )
 
     @classmethod
-    def get_chat_reply(cls, message: str) -> AssistantChatResponse:
-        m = message.lower()
-        if any(w in m for w in ["wait", "time", "queue", "how long"]):
-            return AssistantChatResponse(
-                reply="You can check real-time queue lengths and estimated wait times directly in our Discover Hospitals directory. We update queue lengths every 15 seconds.",
-                suggested_actions=["Check Live Queues", "Book Queue Ticket"],
+    async def chat_with_assistant(
+        cls,
+        message: str,
+        history: List[Any],
+        db: AsyncSession,
+    ) -> AssistantChatResponse:
+        from app.services.llm_service import LLMService
+
+        # Prepare messages for LLM
+        formatted_messages = []
+        if history:
+            for h in history[-8:]:  # keep last 8 turns for context
+                formatted_messages.append({"role": getattr(h, "role", "user"), "content": getattr(h, "content", "")})
+        formatted_messages.append({"role": "user", "content": message})
+
+        # Generate intelligent LLM response
+        llm_reply = await LLMService.chat_completion(formatted_messages)
+
+        # Check if user message or LLM recommends clinic or discusses symptoms
+        m_lower = message.lower()
+        matched_specialty = None
+        urgency = None
+
+        # Check for pet / animal
+        is_animal = any(w in m_lower for w in ["dog", "cat", "pet", "puppy", "kitten", "animal", "vet", "veterinary"])
+        if is_animal:
+            matched_specialty = "Animal Care"
+            urgency = UrgencyLevel.STANDARD
+
+        # Check specialty rules
+        for pattern, specialty, rule_urgency, _, _ in cls.SPECIALTY_RULES:
+            if re.search(pattern, m_lower, re.IGNORECASE):
+                matched_specialty = specialty
+                urgency = rule_urgency
+                break
+
+        # Check if user explicitly asked for clinic/hospital/queue/appointment/booking
+        has_clinic_intent = any(w in m_lower for w in ["clinic", "hospital", "doctor", "appointment", "ticket", "queue", "department", "book"])
+
+        matching_hospitals: List[TriageHospitalMatch] = []
+        if matched_specialty or has_clinic_intent:
+            # Query active hospitals & live queues
+            hosp_query = (
+                select(Hospital)
+                .where(Hospital.is_active == True)
+                .options(
+                    selectinload(Hospital.departments).selectinload(Department.queue_sessions),
+                )
             )
-        if any(w in m for w in ["book", "appointment", "reserve", "ticket"]):
-            return AssistantChatResponse(
-                reply="To reserve a queue ticket, browse our hospital departments and click 'Reserve Ticket'. You'll receive a live ticket tracker and automated alerts when your turn approaches.",
-                suggested_actions=["Find Hospital", "View My Tickets"],
-            )
-        if any(w in m for w in ["emergency", "urgent", "ambulance"]):
-            return AssistantChatResponse(
-                reply="For severe life-threatening conditions (e.g. intense chest pain, severe breathing difficulty), please dial 119 or proceed to the nearest emergency department immediately.",
-                suggested_actions=["Emergency Services", "Find Nearest Hospital"],
-            )
+            res = await db.execute(hosp_query)
+            hospitals = res.scalars().all()
+
+            for h in hospitals:
+                for dept in h.departments:
+                    if not dept.is_active:
+                        continue
+                    
+                    # Match department appropriately
+                    if is_animal:
+                        if "animal" not in h.name.lower() and "vet" not in h.name.lower() and "pet" not in dept.name.lower():
+                            continue
+                    elif matched_specialty:
+                        dept_name_lower = dept.name.lower()
+                        spec_lower = matched_specialty.lower()
+                        if spec_lower not in dept_name_lower and dept_name_lower not in spec_lower:
+                            # If not exact match, include general/internal medicine if available
+                            if "general" not in dept_name_lower and "internal" not in dept_name_lower:
+                                continue
+
+                    active_session = next((s for s in dept.queue_sessions if s.status == QueueStatus.ACTIVE), None)
+                    waiting_count = 0
+                    if active_session:
+                        t_res = await db.execute(
+                            select(func.count(Ticket.id)).where(
+                                and_(
+                                    Ticket.queue_session_id == active_session.id,
+                                    Ticket.status.in_([TicketStatus.WAITING, TicketStatus.CALLED]),
+                                )
+                            )
+                        )
+                        waiting_count = t_res.scalar() or 0
+
+                    est_wait = WaitTimeCalculator.calculate_wait_time(
+                        position_ahead=waiting_count,
+                        avg_consultation_minutes=dept.avg_consultation_minutes,
+                        is_serving_in_progress=True,
+                    )
+
+                    matching_hospitals.append(
+                        TriageHospitalMatch(
+                            hospital_id=h.id,
+                            hospital_name=h.name,
+                            department_id=dept.id,
+                            department_name=dept.name,
+                            department_code=dept.code,
+                            waiting_patients=waiting_count,
+                            estimated_wait_minutes=est_wait,
+                            address=h.address,
+                        )
+                    )
+
+            matching_hospitals.sort(key=lambda m: m.estimated_wait_minutes)
+            matching_hospitals = matching_hospitals[:3]  # top 3 matches
+
         return AssistantChatResponse(
-            reply="Hello! I can help you evaluate your symptoms, identify the appropriate clinical outpatient department, and find the clinic with the shortest waiting line today. What symptoms are you experiencing?",
-            suggested_actions=["Describe Symptoms", "Browse Hospitals"],
+            reply=llm_reply,
+            urgency_level=urgency,
+            recommended_specialty=matched_specialty,
+            matching_hospitals=matching_hospitals,
+            suggested_actions=["Book Digital Ticket", "Explore Hospitals"] if matching_hospitals else ["Ask Another Question"],
         )

@@ -1,11 +1,15 @@
 import React from 'react';
-import { ArrowRight, Clock, Users, Building2 } from 'lucide-react';
+import { Clock, Users, Building2 } from 'lucide-react';
+
+import { UserProfile } from '../../services/auth';
 
 interface HeroSectionProps {
   onOpenAuth: () => void;
+  currentUser?: UserProfile | null;
+  onSelectTab?: (tab: any) => void;
 }
 
-export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenAuth }) => {
+export const HeroSection: React.FC<HeroSectionProps> = () => {
   return (
     <section style={{ padding: '3rem 0 1.5rem 0', textAlign: 'center' }}>
       <div style={{ maxWidth: '820px', margin: '0 auto' }}>
@@ -33,29 +37,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenAuth }) => {
         }}>
           Health AI Assistant lets patients reserve queue tickets from home, view live estimated wait times, and receive alerts when their turn is near. Clinics and doctors easily manage patient flow from a simple counter console.
         </p>
-
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.85rem', alignItems: 'center', justifyContent: 'center' }}>
-          <button
-            onClick={onOpenAuth}
-            className="btn"
-            style={{
-              background: 'linear-gradient(135deg, #0c2f27 0%, #185339 50%, #227349 100%)',
-              color: '#ffffff',
-              padding: '0.75rem 1.6rem',
-              fontSize: '0.95rem',
-              border: 'none',
-            }}
-          >
-            Get Started <ArrowRight size={16} />
-          </button>
-          <a
-            href="#how-it-works"
-            className="btn btn-outline"
-            style={{ padding: '0.75rem 1.4rem', fontSize: '0.95rem' }}
-          >
-            How It Works
-          </a>
-        </div>
 
         {/* Quick Highlights Strip (Clean flat indicators centered) */}
         <div style={{

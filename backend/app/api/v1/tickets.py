@@ -133,6 +133,18 @@ async def skip_patient(
     return TicketResponse.model_validate(ticket)
 
 
+@router.post("/{ticket_id}/recall", response_model=TicketResponse)
+async def recall_skipped_patient(
+    ticket_id: uuid.UUID,
+    action: TicketActionRequest = TicketActionRequest(),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_hospital_staff),
+):
+    """Counter Action: Recall previously skipped patient back to active consultation"""
+    ticket = await QueueService.recall_ticket(db, ticket_id=ticket_id, staff_user=current_user, note=action.note)
+    return TicketResponse.model_validate(ticket)
+
+
 @router.post("/{ticket_id}/no-show", response_model=TicketResponse)
 async def mark_patient_no_show(
     ticket_id: uuid.UUID,

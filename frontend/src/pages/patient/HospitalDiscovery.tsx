@@ -1,16 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { AuthService } from '../../services/auth';
-import { 
-  Search, 
-  Building2, 
-  Clock, 
-  X, 
-  Users, 
-  MapPin, 
-  Phone, 
-  Stethoscope, 
-  ArrowRight
-} from 'lucide-react';
+import { useLanguage } from '../../context/LanguageContext';
+import {
+  formatFacilityName,
+  formatDepartmentName,
+  formatDoctorName,
+  formatSpecialty,
+  formatCategory,
+} from '../../i18n/formatters';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
 
@@ -20,14 +17,15 @@ interface HospitalDiscoveryProps {
   onNavigateToTracker?: () => void;
 }
 
-export const HospitalDiscovery: React.FC<HospitalDiscoveryProps> = ({ 
+export const HospitalDiscovery: React.FC<HospitalDiscoveryProps> = ({
   onTicketBooked,
-  onNavigateToTriage,
-  onNavigateToTracker
 }) => {
+  const { language, t } = useLanguage();
   const [hospitals, setHospitals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<'All' | 'Hospital' | 'Medical Clinic' | 'Animal Clinic'>('All');
+  const [selectedFacility, setSelectedFacility] = useState<any | null>(null);
 
   // Booking Modal State & Field Validation
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
@@ -48,7 +46,8 @@ export const HospitalDiscovery: React.FC<HospitalDiscoveryProps> = ({
         : `${API_BASE}/patients/discovery/hospitals`;
       const res = await fetch(url);
       if (res.ok) {
-        setHospitals(await res.json());
+        const data = await res.json();
+        setHospitals(data);
       }
     } catch {
       // Graceful fallback
@@ -86,14 +85,14 @@ export const HospitalDiscovery: React.FC<HospitalDiscoveryProps> = ({
 
     let hasError = false;
     if (!patientName.trim()) {
-      setNameError('Please enter your full name');
+      setNameError('Please enter your full name.');
       hasError = true;
     }
     if (!patientPhone.trim()) {
-      setPhoneError('Please enter your contact phone number');
+      setPhoneError('Please enter your phone number.');
       hasError = true;
     } else if (patientPhone.trim().length < 6) {
-      setPhoneError('Please enter a valid phone number');
+      setPhoneError('Please enter a valid phone number.');
       hasError = true;
     }
 
@@ -130,498 +129,615 @@ export const HospitalDiscovery: React.FC<HospitalDiscoveryProps> = ({
     }
   };
 
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '3.5rem', paddingBottom: '3rem' }}>
-      
-      {/* 1. HERO SECTION */}
-      <section style={{
-        background: '#ffffff',
-        border: '1px solid var(--border-color)',
-        borderRadius: '8px',
-        padding: '3rem 2.5rem',
-      }}>
-        <div style={{ maxWidth: '840px' }}>
-          <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--accent-primary)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '0.5rem' }}>
-            Executive Overview • Project Proposal
-          </span>
-          <h1 style={{ fontSize: '2.4rem', fontWeight: 800, color: 'var(--text-main)', lineHeight: 1.2, marginBottom: '1rem', letterSpacing: '-0.02em' }}>
-            Smart Hospital Queue & AI Booking Platform
-          </h1>
-          <p style={{ fontSize: '1.05rem', color: 'var(--text-muted)', lineHeight: 1.65, marginBottom: '1.75rem' }}>
-            A digital healthcare access system designed to eliminate unpredictable waiting room delays. Patients reserve digital queue tickets remotely, track their live position in real-time, receive dynamic wait-time predictions, and access symptom triage before stepping out of their home.
-          </p>
+  const filteredHospitals = hospitals.filter((hosp) => {
+    // 1. Category Filter
+    if (selectedCategory !== 'All') {
+      if (selectedCategory === 'Hospital') {
+        if (hosp.category !== 'General Hospital' && hosp.category !== 'Hospital') {
+          return false;
+        }
+      } else if (hosp.category !== selectedCategory) {
+        return false;
+      }
+    }
 
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
-            <a 
-              href="#search-hospitals-section" 
-              className="btn btn-primary"
-            >
-              Explore Live Queues
-            </a>
-            {onNavigateToTriage && (
-              <button 
-                onClick={onNavigateToTriage}
-                className="btn btn-outline"
-                style={{ borderColor: 'var(--accent-primary)', color: 'var(--accent-primary)' }}
-              >
-                <Stethoscope size={16} /> Symptom Triage <ArrowRight size={14} />
-              </button>
-            )}
-            {onNavigateToTracker && (
-              <button 
-                onClick={onNavigateToTracker}
-                className="btn btn-outline"
-              >
-                <Clock size={16} /> Track Live Ticket
-              </button>
-            )}
-          </div>
-        </div>
-      </section>
+    // 2. Search Query Filter
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return true;
+    const hospMatch = hosp.name?.toLowerCase().includes(q) || hosp.city?.toLowerCase().includes(q) || hosp.address?.toLowerCase().includes(q);
+    const deptMatch = (hosp.departments || []).some(
+      (d: any) => d.name?.toLowerCase().includes(q) || d.code?.toLowerCase().includes(q)
+    );
+    const serviceMatch = (hosp.services || []).some(
+      (s: any) => s.name?.toLowerCase().includes(q) || s.description?.toLowerCase().includes(q)
+    );
+    return hospMatch || deptMatch || serviceMatch;
+  });
 
-      {/* 2. THE PROBLEM STATEMENT */}
-      <section>
-        <div style={{ marginBottom: '1.5rem' }}>
-          <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#dc2626', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Section 2 • Problem Statement
-          </span>
-          <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-main)', marginTop: '4px' }}>
-            Why Traditional Hospital Waiting is Broken
-          </h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>
-            Healthcare facilities and patients face systematic delays and informational blackouts every day:
-          </p>
+  // Dedicated Facility Services & Queues View
+  if (selectedFacility) {
+    return (
+      <div style={{ width: '100%', height: '100%', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+        {/* Back Navigation Bar */}
+        <div style={{ marginBottom: '1.25rem' }}>
+          <button
+            onClick={() => setSelectedFacility(null)}
+            style={{
+              padding: '0.4rem 0.95rem',
+              fontSize: '0.85rem',
+              fontWeight: 500,
+              background: 'transparent',
+              border: '1px solid var(--border-color)',
+              borderRadius: '4px',
+              color: 'var(--text-main)',
+              cursor: 'pointer',
+              boxShadow: 'none',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
+            }}
+          >
+            {language === 'km' ? '← ត្រឡប់ទៅបញ្ជីមន្ទីរពេទ្យ & គ្លីនិក' : '← Back to Facilities'}
+          </button>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
-          <div className="glass-card">
-            <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.4rem', color: 'var(--text-main)' }}>
-              1. Zero Visibility & Lost Hours
-            </h3>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-              Patients lose hours sitting in crowded waiting rooms with no clarity on their real queue position or true waiting times.
-            </p>
-          </div>
-
-          <div className="glass-card">
-            <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.4rem', color: 'var(--text-main)' }}>
-              2. Manual Paper Queues
-            </h3>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-              Physical paper tickets and static boards are completely disconnected from actual doctor consultation pace and workflow.
-            </p>
-          </div>
-
-          <div className="glass-card">
-            <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.4rem', color: 'var(--text-main)' }}>
-              3. Digitization Barrier
-            </h3>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-              Hospitals and clinics lack affordable, simple software to digitize queues, staff schedules, and doctor availability.
-            </p>
-          </div>
-
-          <div className="glass-card">
-            <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.4rem', color: 'var(--text-main)' }}>
-              4. No Queue Comparison
-            </h3>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-              Patients have no way to compare live waiting times across healthcare providers before deciding where to go.
-            </p>
-          </div>
-
-          <div className="glass-card">
-            <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.4rem', color: 'var(--text-main)' }}>
-              5. Bottlenecks & No-Shows
-            </h3>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-              No shared system exists to track patient flow, catch bottlenecks, reduce missed appointments, or balance clinic loads.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* 3. THE PROPOSED SOLUTION */}
-      <section>
-        <div style={{ marginBottom: '1.5rem' }}>
-          <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--accent-emerald)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Section 3 • Proposed Solution
-          </span>
-          <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-main)', marginTop: '4px' }}>
-            A Three-Sided Real-Time Platform
-          </h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>
-            Connecting patients, clinic staff, and platform administrators through a single real-time ticketing engine:
-          </p>
-        </div>
-
-        <div className="grid-3">
-          {/* Patient App */}
-          <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--accent-primary)' }}>
-              1. Patient Access Portal
-            </h3>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-              Enables patients to discover clinics, take queue tickets remotely, and receive live progress alerts without being physically present.
-            </p>
-            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-              <li>• Remote digital ticket reservation for departments & doctors</li>
-              <li>• Live WebSocket queue position & estimated wait time</li>
-              <li>• Automated "Your Turn is Near" arrival notifications</li>
-              <li>• Symptom triage assistant to find the least crowded clinic</li>
-            </ul>
-          </div>
-
-          {/* Partner Console */}
-          <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--accent-emerald)' }}>
-              2. Hospital Staff Console
-            </h3>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-              A centralized counter dashboard for doctors and receptionists that instantly syncs all actions with patient devices.
-            </p>
-            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-              <li>• 1-click counter dispatch: Call Next, Consult, Complete, No-Show</li>
-              <li>• Instant screen synchronization via real-time WebSockets</li>
-              <li>• Doctor shift management, room assignments & availability</li>
-              <li>• Walk-in ticket generation for on-premise arrivals</li>
-            </ul>
-          </div>
-
-          {/* Super Admin */}
-          <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#7c3aed' }}>
-              3. Platform Admin Control
-            </h3>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-              Complete administrative governance and telemetry over all onboarded hospital networks and clinics.
-            </p>
-            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-              <li>• Partner verification pipeline (Review, Approve, Reject)</li>
-              <li>• System-wide ticket analytics & peak congestion tracking</li>
-              <li>• User directory management and role-based access control</li>
-              <li>• Comprehensive audit logs and activity tracking</li>
-            </ul>
-          </div>
-        </div>
-      </section>
-
-      {/* 4. HOW IT WORKS (STEP-BY-STEP FLOW) */}
-      <section>
-        <div style={{ marginBottom: '1.5rem' }}>
-          <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--accent-cyan)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Patient & Clinic Workflow
-          </span>
-          <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-main)', marginTop: '4px' }}>
-            How the System Works in 4 Steps
-          </h2>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
-          <div className="glass-card">
-            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--accent-primary)', marginBottom: '0.35rem' }}>01</div>
-            <h3 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '0.35rem' }}>Discover & Compare</h3>
-            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.45 }}>
-              Browse partner hospitals and check live department queues and wait times before leaving home.
-            </p>
-          </div>
-
-          <div className="glass-card">
-            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--accent-primary)', marginBottom: '0.35rem' }}>02</div>
-            <h3 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '0.35rem' }}>Reserve Queue Ticket</h3>
-            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.45 }}>
-              Reserve your digital ticket with your name and phone number with 1 click.
-            </p>
-          </div>
-
-          <div className="glass-card">
-            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--accent-primary)', marginBottom: '0.35rem' }}>03</div>
-            <h3 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '0.35rem' }}>Live Tracking & Alerts</h3>
-            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.45 }}>
-              Watch your number progress in real-time. Receive an alert when your turn is approaching.
-            </p>
-          </div>
-
-          <div className="glass-card">
-            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--accent-primary)', marginBottom: '0.35rem' }}>04</div>
-            <h3 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '0.35rem' }}>Direct Consultation</h3>
-            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.45 }}>
-              Arrive right as your number is called. Walk straight into the doctor room without waiting.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* 5. SYSTEM ARCHITECTURE & WAITING-TIME ENGINE */}
-      <section>
-        <div style={{ marginBottom: '1.5rem' }}>
-          <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--accent-blue)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Section 5 • Technical Highlights
-          </span>
-          <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-main)', marginTop: '4px' }}>
-            Engine Architecture & Wait-Time Calculation
-          </h2>
-        </div>
-
-        <div className="grid-2">
-          <div className="glass-card">
-            <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '0.5rem' }}>
-              Deterministic Waiting-Time Formula
-            </h3>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: '0.75rem' }}>
-              Estimation is based on deterministic operational modeling rather than approximate guesses:
-            </p>
-            <div style={{ fontSize: '0.82rem', color: 'var(--text-main)', fontFamily: 'var(--font-mono)', background: 'var(--bg-secondary)', padding: '0.75rem', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
-              Wait = (Patients Ahead × Doctor Avg Time) - Elapsed Serving Time × Peak Multiplier
+        {/* Facility Detail Container */}
+        <div style={{
+          background: '#ffffff',
+          border: '1px solid var(--border-color)',
+          borderRadius: '6px',
+          overflowY: 'auto',
+          flex: 1,
+          minHeight: 0,
+          boxShadow: 'none',
+        }}>
+          {/* Facility Header */}
+          <div style={{
+            padding: '1.5rem',
+            borderBottom: '1px solid var(--border-color)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '1.35rem', fontWeight: 600, color: 'var(--text-main)' }}>
+                {formatFacilityName(selectedFacility.name, language)}
+              </span>
+              {selectedFacility.category && (
+                <span style={{
+                  fontSize: '0.75rem',
+                  padding: '0.2rem 0.65rem',
+                  borderRadius: '16px',
+                  border: '1px solid var(--border-color)',
+                  color: 'var(--text-muted)',
+                  textTransform: 'uppercase',
+                  fontWeight: 500,
+                }}>
+                  {formatCategory(selectedFacility.category, language)}
+                </span>
+              )}
+              {selectedFacility.emergency_service_available && (
+                <span style={{
+                  fontSize: '0.75rem',
+                  padding: '0.2rem 0.55rem',
+                  borderRadius: '16px',
+                  border: '1px solid #059669',
+                  color: '#059669',
+                  fontWeight: 500,
+                }}>
+                  {t('emergency_247')}
+                </span>
+              )}
+            </div>
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '6px' }}>
+              {selectedFacility.address || 'Phnom Penh'} {selectedFacility.phone ? `• ${selectedFacility.phone}` : ''}
             </div>
           </div>
 
-          <div className="glass-card">
-            <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '0.5rem' }}>
-              Instant WebSocket Event Synchronization
-            </h3>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: '0.75rem' }}>
-              Staff actions trigger immediate database updates and broadcast queue position changes instantly:
-            </p>
-            <div style={{ fontSize: '0.82rem', color: 'var(--text-main)', fontFamily: 'var(--font-mono)', background: 'var(--bg-secondary)', padding: '0.75rem', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
-              Counter Action → Database & Redis Pub/Sub → WebSocket → Patient Live Tracker
+          {/* Section 1: Clinical / Veterinary Departments & Live Queues */}
+          <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border-color)' }}>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, marginBottom: '0.85rem' }}>
+              {t('active_departments')}
             </div>
-          </div>
-        </div>
-      </section>
 
-      {/* 6. INTERACTIVE HOSPITAL DISCOVERY & QUEUES */}
-      <section id="search-hospitals-section" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '2.5rem' }}>
-        <div style={{ marginBottom: '1.5rem' }}>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '0.35rem' }}>
-            Live Hospital & Clinic Queues
-          </h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1.25rem' }}>
-            Search partner facilities, view current wait times, and take a digital queue ticket online:
-          </p>
-
-          <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '0.75rem', maxWidth: '640px' }}>
-            <div style={{ position: 'relative', flex: 1 }}>
-              <input
-                type="text"
-                placeholder="Search by hospital name, city, or department..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '0.75rem 1rem 0.75rem 2.5rem',
-                  fontSize: '0.9rem',
-                }}
-              />
-              <Search size={18} color="var(--text-dim)" style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)' }} />
-            </div>
-            <button type="submit" className="btn btn-primary">
-              Search
-            </button>
-          </form>
-        </div>
-
-        {/* Hospitals List */}
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-dim)', fontSize: '0.9rem' }}>
-            Loading hospital queues...
-          </div>
-        ) : hospitals.length === 0 ? (
-          <div className="glass-card" style={{ textAlign: 'center', padding: '3rem 1.5rem', color: 'var(--text-dim)' }}>
-            <Building2 size={32} color="var(--text-dim)" style={{ margin: '0 auto 0.75rem auto' }} />
-            <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '0.35rem' }}>
-              No hospitals found matching your search.
-            </h3>
-            <p style={{ fontSize: '0.85rem', maxWidth: '420px', margin: '0 auto' }}>
-              Try searching with another keyword or explore the partner onboarding portal in the <strong>Admin Center</strong>.
-            </p>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            {hospitals.map((hosp) => (
-              <div key={hosp.id} className="glass-card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.25rem' }}>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                      <Building2 size={20} color="var(--accent-primary)" />
-                      <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>{hosp.name}</h3>
-                    </div>
-                    <div style={{ display: 'flex', gap: '1.25rem', fontSize: '0.85rem', color: 'var(--text-muted)', flexWrap: 'wrap' }}>
-                      {hosp.address && (
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <MapPin size={14} /> {hosp.address}
-                        </span>
-                      )}
-                      {hosp.phone && (
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <Phone size={14} /> {hosp.phone}
-                        </span>
+            {(selectedFacility.departments || []).length === 0 ? (
+              <div style={{ padding: '1rem 0', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                {language === 'km' ? 'មិនមានផ្នែកវេជ្ជសាស្ត្រសកម្មសម្រាប់ថ្ងៃនេះទេ' : 'No active departments registered for this facility today.'}
+              </div>
+            ) : (
+              <div style={{ border: '1px solid var(--border-color)', borderRadius: '4px', overflow: 'hidden' }}>
+                {selectedFacility.departments.map((dept: any, idx: number) => (
+                  <div
+                    key={dept.id}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      flexWrap: 'wrap',
+                      gap: '1rem',
+                      padding: '0.95rem 1.25rem',
+                      borderBottom: idx === selectedFacility.departments.length - 1 ? 'none' : '1px solid var(--border-color)',
+                      background: '#ffffff',
+                    }}
+                  >
+                    <div style={{ minWidth: '240px', flex: '1.5' }}>
+                      <div style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-main)' }}>
+                        {formatDepartmentName(dept.name, language)}
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                        {language === 'km' ? 'កូដផ្នែក' : 'Code'}: {dept.code || 'DEPT'} • {dept.floor_room || 'Room 101'}
+                      </div>
+                      {dept.doctors && dept.doctors.length > 0 && (
+                        <div style={{ fontSize: '0.82rem', color: 'var(--text-main)', marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          {dept.doctors.map((doc: any, dIdx: number) => (
+                            <div key={doc.id || dIdx} style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                              <span style={{ fontWeight: 500, color: 'var(--text-main)' }}>
+                                {formatDoctorName(doc.full_name, language)}
+                              </span>
+                              {doc.specialty && (
+                                <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>
+                                  ({formatSpecialty(doc.specialty, language)})
+                                </span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
                       )}
                     </div>
-                  </div>
-                </div>
 
-                {/* Department Queues Grid */}
-                <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', textTransform: 'uppercase', fontWeight: 700, display: 'block', marginBottom: '0.75rem' }}>
-                    Available Outpatient Departments & Wait Times
-                  </span>
+                    <div style={{ minWidth: '180px', flex: '1' }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>
+                        {language === 'km' ? 'ជួររង់ចាំផ្ទាល់' : 'Live Queue'}
+                      </div>
+                      <div style={{ fontSize: '0.85rem', fontWeight: 400, color: 'var(--text-main)', marginTop: '2px' }}>
+                        {language === 'km'
+                          ? `${dept.waiting_count} នាក់ក្នុងជួរ • ~${dept.estimated_wait_minutes} នាទីរង់ចាំ`
+                          : `${dept.waiting_count} in line • ~${dept.estimated_wait_minutes} mins wait`}
+                      </div>
+                    </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
-                    {hosp.departments?.map((dept: any) => (
-                      <div
-                        key={dept.id}
+                    <div>
+                      <button
+                        onClick={() => handleOpenBooking(selectedFacility, dept)}
                         style={{
-                          padding: '1rem',
-                          background: '#ffffff',
-                          border: '1px solid var(--border-color)',
-                          borderRadius: '6px',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          justifyContent: 'space-between',
-                          gap: '0.75rem',
+                          padding: '0.4rem 0.95rem',
+                          fontSize: '0.8rem',
+                          fontWeight: 500,
+                          background: 'transparent',
+                          border: '1px solid var(--text-main)',
+                          borderRadius: '16px',
+                          color: 'var(--text-main)',
+                          cursor: 'pointer',
+                          boxShadow: 'none',
+                          whiteSpace: 'nowrap',
+                          fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
                         }}
                       >
-                        <div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                            <h4 style={{ fontSize: '1rem', fontWeight: 700 }}>{dept.name}</h4>
-                            <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', fontFamily: 'var(--font-mono)' }}>
-                              {dept.code}
-                            </span>
-                          </div>
-                          <div style={{ display: 'flex', gap: '1rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              <Users size={14} /> {dept.waiting_count} waiting
-                            </span>
-                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--accent-primary)', fontWeight: 600 }}>
-                              <Clock size={14} /> ~{dept.estimated_wait_minutes} mins
-                            </span>
-                          </div>
-                        </div>
-
-                        <button
-                          onClick={() => handleOpenBooking(hosp, dept)}
-                          className="btn btn-outline"
-                          style={{ width: '100%', fontSize: '0.8rem', padding: '0.45rem' }}
-                        >
-                          Reserve Ticket
-                        </button>
-                      </div>
-                    ))}
+                        {t('book_digital_ticket')}
+                      </button>
+                    </div>
                   </div>
-                </div>
+                ))}
               </div>
-            ))}
+            )}
+          </div>
+
+          {/* Section 2: Healthcare & Veterinary Services Roster */}
+          <div style={{ padding: '1.25rem 1.5rem' }}>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, marginBottom: '0.85rem' }}>
+              {t('services_offered')}
+            </div>
+
+            {(selectedFacility.services || []).length === 0 ? (
+              <div style={{ padding: '0.75rem 0', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                {language === 'km' ? 'សេវាពិគ្រោះជំងឺទូទៅអាចរកបាននៅបញ្ជរបម្រើភ្ញៀវ' : 'Standard outpatient consultation available at facility reception.'}
+              </div>
+            ) : (
+              <div style={{ border: '1px solid var(--border-color)', borderRadius: '4px', overflow: 'hidden' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)', textAlign: 'left', background: '#fafafa' }}>
+                      <th style={{ padding: '0.75rem 1.25rem', fontWeight: 600, fontSize: '0.75rem', textTransform: 'uppercase' }}>
+                        {language === 'km' ? 'ឈ្មោះសេវាកម្ម' : 'Service Name'}
+                      </th>
+                      <th style={{ padding: '0.75rem 1.25rem', fontWeight: 600, fontSize: '0.75rem', textTransform: 'uppercase' }}>
+                        {language === 'km' ? 'ព័ត៌មានពិពណ៌នា' : 'Description'}
+                      </th>
+                      <th style={{ padding: '0.75rem 1.25rem', fontWeight: 600, fontSize: '0.75rem', textTransform: 'uppercase' }}>
+                        {language === 'km' ? 'រយៈពេល' : 'Duration'}
+                      </th>
+                      <th style={{ padding: '0.75rem 1.25rem', fontWeight: 600, fontSize: '0.75rem', textTransform: 'uppercase', textAlign: 'right' }}>
+                        {language === 'km' ? 'តម្លៃ (USD)' : 'Price (USD)'}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedFacility.services.map((srv: any, sIdx: number) => (
+                      <tr key={srv.id} style={{ borderBottom: sIdx === selectedFacility.services.length - 1 ? 'none' : '1px solid var(--border-color)' }}>
+                        <td style={{ padding: '0.85rem 1.25rem', fontWeight: 500, color: 'var(--text-main)' }}>
+                          {srv.name}
+                        </td>
+                        <td style={{ padding: '0.85rem 1.25rem', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                          {srv.description || (language === 'km' ? 'សេវាកម្មវេជ្ជសាស្ត្រស្តង់ដារ' : 'Standard medical service')}
+                        </td>
+                        <td style={{ padding: '0.85rem 1.25rem', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                          ~{srv.duration_minutes} {language === 'km' ? 'នាទី' : 'mins'}
+                        </td>
+                        <td style={{ padding: '0.85rem 1.25rem', color: 'var(--text-main)', fontWeight: 400, textAlign: 'right' }}>
+                          ${Number(srv.price).toFixed(2)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Booking Confirmation Modal */}
+        {bookingModalOpen && selectedHospital && selectedDept && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.4)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '1rem',
+          }}>
+            <div style={{
+              background: '#ffffff',
+              border: '1px solid var(--border-color)',
+              borderRadius: '6px',
+              width: '100%',
+              maxWidth: '440px',
+              padding: '1.5rem',
+              boxShadow: 'none',
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 600, color: 'var(--text-main)' }}>
+                  {t('confirm_booking')}
+                </h3>
+                <button
+                  onClick={() => setBookingModalOpen(false)}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    fontSize: '1rem',
+                    cursor: 'pointer',
+                    color: 'var(--text-muted)',
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
+                {formatFacilityName(selectedHospital.name, language)} • {formatDepartmentName(selectedDept.name, language)} ({selectedDept.code || 'DEPT'})
+              </div>
+
+              <form onSubmit={handleConfirmBooking}>
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.25rem', color: 'var(--text-main)' }}>
+                    {t('patient_full_name')}
+                  </label>
+                  <input
+                    type="text"
+                    placeholder={language === 'km' ? 'បញ្ចូលឈ្មោះពេញ' : 'Enter full name'}
+                    value={patientName}
+                    onChange={(e) => {
+                      setPatientName(e.target.value);
+                      setNameError(null);
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '0.55rem 0.75rem',
+                      border: nameError ? '1px solid #dc2626' : '1px solid var(--border-color)',
+                      borderRadius: '4px',
+                      fontSize: '0.875rem',
+                      boxShadow: 'none',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                      fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
+                    }}
+                  />
+                  {nameError && (
+                    <div style={{ color: '#dc2626', fontSize: '0.75rem', marginTop: '4px' }}>
+                      {nameError}
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.25rem', color: 'var(--text-main)' }}>
+                    {t('phone_number')}
+                  </label>
+                  <input
+                    type="text"
+                    placeholder={language === 'km' ? 'បញ្ចូលលេខទូរស័ព្ទ' : 'Enter phone number'}
+                    value={patientPhone}
+                    onChange={(e) => {
+                      setPatientPhone(e.target.value);
+                      setPhoneError(null);
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '0.55rem 0.75rem',
+                      border: phoneError ? '1px solid #dc2626' : '1px solid var(--border-color)',
+                      borderRadius: '4px',
+                      fontSize: '0.875rem',
+                      boxShadow: 'none',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                  {phoneError && (
+                    <div style={{ color: '#dc2626', fontSize: '0.75rem', marginTop: '4px' }}>
+                      {phoneError}
+                    </div>
+                  )}
+                </div>
+
+                <div style={{
+                  padding: '0.65rem 0.85rem',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '4px',
+                  fontSize: '0.8rem',
+                  color: 'var(--text-muted)',
+                  marginBottom: '1.25rem',
+                }}>
+                  {language === 'km'
+                    ? `ពេលវេលារង់ចាំប្រហែល៖ ~${selectedDept.estimated_wait_minutes} នាទី (${selectedDept.waiting_count} នាក់ក្នុងជួរ)`
+                    : `Current estimated wait: ~${selectedDept.estimated_wait_minutes} mins (${selectedDept.waiting_count} in line)`}
+                </div>
+
+                {formError && (
+                  <div style={{ color: '#dc2626', fontSize: '0.8rem', marginBottom: '1rem' }}>
+                    {formError}
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => setBookingModalOpen(false)}
+                    style={{
+                      padding: '0.5rem 0.9rem',
+                      background: 'transparent',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: '4px',
+                      color: 'var(--text-muted)',
+                      fontSize: '0.85rem',
+                      cursor: 'pointer',
+                      boxShadow: 'none',
+                      fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
+                    }}
+                  >
+                    {t('cancel')}
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={bookingLoading}
+                    style={{
+                      padding: '0.5rem 1.1rem',
+                      background: 'transparent',
+                      border: '1px solid var(--text-main)',
+                      borderRadius: '4px',
+                      color: 'var(--text-main)',
+                      fontSize: '0.85rem',
+                      fontWeight: 600,
+                      cursor: bookingLoading ? 'not-allowed' : 'pointer',
+                      opacity: bookingLoading ? 0.6 : 1,
+                      boxShadow: 'none',
+                      fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
+                    }}
+                  >
+                    {bookingLoading ? (language === 'km' ? 'កំពុងកក់...' : 'Reserving...') : t('confirm_ticket_btn')}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         )}
-      </section>
+      </div>
+    );
+  }
 
-      {/* Booking Confirmation Modal */}
-      {bookingModalOpen && selectedHospital && selectedDept && (
+  // Two-Column Grid Facilities List View
+  return (
+    <div style={{ width: '100%', height: '100%', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+      {/* Top Search Controls & Category Filter Bar */}
+      <div style={{ marginBottom: '1.25rem' }}>
+        {/* Search Input Row */}
+        <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '0.75rem', maxWidth: '560px', marginBottom: '1rem' }}>
+          <input
+            type="text"
+            placeholder={t('discovery_search_placeholder')}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{
+              flex: 1,
+              padding: '0.55rem 0.85rem',
+              background: '#ffffff',
+              border: '1px solid var(--border-color)',
+              borderRadius: '4px',
+              fontSize: '0.875rem',
+              color: 'var(--text-main)',
+              boxShadow: 'none',
+              outline: 'none',
+              fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
+            }}
+          />
+          <button
+            type="submit"
+            style={{
+              padding: '0.55rem 1rem',
+              background: 'transparent',
+              border: '1px solid var(--text-main)',
+              borderRadius: '4px',
+              color: 'var(--text-main)',
+              fontSize: '0.875rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              boxShadow: 'none',
+              fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
+            }}
+          >
+            {language === 'km' ? 'ស្វែងរក' : 'Search'}
+          </button>
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchQuery('');
+                loadHospitals('');
+              }}
+              style={{
+                padding: '0.55rem 0.85rem',
+                background: 'transparent',
+                border: '1px solid var(--border-color)',
+                borderRadius: '4px',
+                color: 'var(--text-muted)',
+                fontSize: '0.875rem',
+                cursor: 'pointer',
+                boxShadow: 'none',
+                fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
+              }}
+            >
+              {language === 'km' ? 'សម្អាត' : 'Clear'}
+            </button>
+          )}
+        </form>
+
+        {/* Category Selection Tabs */}
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+          {[
+            { label: t('cat_all'), value: 'All' },
+            { label: t('cat_hospitals'), value: 'Hospital' },
+            { label: t('cat_medical_clinics'), value: 'Medical Clinic' },
+            { label: t('cat_animal_clinics'), value: 'Animal Clinic' },
+          ].map((cat) => (
+            <button
+              key={cat.value}
+              onClick={() => setSelectedCategory(cat.value as any)}
+              style={{
+                padding: '0.35rem 0.95rem',
+                fontSize: '0.8rem',
+                fontWeight: selectedCategory === cat.value ? 600 : 400,
+                background: 'transparent',
+                border: selectedCategory === cat.value ? '1px solid var(--text-main)' : '1px solid var(--border-color)',
+                borderRadius: 0,
+                color: selectedCategory === cat.value ? 'var(--text-main)' : 'var(--text-muted)',
+                cursor: 'pointer',
+                boxShadow: 'none',
+                fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
+              }}
+            >
+              {cat.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Facility 2-Column Grid List */}
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+          {language === 'km' ? 'កំពុងដំណើរការ...' : 'Loading facilities...'}
+        </div>
+      ) : filteredHospitals.length === 0 ? (
         <div style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(15, 23, 42, 0.45)',
-          zIndex: 100,
+          flex: 1,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '1rem',
+          textAlign: 'center',
+          padding: '3rem 1rem',
+          background: '#ffffff',
+          border: '1px solid var(--border-color)',
+          borderRadius: '6px',
+          color: 'var(--text-muted)',
+          fontSize: '0.875rem',
+          boxShadow: 'none',
         }}>
-          <div className="glass-card" style={{ maxWidth: '440px', width: '100%', padding: '2rem', position: 'relative' }}>
+          {language === 'km' ? 'មិនមានទីតាំងត្រូវនឹងការស្វែងរករបស់អ្នកឡើយ' : 'No facilities found matching your selected category or query.'}
+        </div>
+      ) : (
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(440px, 1fr))',
+          rowGap: '0.35rem',
+          columnGap: '0.75rem',
+          alignContent: 'start',
+          alignItems: 'start',
+          gridAutoRows: 'max-content',
+          overflowY: 'auto',
+          flex: 1,
+          minHeight: 0,
+        }}>
+          {filteredHospitals.map((hosp) => (
             <button
-              onClick={() => setBookingModalOpen(false)}
+              key={hosp.id}
+              onClick={() => setSelectedFacility(hosp)}
               style={{
-                position: 'absolute',
-                top: '1.25rem',
-                right: '1.25rem',
-                background: 'transparent',
-                border: 'none',
-                color: 'var(--text-muted)',
-                cursor: 'pointer',
-              }}
-            >
-              <X size={20} />
-            </button>
-
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.25rem' }}>
-              Reserve Queue Ticket
-            </h3>
-            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
-              {selectedHospital.name} • <span style={{ color: 'var(--accent-primary)', fontWeight: 600 }}>{selectedDept.name}</span>
-            </div>
-
-            <form onSubmit={handleConfirmBooking} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>
-                  Patient Full Name
-                </label>
-                <input
-                  type="text"
-                  placeholder="Enter full name"
-                  value={patientName}
-                  onChange={(e) => { setPatientName(e.target.value); setNameError(null); }}
-                  className={nameError ? 'input-error' : ''}
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    fontSize: '0.9rem',
-                  }}
-                />
-                {nameError && <span className="error-text">{nameError}</span>}
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>
-                  Contact Phone Number
-                </label>
-                <input
-                  type="text"
-                  placeholder="Enter phone number"
-                  value={patientPhone}
-                  onChange={(e) => { setPatientPhone(e.target.value); setPhoneError(null); }}
-                  className={phoneError ? 'input-error' : ''}
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    fontSize: '0.9rem',
-                  }}
-                />
-                {phoneError && <span className="error-text">{phoneError}</span>}
-              </div>
-
-              <div style={{
-                padding: '0.75rem',
+                display: 'block',
+                width: '100%',
+                textAlign: 'left',
+                padding: '0.75rem 1rem',
+                background: '#ffffff',
                 border: '1px solid var(--border-color)',
                 borderRadius: '6px',
-                fontSize: '0.8rem',
-                color: 'var(--text-muted)',
-              }}>
-                Current estimated wait: <strong style={{ color: 'var(--accent-primary)' }}>~{selectedDept.estimated_wait_minutes} mins</strong> ({selectedDept.waiting_count} waiting).
+                cursor: 'pointer',
+                boxShadow: 'none',
+                transition: 'border-color 0.15s ease',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--text-main)')}
+              onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border-color)')}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-main)', lineHeight: 1.2 }}>
+                  {formatFacilityName(hosp.name, language)}
+                </span>
+                {hosp.category && (
+                  <span style={{
+                    fontSize: '0.68rem',
+                    padding: '0.15rem 0.55rem',
+                    borderRadius: '16px',
+                    border: '1px solid var(--border-color)',
+                    color: 'var(--text-muted)',
+                    textTransform: 'uppercase',
+                    fontWeight: 500,
+                    lineHeight: 1,
+                  }}>
+                    {formatCategory(hosp.category, language)}
+                  </span>
+                )}
+                {hosp.emergency_service_available && (
+                  <span style={{
+                    fontSize: '0.68rem',
+                    padding: '0.15rem 0.5rem',
+                    borderRadius: '16px',
+                    border: '1px solid #059669',
+                    color: '#059669',
+                    fontWeight: 500,
+                    lineHeight: 1,
+                  }}>
+                    {t('emergency_247')}
+                  </span>
+                )}
               </div>
-
-              {formError && <span className="error-text">{formError}</span>}
-
-              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
-                <button
-                  type="button"
-                  onClick={() => setBookingModalOpen(false)}
-                  className="btn btn-outline"
-                  style={{ flex: 1 }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={bookingLoading}
-                  className="btn btn-primary"
-                  style={{ flex: 1 }}
-                >
-                  {bookingLoading ? 'Reserving...' : 'Confirm Ticket'}
-                </button>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '3px', lineHeight: 1.3 }}>
+                {hosp.address || 'Phnom Penh'} {hosp.phone ? `• ${hosp.phone}` : ''}
               </div>
-            </form>
-          </div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '3px', lineHeight: 1.3 }}>
+                {language === 'km'
+                  ? `${(hosp.departments || []).length} ផ្នែកវេជ្ជសាស្ត្រសកម្ម • ${(hosp.services || []).length} សេវាកម្ម`
+                  : `${(hosp.departments || []).length} active departments • ${(hosp.services || []).length} medical services`}
+              </div>
+            </button>
+          ))}
         </div>
       )}
     </div>

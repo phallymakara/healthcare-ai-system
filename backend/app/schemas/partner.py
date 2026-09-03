@@ -3,7 +3,7 @@ from datetime import time, date, datetime
 from typing import Optional, List
 from pydantic import BaseModel, Field, EmailStr
 
-from app.models.enums import OverrideType, QueueStatus
+from app.models.enums import OverrideType, QueueStatus, UserRole
 
 
 # --- Department Schemas ---
@@ -32,6 +32,15 @@ class DepartmentResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class DepartmentUpdateSchema(BaseModel):
+    name: Optional[str] = Field(None, min_length=2, max_length=128)
+    code: Optional[str] = Field(None, min_length=2, max_length=16)
+    description: Optional[str] = None
+    floor_room: Optional[str] = None
+    avg_consultation_minutes: Optional[int] = Field(None, ge=5, le=120)
+    is_active: Optional[bool] = None
+
+
 # --- Service Schemas ---
 
 class ServiceCreateSchema(BaseModel):
@@ -53,6 +62,15 @@ class ServiceResponse(BaseModel):
     is_active: bool
 
     model_config = {"from_attributes": True}
+
+
+class ServiceUpdateSchema(BaseModel):
+    department_id: Optional[uuid.UUID] = None
+    name: Optional[str] = Field(None, min_length=2, max_length=255)
+    description: Optional[str] = None
+    duration_minutes: Optional[int] = Field(None, ge=5, le=180)
+    price: Optional[float] = Field(None, ge=0.0)
+    is_active: Optional[bool] = None
 
 
 # --- Doctor Schemas ---
@@ -111,6 +129,31 @@ class DoctorResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class DoctorUpdateSchema(BaseModel):
+    department_id: Optional[uuid.UUID] = None
+    full_name: Optional[str] = Field(None, min_length=2, max_length=128)
+    specialty: Optional[str] = Field(None, min_length=2, max_length=128)
+    license_number: Optional[str] = None
+    bio: Optional[str] = None
+    photo_url: Optional[str] = None
+    room_number: Optional[str] = None
+    avg_consultation_minutes: Optional[int] = Field(None, ge=5, le=120)
+    is_available: Optional[bool] = None
+    is_active: Optional[bool] = None
+
+
+class DoctorScheduleItem(BaseModel):
+    day_of_week: int = Field(..., ge=0, le=6)
+    start_time: time = Field(default=time(8, 0))
+    end_time: time = Field(default=time(17, 0))
+    max_patients_per_slot: int = Field(default=30, ge=1, le=100)
+    is_active: bool = True
+
+
+class DoctorSchedulesBatchUpdateSchema(BaseModel):
+    schedules: List[DoctorScheduleItem]
+
+
 # --- Dashboard Metrics ---
 
 class DepartmentQueueSummary(BaseModel):
@@ -125,6 +168,11 @@ class DepartmentQueueSummary(BaseModel):
     avg_wait_minutes: int
 
 
+class HourlyFlowItem(BaseModel):
+    hour: str
+    count: int
+
+
 class PartnerDashboardMetricsResponse(BaseModel):
     hospital_id: uuid.UUID
     hospital_name: str
@@ -134,4 +182,73 @@ class PartnerDashboardMetricsResponse(BaseModel):
     completed_today: int
     skipped_no_show_today: int
     average_wait_minutes: int
+    online_bookings_today: int = 0
+    walkin_tickets_today: int = 0
+    hourly_flow: List[HourlyFlowItem] = []
     departments: List[DepartmentQueueSummary]
+
+
+# --- Staff Schemas ---
+
+class StaffCreateSchema(BaseModel):
+    full_name: str = Field(..., min_length=2, max_length=128)
+    email: EmailStr
+    phone_number: Optional[str] = None
+    role: UserRole = UserRole.RECEPTIONIST
+    password: str = Field(..., min_length=6, max_length=128)
+
+
+class StaffUpdateSchema(BaseModel):
+    full_name: Optional[str] = Field(None, min_length=2, max_length=128)
+    email: Optional[EmailStr] = None
+    phone_number: Optional[str] = None
+    role: Optional[UserRole] = None
+    is_active: Optional[bool] = None
+    password: Optional[str] = Field(None, min_length=6, max_length=128)
+
+
+class StaffResponse(BaseModel):
+    id: uuid.UUID
+    hospital_id: Optional[uuid.UUID] = None
+    full_name: str
+    email: Optional[str] = None
+    phone_number: Optional[str] = None
+    role: UserRole
+    is_active: bool
+    is_verified: bool
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+# --- Hospital Profile Schemas ---
+
+class HospitalProfileResponse(BaseModel):
+    id: uuid.UUID
+    name: str
+    description: Optional[str] = None
+    address: Optional[str] = None
+    city: Optional[str] = None
+    contact_phone: Optional[str] = None
+    contact_email: Optional[str] = None
+    emergency_phone: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    is_active: bool
+    is_verified: bool
+
+    model_config = {"from_attributes": True}
+
+
+class HospitalProfileUpdateSchema(BaseModel):
+    name: Optional[str] = Field(None, min_length=2, max_length=255)
+    description: Optional[str] = None
+    address: Optional[str] = None
+    city: Optional[str] = None
+    contact_phone: Optional[str] = None
+    contact_email: Optional[EmailStr] = None
+    emergency_phone: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+
+

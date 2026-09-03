@@ -118,7 +118,7 @@ export const AdminDashboard: React.FC = () => {
   }
 
   return (
-    <div>
+    <div style={{ width: '100%', maxWidth: '100%', flex: 1 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <h1 style={{ fontSize: '1.85rem', fontWeight: 800 }}>Platform Governance Center</h1>
