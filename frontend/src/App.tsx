@@ -18,8 +18,11 @@ import { DepartmentManagement } from './pages/partner/DepartmentManagement';
 import { StaffManagement } from './pages/partner/StaffManagement';
 import { HospitalProfile } from './pages/partner/HospitalProfile';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
+import { HospitalPartnerAuth } from './pages/partner/HospitalPartnerAuth';
+import { isPartnerPortal, getPortalSwitchUrl } from './utils/subdomain';
 
 export const App: React.FC = () => {
+  const isPartner = isPartnerPortal();
   const storedUser = AuthService.getStoredUser();
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(storedUser);
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -101,7 +104,9 @@ export const App: React.FC = () => {
     setCurrentUser(user);
     if (user.role === 'SUPER_ADMIN') {
       setActiveTab('admin_center');
-    } else if (user.role === 'DOCTOR' || user.role === 'HOSPITAL_ADMIN' || user.role === 'RECEPTIONIST') {
+    } else if (user.role === 'HOSPITAL_ADMIN') {
+      setActiveTab('partner_dashboard');
+    } else if (user.role === 'DOCTOR' || user.role === 'RECEPTIONIST') {
       setActiveTab('partner_counter');
     } else {
       setActiveTab('patient_triage');
@@ -127,6 +132,24 @@ export const App: React.FC = () => {
     }
     setActiveTab(tab);
   };
+
+  const isPartnerUser =
+    currentUser &&
+    (currentUser.role === 'HOSPITAL_ADMIN' ||
+      currentUser.role === 'DOCTOR' ||
+      currentUser.role === 'RECEPTIONIST' ||
+      currentUser.role === 'SUPER_ADMIN');
+
+  if (isPartner && !isPartnerUser) {
+    return (
+      <HospitalPartnerAuth
+        onSuccess={handleUserLoginSuccess}
+        onSwitchToPatient={() => {
+          window.location.href = getPortalSwitchUrl('patient');
+        }}
+      />
+    );
+  }
 
   const isLandingView = !currentUser || activeTab === 'landing';
 
@@ -244,6 +267,10 @@ export const App: React.FC = () => {
         isOpen={authModalOpen}
         onClose={() => setAuthModalOpen(false)}
         onSuccess={handleUserLoginSuccess}
+        onOpenHospitalPortal={() => {
+          setAuthModalOpen(false);
+          window.location.href = getPortalSwitchUrl('partner');
+        }}
       />
     </>
   );

@@ -53,9 +53,12 @@ Expected output:
 To test the system end-to-end in your browser, open two browser windows side by side (e.g., standard window and an incognito window) to observe real-time WebSocket synchronization.
 
 Default demo accounts:
-- Patient: patient.dararith@gmail.com / patient123!
-- Doctor: dr.sokha@royalcityhospital.com / doctor123!
-- Super Admin: admin@carequeue.ai / admin123!
+| Role | Email / Phone | Password | Target Console / Access |
+| :--- | :--- | :--- | :--- |
+| **Hospital Admin** | `patient.dararith@gmail.com` | `patient123!` | Hospital Partner Console |
+| **Doctor / Physician** | `dr.sokha@royalcityhospital.com` | `doctor123!` | Hospital Counter & Shifts |
+| **Super Admin** | `admin@carequeue.ai` | `admin123!` | Super Admin Center |
+| **Patient** | `patient.sophea@gmail.com` | `patient123!` | Patient App & Live Tickets |
 
 ---
 

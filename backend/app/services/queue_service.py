@@ -31,16 +31,17 @@ class QueueService:
         department_id: uuid.UUID,
         doctor_id: Optional[uuid.UUID] = None,
         branch_id: Optional[uuid.UUID] = None,
+        session_date: Optional[date] = None,
     ) -> QueueSession:
-        today = date.today()
+        target_date = session_date or date.today()
 
-        # Find existing active/paused session for today
+        # Find existing active/paused session for date
         query = select(QueueSession).where(
             and_(
                 QueueSession.hospital_id == hospital_id,
                 QueueSession.department_id == department_id,
                 QueueSession.doctor_id == doctor_id,
-                QueueSession.session_date == today,
+                QueueSession.session_date == target_date,
             )
         )
         res = await session.execute(query)
@@ -53,7 +54,7 @@ class QueueService:
                 branch_id=branch_id,
                 department_id=department_id,
                 doctor_id=doctor_id,
-                session_date=today,
+                session_date=target_date,
                 status=QueueStatus.ACTIVE,
                 total_issued_today=0,
             )
@@ -73,6 +74,8 @@ class QueueService:
         doctor_id: Optional[uuid.UUID] = None,
         service_id: Optional[uuid.UUID] = None,
         ticket_source: TicketSource = TicketSource.ONLINE,
+        appointment_date: Optional[date] = None,
+        appointment_time: Optional[str] = None,
     ) -> Ticket:
         # 1. Lock and load QueueSession
         q_res = await session.execute(
@@ -134,6 +137,8 @@ class QueueService:
             status=TicketStatus.WAITING,
             position=position,
             estimated_wait_minutes=est_wait,
+            appointment_date=appointment_date,
+            appointment_time=appointment_time,
         )
         session.add(new_ticket)
         await session.flush()
@@ -257,6 +262,67 @@ class QueueService:
         )
 
         return next_ticket
+
+    @staticmethod
+    async def call_specific_ticket(
+        session: AsyncSession,
+        ticket_id: uuid.UUID,
+        staff_user: User,
+        note: Optional[str] = None,
+    ) -> Ticket:
+        ticket = await QueueService._get_ticket_with_lock(session, ticket_id)
+        from_status = ticket.status
+        ticket.status = TicketStatus.CALLED
+        ticket.called_at = datetime.now(timezone.utc).replace(tzinfo=None)
+        ticket.position = 0
+        ticket.estimated_wait_minutes = 0
+
+        if ticket.queue_session_id:
+            q_res = await session.execute(
+                select(QueueSession).where(QueueSession.id == ticket.queue_session_id)
+            )
+            queue_sess = q_res.scalar_one_or_none()
+            if queue_sess:
+                queue_sess.current_serving_ticket_id = ticket.id
+                queue_sess.current_serving_number = ticket.ticket_number
+
+        log = TicketLog(
+            id=uuid.uuid4(),
+            ticket_id=ticket.id,
+            from_status=from_status,
+            to_status=TicketStatus.CALLED,
+            actor_id=staff_user.id,
+            note=note or f"Patient called by {staff_user.full_name}",
+        )
+        session.add(log)
+        if ticket.queue_session_id:
+            await QueueService._recalculate_waiting_positions(session, ticket.queue_session_id)
+        await session.commit()
+
+        if ticket.queue_session_id:
+            await manager.dispatch_queue_event(
+                event_type="PATIENT_CALLED",
+                session_id=ticket.queue_session_id,
+                hospital_id=ticket.hospital_id,
+                data={
+                    "ticket_id": str(ticket.id),
+                    "ticket_number": ticket.ticket_number,
+                    "patient_name": ticket.patient_name,
+                    "called_by": staff_user.full_name,
+                },
+                ticket_id=ticket.id,
+            )
+
+        await NotificationService.dispatch(
+            title="Now Serving - Your Turn!",
+            message=f"Ticket {ticket.ticket_number} called by {staff_user.full_name}. Please proceed to the room.",
+            notification_type=NotificationType.PATIENT_CALLED,
+            user_id=ticket.patient_id,
+            phone_number=ticket.patient_phone,
+            ticket_id=ticket.id,
+        )
+
+        return ticket
 
     @staticmethod
     async def start_consultation(

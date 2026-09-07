@@ -101,6 +101,8 @@ class Ticket(Base):
     estimated_wait_minutes: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     
     # Timestamps for operational analytics & wait-time ML tracking
+    appointment_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    appointment_time: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
     called_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     serving_started_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)

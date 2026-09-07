@@ -1,16 +1,18 @@
 import { HealthCheckResponse } from '../types';
 
 export const getApiBase = (): string => {
-  // 1. Explicit env var (dev mode with custom backend URL)
+  // 1. Explicit env var (if custom backend host is needed)
   if (import.meta.env.VITE_API_BASE_URL) {
     return import.meta.env.VITE_API_BASE_URL;
   }
-  // 2. Production: use same origin (Nginx reverse proxy handles routing)
-  //    No hardcoded ports — works on any domain/IP automatically
-  if (typeof window !== 'undefined' && import.meta.env.PROD) {
-    return `${window.location.origin}/api/v1`;
+  // 2. Production or runtime server: dynamically use current window origin
+  //    Works automatically on any domain, server IP, custom port, or behind reverse proxies
+  if (typeof window !== 'undefined') {
+    if (import.meta.env.PROD || window.location.port !== '5173') {
+      return `${window.location.origin}/api/v1`;
+    }
   }
-  // 3. Dev fallback
+  // 3. Local Vite dev server fallback
   return 'http://localhost:8000/api/v1';
 };
 
@@ -19,12 +21,14 @@ export const getWsBase = (): string => {
   if (import.meta.env.VITE_WS_BASE_URL) {
     return import.meta.env.VITE_WS_BASE_URL;
   }
-  // 2. Production: derive WebSocket URL from current page origin
-  if (typeof window !== 'undefined' && import.meta.env.PROD) {
+  // 2. Production or runtime server: dynamically adapt protocol (ws:// or wss://) and host
+  if (typeof window !== 'undefined') {
     const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    return `${wsProtocol}//${window.location.host}/ws`;
+    if (import.meta.env.PROD || window.location.port !== '5173') {
+      return `${wsProtocol}//${window.location.host}/ws`;
+    }
   }
-  // 3. Dev fallback
+  // 3. Local Vite dev server fallback
   return 'ws://localhost:8000/ws';
 };
 

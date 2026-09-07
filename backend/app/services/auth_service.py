@@ -1,3 +1,4 @@
+import logging
 import uuid
 import re
 from typing import Optional
@@ -11,6 +12,7 @@ from app.models import (
     PatientProfile,
     Hospital,
     HospitalBranch,
+    Department,
     UserRole,
     VerificationStatus,
 )
@@ -23,6 +25,8 @@ from app.schemas.auth import (
     TokenResponse,
     UserResponse,
 )
+
+logger = logging.getLogger("healthcare_ai.auth")
 
 
 def generate_slug(name: str) -> str:
@@ -81,11 +85,25 @@ class AuthService:
 
     @staticmethod
     async def register_patient(session: AsyncSession, data: PatientRegisterRequest) -> TokenResponse:
-        # Check uniqueness of phone number and email
-        filters = [User.phone_number == data.phone_number.strip()]
-        if data.email:
-            filters.append(User.email == data.email.strip().lower())
-            
+        # Resolve email or phone
+        raw_contact = (data.contact_identifier or "").strip()
+        is_email = "@" in raw_contact
+
+        resolved_email = data.email or (raw_contact.lower() if is_email and raw_contact else None)
+        resolved_phone = data.phone_number or (raw_contact if not is_email and raw_contact else None)
+
+        if not resolved_email and not resolved_phone:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Please enter your phone number or email.",
+            )
+
+        filters = []
+        if resolved_phone:
+            filters.append(User.phone_number == str(resolved_phone).strip())
+        if resolved_email:
+            filters.append(User.email == str(resolved_email).strip().lower())
+
         exist_query = select(User).where(or_(*filters))
         exist_res = await session.execute(exist_query)
         if exist_res.scalar_one_or_none():
@@ -97,8 +115,8 @@ class AuthService:
         # Create user
         new_user = User(
             id=uuid.uuid4(),
-            email=data.email.strip().lower() if data.email else None,
-            phone_number=data.phone_number.strip(),
+            email=str(resolved_email).strip().lower() if resolved_email else None,
+            phone_number=str(resolved_phone).strip() if resolved_phone else None,
             hashed_password=get_password_hash(data.password),
             full_name=data.full_name.strip(),
             role=UserRole.PATIENT,
@@ -135,29 +153,77 @@ class AuthService:
 
     @staticmethod
     async def register_partner(session: AsyncSession, data: PartnerRegisterRequest) -> TokenResponse:
-        # Check admin credentials conflict
-        exist_query = select(User).where(
-            or_(User.email == data.admin_email.strip().lower(), User.phone_number == data.admin_phone.strip())
+        # Resolve contact identifier (email or phone)
+        raw_contact = (data.contact_identifier or "").strip()
+        is_email = "@" in raw_contact
+
+        resolved_email = (
+            data.admin_email
+            or data.hospital_email
+            or (raw_contact.lower() if is_email and raw_contact else None)
         )
-        exist_res = await session.execute(exist_query)
-        if exist_res.scalar_one_or_none():
+        resolved_phone = (
+            data.admin_phone
+            or data.hospital_phone
+            or (raw_contact if not is_email and raw_contact else None)
+        )
+        password = data.password or data.admin_password
+        if not password or len(password) < 6:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Password must be at least 6 characters.",
+            )
+
+        if not resolved_email and not resolved_phone:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Please provide an official hospital or clinic email or phone number.",
+            )
+
+        # Check existing user conflict
+        where_clauses = []
+        if resolved_email:
+            where_clauses.append(User.email == str(resolved_email).strip().lower())
+        if resolved_phone:
+            where_clauses.append(User.phone_number == str(resolved_phone).strip())
+
+        existing_user = None
+        if where_clauses:
+            exist_query = select(User).where(or_(*where_clauses))
+            exist_res = await session.execute(exist_query)
+            existing_user = exist_res.scalar_one_or_none()
+
+        if existing_user and existing_user.role not in (UserRole.PATIENT, UserRole.HOSPITAL_ADMIN):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="An admin account with this email or phone already exists.",
+                detail="An account with this email or phone is already registered as staff.",
             )
 
         # 1. Create Hospital Organization
+        h_name = (data.hospital_name or "").strip()
+        if not h_name:
+            if resolved_email:
+                prefix = str(resolved_email).split('@')[0].replace('.', ' ').replace('_', ' ').title()
+                h_name = f"{prefix} Clinic"
+            elif resolved_phone:
+                h_name = f"Partner Clinic ({str(resolved_phone)[-4:]})"
+            else:
+                h_name = "Healthcare Partner Clinic"
+
+        logger.info("Initiating hospital partner registration for contact: %s", resolved_email or resolved_phone)
         hospital = Hospital(
             id=uuid.uuid4(),
-            name=data.hospital_name.strip(),
-            slug=generate_slug(data.hospital_name),
+            name=h_name,
+            slug=generate_slug(h_name),
             description=data.description,
-            address=data.address,
-            phone=data.hospital_phone,
-            email=data.hospital_email,
+            logo_url=data.logo_url,
+            address=data.address or "",
+            phone=str(resolved_phone).strip() if resolved_phone else None,
+            email=str(resolved_email).strip().lower() if resolved_email else None,
             website=data.website,
             is_active=True,
             is_verified=False,
+            emergency_service_available=bool(data.emergency_service_available),
             verification_status=VerificationStatus.PENDING,
         )
         session.add(hospital)
@@ -167,30 +233,67 @@ class AuthService:
         branch = HospitalBranch(
             id=uuid.uuid4(),
             hospital_id=hospital.id,
-            name=f"{data.hospital_name} - Main Branch",
-            address=data.address,
-            phone=data.hospital_phone,
+            name=f"{h_name} - Main Branch",
+            address=data.address or "",
+            phone=str(resolved_phone).strip() if resolved_phone else None,
             is_main_branch=True,
             is_active=True,
         )
         session.add(branch)
         await session.flush()
 
-        # 3. Create Hospital Admin User
-        admin_user = User(
-            id=uuid.uuid4(),
-            email=data.admin_email.strip().lower(),
-            phone_number=data.admin_phone.strip(),
-            hashed_password=get_password_hash(data.admin_password),
-            full_name=data.admin_full_name.strip(),
-            role=UserRole.HOSPITAL_ADMIN,
-            hospital_id=hospital.id,
-            branch_id=branch.id,
-            is_active=True,
-            is_verified=True,
-        )
-        session.add(admin_user)
+        # 3. Create Initial Department if specified in onboarding
+        initial_dept_name = (data.initial_department_name or "").strip()
+        if initial_dept_name:
+            initial_dept = Department(
+                id=uuid.uuid4(),
+                hospital_id=hospital.id,
+                branch_id=branch.id,
+                name=initial_dept_name,
+                floor_room=(data.initial_department_room or "").strip() or "Room 101",
+                avg_consultation_minutes=15,
+                is_active=True,
+            )
+            session.add(initial_dept)
+            await session.flush()
+            logger.debug("Created initial department '%s' for hospital '%s'", initial_dept_name, hospital.name)
+
+        # 4. Create or Upgrade Hospital Admin User
+        admin_name = (data.admin_full_name or "").strip() or f"{h_name} Admin"
+        if existing_user:
+            admin_user = existing_user
+            if not admin_user.full_name or admin_user.full_name == "Patient":
+                admin_user.full_name = admin_name
+            admin_user.role = UserRole.HOSPITAL_ADMIN
+            admin_user.hospital_id = hospital.id
+            admin_user.branch_id = branch.id
+            admin_user.hashed_password = get_password_hash(password)
+            admin_user.is_verified = True
+            admin_user.is_active = True
+        else:
+            admin_user = User(
+                id=uuid.uuid4(),
+                email=str(resolved_email).strip().lower() if resolved_email else None,
+                phone_number=str(resolved_phone).strip() if resolved_phone else None,
+                hashed_password=get_password_hash(password),
+                full_name=admin_name,
+                role=UserRole.HOSPITAL_ADMIN,
+                hospital_id=hospital.id,
+                branch_id=branch.id,
+                is_active=True,
+                is_verified=True,
+            )
+            session.add(admin_user)
         await session.commit()
+
+        logger.info(
+            "Successfully registered hospital '%s' (ID: %s) with admin '%s'",
+            hospital.name,
+            hospital.id,
+            admin_user.email or admin_user.phone_number,
+        )
+
+        admin_loaded = await AuthService.get_user_by_id(session, admin_user.id)
 
         access_token = create_access_token(
             subject=admin_user.id,
@@ -202,7 +305,7 @@ class AuthService:
         return TokenResponse(
             access_token=access_token,
             refresh_token=refresh_token,
-            user=UserResponse.model_validate(admin_user),
+            user=UserResponse.model_validate(admin_loaded),
         )
 
     @staticmethod

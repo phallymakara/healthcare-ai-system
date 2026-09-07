@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { AuthService } from '../../services/auth';
+import { API_BASE } from '../../services/api';
+import { useLanguage } from '../../context/LanguageContext';
+import { Eye, EyeOff } from 'lucide-react';
 
 interface StaffMember {
   id: string;
@@ -12,14 +15,11 @@ interface StaffMember {
   created_at: string;
 }
 
-const ROLE_LABELS: Record<string, string> = {
-  HOSPITAL_ADMIN: 'Hospital Administrator',
-  DOCTOR: 'Doctor / Physician',
-  RECEPTIONIST: 'Front-Desk Receptionist',
-  NURSE: 'Triage Nurse',
-};
-
 export const StaffManagement: React.FC = () => {
+  const { language, t } = useLanguage();
+  const isKm = language === 'km';
+  const kmFont = isKm ? 'var(--font-khmer)' : 'inherit';
+
   const [staffList, setStaffList] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -31,6 +31,7 @@ export const StaffManagement: React.FC = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [role, setRole] = useState('RECEPTIONIST');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isActive, setIsActive] = useState(true);
 
   // Inline Field Errors
@@ -43,7 +44,15 @@ export const StaffManagement: React.FC = () => {
   // Three-Dot Action Dropdown
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);
 
-  const API_BASE = '/api/v1';
+  const getRoleLabel = (r: string) => {
+    switch (r) {
+      case 'HOSPITAL_ADMIN': return t('staff_role_admin');
+      case 'DOCTOR': return t('staff_role_doctor');
+      case 'RECEPTIONIST': return t('staff_role_receptionist');
+      case 'NURSE': return t('staff_role_nurse');
+      default: return r;
+    }
+  };
 
   const loadStaff = async () => {
     setLoading(true);
@@ -73,6 +82,7 @@ export const StaffManagement: React.FC = () => {
     setPhoneNumber('');
     setRole('RECEPTIONIST');
     setPassword('');
+    setShowPassword(false);
     setIsActive(true);
     setNameError(null);
     setEmailError(null);
@@ -88,6 +98,7 @@ export const StaffManagement: React.FC = () => {
     setPhoneNumber(staff.phone_number || '');
     setRole(staff.role);
     setPassword('');
+    setShowPassword(false);
     setIsActive(staff.is_active);
     setNameError(null);
     setEmailError(null);
@@ -106,22 +117,22 @@ export const StaffManagement: React.FC = () => {
     let hasError = false;
 
     if (!fullName.trim()) {
-      setNameError('Please enter the full name.');
+      setNameError(t('staff_err_name'));
       hasError = true;
     }
 
     if (!email.trim() || !email.includes('@')) {
-      setEmailError('Please enter a valid email address.');
+      setEmailError(t('staff_err_email'));
       hasError = true;
     }
 
     if (!editingStaffId && (!password || password.length < 6)) {
-      setPasswordError('Password must be at least 6 characters.');
+      setPasswordError(t('staff_err_password'));
       hasError = true;
     }
 
     if (editingStaffId && password && password.length < 6) {
-      setPasswordError('Password must be at least 6 characters.');
+      setPasswordError(t('staff_err_password'));
       hasError = true;
     }
 
@@ -156,14 +167,14 @@ export const StaffManagement: React.FC = () => {
 
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
-        setSubmitError(errData.detail || 'Unable to save staff account. Please try again.');
+        setSubmitError(errData.detail || t('staff_err_save'));
         return;
       }
 
       setModalOpen(false);
       await loadStaff();
     } catch {
-      setSubmitError('Connection issue saving staff account. Please try again.');
+      setSubmitError(t('staff_err_conn'));
     } finally {
       setActionLoading(false);
     }
@@ -199,7 +210,7 @@ export const StaffManagement: React.FC = () => {
   };
 
   return (
-    <div style={{ width: '100%', minHeight: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ width: '100%', minHeight: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column', fontFamily: kmFont }}>
       {/* Top Controls: + Invite Staff aligned to the left */}
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1.5rem' }}>
         <button
@@ -214,22 +225,23 @@ export const StaffManagement: React.FC = () => {
             fontWeight: 600,
             cursor: 'pointer',
             boxShadow: 'none',
+            fontFamily: kmFont,
           }}
         >
-          + Invite Staff
+          {t('staff_invite_btn')}
         </button>
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-          Loading staff accounts...
+        <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)', fontSize: '0.9rem', fontFamily: kmFont }}>
+          {t('staff_loading')}
         </div>
       ) : (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
           {/* Section Heading */}
           <div style={{ marginBottom: '0.75rem' }}>
-            <h2 style={{ fontSize: '1.15rem', fontWeight: 400, margin: 0, color: 'var(--text-main)' }}>
-              Hospital Staff Roster
+            <h2 style={{ fontSize: '1.15rem', fontWeight: 600, margin: 0, color: 'var(--text-main)', fontFamily: kmFont }}>
+              {t('staff_roster_title')}
             </h2>
           </div>
 
@@ -238,7 +250,7 @@ export const StaffManagement: React.FC = () => {
             background: '#ffffff',
             border: '1px solid var(--border-color)',
             borderRadius: '6px',
-            overflow: 'hidden',
+            overflow: 'visible',
             boxShadow: 'none',
             flex: 1,
             display: 'flex',
@@ -255,8 +267,9 @@ export const StaffManagement: React.FC = () => {
                 padding: '3rem 1rem',
                 color: 'var(--text-muted)',
                 fontSize: '0.875rem',
+                fontFamily: kmFont,
               }}>
-                No staff members registered yet. Click + Invite Staff to add one.
+                {t('staff_no_staff')}
               </div>
             ) : (
               staffList.map((staff, idx) => (
@@ -271,61 +284,68 @@ export const StaffManagement: React.FC = () => {
                     padding: '1rem 1.25rem',
                     borderBottom: idx === staffList.length - 1 ? 'none' : '1px solid var(--border-color)',
                     background: '#ffffff',
+                    position: 'relative',
+                    zIndex: activeDropdownId === staff.id ? 50 : 1,
+                    borderTopLeftRadius: idx === 0 ? '6px' : 0,
+                    borderTopRightRadius: idx === 0 ? '6px' : 0,
+                    borderBottomLeftRadius: idx === staffList.length - 1 ? '6px' : 0,
+                    borderBottomRightRadius: idx === staffList.length - 1 ? '6px' : 0,
                   }}
                 >
                   {/* Name & Contact */}
                   <div style={{ minWidth: '240px', flex: '1.5' }}>
-                    <div style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-main)' }}>
+                    <div style={{ fontSize: '1.28rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: kmFont }}>
                       {staff.full_name}
                     </div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                      {staff.email || 'No email'} {staff.phone_number ? `• ${staff.phone_number}` : ''}
+                    <div style={{ fontSize: '1.02rem', color: 'var(--text-muted)', marginTop: '4px', fontFamily: kmFont }}>
+                      {staff.email || t('staff_no_email')} {staff.phone_number ? `• ${staff.phone_number}` : ''}
                     </div>
                   </div>
 
                   {/* Role */}
                   <div style={{ minWidth: '180px', flex: '1' }}>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>
-                      Assigned Role
+                    <div style={{ fontSize: '0.95rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, fontFamily: kmFont }}>
+                      {t('staff_assigned_role')}
                     </div>
-                    <div style={{ fontSize: '0.85rem', color: 'var(--text-main)', marginTop: '2px' }}>
-                      {ROLE_LABELS[staff.role] || staff.role}
+                    <div style={{ fontSize: '1.12rem', color: 'var(--text-main)', fontWeight: 600, marginTop: '3px', fontFamily: kmFont }}>
+                      {getRoleLabel(staff.role)}
                     </div>
                   </div>
 
                   {/* Status Badge */}
                   <div style={{ minWidth: '100px', flex: '0.7' }}>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>
-                      Status
+                    <div style={{ fontSize: '0.95rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, fontFamily: kmFont }}>
+                      {t('staff_status')}
                     </div>
-                    <div style={{ marginTop: '2px' }}>
+                    <div style={{ marginTop: '3px' }}>
                       <span style={{
                         display: 'inline-block',
-                        padding: '0.15rem 0.45rem',
+                        padding: '0.3rem 0.75rem',
                         border: '1px solid var(--border-color)',
-                        borderRadius: '3px',
-                        fontSize: '0.75rem',
-                        fontWeight: 500,
+                        borderRadius: '4px',
+                        fontSize: '0.95rem',
+                        fontWeight: 600,
                         color: staff.is_active ? '#059669' : 'var(--text-muted)',
                         background: 'transparent',
+                        fontFamily: kmFont,
                       }}>
-                        {staff.is_active ? 'Active' : 'Inactive'}
+                        {staff.is_active ? t('doc_active') : t('doc_inactive')}
                       </span>
                     </div>
                   </div>
 
                   {/* Actions: Three-dot dropdown menu */}
-                  <div style={{ position: 'relative' }}>
+                  <div style={{ position: 'relative', zIndex: activeDropdownId === staff.id ? 60 : 'auto' }}>
                     <button
                       onClick={() => setActiveDropdownId(activeDropdownId === staff.id ? null : staff.id)}
                       style={{
-                        padding: '0.2rem 0.55rem',
-                        fontSize: '0.9rem',
+                        padding: '0.35rem 0.85rem',
+                        fontSize: '1.2rem',
                         fontWeight: 700,
                         letterSpacing: '1px',
                         background: 'transparent',
                         border: '1px solid var(--border-color)',
-                        borderRadius: '3px',
+                        borderRadius: '4px',
                         color: 'var(--text-main)',
                         cursor: 'pointer',
                         boxShadow: 'none',
@@ -335,74 +355,88 @@ export const StaffManagement: React.FC = () => {
                     </button>
 
                     {activeDropdownId === staff.id && (
-                      <div style={{
-                        position: 'absolute',
-                        right: 0,
-                        top: 'calc(100% + 4px)',
-                        background: '#ffffff',
-                        border: '1px solid var(--border-color)',
-                        borderRadius: '4px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        minWidth: '110px',
-                        zIndex: 50,
-                        boxShadow: 'none',
-                        overflow: 'hidden',
-                      }}>
-                        <button
-                          onClick={() => handleToggleActive(staff)}
+                      <>
+                        <div
+                          onClick={() => setActiveDropdownId(null)}
                           style={{
-                            padding: '0.5rem 0.75rem',
-                            fontSize: '0.8rem',
-                            fontWeight: 500,
-                            textAlign: 'left',
+                            position: 'fixed',
+                            inset: 0,
+                            zIndex: 99,
                             background: 'transparent',
-                            border: 'none',
-                            borderBottom: '1px solid var(--border-color)',
-                            color: staff.is_active ? '#059669' : 'var(--text-muted)',
-                            cursor: 'pointer',
-                            boxShadow: 'none',
                           }}
-                        >
-                          {staff.is_active ? 'Active' : 'Inactive'}
-                        </button>
-                        <button
-                          onClick={() => {
-                            setActiveDropdownId(null);
-                            handleOpenEdit(staff);
-                          }}
-                          style={{
-                            padding: '0.5rem 0.75rem',
-                            fontSize: '0.8rem',
-                            fontWeight: 500,
-                            textAlign: 'left',
-                            background: 'transparent',
-                            border: 'none',
-                            borderBottom: '1px solid var(--border-color)',
-                            color: 'var(--text-main)',
-                            cursor: 'pointer',
-                            boxShadow: 'none',
-                          }}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDeleteStaff(staff.id)}
-                          style={{
-                            padding: '0.5rem 0.75rem',
-                            fontSize: '0.8rem',
-                            fontWeight: 500,
-                            textAlign: 'left',
-                            background: 'transparent',
-                            border: 'none',
-                            color: '#dc2626',
-                            cursor: 'pointer',
-                            boxShadow: 'none',
-                          }}
-                        >
-                          Delete
-                        </button>
-                      </div>
+                        />
+                        <div style={{
+                          position: 'absolute',
+                          right: 0,
+                          top: 'calc(100% + 4px)',
+                          background: '#ffffff',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: '4px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          minWidth: '120px',
+                          zIndex: 100,
+                          boxShadow: 'none',
+                          overflow: 'hidden',
+                        }}>
+                          <button
+                            onClick={() => handleToggleActive(staff)}
+                            style={{
+                              padding: '0.6rem 0.95rem',
+                              fontSize: '0.98rem',
+                              fontWeight: 500,
+                              textAlign: 'left',
+                              background: 'transparent',
+                              border: 'none',
+                              borderBottom: '1px solid var(--border-color)',
+                              color: staff.is_active ? '#059669' : 'var(--text-muted)',
+                              cursor: 'pointer',
+                              boxShadow: 'none',
+                              fontFamily: kmFont,
+                            }}
+                          >
+                            {staff.is_active ? t('doc_active') : t('doc_inactive')}
+                          </button>
+                          <button
+                            onClick={() => {
+                              setActiveDropdownId(null);
+                              handleOpenEdit(staff);
+                            }}
+                            style={{
+                              padding: '0.6rem 0.95rem',
+                              fontSize: '0.98rem',
+                              fontWeight: 500,
+                              textAlign: 'left',
+                              background: 'transparent',
+                              border: 'none',
+                              borderBottom: '1px solid var(--border-color)',
+                              color: 'var(--text-main)',
+                              cursor: 'pointer',
+                              boxShadow: 'none',
+                              fontFamily: kmFont,
+                            }}
+                          >
+                            {t('doc_edit')}
+                          </button>
+                          <button
+                            onClick={() => handleDeleteStaff(staff.id)}
+                            style={{
+                              padding: '0.6rem 0.95rem',
+                              fontSize: '0.98rem',
+                              fontWeight: 500,
+                              textAlign: 'left',
+                              background: 'transparent',
+                              border: 'none',
+                              color: '#dc2626',
+                              cursor: 'pointer',
+                              boxShadow: 'none',
+                              fontFamily: kmFont,
+                            }}
+                          >
+                            {t('doc_delete')}
+                          </button>
+                        </div>
+                      </>
                     )}
                   </div>
                 </div>
@@ -414,38 +448,19 @@ export const StaffManagement: React.FC = () => {
 
       {/* Invite / Edit Staff Modal */}
       {modalOpen && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.4)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-          padding: '1rem',
-        }}>
-          <div style={{
-            background: '#ffffff',
-            border: '1px solid var(--border-color)',
-            borderRadius: '6px',
-            width: '100%',
-            maxWidth: '480px',
-            padding: '1.5rem',
-            boxShadow: 'none',
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-              <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 600, color: 'var(--text-main)' }}>
-                {editingStaffId ? 'Edit Staff Account' : 'Invite Staff Member'}
-              </h3>
+        <div className="responsive-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setModalOpen(false); }}>
+          <div className="responsive-modal-card" style={{ maxWidth: '520px', fontFamily: kmFont }}>
+            <div className="responsive-modal-body" style={{ padding: '1.6rem 1.75rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.4rem' }}>
+                <h3 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: kmFont }}>
+                  {editingStaffId ? t('staff_modal_edit') : t('staff_modal_invite')}
+                </h3>
               <button
                 onClick={() => setModalOpen(false)}
                 style={{
                   background: 'transparent',
                   border: 'none',
-                  fontSize: '1rem',
+                  fontSize: '1.1rem',
                   cursor: 'pointer',
                   color: 'var(--text-muted)',
                 }}
@@ -454,11 +469,11 @@ export const StaffManagement: React.FC = () => {
               </button>
             </div>
 
-            <form onSubmit={handleSaveStaff}>
+            <form onSubmit={handleSaveStaff} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
               {/* Full Name */}
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.25rem', color: 'var(--text-main)' }}>
-                  Full Name
+              <div>
+                <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, marginBottom: '6px', color: 'var(--text-main)', fontFamily: kmFont }}>
+                  {t('staff_name_label')}
                 </label>
                 <input
                   type="text"
@@ -467,29 +482,30 @@ export const StaffManagement: React.FC = () => {
                     setFullName(e.target.value);
                     setNameError(null);
                   }}
-                  placeholder="e.g. Sokha Meas"
+                  placeholder={t('staff_name_placeholder')}
                   style={{
                     width: '100%',
-                    padding: '0.55rem 0.75rem',
+                    padding: '0.72rem 0.85rem',
                     border: nameError ? '1px solid #dc2626' : '1px solid var(--border-color)',
                     borderRadius: '4px',
-                    fontSize: '0.875rem',
+                    fontSize: '0.95rem',
                     boxShadow: 'none',
                     outline: 'none',
                     boxSizing: 'border-box',
+                    fontFamily: kmFont,
                   }}
                 />
                 {nameError && (
-                  <div style={{ color: '#dc2626', fontSize: '0.75rem', marginTop: '4px' }}>
+                  <div style={{ color: '#dc2626', fontSize: '0.85rem', marginTop: '5px', fontFamily: kmFont }}>
                     {nameError}
                   </div>
                 )}
               </div>
 
               {/* Email */}
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.25rem', color: 'var(--text-main)' }}>
-                  Email Address
+              <div>
+                <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, marginBottom: '6px', color: 'var(--text-main)', fontFamily: kmFont }}>
+                  {t('staff_email_label')}
                 </label>
                 <input
                   type="email"
@@ -498,29 +514,30 @@ export const StaffManagement: React.FC = () => {
                     setEmail(e.target.value);
                     setEmailError(null);
                   }}
-                  placeholder="sokha.meas@hospital.kh"
+                  placeholder={t('staff_email_placeholder')}
                   style={{
                     width: '100%',
-                    padding: '0.55rem 0.75rem',
+                    padding: '0.72rem 0.85rem',
                     border: emailError ? '1px solid #dc2626' : '1px solid var(--border-color)',
                     borderRadius: '4px',
-                    fontSize: '0.875rem',
+                    fontSize: '0.95rem',
                     boxShadow: 'none',
                     outline: 'none',
                     boxSizing: 'border-box',
+                    fontFamily: kmFont,
                   }}
                 />
                 {emailError && (
-                  <div style={{ color: '#dc2626', fontSize: '0.75rem', marginTop: '4px' }}>
+                  <div style={{ color: '#dc2626', fontSize: '0.85rem', marginTop: '5px', fontFamily: kmFont }}>
                     {emailError}
                   </div>
                 )}
               </div>
 
               {/* Phone */}
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.25rem', color: 'var(--text-main)' }}>
-                  Phone Number
+              <div>
+                <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, marginBottom: '6px', color: 'var(--text-main)', fontFamily: kmFont }}>
+                  {t('staff_phone_label')}
                 </label>
                 <input
                   type="text"
@@ -529,70 +546,97 @@ export const StaffManagement: React.FC = () => {
                   placeholder="012 345 678"
                   style={{
                     width: '100%',
-                    padding: '0.55rem 0.75rem',
+                    padding: '0.72rem 0.85rem',
                     border: '1px solid var(--border-color)',
                     borderRadius: '4px',
-                    fontSize: '0.875rem',
+                    fontSize: '0.95rem',
                     boxShadow: 'none',
                     outline: 'none',
                     boxSizing: 'border-box',
+                    fontFamily: kmFont,
                   }}
                 />
               </div>
 
               {/* Role Selection */}
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.25rem', color: 'var(--text-main)' }}>
-                  Assigned Role
+              <div>
+                <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, marginBottom: '6px', color: 'var(--text-main)', fontFamily: kmFont }}>
+                  {t('staff_assigned_role')}
                 </label>
                 <select
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
                   style={{
                     width: '100%',
-                    padding: '0.55rem 0.75rem',
+                    padding: '0.72rem 0.85rem',
                     border: '1px solid var(--border-color)',
                     borderRadius: '4px',
-                    fontSize: '0.875rem',
+                    fontSize: '0.95rem',
                     boxShadow: 'none',
                     outline: 'none',
                     boxSizing: 'border-box',
                     background: '#ffffff',
+                    fontFamily: kmFont,
                   }}
                 >
-                  <option value="RECEPTIONIST">Front-Desk Receptionist</option>
-                  <option value="DOCTOR">Doctor / Physician</option>
-                  <option value="NURSE">Triage Nurse</option>
-                  <option value="HOSPITAL_ADMIN">Hospital Administrator</option>
+                  <option value="RECEPTIONIST">{t('staff_role_receptionist')}</option>
+                  <option value="DOCTOR">{t('staff_role_doctor')}</option>
+                  <option value="NURSE">{t('staff_role_nurse')}</option>
+                  <option value="HOSPITAL_ADMIN">{t('staff_role_admin')}</option>
                 </select>
               </div>
 
               {/* Password */}
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.25rem', color: 'var(--text-main)' }}>
-                  {editingStaffId ? 'New Password (leave blank to keep current)' : 'Initial Password'}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, marginBottom: '6px', color: 'var(--text-main)', fontFamily: kmFont }}>
+                  {editingStaffId ? t('staff_password_new') : t('staff_password_init')}
                 </label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
-                    setPasswordError(null);
-                  }}
-                  placeholder="••••••••"
-                  style={{
-                    width: '100%',
-                    padding: '0.55rem 0.75rem',
-                    border: passwordError ? '1px solid #dc2626' : '1px solid var(--border-color)',
-                    borderRadius: '4px',
-                    fontSize: '0.875rem',
-                    boxShadow: 'none',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                  }}
-                />
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      setPasswordError(null);
+                    }}
+                    placeholder="••••••••"
+                    style={{
+                      width: '100%',
+                      padding: '0.72rem 2.4rem 0.72rem 0.85rem',
+                      border: passwordError ? '1px solid #dc2626' : '1px solid var(--border-color)',
+                      borderRadius: '4px',
+                      fontSize: '0.95rem',
+                      boxShadow: 'none',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                      fontFamily: kmFont,
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((p) => !p)}
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'var(--text-muted)',
+                      cursor: 'pointer',
+                      padding: '2px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                    tabIndex={-1}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                  </button>
+                </div>
                 {passwordError && (
-                  <div style={{ color: '#dc2626', fontSize: '0.75rem', marginTop: '4px' }}>
+                  <div style={{ color: '#dc2626', fontSize: '0.85rem', marginTop: '5px', fontFamily: kmFont }}>
                     {passwordError}
                   </div>
                 )}
@@ -600,7 +644,7 @@ export const StaffManagement: React.FC = () => {
 
               {/* Active Toggle (for edit) */}
               {editingStaffId && (
-                <div style={{ marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <input
                     type="checkbox"
                     id="staff-active-check"
@@ -608,57 +652,60 @@ export const StaffManagement: React.FC = () => {
                     onChange={(e) => setIsActive(e.target.checked)}
                     style={{ cursor: 'pointer' }}
                   />
-                  <label htmlFor="staff-active-check" style={{ fontSize: '0.85rem', color: 'var(--text-main)', cursor: 'pointer' }}>
-                    Active Account
+                  <label htmlFor="staff-active-check" style={{ fontSize: '0.9rem', color: 'var(--text-main)', cursor: 'pointer', fontFamily: kmFont }}>
+                    {t('staff_active_account')}
                   </label>
                 </div>
               )}
 
               {/* Action Error */}
               {submitError && (
-                <div style={{ color: '#dc2626', fontSize: '0.8rem', marginBottom: '1rem' }}>
+                <div style={{ color: '#dc2626', fontSize: '0.85rem', fontFamily: kmFont }}>
                   {submitError}
                 </div>
               )}
 
               {/* Buttons */}
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
                   style={{
-                    padding: '0.5rem 0.9rem',
+                    padding: '0.75rem 1.25rem',
                     background: 'transparent',
                     border: '1px solid var(--border-color)',
                     borderRadius: '4px',
                     color: 'var(--text-muted)',
-                    fontSize: '0.85rem',
+                    fontSize: '0.98rem',
+                    fontWeight: 500,
                     cursor: 'pointer',
                     boxShadow: 'none',
+                    fontFamily: kmFont,
                   }}
                 >
-                  Cancel
+                  {t('cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={actionLoading}
                   style={{
-                    padding: '0.5rem 1.1rem',
+                    padding: '0.75rem 1.45rem',
                     background: 'transparent',
                     border: '1px solid var(--text-main)',
                     borderRadius: '4px',
                     color: 'var(--text-main)',
-                    fontSize: '0.85rem',
+                    fontSize: '0.98rem',
                     fontWeight: 600,
-                    cursor: actionLoading ? 'not-allowed' : 'pointer',
-                    opacity: actionLoading ? 0.6 : 1,
+                    cursor: 'pointer',
                     boxShadow: 'none',
+                    fontFamily: kmFont,
                   }}
                 >
-                  {actionLoading ? 'Saving...' : editingStaffId ? 'Save Changes' : 'Invite Staff'}
+                  {actionLoading ? t('staff_saving') : editingStaffId ? t('staff_save_btn') : t('staff_invite_btn')}
                 </button>
               </div>
             </form>
+            </div>
           </div>
         </div>
       )}

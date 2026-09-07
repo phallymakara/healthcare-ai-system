@@ -23,6 +23,8 @@ class BookTicketRequest(BaseModel):
     # Patient details (optional if authenticated user)
     patient_name: Optional[str] = None
     patient_phone: Optional[str] = None
+    appointment_date: Optional[date] = None
+    appointment_time: Optional[str] = None
 
 
 class WalkInTicketRequest(BaseModel):
@@ -72,6 +74,8 @@ class TicketResponse(BaseModel):
     status: TicketStatus
     position: int
     estimated_wait_minutes: int
+    appointment_date: Optional[date] = None
+    appointment_time: Optional[str] = None
     called_at: Optional[datetime] = None
     serving_started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
@@ -117,3 +121,25 @@ class QueueSessionResponse(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+# --- Slot Availability Schemas ---
+
+class SlotAvailabilityItem(BaseModel):
+    slot: str
+    is_booked: bool
+    booked_count: int
+    max_capacity: int = 1
+    available_spots: int
+
+
+class SlotsAvailabilityResponse(BaseModel):
+    date: str
+    hospital_id: uuid.UUID
+    department_id: Optional[uuid.UUID] = None
+    doctor_id: Optional[uuid.UUID] = None
+    total_slots: int
+    available_slots: int
+    booked_slots: int
+    slots: List[SlotAvailabilityItem]
+

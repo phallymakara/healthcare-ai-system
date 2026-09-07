@@ -34,6 +34,7 @@ services:
       - "${POSTGRES_PORT:-5440}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./backend/init-data:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-healthcare_ai_db}"]
       interval: 5s
@@ -71,18 +72,30 @@ services:
       dockerfile: Dockerfile
     container_name: healthcare_backend
     restart: unless-stopped
-    env_file:
-      - ./backend/.env.docker
     environment:
-      # These MUST be set in the root .env file (see .env.production template)
+      PROJECT_NAME: ${PROJECT_NAME:-Healthcare AI System}
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+      DEBUG: ${DEBUG:-false}
+      SECRET_KEY: ${SECRET_KEY}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-1440}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres123}
       POSTGRES_DB: ${POSTGRES_DB:-healthcare_ai_db}
-      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-healthcare_ai_db}
-      REDIS_URL: redis://redis:6379/0
-      LANGGRAPH_CHECKPOINT_DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-healthcare_ai_db}
-      SECRET_KEY: ${SECRET_KEY:?Set SECRET_KEY in .env}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_DB: ${REDIS_DB:-0}
+      DATABASE_URL: ${DATABASE_URL:-}
+      REDIS_URL: ${REDIS_URL:-}
+      LANGGRAPH_CHECKPOINT_DATABASE_URL: ${LANGGRAPH_CHECKPOINT_DATABASE_URL:-}
       SEED_DATA: ${SEED_DATA:-false}
+      MICROSOFT_FOUNDRY_API_KEY: ${MICROSOFT_FOUNDRY_API_KEY:-}
+      MICROSOFT_FOUNDRY_BASE_URL: ${MICROSOFT_FOUNDRY_BASE_URL:-}
+      MICROSOFT_FOUNDRY_MODEL: ${MICROSOFT_FOUNDRY_MODEL:-gpt-4o}
+      CORS_ORIGINS: ${CORS_ORIGINS:-["*"]}
+      UVICORN_WORKERS: ${UVICORN_WORKERS:-2}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
     ports:
       - "${BACKEND_PORT:-9000}:8000"
     depends_on:

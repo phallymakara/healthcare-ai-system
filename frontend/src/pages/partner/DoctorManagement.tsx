@@ -1,18 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import { AuthService } from '../../services/auth';
+import { useLanguage } from '../../context/LanguageContext';
 import { API_BASE } from '../../services/api';
 
-const DAYS = [
-  { dayIndex: 0, label: 'Mon', full: 'Monday' },
-  { dayIndex: 1, label: 'Tue', full: 'Tuesday' },
-  { dayIndex: 2, label: 'Wed', full: 'Wednesday' },
-  { dayIndex: 3, label: 'Thu', full: 'Thursday' },
-  { dayIndex: 4, label: 'Fri', full: 'Friday' },
-  { dayIndex: 5, label: 'Sat', full: 'Saturday' },
-  { dayIndex: 6, label: 'Sun', full: 'Sunday' },
+const DAY_DEFS = [
+  { dayIndex: 0, labelKey: 'day_mon', fullKey: 'day_mon_full' },
+  { dayIndex: 1, labelKey: 'day_tue', fullKey: 'day_tue_full' },
+  { dayIndex: 2, labelKey: 'day_wed', fullKey: 'day_wed_full' },
+  { dayIndex: 3, labelKey: 'day_thu', fullKey: 'day_thu_full' },
+  { dayIndex: 4, labelKey: 'day_fri', fullKey: 'day_fri_full' },
+  { dayIndex: 5, labelKey: 'day_sat', fullKey: 'day_sat_full' },
+  { dayIndex: 6, labelKey: 'day_sun', fullKey: 'day_sun_full' },
 ];
 
 export const DoctorManagement: React.FC = () => {
+  const { language, t } = useLanguage();
+  const isKm = language === 'km';
+  const kmFont = isKm ? 'var(--font-khmer)' : 'inherit';
+
   const [doctors, setDoctors] = useState<any[]>([]);
   const [departments, setDepartments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -111,16 +116,17 @@ export const DoctorManagement: React.FC = () => {
     setDocSubmitError(null);
 
     let hasError = false;
-    if (!docDeptId) {
-      setDocDeptError('Please select a department.');
+    const finalDeptId = docDeptId || (departments.length > 0 ? departments[0].id : '');
+    if (!finalDeptId) {
+      setDocDeptError(t('doc_err_dept'));
       hasError = true;
     }
     if (!docFullName.trim()) {
-      setDocNameError('Please enter the doctor full name.');
+      setDocNameError(t('doc_err_name'));
       hasError = true;
     }
     if (!docSpecialty.trim()) {
-      setDocSpecialtyError('Please enter the medical specialty.');
+      setDocSpecialtyError(t('doc_err_specialty'));
       hasError = true;
     }
     if (hasError) return;
@@ -137,26 +143,36 @@ export const DoctorManagement: React.FC = () => {
         method,
         headers: { 'Content-Type': 'application/json', ...AuthService.getAuthHeaders() },
         body: JSON.stringify({
-          department_id: docDeptId,
+          department_id: finalDeptId,
           full_name: docFullName.trim(),
           specialty: docSpecialty.trim(),
           room_number: docRoom.trim() || undefined,
           license_number: docLicense.trim() || undefined,
-          avg_consultation_minutes: Number(docMinutes) || 15,
+          avg_consultation_minutes: Math.max(1, Number(docMinutes) || 15),
           is_available: docIsAvailable,
           is_active: docIsActive,
         }),
       });
 
       if (!res.ok) {
-        setDocSubmitError('Unable to save doctor profile. Please try again.');
+        const errData = await res.json().catch(() => null);
+        console.error('Doctor save error:', res.status, errData);
+        let msg = t('doc_err_save');
+        if (errData?.detail) {
+          if (Array.isArray(errData.detail)) {
+            msg = errData.detail.map((d: any) => `${d.loc?.slice(-1)[0] || 'Field'}: ${d.msg}`).join(', ');
+          } else if (typeof errData.detail === 'string') {
+            msg = errData.detail;
+          }
+        }
+        setDocSubmitError(msg);
         return;
       }
 
       setDocModalOpen(false);
       await loadData();
     } catch {
-      setDocSubmitError('Connection issue saving doctor profile. Please try again.');
+      setDocSubmitError(t('doc_err_conn'));
     } finally {
       setDocLoading(false);
     }
@@ -246,46 +262,47 @@ export const DoctorManagement: React.FC = () => {
       });
 
       if (!res.ok) {
-        setShiftSubmitError('Unable to save shift schedule. Please try again.');
+        setShiftSubmitError(t('doc_shift_err_save'));
         return;
       }
 
       setShiftModalOpen(false);
       await loadData();
     } catch {
-      setShiftSubmitError('Connection issue saving shift schedule. Please try again.');
+      setShiftSubmitError(t('doc_shift_err_conn'));
     } finally {
       setShiftLoading(false);
     }
   };
 
   return (
-    <div style={{ width: '100%' }}>
+    <div style={{ width: '100%', fontFamily: kmFont }}>
       {/* Top Controls: + Add Doctor aligned to the left */}
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1.5rem' }}>
         <button
           onClick={handleOpenNewDoc}
           disabled={departments.length === 0}
           style={{
-            padding: '0.55rem 1rem',
+            padding: '0.65rem 1.25rem',
             background: 'transparent',
             border: '1px solid var(--text-main)',
             borderRadius: '4px',
             color: 'var(--text-main)',
-            fontSize: '0.875rem',
+            fontSize: '1rem',
             fontWeight: 600,
             cursor: departments.length === 0 ? 'not-allowed' : 'pointer',
             opacity: departments.length === 0 ? 0.5 : 1,
             boxShadow: 'none',
+            fontFamily: kmFont,
           }}
         >
-          + Add Doctor
+          {t('doc_add_btn')}
         </button>
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-          Loading doctors directory...
+        <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-muted)', fontSize: '1.1rem', fontFamily: kmFont }}>
+          {t('doc_loading')}
         </div>
       ) : (
         /* Doctor Rows Layout */
@@ -293,17 +310,26 @@ export const DoctorManagement: React.FC = () => {
           background: '#ffffff',
           border: '1px solid var(--border-color)',
           borderRadius: '6px',
-          overflow: 'hidden',
+          overflow: 'visible',
           boxShadow: 'none',
         }}>
           {doctors.length === 0 ? (
             <div style={{
-              padding: '3rem',
+              minHeight: '60vh',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '3rem 2rem',
               textAlign: 'center',
               color: 'var(--text-muted)',
-              fontSize: '0.875rem',
+              fontSize: '1.1rem',
+              lineHeight: 1.7,
+              fontFamily: kmFont,
             }}>
-              No doctors registered yet. Click + Add Doctor to add your first consultant.
+              <div style={{ maxWidth: '520px' }}>
+                {t('doc_no_doctors')}
+              </div>
             </div>
           ) : (
             doctors.map((doc, idx) => {
@@ -319,65 +345,60 @@ export const DoctorManagement: React.FC = () => {
                     justifyContent: 'space-between',
                     flexWrap: 'wrap',
                     gap: '1rem',
-                    padding: '1rem 1.25rem',
+                    padding: '0.65rem 1.25rem',
                     borderBottom: idx === doctors.length - 1 ? 'none' : '1px solid var(--border-color)',
                     background: '#ffffff',
+                    position: 'relative',
+                    zIndex: activeDropdownDocId === doc.id ? 50 : 1,
+                    borderTopLeftRadius: idx === 0 ? '6px' : 0,
+                    borderTopRightRadius: idx === 0 ? '6px' : 0,
+                    borderBottomLeftRadius: idx === doctors.length - 1 ? '6px' : 0,
+                    borderBottomRightRadius: idx === doctors.length - 1 ? '6px' : 0,
                   }}
                 >
                   {/* Doctor Info Column */}
                   <div style={{ minWidth: '240px', flex: '1.5' }}>
                     <div>
-                      <div style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-main)' }}>
+                      <div style={{ fontSize: '1.28rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: kmFont, lineHeight: 1.25 }}>
                         {doc.full_name}
                       </div>
                     </div>
 
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                      {deptObj ? deptObj.name : 'General'}
+                    <div style={{ fontSize: '1.02rem', color: 'var(--text-muted)', marginTop: '2px', fontFamily: kmFont }}>
+                      {deptObj ? deptObj.name : t('doc_general')} • {doc.specialty}
                     </div>
-
-                    {doc.license_number && (
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'monospace', marginTop: '2px' }}>
-                        {doc.license_number}
-                      </div>
-                    )}
                   </div>
 
-                  {/* Station & Consultation Pacing Column */}
+                  {/* Station Column */}
                   <div style={{ minWidth: '180px', flex: '1' }}>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>
-                      Station & Pacing
-                    </div>
-                    <div style={{ fontSize: '0.85rem', color: 'var(--text-main)', fontWeight: 600, marginTop: '2px' }}>
-                      {doc.room_number || 'General Outpatient'}
-                    </div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                      ~{doc.avg_consultation_minutes} mins / visit
+                    <div style={{ fontSize: '1.12rem', color: 'var(--text-main)', fontWeight: 600, fontFamily: kmFont, lineHeight: 1.25 }}>
+                      {doc.room_number || t('doc_general_outpatient')}
                     </div>
                   </div>
 
                   {/* Weekly Working Days Column */}
                   <div style={{ minWidth: '240px', flex: '1.2' }}>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, marginBottom: '4px' }}>
-                      Weekly Working Days
+                    <div style={{ fontSize: '0.92rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, marginBottom: '4px', fontFamily: kmFont }}>
+                      {t('doc_weekly_working_days')}
                     </div>
                     <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                      {DAYS.map((day) => {
+                      {DAY_DEFS.map((day) => {
                         const isScheduled = scheduleDays.includes(day.dayIndex);
                         return (
                           <span
-                            key={day.label}
+                            key={day.dayIndex}
                             style={{
-                              padding: '0.1rem 0.35rem',
+                              padding: '0.15rem 0.45rem',
                               border: isScheduled ? '1px solid var(--text-main)' : '1px solid var(--border-color)',
-                              borderRadius: '3px',
-                              fontSize: '0.7rem',
+                              borderRadius: '4px',
+                              fontSize: '0.85rem',
                               fontWeight: isScheduled ? 600 : 400,
                               color: isScheduled ? 'var(--text-main)' : 'var(--text-muted)',
                               background: 'transparent',
+                              fontFamily: kmFont,
                             }}
                           >
-                            {day.label}
+                            {t(day.labelKey)}
                           </span>
                         );
                       })}
@@ -385,45 +406,56 @@ export const DoctorManagement: React.FC = () => {
                   </div>
 
                   {/* Actions Column: Three-dot dropdown menu */}
-                  <div style={{ position: 'relative' }}>
+                  <div style={{ position: 'relative', zIndex: activeDropdownDocId === doc.id ? 60 : 'auto' }}>
                     <button
                       onClick={() => setActiveDropdownDocId(activeDropdownDocId === doc.id ? null : doc.id)}
                       style={{
-                        padding: '0.2rem 0.55rem',
-                        fontSize: '0.9rem',
+                        padding: '0.2rem 0.75rem',
+                        fontSize: '1.2rem',
                         fontWeight: 700,
                         letterSpacing: '1px',
                         background: 'transparent',
                         border: '1px solid var(--border-color)',
-                        borderRadius: '3px',
+                        borderRadius: '4px',
                         color: 'var(--text-main)',
                         cursor: 'pointer',
                         boxShadow: 'none',
+                        lineHeight: 1,
                       }}
                     >
                       ···
                     </button>
 
                     {activeDropdownDocId === doc.id && (
-                      <div style={{
-                        position: 'absolute',
-                        right: 0,
-                        top: 'calc(100% + 4px)',
-                        background: '#ffffff',
-                        border: '1px solid var(--border-color)',
-                        borderRadius: '4px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        minWidth: '120px',
-                        zIndex: 50,
-                        boxShadow: 'none',
-                        overflow: 'hidden',
-                      }}>
+                      <>
+                        <div
+                          onClick={() => setActiveDropdownDocId(null)}
+                          style={{
+                            position: 'fixed',
+                            inset: 0,
+                            zIndex: 99,
+                            background: 'transparent',
+                          }}
+                        />
+                        <div style={{
+                          position: 'absolute',
+                          right: 0,
+                          top: 'calc(100% + 4px)',
+                          background: '#ffffff',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: '4px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          minWidth: '150px',
+                          zIndex: 100,
+                          boxShadow: 'none',
+                          overflow: 'hidden',
+                        }}>
                         <button
                           onClick={() => handleToggleAvailable(doc)}
                           style={{
-                            padding: '0.5rem 0.75rem',
-                            fontSize: '0.8rem',
+                            padding: '0.65rem 0.95rem',
+                            fontSize: '0.95rem',
                             fontWeight: 500,
                             textAlign: 'left',
                             background: 'transparent',
@@ -432,9 +464,10 @@ export const DoctorManagement: React.FC = () => {
                             color: doc.is_available ? '#059669' : 'var(--text-muted)',
                             cursor: 'pointer',
                             boxShadow: 'none',
+                            fontFamily: kmFont,
                           }}
                         >
-                          {doc.is_available ? 'Active' : 'Inactive'}
+                          {doc.is_available ? t('doc_active') : t('doc_inactive')}
                         </button>
                         <button
                           onClick={() => {
@@ -442,8 +475,8 @@ export const DoctorManagement: React.FC = () => {
                             handleOpenEditDoc(doc);
                           }}
                           style={{
-                            padding: '0.5rem 0.75rem',
-                            fontSize: '0.8rem',
+                            padding: '0.65rem 0.95rem',
+                            fontSize: '0.95rem',
                             fontWeight: 500,
                             textAlign: 'left',
                             background: 'transparent',
@@ -452,9 +485,10 @@ export const DoctorManagement: React.FC = () => {
                             color: 'var(--text-main)',
                             cursor: 'pointer',
                             boxShadow: 'none',
+                            fontFamily: kmFont,
                           }}
                         >
-                          Edit
+                          {t('doc_edit')}
                         </button>
                         <button
                           onClick={() => {
@@ -462,8 +496,8 @@ export const DoctorManagement: React.FC = () => {
                             handleOpenShifts(doc);
                           }}
                           style={{
-                            padding: '0.5rem 0.75rem',
-                            fontSize: '0.8rem',
+                            padding: '0.65rem 0.95rem',
+                            fontSize: '0.95rem',
                             fontWeight: 500,
                             textAlign: 'left',
                             background: 'transparent',
@@ -472,15 +506,16 @@ export const DoctorManagement: React.FC = () => {
                             color: 'var(--text-main)',
                             cursor: 'pointer',
                             boxShadow: 'none',
+                            fontFamily: kmFont,
                           }}
                         >
-                          Manage Shifts
+                          {t('doc_manage_shifts')}
                         </button>
                         <button
                           onClick={() => handleDeleteDoctor(doc.id)}
                           style={{
-                            padding: '0.5rem 0.75rem',
-                            fontSize: '0.8rem',
+                            padding: '0.65rem 0.95rem',
+                            fontSize: '0.95rem',
                             fontWeight: 500,
                             textAlign: 'left',
                             background: 'transparent',
@@ -488,12 +523,14 @@ export const DoctorManagement: React.FC = () => {
                             color: '#dc2626',
                             cursor: 'pointer',
                             boxShadow: 'none',
+                            fontFamily: kmFont,
                           }}
                         >
-                          Delete
+                          {t('doc_delete')}
                         </button>
                       </div>
-                    )}
+                    </>
+                  )}
                   </div>
                 </div>
               );
@@ -504,33 +541,17 @@ export const DoctorManagement: React.FC = () => {
 
       {/* Add / Edit Doctor Modal */}
       {docModalOpen && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(0, 0, 0, 0.4)',
-          zIndex: 100,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '1rem',
-        }}>
-          <div style={{
-            maxWidth: '440px',
-            width: '100%',
-            padding: '1.5rem',
-            background: '#ffffff',
-            border: '1px solid var(--border-color)',
-            borderRadius: '6px',
-            boxShadow: 'none',
-          }}>
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 700, margin: '0 0 1.25rem 0', color: 'var(--text-main)' }}>
-              {editingDocId ? 'Edit Doctor Profile' : 'Add Consultant Doctor'}
-            </h3>
+        <div className="responsive-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setDocModalOpen(false); }}>
+          <div className="responsive-modal-card" style={{ maxWidth: '520px', fontFamily: kmFont }}>
+            <div className="responsive-modal-body" style={{ padding: '1.6rem 1.75rem' }}>
+              <h3 style={{ fontSize: '1.35rem', fontWeight: 700, margin: '0 0 1.35rem 0', color: 'var(--text-main)', fontFamily: kmFont }}>
+                {editingDocId ? t('doc_modal_edit_title') : t('doc_modal_add_title')}
+              </h3>
 
-            <form onSubmit={handleSaveDoctor} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+            <form onSubmit={handleSaveDoctor} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>
-                  Department
+                <label style={{ display: 'block', fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px', fontFamily: kmFont }}>
+                  {t('doc_dept_label')}
                 </label>
                 <select
                   value={docDeptId}
@@ -540,8 +561,8 @@ export const DoctorManagement: React.FC = () => {
                   }}
                   style={{
                     width: '100%',
-                    padding: '0.6rem',
-                    fontSize: '0.875rem',
+                    padding: '0.65rem 0.85rem',
+                    fontSize: '0.98rem',
                     borderRadius: '4px',
                     border: docDeptError ? '1px solid #dc2626' : '1px solid var(--border-color)',
                     boxShadow: 'none',
@@ -549,6 +570,7 @@ export const DoctorManagement: React.FC = () => {
                     background: '#ffffff',
                     color: 'var(--text-main)',
                     boxSizing: 'border-box',
+                    fontFamily: kmFont,
                   }}
                 >
                   {departments.map((dept) => (
@@ -558,19 +580,19 @@ export const DoctorManagement: React.FC = () => {
                   ))}
                 </select>
                 {docDeptError && (
-                  <div style={{ color: '#dc2626', fontSize: '0.8rem', marginTop: '4px' }}>
+                  <div style={{ color: '#dc2626', fontSize: '0.88rem', marginTop: '4px', fontFamily: kmFont }}>
                     {docDeptError}
                   </div>
                 )}
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>
-                  Doctor Full Name
+                <label style={{ display: 'block', fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px', fontFamily: kmFont }}>
+                  {t('doc_name_label')}
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Dr. Chea Sokha"
+                  placeholder={t('doc_name_placeholder')}
                   value={docFullName}
                   onChange={(e) => {
                     setDocFullName(e.target.value);
@@ -578,29 +600,30 @@ export const DoctorManagement: React.FC = () => {
                   }}
                   style={{
                     width: '100%',
-                    padding: '0.6rem',
-                    fontSize: '0.875rem',
+                    padding: '0.65rem 0.85rem',
+                    fontSize: '0.98rem',
                     borderRadius: '4px',
                     border: docNameError ? '1px solid #dc2626' : '1px solid var(--border-color)',
                     boxShadow: 'none',
                     outline: 'none',
                     boxSizing: 'border-box',
+                    fontFamily: kmFont,
                   }}
                 />
                 {docNameError && (
-                  <div style={{ color: '#dc2626', fontSize: '0.8rem', marginTop: '4px' }}>
+                  <div style={{ color: '#dc2626', fontSize: '0.88rem', marginTop: '4px', fontFamily: kmFont }}>
                     {docNameError}
                   </div>
                 )}
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>
-                  Medical Specialty
+                <label style={{ display: 'block', fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px', fontFamily: kmFont }}>
+                  {t('doc_specialty_label')}
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Cardiologist, Pediatrician"
+                  placeholder={t('doc_specialty_placeholder')}
                   value={docSpecialty}
                   onChange={(e) => {
                     setDocSpecialty(e.target.value);
@@ -608,72 +631,28 @@ export const DoctorManagement: React.FC = () => {
                   }}
                   style={{
                     width: '100%',
-                    padding: '0.6rem',
-                    fontSize: '0.875rem',
+                    padding: '0.65rem 0.85rem',
+                    fontSize: '0.98rem',
                     borderRadius: '4px',
                     border: docSpecialtyError ? '1px solid #dc2626' : '1px solid var(--border-color)',
                     boxShadow: 'none',
                     outline: 'none',
                     boxSizing: 'border-box',
+                    fontFamily: kmFont,
                   }}
                 />
                 {docSpecialtyError && (
-                  <div style={{ color: '#dc2626', fontSize: '0.8rem', marginTop: '4px' }}>
+                  <div style={{ color: '#dc2626', fontSize: '0.88rem', marginTop: '4px', fontFamily: kmFont }}>
                     {docSpecialtyError}
                   </div>
                 )}
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>
-                    Room / Counter #
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Room 102"
-                    value={docRoom}
-                    onChange={(e) => setDocRoom(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '0.6rem',
-                      fontSize: '0.875rem',
-                      borderRadius: '4px',
-                      border: '1px solid var(--border-color)',
-                      boxShadow: 'none',
-                      outline: 'none',
-                      boxSizing: 'border-box',
-                    }}
-                  />
-                </div>
 
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>
-                    Avg Visit (Mins)
-                  </label>
-                  <input
-                    type="number"
-                    min="5"
-                    max="120"
-                    value={docMinutes}
-                    onChange={(e) => setDocMinutes(Number(e.target.value))}
-                    style={{
-                      width: '100%',
-                      padding: '0.6rem',
-                      fontSize: '0.875rem',
-                      borderRadius: '4px',
-                      border: '1px solid var(--border-color)',
-                      boxShadow: 'none',
-                      outline: 'none',
-                      boxSizing: 'border-box',
-                    }}
-                  />
-                </div>
-              </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>
-                  Medical License Number (Optional)
+                <label style={{ display: 'block', fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px', fontFamily: kmFont }}>
+                  {t('doc_license_label')}
                 </label>
                 <input
                   type="text"
@@ -682,43 +661,33 @@ export const DoctorManagement: React.FC = () => {
                   onChange={(e) => setDocLicense(e.target.value)}
                   style={{
                     width: '100%',
-                    padding: '0.6rem',
-                    fontSize: '0.875rem',
+                    padding: '0.65rem 0.85rem',
+                    fontSize: '0.98rem',
                     borderRadius: '4px',
                     border: '1px solid var(--border-color)',
                     boxShadow: 'none',
                     outline: 'none',
                     boxSizing: 'border-box',
+                    fontFamily: kmFont,
                   }}
                 />
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem' }}>
-                <input
-                  type="checkbox"
-                  id="docAvailableCheck"
-                  checked={docIsAvailable}
-                  onChange={(e) => setDocIsAvailable(e.target.checked)}
-                />
-                <label htmlFor="docAvailableCheck" style={{ fontSize: '0.85rem', color: 'var(--text-main)', cursor: 'pointer' }}>
-                  Doctor is on duty and available for consultations
-                </label>
-              </div>
 
               {docSubmitError && (
-                <div style={{ color: '#dc2626', fontSize: '0.8rem' }}>
+                <div style={{ color: '#dc2626', fontSize: '0.88rem', fontFamily: kmFont }}>
                   {docSubmitError}
                 </div>
               )}
 
-              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+              <div style={{ display: 'flex', gap: '0.85rem', marginTop: '0.65rem' }}>
                 <button
                   type="button"
                   onClick={() => setDocModalOpen(false)}
                   style={{
                     flex: 1,
-                    padding: '0.6rem',
-                    fontSize: '0.875rem',
+                    padding: '0.7rem 1.15rem',
+                    fontSize: '1rem',
                     fontWeight: 500,
                     background: 'transparent',
                     border: '1px solid var(--border-color)',
@@ -726,17 +695,18 @@ export const DoctorManagement: React.FC = () => {
                     color: 'var(--text-muted)',
                     cursor: 'pointer',
                     boxShadow: 'none',
+                    fontFamily: kmFont,
                   }}
                 >
-                  Cancel
+                  {t('cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={docLoading}
                   style={{
                     flex: 1,
-                    padding: '0.6rem',
-                    fontSize: '0.875rem',
+                    padding: '0.7rem 1.15rem',
+                    fontSize: '1rem',
                     fontWeight: 600,
                     background: 'transparent',
                     border: '1px solid var(--text-main)',
@@ -744,51 +714,37 @@ export const DoctorManagement: React.FC = () => {
                     color: 'var(--text-main)',
                     cursor: 'pointer',
                     boxShadow: 'none',
+                    fontFamily: kmFont,
                   }}
                 >
-                  {editingDocId ? 'Save Changes' : 'Create Doctor'}
+                  {editingDocId ? t('doc_btn_save') : t('doc_btn_create')}
                 </button>
               </div>
             </form>
+            </div>
           </div>
         </div>
       )}
 
       {/* Manage Shifts Modal */}
       {shiftModalOpen && activeShiftDoc && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(0, 0, 0, 0.4)',
-          zIndex: 100,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '1rem',
-        }}>
-          <div style={{
-            maxWidth: '460px',
-            width: '100%',
-            padding: '1.5rem',
-            background: '#ffffff',
-            border: '1px solid var(--border-color)',
-            borderRadius: '6px',
-            boxShadow: 'none',
-          }}>
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 700, margin: '0 0 0.25rem 0', color: 'var(--text-main)' }}>
-              Manage Working Shifts
-            </h3>
-            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
+        <div className="responsive-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setShiftModalOpen(false); }}>
+          <div className="responsive-modal-card" style={{ maxWidth: '520px', fontFamily: kmFont }}>
+            <div className="responsive-modal-body" style={{ padding: '1.6rem 1.75rem' }}>
+              <h3 style={{ fontSize: '1.35rem', fontWeight: 700, margin: '0 0 0.35rem 0', color: 'var(--text-main)', fontFamily: kmFont }}>
+                {t('doc_shifts_modal_title')}
+              </h3>
+            <div style={{ fontSize: '1rem', color: 'var(--text-muted)', marginBottom: '1.35rem', fontFamily: kmFont }}>
               {activeShiftDoc.full_name} ({activeShiftDoc.specialty})
             </div>
 
-            <form onSubmit={handleSaveShifts} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <form onSubmit={handleSaveShifts} style={{ display: 'flex', flexDirection: 'column', gap: '1.15rem' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px' }}>
-                  Weekly Shift Days
+                <label style={{ display: 'block', fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '8px', fontFamily: kmFont }}>
+                  {t('doc_shift_days_label')}
                 </label>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem' }}>
-                  {DAYS.map((day) => {
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.55rem' }}>
+                  {DAY_DEFS.map((day) => {
                     const checked = selectedDays.includes(day.dayIndex);
                     return (
                       <button
@@ -796,8 +752,8 @@ export const DoctorManagement: React.FC = () => {
                         key={day.dayIndex}
                         onClick={() => handleToggleDay(day.dayIndex)}
                         style={{
-                          padding: '0.45rem',
-                          fontSize: '0.8rem',
+                          padding: '0.6rem 0.4rem',
+                          fontSize: '0.92rem',
                           fontWeight: checked ? 600 : 400,
                           background: 'transparent',
                           border: checked ? '1px solid var(--text-main)' : '1px solid var(--border-color)',
@@ -805,19 +761,20 @@ export const DoctorManagement: React.FC = () => {
                           color: checked ? 'var(--text-main)' : 'var(--text-muted)',
                           cursor: 'pointer',
                           boxShadow: 'none',
+                          fontFamily: kmFont,
                         }}
                       >
-                        {day.full}
+                        {t(day.fullKey)}
                       </button>
                     );
                   })}
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>
-                    Shift Start Time
+                  <label style={{ display: 'block', fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px', fontFamily: kmFont }}>
+                    {t('doc_shift_start')}
                   </label>
                   <input
                     type="time"
@@ -825,20 +782,21 @@ export const DoctorManagement: React.FC = () => {
                     onChange={(e) => setShiftStartTime(e.target.value)}
                     style={{
                       width: '100%',
-                      padding: '0.6rem',
-                      fontSize: '0.875rem',
+                      padding: '0.65rem 0.85rem',
+                      fontSize: '0.98rem',
                       borderRadius: '4px',
                       border: '1px solid var(--border-color)',
                       boxShadow: 'none',
                       outline: 'none',
                       boxSizing: 'border-box',
+                      fontFamily: kmFont,
                     }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>
-                    Shift End Time
+                  <label style={{ display: 'block', fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px', fontFamily: kmFont }}>
+                    {t('doc_shift_end')}
                   </label>
                   <input
                     type="time"
@@ -846,58 +804,34 @@ export const DoctorManagement: React.FC = () => {
                     onChange={(e) => setShiftEndTime(e.target.value)}
                     style={{
                       width: '100%',
-                      padding: '0.6rem',
-                      fontSize: '0.875rem',
+                      padding: '0.65rem 0.85rem',
+                      fontSize: '0.98rem',
                       borderRadius: '4px',
                       border: '1px solid var(--border-color)',
                       boxShadow: 'none',
                       outline: 'none',
                       boxSizing: 'border-box',
+                      fontFamily: kmFont,
                     }}
                   />
                 </div>
               </div>
 
-              <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>
-                  Max Patients Capacity Per Shift
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  max="150"
-                  value={shiftMaxPatients}
-                  onChange={(e) => setShiftMaxPatients(Number(e.target.value))}
-                  style={{
-                    width: '100%',
-                    padding: '0.6rem',
-                    fontSize: '0.875rem',
-                    borderRadius: '4px',
-                    border: '1px solid var(--border-color)',
-                    boxShadow: 'none',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                  }}
-                />
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '3px' }}>
-                  Maximum booking queue capacity for each scheduled working day.
-                </div>
-              </div>
 
               {shiftSubmitError && (
-                <div style={{ color: '#dc2626', fontSize: '0.8rem' }}>
+                <div style={{ color: '#dc2626', fontSize: '0.88rem', fontFamily: kmFont }}>
                   {shiftSubmitError}
                 </div>
               )}
 
-              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+              <div style={{ display: 'flex', gap: '0.85rem', marginTop: '0.65rem' }}>
                 <button
                   type="button"
                   onClick={() => setShiftModalOpen(false)}
                   style={{
                     flex: 1,
-                    padding: '0.6rem',
-                    fontSize: '0.875rem',
+                    padding: '0.7rem 1.15rem',
+                    fontSize: '1rem',
                     fontWeight: 500,
                     background: 'transparent',
                     border: '1px solid var(--border-color)',
@@ -905,17 +839,18 @@ export const DoctorManagement: React.FC = () => {
                     color: 'var(--text-muted)',
                     cursor: 'pointer',
                     boxShadow: 'none',
+                    fontFamily: kmFont,
                   }}
                 >
-                  Cancel
+                  {t('cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={shiftLoading}
                   style={{
                     flex: 1,
-                    padding: '0.6rem',
-                    fontSize: '0.875rem',
+                    padding: '0.7rem 1.15rem',
+                    fontSize: '1rem',
                     fontWeight: 600,
                     background: 'transparent',
                     border: '1px solid var(--text-main)',
@@ -923,12 +858,14 @@ export const DoctorManagement: React.FC = () => {
                     color: 'var(--text-main)',
                     cursor: 'pointer',
                     boxShadow: 'none',
+                    fontFamily: kmFont,
                   }}
                 >
-                  Save Shifts
+                  {t('doc_save_shifts')}
                 </button>
               </div>
             </form>
+            </div>
           </div>
         </div>
       )}

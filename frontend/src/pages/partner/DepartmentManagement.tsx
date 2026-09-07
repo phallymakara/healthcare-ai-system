@@ -1,8 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { AuthService } from '../../services/auth';
+import { useLanguage } from '../../context/LanguageContext';
 import { API_BASE } from '../../services/api';
 
 export const DepartmentManagement: React.FC = () => {
+  const { language, t } = useLanguage();
+  const isKm = language === 'km';
+  const kmFont = isKm ? 'var(--font-khmer)' : 'inherit';
+
   const [departments, setDepartments] = useState<any[]>([]);
   const [services, setServices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -95,11 +100,11 @@ export const DepartmentManagement: React.FC = () => {
 
     let hasError = false;
     if (!deptName.trim()) {
-      setDeptNameError('Please enter the department name.');
+      setDeptNameError(t('dept_err_name'));
       hasError = true;
     }
     if (!deptCode.trim()) {
-      setDeptCodeError('Please enter a department code (e.g. CARD).');
+      setDeptCodeError(t('dept_err_code'));
       hasError = true;
     }
     if (hasError) return;
@@ -126,14 +131,14 @@ export const DepartmentManagement: React.FC = () => {
       });
 
       if (!res.ok) {
-        setDeptSubmitError('Unable to save department. Please try again.');
+        setDeptSubmitError(t('dept_err_save'));
         return;
       }
 
       setDeptModalOpen(false);
       await loadData();
     } catch {
-      setDeptSubmitError('Connection issue saving department. Please try again.');
+      setDeptSubmitError(t('dept_err_conn'));
     } finally {
       setDeptLoading(false);
     }
@@ -207,11 +212,11 @@ export const DepartmentManagement: React.FC = () => {
 
     let hasError = false;
     if (!srvDeptId) {
-      setSrvDeptError('Please select a department.');
+      setSrvDeptError(t('dept_srv_err_dept'));
       hasError = true;
     }
     if (!srvName.trim()) {
-      setSrvNameError('Please enter the service name.');
+      setSrvNameError(t('dept_srv_err_name'));
       hasError = true;
     }
     if (hasError) return;
@@ -238,21 +243,21 @@ export const DepartmentManagement: React.FC = () => {
       });
 
       if (!res.ok) {
-        setSrvSubmitError('Unable to save service. Please try again.');
+        setSrvSubmitError(t('dept_srv_err_save'));
         return;
       }
 
       setSrvModalOpen(false);
       await loadData();
     } catch {
-      setSrvSubmitError('Connection issue saving service. Please try again.');
+      setSrvSubmitError(t('dept_srv_err_conn'));
     } finally {
       setSrvLoading(false);
     }
   };
 
   return (
-    <div style={{ width: '100%' }}>
+    <div style={{ width: '100%', fontFamily: kmFont }}>
       {/* Top Controls: + Add Department & + Add Service aligned to the left */}
       <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1.5rem' }}>
         <button
@@ -267,9 +272,10 @@ export const DepartmentManagement: React.FC = () => {
             fontWeight: 600,
             cursor: 'pointer',
             boxShadow: 'none',
+            fontFamily: kmFont,
           }}
         >
-          + Add Department
+          {t('dept_add_btn')}
         </button>
         <button
           onClick={handleOpenNewService}
@@ -285,23 +291,24 @@ export const DepartmentManagement: React.FC = () => {
             cursor: departments.length === 0 ? 'not-allowed' : 'pointer',
             opacity: departments.length === 0 ? 0.5 : 1,
             boxShadow: 'none',
+            fontFamily: kmFont,
           }}
         >
-          + Add Service
+          {t('dept_add_service_btn')}
         </button>
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-          Loading departments and services...
+        <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)', fontSize: '0.9rem', fontFamily: kmFont }}>
+          {t('dept_loading')}
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
           {/* Section 1: Clinical Departments Row Layout */}
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-              <h2 style={{ fontSize: '1.15rem', fontWeight: 400, margin: 0, color: 'var(--text-main)' }}>
-                Clinical Departments
+              <h2 style={{ fontSize: '1.15rem', fontWeight: 600, margin: 0, color: 'var(--text-main)', fontFamily: kmFont }}>
+                {t('dept_title_depts')}
               </h2>
             </div>
 
@@ -309,7 +316,7 @@ export const DepartmentManagement: React.FC = () => {
               background: '#ffffff',
               border: '1px solid var(--border-color)',
               borderRadius: '6px',
-              overflow: 'hidden',
+              overflow: 'visible',
               boxShadow: 'none',
             }}>
               {departments.length === 0 ? (
@@ -318,8 +325,9 @@ export const DepartmentManagement: React.FC = () => {
                   textAlign: 'center',
                   color: 'var(--text-muted)',
                   fontSize: '0.875rem',
+                  fontFamily: kmFont,
                 }}>
-                  No departments created yet. Click + Add Department to create one.
+                  {t('dept_no_depts')}
                 </div>
               ) : (
                 departments.map((dept, idx) => (
@@ -334,16 +342,22 @@ export const DepartmentManagement: React.FC = () => {
                       padding: '1rem 1.25rem',
                       borderBottom: idx === departments.length - 1 ? 'none' : '1px solid var(--border-color)',
                       background: '#ffffff',
+                      position: 'relative',
+                      zIndex: activeDropdownDeptId === dept.id ? 50 : 1,
+                      borderTopLeftRadius: idx === 0 ? '6px' : 0,
+                      borderTopRightRadius: idx === 0 ? '6px' : 0,
+                      borderBottomLeftRadius: idx === departments.length - 1 ? '6px' : 0,
+                      borderBottomRightRadius: idx === departments.length - 1 ? '6px' : 0,
                     }}
                   >
                     {/* Department Name & Code */}
                     <div style={{ minWidth: '220px', flex: '1.5' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                        <div style={{ fontSize: '1rem', fontWeight: 400, color: 'var(--text-main)' }}>
+                        <div style={{ fontSize: '1.18rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: kmFont }}>
                           {dept.name}
                         </div>
                         <span style={{
-                          fontSize: '0.75rem',
+                          fontSize: '0.9rem',
                           fontFamily: 'monospace',
                           fontWeight: 600,
                           color: 'var(--text-muted)',
@@ -352,7 +366,7 @@ export const DepartmentManagement: React.FC = () => {
                         </span>
                       </div>
                       {dept.description && (
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '3px' }}>
+                        <div style={{ fontSize: '0.95rem', color: 'var(--text-muted)', marginTop: '3px', fontFamily: kmFont }}>
                           {dept.description}
                         </div>
                       )}
@@ -360,36 +374,36 @@ export const DepartmentManagement: React.FC = () => {
 
                     {/* Location */}
                     <div style={{ minWidth: '180px', flex: '1' }}>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>
-                        Location
+                      <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, fontFamily: kmFont }}>
+                        {t('dept_th_location')}
                       </div>
-                      <div style={{ fontSize: '0.85rem', color: 'var(--text-main)', marginTop: '2px' }}>
-                        {dept.floor_room || 'Main Building'}
+                      <div style={{ fontSize: '1.02rem', color: 'var(--text-main)', marginTop: '2px', fontFamily: kmFont }}>
+                        {dept.floor_room || t('dept_main_building')}
                       </div>
                     </div>
 
                     {/* Consultation Duration */}
                     <div style={{ minWidth: '140px', flex: '0.8' }}>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>
-                        Avg. Duration
+                      <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, fontFamily: kmFont }}>
+                        {t('dept_th_duration')}
                       </div>
-                      <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)', marginTop: '2px' }}>
-                        {dept.avg_consultation_minutes} mins
+                      <div style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-main)', marginTop: '2px', fontFamily: kmFont }}>
+                        {t('dept_mins').replace('{mins}', String(dept.avg_consultation_minutes || 15))}
                       </div>
                     </div>
 
                     {/* Actions: Three-dot dropdown menu */}
-                    <div style={{ position: 'relative' }}>
+                    <div style={{ position: 'relative', zIndex: activeDropdownDeptId === dept.id ? 60 : 'auto' }}>
                       <button
                         onClick={() => setActiveDropdownDeptId(activeDropdownDeptId === dept.id ? null : dept.id)}
                         style={{
-                          padding: '0.2rem 0.55rem',
-                          fontSize: '0.9rem',
+                          padding: '0.3rem 0.75rem',
+                          fontSize: '1.1rem',
                           fontWeight: 700,
                           letterSpacing: '1px',
                           background: 'transparent',
                           border: '1px solid var(--border-color)',
-                          borderRadius: '3px',
+                          borderRadius: '4px',
                           color: 'var(--text-main)',
                           cursor: 'pointer',
                           boxShadow: 'none',
@@ -399,74 +413,88 @@ export const DepartmentManagement: React.FC = () => {
                       </button>
 
                       {activeDropdownDeptId === dept.id && (
-                        <div style={{
-                          position: 'absolute',
-                          right: 0,
-                          top: 'calc(100% + 4px)',
-                          background: '#ffffff',
-                          border: '1px solid var(--border-color)',
-                          borderRadius: '4px',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          minWidth: '100px',
-                          zIndex: 50,
-                          boxShadow: 'none',
-                          overflow: 'hidden',
-                        }}>
-                          <button
-                            onClick={() => handleToggleActive(dept)}
+                        <>
+                          <div
+                            onClick={() => setActiveDropdownDeptId(null)}
                             style={{
-                              padding: '0.5rem 0.75rem',
-                              fontSize: '0.8rem',
-                              fontWeight: 500,
-                              textAlign: 'left',
+                              position: 'fixed',
+                              inset: 0,
+                              zIndex: 99,
                               background: 'transparent',
-                              border: 'none',
-                              borderBottom: '1px solid var(--border-color)',
-                              color: dept.is_active ? '#059669' : 'var(--text-muted)',
-                              cursor: 'pointer',
-                              boxShadow: 'none',
                             }}
-                          >
-                            Active
-                          </button>
-                          <button
-                            onClick={() => {
-                              setActiveDropdownDeptId(null);
-                              handleOpenEditDept(dept);
-                            }}
-                            style={{
-                              padding: '0.5rem 0.75rem',
-                              fontSize: '0.8rem',
-                              fontWeight: 500,
-                              textAlign: 'left',
-                              background: 'transparent',
-                              border: 'none',
-                              borderBottom: '1px solid var(--border-color)',
-                              color: 'var(--text-main)',
-                              cursor: 'pointer',
-                              boxShadow: 'none',
-                            }}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleDeleteDept(dept.id)}
-                            style={{
-                              padding: '0.5rem 0.75rem',
-                              fontSize: '0.8rem',
-                              fontWeight: 500,
-                              textAlign: 'left',
-                              background: 'transparent',
-                              border: 'none',
-                              color: '#dc2626',
-                              cursor: 'pointer',
-                              boxShadow: 'none',
-                            }}
-                          >
-                            Delete
-                          </button>
-                        </div>
+                          />
+                          <div style={{
+                            position: 'absolute',
+                            right: 0,
+                            top: 'calc(100% + 4px)',
+                            background: '#ffffff',
+                            border: '1px solid var(--border-color)',
+                            borderRadius: '4px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            minWidth: '110px',
+                            zIndex: 100,
+                            boxShadow: 'none',
+                            overflow: 'hidden',
+                          }}>
+                            <button
+                              onClick={() => handleToggleActive(dept)}
+                              style={{
+                                padding: '0.55rem 0.85rem',
+                                fontSize: '0.92rem',
+                                fontWeight: 500,
+                                textAlign: 'left',
+                                background: 'transparent',
+                                border: 'none',
+                                borderBottom: '1px solid var(--border-color)',
+                                color: dept.is_active ? '#059669' : 'var(--text-muted)',
+                                cursor: 'pointer',
+                                boxShadow: 'none',
+                                fontFamily: kmFont,
+                              }}
+                            >
+                              {dept.is_active ? t('doc_active') : t('doc_inactive')}
+                            </button>
+                            <button
+                              onClick={() => {
+                                setActiveDropdownDeptId(null);
+                                handleOpenEditDept(dept);
+                              }}
+                              style={{
+                                padding: '0.55rem 0.85rem',
+                                fontSize: '0.92rem',
+                                fontWeight: 500,
+                                textAlign: 'left',
+                                background: 'transparent',
+                                border: 'none',
+                                borderBottom: '1px solid var(--border-color)',
+                                color: 'var(--text-main)',
+                                cursor: 'pointer',
+                                boxShadow: 'none',
+                                fontFamily: kmFont,
+                              }}
+                            >
+                              {t('doc_edit')}
+                            </button>
+                            <button
+                              onClick={() => handleDeleteDept(dept.id)}
+                              style={{
+                                padding: '0.55rem 0.85rem',
+                                fontSize: '0.92rem',
+                                fontWeight: 500,
+                                textAlign: 'left',
+                                background: 'transparent',
+                                border: 'none',
+                                color: '#dc2626',
+                                cursor: 'pointer',
+                                boxShadow: 'none',
+                                fontFamily: kmFont,
+                              }}
+                            >
+                              {t('doc_delete')}
+                            </button>
+                          </div>
+                        </>
                       )}
                     </div>
                   </div>
@@ -478,8 +506,8 @@ export const DepartmentManagement: React.FC = () => {
           {/* Section 2: Services & Pricing Row Layout */}
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-              <h2 style={{ fontSize: '1.15rem', fontWeight: 400, margin: 0, color: 'var(--text-main)' }}>
-                Services & Pricing
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: 'var(--text-main)', fontFamily: kmFont }}>
+                {t('dept_title_services')}
               </h2>
             </div>
 
@@ -495,9 +523,10 @@ export const DepartmentManagement: React.FC = () => {
                   padding: '2rem',
                   textAlign: 'center',
                   color: 'var(--text-muted)',
-                  fontSize: '0.875rem',
+                  fontSize: '0.95rem',
+                  fontFamily: kmFont,
                 }}>
-                  No clinical services created yet. Click + Add Service to create one.
+                  {t('dept_no_services')}
                 </div>
               ) : (
                 services.map((srv, idx) => {
@@ -511,18 +540,18 @@ export const DepartmentManagement: React.FC = () => {
                         justifyContent: 'space-between',
                         flexWrap: 'wrap',
                         gap: '1rem',
-                        padding: '1rem 1.25rem',
+                        padding: '1.1rem 1.35rem',
                         borderBottom: idx === services.length - 1 ? 'none' : '1px solid var(--border-color)',
                         background: '#ffffff',
                       }}
                     >
                       {/* Service Name & Description */}
                       <div style={{ minWidth: '220px', flex: '1.5' }}>
-                        <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                        <div style={{ fontSize: '1.18rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: kmFont }}>
                           {srv.name}
                         </div>
                         {srv.description && (
-                          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '3px' }}>
+                          <div style={{ fontSize: '0.95rem', color: 'var(--text-muted)', marginTop: '3px', fontFamily: kmFont }}>
                             {srv.description}
                           </div>
                         )}
@@ -530,30 +559,30 @@ export const DepartmentManagement: React.FC = () => {
 
                       {/* Department */}
                       <div style={{ minWidth: '180px', flex: '1' }}>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>
-                          Department
+                        <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, fontFamily: kmFont }}>
+                          {t('dept_srv_th_dept')}
                         </div>
-                        <div style={{ fontSize: '0.85rem', color: 'var(--text-main)', marginTop: '2px' }}>
-                          {parentDept ? parentDept.name : 'General'}
+                        <div style={{ fontSize: '1.02rem', color: 'var(--text-main)', marginTop: '2px', fontFamily: kmFont }}>
+                          {parentDept ? parentDept.name : t('doc_general')}
                         </div>
                       </div>
 
                       {/* Duration */}
                       <div style={{ minWidth: '120px', flex: '0.7' }}>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>
-                          Duration
+                        <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, fontFamily: kmFont }}>
+                          {t('dept_srv_th_duration')}
                         </div>
-                        <div style={{ fontSize: '0.85rem', color: 'var(--text-main)', marginTop: '2px' }}>
-                          {srv.duration_minutes} mins
+                        <div style={{ fontSize: '1.05rem', color: 'var(--text-main)', marginTop: '2px', fontFamily: kmFont }}>
+                          {t('dept_mins').replace('{mins}', String(srv.duration_minutes || 20))}
                         </div>
                       </div>
 
                       {/* Price */}
                       <div style={{ minWidth: '100px', flex: '0.6' }}>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>
-                          Price
+                        <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, fontFamily: kmFont }}>
+                          {t('dept_srv_th_price')}
                         </div>
-                        <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-main)', marginTop: '2px' }}>
+                        <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-main)', marginTop: '2px' }}>
                           ${srv.price.toFixed(2)}
                         </div>
                       </div>
@@ -563,18 +592,19 @@ export const DepartmentManagement: React.FC = () => {
                         <button
                           onClick={() => handleOpenEditService(srv)}
                           style={{
-                            padding: '0.35rem 0.75rem',
-                            fontSize: '0.8rem',
+                            padding: '0.45rem 0.85rem',
+                            fontSize: '0.92rem',
                             fontWeight: 500,
                             background: 'transparent',
                             border: '1px solid var(--border-color)',
-                            borderRadius: '3px',
+                            borderRadius: '4px',
                             color: 'var(--text-main)',
                             cursor: 'pointer',
                             boxShadow: 'none',
+                            fontFamily: kmFont,
                           }}
                         >
-                          Edit
+                          {t('doc_edit')}
                         </button>
                       </div>
                     </div>
@@ -588,37 +618,21 @@ export const DepartmentManagement: React.FC = () => {
 
       {/* Add / Edit Department Modal */}
       {deptModalOpen && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(0, 0, 0, 0.4)',
-          zIndex: 100,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '1rem',
-        }}>
-          <div style={{
-            maxWidth: '440px',
-            width: '100%',
-            padding: '1.5rem',
-            background: '#ffffff',
-            border: '1px solid var(--border-color)',
-            borderRadius: '6px',
-            boxShadow: 'none',
-          }}>
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 700, margin: '0 0 1.25rem 0', color: 'var(--text-main)' }}>
-              {editingDeptId ? 'Edit Clinical Department' : 'Add Clinical Department'}
-            </h3>
+        <div className="responsive-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setDeptModalOpen(false); }}>
+          <div className="responsive-modal-card" style={{ maxWidth: '520px', fontFamily: kmFont }}>
+            <div className="responsive-modal-body" style={{ padding: '1.6rem 1.75rem' }}>
+              <h3 style={{ fontSize: '1.35rem', fontWeight: 700, margin: '0 0 1.4rem 0', color: 'var(--text-main)', fontFamily: kmFont }}>
+                {editingDeptId ? t('dept_modal_edit_dept') : t('dept_modal_add_dept')}
+              </h3>
 
-            <form onSubmit={handleSaveDepartment} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+            <form onSubmit={handleSaveDepartment} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>
-                  Department Name
+                <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px', fontFamily: kmFont }}>
+                  {t('dept_name_label')}
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Cardiology, Pediatrics"
+                  placeholder={t('dept_name_placeholder')}
                   value={deptName}
                   onChange={(e) => {
                     setDeptName(e.target.value);
@@ -626,29 +640,30 @@ export const DepartmentManagement: React.FC = () => {
                   }}
                   style={{
                     width: '100%',
-                    padding: '0.6rem',
-                    fontSize: '0.875rem',
+                    padding: '0.72rem 0.85rem',
+                    fontSize: '0.95rem',
                     borderRadius: '4px',
                     border: deptNameError ? '1px solid #dc2626' : '1px solid var(--border-color)',
                     boxShadow: 'none',
                     outline: 'none',
                     boxSizing: 'border-box',
+                    fontFamily: kmFont,
                   }}
                 />
                 {deptNameError && (
-                  <div style={{ color: '#dc2626', fontSize: '0.8rem', marginTop: '4px' }}>
+                  <div style={{ color: '#dc2626', fontSize: '0.85rem', marginTop: '5px', fontFamily: kmFont }}>
                     {deptNameError}
                   </div>
                 )}
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>
-                  Department Code
+                <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px', fontFamily: kmFont }}>
+                  {t('dept_code_label')}
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. CARD, PED, GEN"
+                  placeholder={t('dept_code_placeholder')}
                   value={deptCode}
                   onChange={(e) => {
                     setDeptCode(e.target.value);
@@ -656,25 +671,26 @@ export const DepartmentManagement: React.FC = () => {
                   }}
                   style={{
                     width: '100%',
-                    padding: '0.6rem',
-                    fontSize: '0.875rem',
+                    padding: '0.72rem 0.85rem',
+                    fontSize: '0.95rem',
                     borderRadius: '4px',
                     border: deptCodeError ? '1px solid #dc2626' : '1px solid var(--border-color)',
                     boxShadow: 'none',
                     outline: 'none',
                     boxSizing: 'border-box',
+                    fontFamily: kmFont,
                   }}
                 />
                 {deptCodeError && (
-                  <div style={{ color: '#dc2626', fontSize: '0.8rem', marginTop: '4px' }}>
+                  <div style={{ color: '#dc2626', fontSize: '0.85rem', marginTop: '5px', fontFamily: kmFont }}>
                     {deptCodeError}
                   </div>
                 )}
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>
-                  Average Consultation Duration (Minutes)
+                <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px', fontFamily: kmFont }}>
+                  {t('dept_duration_label')}
                 </label>
                 <input
                   type="number"
@@ -684,64 +700,21 @@ export const DepartmentManagement: React.FC = () => {
                   onChange={(e) => setDeptMinutes(Number(e.target.value))}
                   style={{
                     width: '100%',
-                    padding: '0.6rem',
-                    fontSize: '0.875rem',
+                    padding: '0.72rem 0.85rem',
+                    fontSize: '0.95rem',
                     borderRadius: '4px',
                     border: '1px solid var(--border-color)',
                     boxShadow: 'none',
                     outline: 'none',
                     boxSizing: 'border-box',
+                    fontFamily: kmFont,
                   }}
                 />
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '3px' }}>
-                  Used to calculate estimated patient wait times in the queue.
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px', fontFamily: kmFont }}>
+                  {t('dept_duration_hint')}
                 </div>
               </div>
 
-              <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>
-                  Location (Floor / Room)
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Building A, Floor 2, Room 204"
-                  value={deptFloorRoom}
-                  onChange={(e) => setDeptFloorRoom(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '0.6rem',
-                    fontSize: '0.875rem',
-                    borderRadius: '4px',
-                    border: '1px solid var(--border-color)',
-                    boxShadow: 'none',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                  }}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>
-                  Description (Optional)
-                </label>
-                <textarea
-                  placeholder="Brief clinical description"
-                  value={deptDescription}
-                  onChange={(e) => setDeptDescription(e.target.value)}
-                  rows={2}
-                  style={{
-                    width: '100%',
-                    padding: '0.6rem',
-                    fontSize: '0.875rem',
-                    borderRadius: '4px',
-                    border: '1px solid var(--border-color)',
-                    boxShadow: 'none',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                    resize: 'none',
-                  }}
-                />
-              </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem' }}>
                 <input
@@ -750,25 +723,25 @@ export const DepartmentManagement: React.FC = () => {
                   checked={deptIsActive}
                   onChange={(e) => setDeptIsActive(e.target.checked)}
                 />
-                <label htmlFor="deptActiveCheck" style={{ fontSize: '0.85rem', color: 'var(--text-main)', cursor: 'pointer' }}>
-                  Department is active and accepting patients
+                <label htmlFor="deptActiveCheck" style={{ fontSize: '0.9rem', color: 'var(--text-main)', cursor: 'pointer', fontFamily: kmFont }}>
+                  {t('dept_active_check')}
                 </label>
               </div>
 
               {deptSubmitError && (
-                <div style={{ color: '#dc2626', fontSize: '0.8rem' }}>
+                <div style={{ color: '#dc2626', fontSize: '0.85rem', fontFamily: kmFont }}>
                   {deptSubmitError}
                 </div>
               )}
 
-              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.75rem' }}>
                 <button
                   type="button"
                   onClick={() => setDeptModalOpen(false)}
                   style={{
                     flex: 1,
-                    padding: '0.6rem',
-                    fontSize: '0.875rem',
+                    padding: '0.75rem 1rem',
+                    fontSize: '0.98rem',
                     fontWeight: 500,
                     background: 'transparent',
                     border: '1px solid var(--border-color)',
@@ -776,17 +749,18 @@ export const DepartmentManagement: React.FC = () => {
                     color: 'var(--text-muted)',
                     cursor: 'pointer',
                     boxShadow: 'none',
+                    fontFamily: kmFont,
                   }}
                 >
-                  Cancel
+                  {t('cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={deptLoading}
                   style={{
                     flex: 1,
-                    padding: '0.6rem',
-                    fontSize: '0.875rem',
+                    padding: '0.75rem 1rem',
+                    fontSize: '0.98rem',
                     fontWeight: 600,
                     background: 'transparent',
                     border: '1px solid var(--text-main)',
@@ -794,45 +768,31 @@ export const DepartmentManagement: React.FC = () => {
                     color: 'var(--text-main)',
                     cursor: 'pointer',
                     boxShadow: 'none',
+                    fontFamily: kmFont,
                   }}
                 >
-                  {editingDeptId ? 'Save Changes' : 'Create Department'}
+                  {editingDeptId ? t('dept_save_btn') : t('dept_create_btn')}
                 </button>
               </div>
             </form>
+            </div>
           </div>
         </div>
       )}
 
       {/* Add / Edit Service Modal */}
       {srvModalOpen && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(0, 0, 0, 0.4)',
-          zIndex: 100,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '1rem',
-        }}>
-          <div style={{
-            maxWidth: '440px',
-            width: '100%',
-            padding: '1.5rem',
-            background: '#ffffff',
-            border: '1px solid var(--border-color)',
-            borderRadius: '6px',
-            boxShadow: 'none',
-          }}>
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 700, margin: '0 0 1.25rem 0', color: 'var(--text-main)' }}>
-              {editingSrvId ? 'Edit Clinical Service' : 'Add Clinical Service'}
-            </h3>
+        <div className="responsive-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setSrvModalOpen(false); }}>
+          <div className="responsive-modal-card" style={{ maxWidth: '520px', fontFamily: kmFont }}>
+            <div className="responsive-modal-body" style={{ padding: '1.6rem 1.75rem' }}>
+              <h3 style={{ fontSize: '1.35rem', fontWeight: 700, margin: '0 0 1.4rem 0', color: 'var(--text-main)', fontFamily: kmFont }}>
+                {editingSrvId ? t('dept_modal_edit_srv') : t('dept_modal_add_srv')}
+              </h3>
 
-            <form onSubmit={handleSaveService} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+            <form onSubmit={handleSaveService} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>
-                  Department
+                <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px', fontFamily: kmFont }}>
+                  {t('dept_srv_th_dept')}
                 </label>
                 <select
                   value={srvDeptId}
@@ -842,8 +802,8 @@ export const DepartmentManagement: React.FC = () => {
                   }}
                   style={{
                     width: '100%',
-                    padding: '0.6rem',
-                    fontSize: '0.875rem',
+                    padding: '0.72rem 0.85rem',
+                    fontSize: '0.95rem',
                     borderRadius: '4px',
                     border: srvDeptError ? '1px solid #dc2626' : '1px solid var(--border-color)',
                     boxShadow: 'none',
@@ -851,6 +811,7 @@ export const DepartmentManagement: React.FC = () => {
                     background: '#ffffff',
                     color: 'var(--text-main)',
                     boxSizing: 'border-box',
+                    fontFamily: kmFont,
                   }}
                 >
                   {departments.map((dept) => (
@@ -860,19 +821,19 @@ export const DepartmentManagement: React.FC = () => {
                   ))}
                 </select>
                 {srvDeptError && (
-                  <div style={{ color: '#dc2626', fontSize: '0.8rem', marginTop: '4px' }}>
+                  <div style={{ color: '#dc2626', fontSize: '0.85rem', marginTop: '5px', fontFamily: kmFont }}>
                     {srvDeptError}
                   </div>
                 )}
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>
-                  Service Name
+                <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px', fontFamily: kmFont }}>
+                  {t('dept_srv_name_label')}
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Routine Consultation, ECG, Ultrasound"
+                  placeholder={t('dept_srv_name_placeholder')}
                   value={srvName}
                   onChange={(e) => {
                     setSrvName(e.target.value);
@@ -880,26 +841,27 @@ export const DepartmentManagement: React.FC = () => {
                   }}
                   style={{
                     width: '100%',
-                    padding: '0.6rem',
-                    fontSize: '0.875rem',
+                    padding: '0.72rem 0.85rem',
+                    fontSize: '0.95rem',
                     borderRadius: '4px',
                     border: srvNameError ? '1px solid #dc2626' : '1px solid var(--border-color)',
                     boxShadow: 'none',
                     outline: 'none',
                     boxSizing: 'border-box',
+                    fontFamily: kmFont,
                   }}
                 />
                 {srvNameError && (
-                  <div style={{ color: '#dc2626', fontSize: '0.8rem', marginTop: '4px' }}>
+                  <div style={{ color: '#dc2626', fontSize: '0.85rem', marginTop: '5px', fontFamily: kmFont }}>
                     {srvNameError}
                   </div>
                 )}
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>
-                    Duration (Minutes)
+                  <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px', fontFamily: kmFont }}>
+                    {t('dept_srv_duration_label')}
                   </label>
                   <input
                     type="number"
@@ -909,20 +871,21 @@ export const DepartmentManagement: React.FC = () => {
                     onChange={(e) => setSrvDuration(Number(e.target.value))}
                     style={{
                       width: '100%',
-                      padding: '0.6rem',
-                      fontSize: '0.875rem',
+                      padding: '0.72rem 0.85rem',
+                      fontSize: '0.95rem',
                       borderRadius: '4px',
                       border: '1px solid var(--border-color)',
                       boxShadow: 'none',
                       outline: 'none',
                       boxSizing: 'border-box',
+                      fontFamily: kmFont,
                     }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>
-                    Price ($)
+                  <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px', fontFamily: kmFont }}>
+                    {t('dept_srv_price_label')}
                   </label>
                   <input
                     type="number"
@@ -932,37 +895,39 @@ export const DepartmentManagement: React.FC = () => {
                     onChange={(e) => setSrvPrice(Number(e.target.value))}
                     style={{
                       width: '100%',
-                      padding: '0.6rem',
-                      fontSize: '0.875rem',
+                      padding: '0.72rem 0.85rem',
+                      fontSize: '0.95rem',
                       borderRadius: '4px',
                       border: '1px solid var(--border-color)',
                       boxShadow: 'none',
                       outline: 'none',
                       boxSizing: 'border-box',
+                      fontFamily: kmFont,
                     }}
                   />
                 </div>
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>
-                  Description (Optional)
+                <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px', fontFamily: kmFont }}>
+                  {t('dept_srv_desc_label')}
                 </label>
                 <textarea
-                  placeholder="Service details or clinical instructions"
+                  placeholder={t('dept_srv_desc_placeholder')}
                   value={srvDescription}
                   onChange={(e) => setSrvDescription(e.target.value)}
                   rows={2}
                   style={{
                     width: '100%',
-                    padding: '0.6rem',
-                    fontSize: '0.875rem',
+                    padding: '0.72rem 0.85rem',
+                    fontSize: '0.95rem',
                     borderRadius: '4px',
                     border: '1px solid var(--border-color)',
                     boxShadow: 'none',
                     outline: 'none',
                     boxSizing: 'border-box',
                     resize: 'none',
+                    fontFamily: kmFont,
                   }}
                 />
               </div>
@@ -974,25 +939,25 @@ export const DepartmentManagement: React.FC = () => {
                   checked={srvIsActive}
                   onChange={(e) => setSrvIsActive(e.target.checked)}
                 />
-                <label htmlFor="srvActiveCheck" style={{ fontSize: '0.85rem', color: 'var(--text-main)', cursor: 'pointer' }}>
-                  Service is active and available for booking
+                <label htmlFor="srvActiveCheck" style={{ fontSize: '0.9rem', color: 'var(--text-main)', cursor: 'pointer', fontFamily: kmFont }}>
+                  {t('dept_srv_active_check')}
                 </label>
               </div>
 
               {srvSubmitError && (
-                <div style={{ color: '#dc2626', fontSize: '0.8rem' }}>
+                <div style={{ color: '#dc2626', fontSize: '0.85rem', fontFamily: kmFont }}>
                   {srvSubmitError}
                 </div>
               )}
 
-              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.75rem' }}>
                 <button
                   type="button"
                   onClick={() => setSrvModalOpen(false)}
                   style={{
                     flex: 1,
-                    padding: '0.6rem',
-                    fontSize: '0.875rem',
+                    padding: '0.75rem 1rem',
+                    fontSize: '0.98rem',
                     fontWeight: 500,
                     background: 'transparent',
                     border: '1px solid var(--border-color)',
@@ -1000,17 +965,18 @@ export const DepartmentManagement: React.FC = () => {
                     color: 'var(--text-muted)',
                     cursor: 'pointer',
                     boxShadow: 'none',
+                    fontFamily: kmFont,
                   }}
                 >
-                  Cancel
+                  {t('cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={srvLoading}
                   style={{
                     flex: 1,
-                    padding: '0.6rem',
-                    fontSize: '0.875rem',
+                    padding: '0.75rem 1rem',
+                    fontSize: '0.98rem',
                     fontWeight: 600,
                     background: 'transparent',
                     border: '1px solid var(--text-main)',
@@ -1018,12 +984,14 @@ export const DepartmentManagement: React.FC = () => {
                     color: 'var(--text-main)',
                     cursor: 'pointer',
                     boxShadow: 'none',
+                    fontFamily: kmFont,
                   }}
                 >
-                  {editingSrvId ? 'Save Changes' : 'Create Service'}
+                  {editingSrvId ? t('dept_save_btn') : t('dept_create_btn')}
                 </button>
               </div>
             </form>
+            </div>
           </div>
         </div>
       )}

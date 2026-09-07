@@ -1,5 +1,6 @@
 import React from 'react';
 import { ArrowRight } from 'lucide-react';
+import { useLanguage } from '../../context/LanguageContext';
 import { UserProfile } from '../../services/auth';
 
 interface CtaSectionProps {
@@ -9,6 +10,8 @@ interface CtaSectionProps {
 }
 
 export const CtaSection: React.FC<CtaSectionProps> = ({ onOpenAuth, currentUser, onSelectTab }) => {
+  const { t } = useLanguage();
+
   const handleClick = () => {
     if (currentUser) {
       if (currentUser.role === 'SUPER_ADMIN') {
@@ -25,30 +28,30 @@ export const CtaSection: React.FC<CtaSectionProps> = ({ onOpenAuth, currentUser,
 
   return (
     <section style={{
-      padding: '3rem 1rem',
+      padding: '3.5rem 1rem',
       textAlign: 'center',
-      maxWidth: '720px',
+      maxWidth: '760px',
       margin: '0 auto',
     }}>
       <h2 style={{
-        fontSize: '2rem',
+        fontSize: '2.25rem',
         fontWeight: 800,
         color: 'var(--text-main)',
-        marginBottom: '0.75rem',
+        marginBottom: '0.85rem',
         letterSpacing: '-0.02em',
       }}>
-        Ready to simplify your healthcare visits?
+        {t('cta_title')}
       </h2>
       <p style={{
-        fontSize: '0.95rem',
+        fontSize: '1.08rem',
         color: 'var(--text-muted)',
-        maxWidth: '520px',
-        margin: '0 auto 1.75rem auto',
+        maxWidth: '620px',
+        margin: '0 auto 2rem auto',
         lineHeight: 1.6,
       }}>
         {currentUser 
-          ? 'Quickly access hospital queues, manage appointments, or monitor live counter progress.' 
-          : 'Create an account in seconds to reserve tickets and track your queue, or sign in as hospital staff to operate your counter.'}
+          ? t('cta_desc_user') 
+          : t('cta_desc_guest')}
       </p>
       <button
         onClick={handleClick}
@@ -56,13 +59,14 @@ export const CtaSection: React.FC<CtaSectionProps> = ({ onOpenAuth, currentUser,
         style={{
           background: 'linear-gradient(135deg, #0c2f27 0%, #185339 50%, #227349 100%)',
           color: '#ffffff',
-          padding: '0.75rem 1.75rem',
-          fontSize: '0.95rem',
+          padding: '0.85rem 2rem',
+          fontSize: '1.05rem',
+          fontWeight: 600,
           border: 'none',
           cursor: 'pointer',
         }}
       >
-        {currentUser ? 'Go to My Portal' : 'Sign In / Register'} <ArrowRight size={16} />
+        {currentUser ? t('cta_btn_portal') : t('cta_btn_guest')} <ArrowRight size={18} />
       </button>
     </section>
   );

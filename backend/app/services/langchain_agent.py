@@ -318,6 +318,8 @@ class HealthcareAgentService:
                 "position": new_ticket.position,
                 "estimated_wait_minutes": new_ticket.estimated_wait_minutes,
                 "room_number": target_dept.floor_room or "Room 201",
+                "appointment_date": str(new_ticket.appointment_date) if new_ticket.appointment_date else None,
+                "appointment_time": new_ticket.appointment_time,
                 "created_at": str(new_ticket.created_at),
             }
 

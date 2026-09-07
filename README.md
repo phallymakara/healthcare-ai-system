@@ -52,15 +52,29 @@ The platform is structured into modular layers:
 - Node.js 18+ and npm
 
 ### 1. Infrastructure Setup (Docker Compose)
-Start the PostgreSQL and Redis containers:
+
+#### For Local Development (Database & Redis only):
+Start only the PostgreSQL and Redis containers so you can run Backend and Frontend locally with hot-reloading:
 
 ```bash
-docker-compose up -d
+docker compose -f docker-compose.dev.yml up -d
 ```
+
+> **Tip**: To also launch web management tools (Adminer for PostgreSQL at `http://localhost:8080` and Redis Commander at `http://localhost:8081`):
+> ```bash
+> docker compose -f docker-compose.dev.yml --profile tools up -d
+> ```
 
 Verify services:
 - PostgreSQL: 127.0.0.1:5440 (Database: healthcare_ai_db, User: postgres, Password: postgres123)
 - Redis: 127.0.0.1:6379
+
+#### For Production / Full-Stack (Builds all 4 containers):
+To run all images including FastAPI backend and Nginx frontend in Docker:
+
+```bash
+docker compose up -d --build
+```
 
 ### 2. Backend Setup
 Navigate to the backend directory and activate the virtual environment:
@@ -102,9 +116,12 @@ The web application will be accessible at: `http://localhost:5173`.
 
 ## Default Demo Accounts
 
-- Super Admin: `admin@carequeue.ai` / `admin123!`
-- Hospital Doctor: `dr.sokha@royalcityhospital.com` / `doctor123!`
-- Patient: `patient.dararith@gmail.com` / `patient123!`
+| Role | Email / Phone | Password | Target Console / Access |
+| :--- | :--- | :--- | :--- |
+| **Hospital Admin** | `patient.dararith@gmail.com` | `patient123!` | Hospital Partner Console |
+| **Doctor / Physician** | `dr.sokha@royalcityhospital.com` | `doctor123!` | Hospital Counter & Shifts |
+| **Super Admin** | `admin@carequeue.ai` | `admin123!` | Super Admin Center |
+| **Patient** | `patient.sophea@gmail.com` | `patient123!` | Patient App & Live Tickets |
 
 ---
 

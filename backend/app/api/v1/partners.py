@@ -2,7 +2,7 @@ import uuid
 from datetime import date
 from typing import List, Optional
 from fastapi import APIRouter, Depends, status, HTTPException
-from sqlalchemy import select, and_, func, delete
+from sqlalchemy import select, and_, or_, func, delete
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -45,6 +45,9 @@ from app.schemas.partner import (
     StaffResponse,
     HospitalProfileResponse,
     HospitalProfileUpdateSchema,
+    PartnerBookingItem,
+    PartnerBookingsSummary,
+    PartnerBookingsResponse,
 )
 
 router = APIRouter(prefix="/partners", tags=["Hospital & Clinic Partner Platform"])
@@ -182,7 +185,7 @@ async def create_partner_department(
         hospital_id=hospital_id,
         branch_id=data.branch_id,
         name=data.name.strip(),
-        code=data.code.strip().upper(),
+        code=data.code.strip().upper() if data.code else (data.name.strip()[:4].upper()),
         description=data.description,
         floor_room=data.floor_room,
         avg_consultation_minutes=data.avg_consultation_minutes,
@@ -644,7 +647,23 @@ async def get_partner_hospital_profile(
     hosp = res.scalar_one_or_none()
     if not hosp:
         raise HTTPException(status_code=404, detail="Hospital not found")
-    return hosp
+    return HospitalProfileResponse(
+        id=hosp.id,
+        name=hosp.name,
+        description=hosp.description,
+        address=hosp.address,
+        city=None,
+        contact_phone=hosp.phone,
+        contact_email=hosp.email,
+        emergency_phone=hosp.phone,
+        logo_url=hosp.logo_url,
+        website=hosp.website,
+        emergency_service_available=hosp.emergency_service_available,
+        latitude=hosp.latitude,
+        longitude=hosp.longitude,
+        is_active=hosp.is_active,
+        is_verified=hosp.is_verified,
+    )
 
 
 @router.put("/profile", response_model=HospitalProfileResponse)
@@ -665,14 +684,16 @@ async def update_partner_hospital_profile(
         hosp.description = data.description
     if data.address is not None:
         hosp.address = data.address
-    if data.city is not None:
-        hosp.city = data.city
     if data.contact_phone is not None:
-        hosp.contact_phone = data.contact_phone
+        hosp.phone = data.contact_phone
     if data.contact_email is not None:
-        hosp.contact_email = data.contact_email
-    if data.emergency_phone is not None:
-        hosp.emergency_phone = data.emergency_phone
+        hosp.email = str(data.contact_email)
+    if data.logo_url is not None:
+        hosp.logo_url = data.logo_url
+    if data.website is not None:
+        hosp.website = data.website
+    if data.emergency_service_available is not None:
+        hosp.emergency_service_available = data.emergency_service_available
     if data.latitude is not None:
         hosp.latitude = data.latitude
     if data.longitude is not None:
@@ -680,7 +701,168 @@ async def update_partner_hospital_profile(
 
     await db.commit()
     await db.refresh(hosp)
-    return hosp
+    return HospitalProfileResponse(
+        id=hosp.id,
+        name=hosp.name,
+        description=hosp.description,
+        address=hosp.address,
+        city=None,
+        contact_phone=hosp.phone,
+        contact_email=hosp.email,
+        emergency_phone=hosp.phone,
+        logo_url=hosp.logo_url,
+        website=hosp.website,
+        emergency_service_available=hosp.emergency_service_available,
+        latitude=hosp.latitude,
+        longitude=hosp.longitude,
+        is_active=hosp.is_active,
+        is_verified=hosp.is_verified,
+    )
+
+
+@router.get("/bookings", response_model=PartnerBookingsResponse)
+async def get_partner_bookings(
+    department_id: Optional[uuid.UUID] = None,
+    doctor_id: Optional[uuid.UUID] = None,
+    booking_date: Optional[str] = None,
+    source: Optional[str] = None,
+    status_filter: Optional[str] = None,
+    search: Optional[str] = None,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_hospital_staff),
+):
+    """
+    Get customer booking slots and tickets for the hospital with filtering options.
+    Enables viewing online appointment bookings, walk-ins, time slots, assigned doctors, and statuses.
+    """
+    hospital_id = current_user.hospital_id
+    if not hospital_id:
+        h_res = await db.execute(select(Hospital))
+        hosp = h_res.scalars().first()
+        if not hosp:
+            raise HTTPException(status_code=404, detail="No hospital registered")
+        hospital_id = hosp.id
+
+    query = (
+        select(Ticket)
+        .options(
+            selectinload(Ticket.department),
+            selectinload(Ticket.doctor),
+            selectinload(Ticket.service),
+        )
+        .where(Ticket.hospital_id == hospital_id)
+    )
+
+    if department_id:
+        query = query.where(Ticket.department_id == department_id)
+
+    if doctor_id:
+        query = query.where(Ticket.doctor_id == doctor_id)
+
+    if booking_date:
+        try:
+            parsed_date = date.fromisoformat(booking_date)
+            query = query.where(
+                or_(
+                    Ticket.appointment_date == parsed_date,
+                    and_(Ticket.appointment_date.is_(None), func.date(Ticket.created_at) == parsed_date),
+                )
+            )
+        except ValueError:
+            pass
+
+    if source:
+        s_upper = source.upper()
+        if s_upper == "ONLINE":
+            query = query.where(Ticket.ticket_source == TicketSource.ONLINE)
+        elif s_upper in ("WALK_IN", "WALKIN"):
+            query = query.where(Ticket.ticket_source == TicketSource.WALK_IN)
+
+    if status_filter:
+        stat_upper = status_filter.upper()
+        if stat_upper in TicketStatus.__members__:
+            query = query.where(Ticket.status == TicketStatus[stat_upper])
+
+    if search:
+        search_term = f"%{search.strip()}%"
+        query = query.where(
+            or_(
+                Ticket.ticket_number.ilike(search_term),
+                Ticket.patient_name.ilike(search_term),
+                Ticket.patient_phone.ilike(search_term),
+            )
+        )
+
+    # Order by appointment_date, appointment_time, position, created_at
+    query = query.order_by(
+        Ticket.appointment_date.desc().nullslast(),
+        Ticket.appointment_time.asc().nullslast(),
+        Ticket.created_at.desc(),
+    )
+
+    result = await db.execute(query)
+    tickets = result.scalars().all()
+
+    total_bookings = len(tickets)
+    online_bookings = 0
+    walkin_bookings = 0
+    waiting_count = 0
+    serving_count = 0
+    completed_count = 0
+
+    booking_items: List[PartnerBookingItem] = []
+    for t in tickets:
+        if t.ticket_source == TicketSource.ONLINE:
+            online_bookings += 1
+        elif t.ticket_source == TicketSource.WALK_IN:
+            walkin_bookings += 1
+
+        if t.status in (TicketStatus.WAITING, TicketStatus.CALLED):
+            waiting_count += 1
+        elif t.status == TicketStatus.SERVING:
+            serving_count += 1
+        elif t.status == TicketStatus.COMPLETED:
+            completed_count += 1
+
+        booking_items.append(
+            PartnerBookingItem(
+                id=t.id,
+                ticket_number=t.ticket_number,
+                patient_name=t.patient_name,
+                patient_phone=t.patient_phone,
+                patient_id=t.patient_id,
+                ticket_source=t.ticket_source.value if hasattr(t.ticket_source, "value") else str(t.ticket_source),
+                status=t.status.value if hasattr(t.status, "value") else str(t.status),
+                appointment_date=t.appointment_date,
+                appointment_time=t.appointment_time,
+                department_id=t.department_id,
+                department_name=t.department.name if t.department else None,
+                department_code=t.department.code if t.department else None,
+                doctor_id=t.doctor_id,
+                doctor_name=t.doctor.name if t.doctor else None,
+                doctor_specialty=t.doctor.specialty if t.doctor else None,
+                service_id=t.service_id,
+                service_name=t.service.name if t.service else None,
+                position=t.position,
+                estimated_wait_minutes=t.estimated_wait_minutes,
+                created_at=t.created_at,
+                serving_started_at=t.serving_started_at,
+                completed_at=t.completed_at,
+            )
+        )
+
+    return PartnerBookingsResponse(
+        bookings=booking_items,
+        summary=PartnerBookingsSummary(
+            total_bookings=total_bookings,
+            online_bookings=online_bookings,
+            walkin_bookings=walkin_bookings,
+            waiting_count=waiting_count,
+            serving_count=serving_count,
+            completed_count=completed_count,
+        ),
+    )
+
 
 
 

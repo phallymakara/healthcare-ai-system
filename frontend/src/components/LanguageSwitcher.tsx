@@ -10,7 +10,7 @@ export const LanguageSwitcher: React.FC<{ style?: React.CSSProperties }> = ({ st
       style={{
         display: 'inline-flex',
         alignItems: 'center',
-        gap: '4px',
+        gap: '5px',
         background: 'transparent',
         border: 'none',
         padding: '2px 4px',
@@ -19,7 +19,7 @@ export const LanguageSwitcher: React.FC<{ style?: React.CSSProperties }> = ({ st
       }}
       title={language === 'en' ? 'Switch to Khmer (ប្តូរទៅភាសាខ្មែរ)' : 'Switch to English'}
     >
-      <Globe size={15} style={{ color: 'var(--text-dim)', marginRight: '2px', flexShrink: 0 }} />
+      <Globe size={17} style={{ color: 'var(--text-dim)', marginRight: '3px', flexShrink: 0 }} />
 
       <button
         type="button"
@@ -29,8 +29,8 @@ export const LanguageSwitcher: React.FC<{ style?: React.CSSProperties }> = ({ st
           border: 'none',
           cursor: 'pointer',
           padding: '2px 4px',
-          fontSize: '0.82rem',
-          fontWeight: language === 'en' ? 700 : 400,
+          fontSize: '0.95rem',
+          fontWeight: language === 'en' ? 700 : 500,
           color: language === 'en' ? 'var(--text-main)' : 'var(--text-dim)',
           textDecoration: language === 'en' ? 'underline' : 'none',
           textUnderlineOffset: '3px',
@@ -44,7 +44,7 @@ export const LanguageSwitcher: React.FC<{ style?: React.CSSProperties }> = ({ st
         EN
       </button>
 
-      <span style={{ color: 'var(--border-color)', fontSize: '0.75rem', userSelect: 'none' }}>|</span>
+      <span style={{ color: 'var(--border-color)', fontSize: '0.85rem', userSelect: 'none' }}>|</span>
 
       <button
         type="button"
@@ -54,9 +54,9 @@ export const LanguageSwitcher: React.FC<{ style?: React.CSSProperties }> = ({ st
           border: 'none',
           cursor: 'pointer',
           padding: '2px 4px',
-          fontSize: '0.85rem',
+          fontSize: '0.98rem',
           fontFamily: 'var(--font-khmer)',
-          fontWeight: language === 'km' ? 700 : 400,
+          fontWeight: language === 'km' ? 700 : 500,
           color: language === 'km' ? 'var(--text-main)' : 'var(--text-dim)',
           textDecoration: language === 'km' ? 'underline' : 'none',
           textUnderlineOffset: '3px',

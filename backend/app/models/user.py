@@ -46,7 +46,7 @@ class User(Base):
 
     # Relationships
     patient_profile: Mapped[Optional["PatientProfile"]] = relationship(
-        "PatientProfile", back_populates="user", uselist=False, cascade="all, delete-orphan"
+        "PatientProfile", back_populates="user", uselist=False, cascade="all, delete-orphan", lazy="selectin"
     )
     doctor_profile: Mapped[Optional["Doctor"]] = relationship(
         "Doctor", back_populates="user", uselist=False

@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
@@ -7,21 +8,28 @@ from app.core.redis import get_redis_client, close_redis_client
 from app.core.websocket import manager
 from app.api.v1.router import api_v1_router
 
+# Proper engineering structured logger
+logging.basicConfig(
+    level=logging.DEBUG if settings.DEBUG else logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+)
+logger = logging.getLogger("healthcare_ai")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: Initialize Redis connection
     try:
         await get_redis_client()
-        print("✅ Redis client connected successfully.")
+        logger.info("Redis client connected successfully.")
     except Exception as e:
-        print(f"⚠️ Redis connection warning: {e}")
+        logger.warning(f"Redis connection warning: {e}")
 
     yield
 
     # Shutdown: Close Redis connection
     await close_redis_client()
-    print("🛑 Redis client disconnected.")
+    logger.info("Redis client disconnected.")
 
 
 app = FastAPI(

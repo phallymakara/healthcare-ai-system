@@ -27,8 +27,8 @@ echo "✅ Database migrations complete!"
 
 # --- 3. Seed initial data if needed ---
 if [ "${SEED_DATA:-false}" = "true" ]; then
-    echo "🌱 Seeding initial data..."
-    python -m app.seeds.seed_data
+    echo "🌱 Seeding initial demonstration data..."
+    python -m scripts.seed_cambodia_data || python -m app.seeds.seed_data
     echo "✅ Seeding complete!"
 fi
 

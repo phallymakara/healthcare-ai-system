@@ -1,0 +1,118 @@
+# ==============================================================================
+# Healthcare AI System — Development Docker Compose
+# ==============================================================================
+# This file is intended for LOCAL DEVELOPMENT.
+# It runs ONLY the infrastructure dependencies (PostgreSQL database & Redis cache)
+# so you can run the FastAPI backend (`uvicorn app.main:app --reload`) and
+# Vite frontend (`npm run dev`) directly on your host machine with fast hot-reloading.
+#
+# Usage:
+#   docker compose -f docker-compose.dev.yml up -d          # Start DB & Redis only
+#   docker compose -f docker-compose.dev.yml logs -f        # View logs
+#   docker compose -f docker-compose.dev.yml down           # Stop DB & Redis
+#   docker compose -f docker-compose.dev.yml down -v        # Stop & reset DB data
+#
+# Optional Developer Tools (Adminer DB web UI & Redis Commander):
+#   docker compose -f docker-compose.dev.yml --profile tools up -d
+#   - Adminer (Postgres UI):       http://localhost:8080
+#   - Redis Commander (Redis UI):  http://localhost:8081
+#
+# Production / Full-Stack:
+#   docker compose up -d --build                            # Runs all images (frontend, backend, db, redis)
+# ==============================================================================
+
+services:
+  # ============================================================
+  # PostgreSQL Database (v16)
+  # Accessible from host at localhost:${POSTGRES_PORT:-5440}
+  # ============================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: healthcare_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres123}
+      POSTGRES_DB: ${POSTGRES_DB:-healthcare_ai_db}
+    ports:
+      - "${POSTGRES_PORT:-5440}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/init-data:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-healthcare_ai_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - healthcare_net
+
+  # ============================================================
+  # Redis Cache (v7)
+  # Accessible from host at localhost:${DEV_REDIS_PORT:-6379}
+  # ============================================================
+  redis:
+    image: redis:7-alpine
+    container_name: healthcare_redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    ports:
+      # Defaults to 6379 to match backend/.env configuration for local FastAPI development
+      - "${DEV_REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - healthcare_net
+
+  # ============================================================
+  # Optional Developer Tools (run with `--profile tools`)
+  # ============================================================
+  adminer:
+    image: adminer:latest
+    container_name: healthcare_adminer
+    restart: unless-stopped
+    ports:
+      - "${ADMINER_PORT:-8080}:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - healthcare_net
+    profiles:
+      - tools
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: healthcare_redis_commander
+    restart: unless-stopped
+    environment:
+      REDIS_HOSTS: local:redis:6379
+    ports:
+      - "${REDIS_COMMANDER_PORT:-8081}:8081"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - healthcare_net
+    profiles:
+      - tools
+
+# ============================================================
+# Volumes & Networks (Shared with production stack)
+# ============================================================
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  healthcare_net:
+    driver: bridge

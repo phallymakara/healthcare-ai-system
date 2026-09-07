@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import { AuthService } from '../../services/auth';
 import { useLanguage } from '../../context/LanguageContext';
 import { API_BASE } from '../../services/api';
+import { AppointmentSlotPicker } from '../../components/AppointmentSlotPicker';
 
 interface HealthcareAssistantProps {
   onTicketBooked: (ticket: any) => void;
@@ -31,6 +32,8 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
   onNavigateToTracker,
 }) => {
   const { language, t } = useLanguage();
+  const isKm = language === 'km';
+  const kmFont = isKm ? 'var(--font-khmer)' : 'inherit';
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: 'welcome',
@@ -54,13 +57,29 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
   const [loading, setLoading] = useState(false);
   const [inputError, setInputError] = useState<string | null>(null);
 
+  const TIME_SLOTS = [
+    '08:00 AM - 09:00 AM',
+    '09:00 AM - 10:00 AM',
+    '10:00 AM - 11:00 AM',
+    '11:00 AM - 12:00 PM',
+    '01:30 PM - 02:30 PM',
+    '02:30 PM - 03:30 PM',
+    '03:30 PM - 04:30 PM',
+    '04:30 PM - 05:30 PM',
+  ];
+
+  const getTodayDateStr = () => new Date().toISOString().split('T')[0];
+
   // Booking Modal State
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState<any>(null);
   const [patientName, setPatientName] = useState('');
   const [patientPhone, setPatientPhone] = useState('');
+  const [appointmentDate, setAppointmentDate] = useState(getTodayDateStr());
+  const [appointmentTime, setAppointmentTime] = useState(TIME_SLOTS[1]);
   const [nameError, setNameError] = useState<string | null>(null);
   const [phoneError, setPhoneError] = useState<string | null>(null);
+  const [dateError, setDateError] = useState<string | null>(null);
   const [bookingLoading, setBookingLoading] = useState(false);
   const [bookingFormError, setBookingFormError] = useState<string | null>(null);
 
@@ -158,7 +177,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
   };
 
   const handleActionClick = (actionText: string, msg?: ChatMessage) => {
-    if (actionText === 'View in Live Queue' || actionText === 'View Live Queue') {
+    if (actionText === 'View in Live Queue' || actionText === 'View Live Queue' || actionText === 'View Ticket' || actionText === t('view_live_queue')) {
       if (msg?.bookedTicket) {
         onTicketBooked(msg.bookedTicket);
       } else if (onNavigateToTracker) {
@@ -183,8 +202,11 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
     setSelectedMatch(match);
     setPatientName(user?.full_name || '');
     setPatientPhone(user?.phone_number || '');
+    setAppointmentDate(getTodayDateStr());
+    setAppointmentTime(TIME_SLOTS[1]);
     setNameError(null);
     setPhoneError(null);
+    setDateError(null);
     setBookingFormError(null);
     setBookingModalOpen(true);
   };
@@ -193,18 +215,23 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
     e.preventDefault();
     setNameError(null);
     setPhoneError(null);
+    setDateError(null);
     setBookingFormError(null);
 
     let hasErr = false;
     if (!patientName.trim()) {
-      setNameError('Please enter your full name.');
+      setNameError(language === 'km' ? 'សូមបញ្ចូលឈ្មោះពេញរបស់អ្នក' : 'Please enter your full name.');
       hasErr = true;
     }
     if (!patientPhone.trim()) {
-      setPhoneError('Please enter your phone number.');
+      setPhoneError(language === 'km' ? 'សូមបញ្ចូលលេខទូរស័ព្ទរបស់អ្នក' : 'Please enter your phone number.');
       hasErr = true;
     } else if (patientPhone.trim().length < 6) {
-      setPhoneError('Please enter a valid phone number.');
+      setPhoneError(language === 'km' ? 'សូមបញ្ចូលលេខទូរស័ព្ទត្រឹមត្រូវ' : 'Please enter a valid phone number.');
+      hasErr = true;
+    }
+    if (!appointmentDate) {
+      setDateError(language === 'km' ? 'សូមជ្រើសរើសកាលបរិច្ឆេទ' : 'Please select an appointment date.');
       hasErr = true;
     }
 
@@ -223,11 +250,13 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
           department_id: selectedMatch.department_id,
           patient_name: patientName.trim(),
           patient_phone: patientPhone.trim(),
+          appointment_date: appointmentDate,
+          appointment_time: appointmentTime,
         }),
       });
 
       if (!res.ok) {
-        setBookingFormError('Unable to reserve ticket right now. Please try again.');
+        setBookingFormError(language === 'km' ? 'មិនអាចកក់សំបុត្របានទេនៅពេលនេះ។ សូមព្យាយាមម្តងទៀត។' : 'Unable to reserve ticket right now. Please try again.');
         return;
       }
 
@@ -235,7 +264,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
       setBookingModalOpen(false);
       onTicketBooked(ticket);
     } catch {
-      setBookingFormError('Connection issue. Please check your network and try again.');
+      setBookingFormError(language === 'km' ? 'បញ្ហាតភ្ជាប់បណ្តាញ។ សូមពិនិត្យមើលបណ្តាញរបស់អ្នកហើយព្យាយាមម្តងទៀត។' : 'Connection issue. Please check your network and try again.');
     } finally {
       setBookingLoading(false);
     }
@@ -287,9 +316,10 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
                 </div>
 
                 <div style={{
-                  maxWidth: msg.role === 'user' ? '80%' : '92%',
+                  maxWidth: msg.role === 'user' ? '88%' : '96%',
                   padding: '0.25rem 0',
-                  fontSize: isKm ? '0.95rem' : '0.9rem',
+                  fontSize: isKm ? '1.08rem' : '1rem',
+                  fontWeight: 400,
                   fontFamily: isKm ? 'var(--font-khmer)' : 'inherit',
                   color: 'var(--text-main)',
                   lineHeight: isKm ? 1.75 : 1.6,
@@ -298,18 +328,18 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
                   <div style={{ color: 'var(--text-main)', lineHeight: isKm ? 1.75 : 1.6, fontFamily: isKm ? 'var(--font-khmer)' : 'inherit' }}>
                     <ReactMarkdown
                       components={{
-                        p: ({ children }) => <p style={{ margin: '0.4rem 0', lineHeight: isKm ? 1.75 : 1.6, fontFamily: isKm ? 'var(--font-khmer)' : 'inherit' }}>{children}</p>,
-                        h1: ({ children }) => <h3 style={{ fontSize: '1.15rem', fontWeight: 600, margin: '0.65rem 0 0.35rem 0', color: 'var(--text-main)', fontFamily: isKm ? 'var(--font-khmer)' : 'inherit' }}>{children}</h3>,
-                        h2: ({ children }) => <h3 style={{ fontSize: '1.1rem', fontWeight: 600, margin: '0.6rem 0 0.35rem 0', color: 'var(--text-main)', fontFamily: isKm ? 'var(--font-khmer)' : 'inherit' }}>{children}</h3>,
-                        h3: ({ children }) => <h4 style={{ fontSize: '1rem', fontWeight: 600, margin: '0.55rem 0 0.25rem 0', color: 'var(--text-main)', fontFamily: isKm ? 'var(--font-khmer)' : 'inherit' }}>{children}</h4>,
-                        h4: ({ children }) => <h5 style={{ fontSize: '0.9rem', fontWeight: 600, margin: '0.5rem 0 0.25rem 0', color: 'var(--text-main)', fontFamily: isKm ? 'var(--font-khmer)' : 'inherit' }}>{children}</h5>,
+                        p: ({ children }) => <p style={{ margin: '0.4rem 0', fontSize: 'inherit', lineHeight: isKm ? 1.75 : 1.6, fontFamily: isKm ? 'var(--font-khmer)' : 'inherit' }}>{children}</p>,
+                        h1: ({ children }) => <h3 style={{ fontSize: '1.25rem', fontWeight: 600, margin: '0.65rem 0 0.35rem 0', color: 'var(--text-main)', fontFamily: isKm ? 'var(--font-khmer)' : 'inherit' }}>{children}</h3>,
+                        h2: ({ children }) => <h3 style={{ fontSize: '1.2rem', fontWeight: 600, margin: '0.6rem 0 0.35rem 0', color: 'var(--text-main)', fontFamily: isKm ? 'var(--font-khmer)' : 'inherit' }}>{children}</h3>,
+                        h3: ({ children }) => <h4 style={{ fontSize: '1.1rem', fontWeight: 600, margin: '0.55rem 0 0.25rem 0', color: 'var(--text-main)', fontFamily: isKm ? 'var(--font-khmer)' : 'inherit' }}>{children}</h4>,
+                        h4: ({ children }) => <h5 style={{ fontSize: '1rem', fontWeight: 600, margin: '0.5rem 0 0.25rem 0', color: 'var(--text-main)', fontFamily: isKm ? 'var(--font-khmer)' : 'inherit' }}>{children}</h5>,
                         ul: ({ children }) => <ul style={{ margin: '0.4rem 0', paddingLeft: '1.25rem' }}>{children}</ul>,
                         ol: ({ children }) => <ol style={{ margin: '0.4rem 0', paddingLeft: '1.25rem' }}>{children}</ol>,
                         li: ({ children }) => <li style={{ margin: '0.2rem 0', lineHeight: isKm ? 1.75 : 1.6, fontFamily: isKm ? 'var(--font-khmer)' : 'inherit' }}>{children}</li>,
                         strong: ({ children }) => <strong style={{ fontWeight: 600 }}>{children}</strong>,
                         code: ({ children }) => (
                           <code style={{
-                            fontSize: '0.85rem',
+                            fontSize: '0.9rem',
                             fontFamily: 'monospace',
                             background: 'rgba(0,0,0,0.04)',
                             padding: '0.15rem 0.35rem',
@@ -555,7 +585,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
           })}
 
           {loading && (
-            <div style={{ alignSelf: 'flex-start', color: 'var(--text-muted)', fontSize: '0.8rem', padding: '0.5rem 1rem' }}>
+            <div style={{ alignSelf: 'flex-start', color: 'var(--text-muted)', fontSize: '0.9rem', padding: '0.5rem 1rem' }}>
               {t('chat_processing')}
             </div>
           )}
@@ -565,7 +595,6 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
 
         {/* Bottom Chat Input Form Area */}
         <div style={{
-          borderTop: '1px solid var(--border-color)',
           padding: '0.85rem 1.25rem',
           background: '#ffffff',
         }}>
@@ -578,11 +607,11 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
               disabled={loading}
               style={{
                 flex: 1,
-                padding: '0.6rem 0.85rem',
-                fontSize: (language === 'km' || isKhmer(inputText)) ? '0.95rem' : '0.875rem',
+                padding: '0.68rem 1.15rem',
+                fontSize: (language === 'km' || isKhmer(inputText)) ? '1.05rem' : '1rem',
                 fontFamily: (language === 'km' || isKhmer(inputText)) ? 'var(--font-khmer)' : 'inherit',
                 border: '1px solid var(--border-color)',
-                borderRadius: '4px',
+                borderRadius: '24px',
                 background: '#ffffff',
                 color: 'var(--text-main)',
                 outline: 'none',
@@ -593,12 +622,12 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
               type="submit"
               disabled={loading}
               style={{
-                padding: '0.6rem 1.25rem',
-                fontSize: '0.875rem',
+                padding: '0.68rem 1.4rem',
+                fontSize: '0.92rem',
                 fontWeight: 600,
                 background: 'transparent',
                 border: '1px solid var(--text-main)',
-                borderRadius: '4px',
+                borderRadius: '24px',
                 color: 'var(--text-main)',
                 cursor: loading ? 'not-allowed' : 'pointer',
                 opacity: loading ? 0.6 : 1,
@@ -611,99 +640,162 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
           </form>
 
           {inputError && (
-            <div style={{ color: '#dc2626', fontSize: '0.75rem', marginTop: '0.4rem' }}>
+            <div style={{ color: '#dc2626', fontSize: '0.8rem', marginTop: '0.4rem', textAlign: 'center' }}>
               {inputError}
             </div>
           )}
+
+          {/* AI Medical Disclaimer */}
+          <div style={{
+            fontSize: '0.78rem',
+            color: 'var(--text-muted)',
+            textAlign: 'center',
+            marginTop: '0.55rem',
+            lineHeight: 1.4,
+            fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
+          }}>
+            {t('ai_disclaimer')}
+          </div>
         </div>
       </div>
 
       {/* Manual Booking Modal Dialog */}
       {bookingModalOpen && selectedMatch && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.4)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-          padding: '1rem',
-        }}>
-          <div style={{
-            background: '#ffffff',
-            border: '1px solid var(--border-color)',
-            borderRadius: '6px',
-            width: '100%',
-            maxWidth: '460px',
-            padding: '1.5rem',
-            boxShadow: 'none',
-          }}>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.35rem' }}>
-              {t('confirm_booking')}
-            </h3>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
-              {selectedMatch.hospital_name} • {selectedMatch.department_name}
-            </p>
+        <div className="responsive-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setBookingModalOpen(false); }}>
+          <div className="responsive-modal-card" style={{ maxWidth: '520px', fontFamily: kmFont }}>
+            <div className="responsive-modal-body" style={{ padding: '1.6rem 1.75rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                <h3 style={{ fontSize: '1.35rem', fontWeight: 700, color: 'var(--text-main)', margin: 0, fontFamily: kmFont }}>
+                  {t('confirm_booking')}
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setBookingModalOpen(false)}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    fontSize: '1.1rem',
+                    cursor: 'pointer',
+                    color: 'var(--text-muted)',
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+              <p style={{ fontSize: '0.92rem', color: 'var(--text-muted)', marginBottom: '1.35rem', fontFamily: kmFont }}>
+                {selectedMatch.hospital_name} • {selectedMatch.department_name}
+              </p>
 
-            <form onSubmit={handleConfirmBooking} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <form onSubmit={handleConfirmBooking} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.35rem' }}>
+                <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '6px', fontFamily: kmFont }}>
                   {t('patient_full_name')}
                 </label>
                 <input
                   type="text"
                   value={patientName}
                   onChange={(e) => setPatientName(e.target.value)}
-                  placeholder="e.g. Sokha Chhay"
+                  placeholder={isKm ? 'បញ្ចូលឈ្មោះពេញ' : 'e.g. Sokha Chhay'}
                   style={{
                     width: '100%',
-                    padding: '0.55rem 0.75rem',
-                    fontSize: '0.875rem',
+                    padding: '0.72rem 0.85rem',
+                    fontSize: '0.95rem',
                     border: nameError ? '1px solid #dc2626' : '1px solid var(--border-color)',
                     borderRadius: '4px',
                     boxShadow: 'none',
                     outline: 'none',
+                    boxSizing: 'border-box',
+                    fontFamily: kmFont,
                   }}
                 />
                 {nameError && (
-                  <div style={{ color: '#dc2626', fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                  <div style={{ color: '#dc2626', fontSize: '0.85rem', marginTop: '5px', fontFamily: kmFont }}>
                     {nameError}
                   </div>
                 )}
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.35rem' }}>
+                <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '6px', fontFamily: kmFont }}>
                   {t('phone_number')}
                 </label>
                 <input
                   type="tel"
                   value={patientPhone}
-                  onChange={(e) => setPatientPhone(e.target.value)}
-                  placeholder="e.g. 012888999"
+                  onChange={(e) => {
+                    setPatientPhone(e.target.value);
+                    setPhoneError(null);
+                  }}
+                  placeholder={isKm ? 'បញ្ចូលលេខទូរស័ព្ទ' : 'e.g. 012888999'}
                   style={{
                     width: '100%',
-                    padding: '0.55rem 0.75rem',
-                    fontSize: '0.875rem',
+                    padding: '0.72rem 0.85rem',
+                    fontSize: '0.95rem',
                     border: phoneError ? '1px solid #dc2626' : '1px solid var(--border-color)',
                     borderRadius: '4px',
                     boxShadow: 'none',
                     outline: 'none',
+                    boxSizing: 'border-box',
+                    fontFamily: kmFont,
                   }}
                 />
                 {phoneError && (
-                  <div style={{ color: '#dc2626', fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                  <div style={{ color: '#dc2626', fontSize: '0.85rem', marginTop: '5px', fontFamily: kmFont }}>
                     {phoneError}
                   </div>
                 )}
               </div>
 
+              <div>
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '6px', fontFamily: kmFont }}>
+                    {t('appointment_date')}
+                  </label>
+                  <input
+                    type="date"
+                    min={getTodayDateStr()}
+                    value={appointmentDate}
+                    onChange={(e) => {
+                      setAppointmentDate(e.target.value);
+                      setDateError(null);
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '0.72rem 0.85rem',
+                      fontSize: '0.95rem',
+                      border: dateError ? '1px solid #dc2626' : '1px solid var(--border-color)',
+                      borderRadius: '4px',
+                      boxShadow: 'none',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                      background: '#ffffff',
+                      color: 'var(--text-main)',
+                      fontFamily: kmFont,
+                    }}
+                  />
+                  {dateError && (
+                    <div style={{ color: '#dc2626', fontSize: '0.85rem', marginTop: '5px', fontFamily: kmFont }}>
+                      {dateError}
+                    </div>
+                  )}
+                </div>
+
+                {/* Real-time Live Appointment Time Slot Grid */}
+                <AppointmentSlotPicker
+                  hospitalId={selectedMatch.hospital_id}
+                  departmentId={selectedMatch.department_id}
+                  selectedDate={appointmentDate}
+                  selectedSlot={appointmentTime}
+                  onSelectSlot={(slot) => {
+                    setAppointmentTime(slot);
+                    if (bookingFormError) setBookingFormError(null);
+                  }}
+                  onSlotError={(err) => setBookingFormError(err)}
+                />
+              </div>
+
               {bookingFormError && (
-                <div style={{ color: '#dc2626', fontSize: '0.8rem' }}>
+                <div style={{ color: '#dc2626', fontSize: '0.85rem', fontFamily: kmFont }}>
                   {bookingFormError}
                 </div>
               )}
@@ -714,15 +806,16 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
                   onClick={() => setBookingModalOpen(false)}
                   disabled={bookingLoading}
                   style={{
-                    padding: '0.5rem 1rem',
-                    fontSize: '0.85rem',
+                    padding: '0.75rem 1.25rem',
+                    fontSize: '0.98rem',
                     fontWeight: 500,
                     background: 'transparent',
                     border: '1px solid var(--border-color)',
                     borderRadius: '4px',
-                    color: 'var(--text-main)',
+                    color: 'var(--text-muted)',
                     cursor: 'pointer',
                     boxShadow: 'none',
+                    fontFamily: kmFont,
                   }}
                 >
                   {t('cancel')}
@@ -731,22 +824,23 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
                   type="submit"
                   disabled={bookingLoading}
                   style={{
-                    padding: '0.5rem 1.25rem',
-                    fontSize: '0.85rem',
+                    padding: '0.75rem 1.45rem',
+                    fontSize: '0.98rem',
                     fontWeight: 600,
                     background: 'transparent',
                     border: '1px solid var(--text-main)',
                     borderRadius: '4px',
                     color: 'var(--text-main)',
                     cursor: bookingLoading ? 'not-allowed' : 'pointer',
-                    opacity: bookingLoading ? 0.6 : 1,
                     boxShadow: 'none',
+                    fontFamily: kmFont,
                   }}
                 >
-                  {bookingLoading ? '...' : t('confirm_ticket_btn')}
+                  {bookingLoading ? t('chat_booking_saving') : t('confirm_ticket_btn')}
                 </button>
               </div>
             </form>
+            </div>
           </div>
         </div>
       )}

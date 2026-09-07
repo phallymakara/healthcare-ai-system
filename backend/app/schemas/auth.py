@@ -22,8 +22,9 @@ class LoginRequest(BaseModel):
 
 class PatientRegisterRequest(BaseModel):
     full_name: str = Field(..., min_length=2, max_length=128)
+    contact_identifier: Optional[str] = None
     email: Optional[EmailStr] = None
-    phone_number: str = Field(..., min_length=8, max_length=32)
+    phone_number: Optional[str] = None
     password: str = Field(..., min_length=6)
     date_of_birth: Optional[date] = None
     gender: Optional[str] = None
@@ -34,18 +35,29 @@ class PatientRegisterRequest(BaseModel):
 
 class PartnerRegisterRequest(BaseModel):
     # Organization
-    hospital_name: str = Field(..., min_length=3, max_length=255)
+    hospital_name: Optional[str] = None
     description: Optional[str] = None
-    address: str = Field(..., min_length=5)
-    hospital_phone: str
-    hospital_email: EmailStr
+    address: Optional[str] = None
+    city: Optional[str] = None
+    logo_url: Optional[str] = None
+    emergency_service_available: Optional[bool] = False
+    
+    # Unified Official Contact (Email or Phone)
+    contact_identifier: Optional[str] = None
+    hospital_phone: Optional[str] = None
+    hospital_email: Optional[EmailStr] = None
     website: Optional[str] = None
     
-    # Primary Admin User
-    admin_full_name: str = Field(..., min_length=2)
-    admin_email: EmailStr
-    admin_phone: str
-    admin_password: str = Field(..., min_length=6)
+    # Primary Admin User / Credentials
+    admin_full_name: Optional[str] = None
+    admin_email: Optional[EmailStr] = None
+    admin_phone: Optional[str] = None
+    password: Optional[str] = None
+    admin_password: Optional[str] = None
+
+    # Initial Department Setup (Optional during onboarding)
+    initial_department_name: Optional[str] = None
+    initial_department_room: Optional[str] = None
 
 
 class RefreshTokenRequest(BaseModel):

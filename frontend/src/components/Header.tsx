@@ -15,6 +15,8 @@ export type NavTab =
   | 'partner_counter' 
   | 'partner_doctors' 
   | 'partner_departments'
+  | 'partner_staff'
+  | 'partner_profile'
   | 'admin_center';
 
 interface HeaderProps {
@@ -57,11 +59,11 @@ export const Header: React.FC<HeaderProps> = ({
             <img 
               src={prosethLogo} 
               alt="Proseth Logo" 
-              style={{ height: '36px', width: 'auto', objectFit: 'contain' }} 
+              style={{ height: '40px', width: 'auto', objectFit: 'contain' }} 
             />
-            <div>
-              <span>{t('app_title')}</span>
-              <span style={{ fontSize: '0.75rem', color: 'var(--accent-primary)', marginLeft: '6px', fontWeight: 700 }}>{t('app_subtitle')}</span>
+            <div style={{ display: 'flex', alignItems: 'baseline' }}>
+              <span style={{ fontSize: '1.22rem', fontWeight: 800 }}>{t('app_title')}</span>
+              <span style={{ fontSize: '0.85rem', color: 'var(--accent-primary)', marginLeft: '6px', fontWeight: 700 }}>{t('app_subtitle')}</span>
             </div>
           </button>
         </div>
@@ -86,7 +88,7 @@ export const Header: React.FC<HeaderProps> = ({
                     color: activeTab === 'patient_triage' ? 'var(--accent-primary)' : 'var(--text-muted)',
                     fontWeight: activeTab === 'patient_triage' ? 700 : 500,
                     padding: '0.5rem 0',
-                    fontSize: '0.9rem',
+                    fontSize: '1.02rem',
                     cursor: 'pointer',
                   }}
                 >
@@ -108,7 +110,7 @@ export const Header: React.FC<HeaderProps> = ({
                     color: activeTab === 'patient_discovery' ? 'var(--accent-primary)' : 'var(--text-muted)',
                     fontWeight: activeTab === 'patient_discovery' ? 700 : 500,
                     padding: '0.5rem 0',
-                    fontSize: '0.9rem',
+                    fontSize: '1.02rem',
                     cursor: 'pointer',
                   }}
                 >
@@ -126,7 +128,7 @@ export const Header: React.FC<HeaderProps> = ({
                         color: activeTab === 'patient_live_ticket' ? 'var(--accent-primary)' : 'var(--text-muted)',
                         fontWeight: activeTab === 'patient_live_ticket' ? 700 : 500,
                         padding: '0.5rem 0',
-                        fontSize: '0.9rem',
+                        fontSize: '1.02rem',
                         cursor: 'pointer',
                       }}
                     >
@@ -142,7 +144,7 @@ export const Header: React.FC<HeaderProps> = ({
                         color: activeTab === 'patient_history' ? 'var(--accent-primary)' : 'var(--text-muted)',
                         fontWeight: activeTab === 'patient_history' ? 700 : 500,
                         padding: '0.5rem 0',
-                        fontSize: '0.9rem',
+                        fontSize: '1.02rem',
                         cursor: 'pointer',
                       }}
                     >
@@ -165,7 +167,7 @@ export const Header: React.FC<HeaderProps> = ({
                     color: activeTab === 'partner_counter' ? 'var(--accent-emerald)' : 'var(--text-muted)',
                     fontWeight: activeTab === 'partner_counter' ? 700 : 500,
                     padding: '0.5rem 0',
-                    fontSize: '0.9rem',
+                    fontSize: '1.02rem',
                     cursor: 'pointer',
                   }}
                 >
@@ -181,7 +183,7 @@ export const Header: React.FC<HeaderProps> = ({
                     color: activeTab === 'partner_dashboard' ? 'var(--accent-emerald)' : 'var(--text-muted)',
                     fontWeight: activeTab === 'partner_dashboard' ? 700 : 500,
                     padding: '0.5rem 0',
-                    fontSize: '0.9rem',
+                    fontSize: '1.02rem',
                     cursor: 'pointer',
                   }}
                 >
@@ -197,7 +199,7 @@ export const Header: React.FC<HeaderProps> = ({
                     color: activeTab === 'partner_doctors' ? 'var(--accent-emerald)' : 'var(--text-muted)',
                     fontWeight: activeTab === 'partner_doctors' ? 700 : 500,
                     padding: '0.5rem 0',
-                    fontSize: '0.9rem',
+                    fontSize: '1.02rem',
                     cursor: 'pointer',
                   }}
                 >
@@ -213,7 +215,7 @@ export const Header: React.FC<HeaderProps> = ({
                     color: activeTab === 'partner_departments' ? 'var(--accent-emerald)' : 'var(--text-muted)',
                     fontWeight: activeTab === 'partner_departments' ? 700 : 500,
                     padding: '0.5rem 0',
-                    fontSize: '0.9rem',
+                    fontSize: '1.02rem',
                     cursor: 'pointer',
                   }}
                 >
@@ -233,7 +235,7 @@ export const Header: React.FC<HeaderProps> = ({
                   color: activeTab === 'admin_center' ? '#7c3aed' : 'var(--text-muted)',
                   fontWeight: activeTab === 'admin_center' ? 700 : 500,
                   padding: '0.5rem 0',
-                  fontSize: '0.9rem',
+                  fontSize: '1.02rem',
                   cursor: 'pointer',
                 }}
               >
@@ -413,8 +415,8 @@ export const Header: React.FC<HeaderProps> = ({
               )}
             </div>
           ) : (
-            <button onClick={onOpenAuth} className="btn btn-primary" style={{ padding: '0.45rem 1rem', fontSize: '0.85rem' }}>
-              <LogIn size={15} /> Sign In
+            <button onClick={onOpenAuth} className="btn btn-primary" style={{ padding: '0.55rem 1.25rem', fontSize: '0.98rem' }}>
+              <LogIn size={17} /> {t('sign_in')}
             </button>
           )}
 
@@ -470,7 +472,7 @@ export const Header: React.FC<HeaderProps> = ({
                     onClick={() => { onSelectTab('patient_live_ticket'); setMobileMenuOpen(false); }}
                     className={`header-mobile-link ${activeTab === 'patient_live_ticket' ? 'active' : ''}`}
                   >
-                    Live Queue
+                    {t('nav_live_queue')}
                   </button>
 
                   <button

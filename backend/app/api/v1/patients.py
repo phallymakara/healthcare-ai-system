@@ -45,6 +45,7 @@ class DoctorDiscoveryItem(BaseModel):
     full_name: str
     specialty: str
     bio: Optional[str] = None
+    photo_url: Optional[str] = None
     room_number: Optional[str] = None
     is_available: bool = True
 
@@ -194,6 +195,7 @@ async def search_hospitals(
                     full_name=doc.full_name,
                     specialty=doc.specialty,
                     bio=doc.bio,
+                    photo_url=doc.photo_url,
                     room_number=doc.room_number,
                     is_available=doc.is_available,
                 )

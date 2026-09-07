@@ -1,7 +1,7 @@
 import uuid
 from datetime import time, date, datetime
 from typing import Optional, List
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field, EmailStr, field_validator
 
 from app.models.enums import OverrideType, QueueStatus, UserRole
 
@@ -10,7 +10,7 @@ from app.models.enums import OverrideType, QueueStatus, UserRole
 
 class DepartmentCreateSchema(BaseModel):
     name: str = Field(..., min_length=2, max_length=128)
-    code: str = Field(..., min_length=2, max_length=16)  # e.g., "CARDIO", "DERM"
+    code: Optional[str] = Field(None, max_length=16)  # e.g., "CARDIO", "DERM"
     description: Optional[str] = None
     floor_room: Optional[str] = None
     avg_consultation_minutes: int = Field(default=15, ge=5, le=120)
@@ -98,16 +98,30 @@ class DoctorScheduleResponse(BaseModel):
 class DoctorCreateSchema(BaseModel):
     department_id: uuid.UUID
     branch_id: Optional[uuid.UUID] = None
-    full_name: str = Field(..., min_length=2, max_length=128)
-    specialty: str = Field(..., min_length=2, max_length=128)
+    full_name: str = Field(..., min_length=1, max_length=128)
+    specialty: str = Field(..., min_length=1, max_length=128)
     license_number: Optional[str] = None
     bio: Optional[str] = None
     photo_url: Optional[str] = None
     room_number: Optional[str] = None
-    avg_consultation_minutes: int = Field(default=15, ge=5, le=120)
-    email: Optional[EmailStr] = None
+    avg_consultation_minutes: int = Field(default=15, ge=1, le=240)
+    email: Optional[str] = None
     phone: Optional[str] = None
     password: Optional[str] = None  # If creating a doctor login account
+
+    @field_validator("email", "phone", "password", "license_number", "bio", "photo_url", "room_number", mode="before")
+    @classmethod
+    def clean_empty_strings(cls, v):
+        if isinstance(v, str) and not v.strip():
+            return None
+        return v
+
+    @field_validator("branch_id", mode="before")
+    @classmethod
+    def clean_empty_uuid(cls, v):
+        if not v or (isinstance(v, str) and not v.strip()):
+            return None
+        return v
 
 
 class DoctorResponse(BaseModel):
@@ -131,15 +145,22 @@ class DoctorResponse(BaseModel):
 
 class DoctorUpdateSchema(BaseModel):
     department_id: Optional[uuid.UUID] = None
-    full_name: Optional[str] = Field(None, min_length=2, max_length=128)
-    specialty: Optional[str] = Field(None, min_length=2, max_length=128)
+    full_name: Optional[str] = Field(None, min_length=1, max_length=128)
+    specialty: Optional[str] = Field(None, min_length=1, max_length=128)
     license_number: Optional[str] = None
     bio: Optional[str] = None
     photo_url: Optional[str] = None
     room_number: Optional[str] = None
-    avg_consultation_minutes: Optional[int] = Field(None, ge=5, le=120)
+    avg_consultation_minutes: Optional[int] = Field(None, ge=1, le=240)
     is_available: Optional[bool] = None
     is_active: Optional[bool] = None
+
+    @field_validator("license_number", "bio", "photo_url", "room_number", mode="before")
+    @classmethod
+    def clean_empty_strings_update(cls, v):
+        if isinstance(v, str) and not v.strip():
+            return None
+        return v
 
 
 class DoctorScheduleItem(BaseModel):
@@ -232,6 +253,9 @@ class HospitalProfileResponse(BaseModel):
     contact_phone: Optional[str] = None
     contact_email: Optional[str] = None
     emergency_phone: Optional[str] = None
+    logo_url: Optional[str] = None
+    website: Optional[str] = None
+    emergency_service_available: bool = False
     latitude: Optional[float] = None
     longitude: Optional[float] = None
     is_active: bool
@@ -248,7 +272,54 @@ class HospitalProfileUpdateSchema(BaseModel):
     contact_phone: Optional[str] = None
     contact_email: Optional[EmailStr] = None
     emergency_phone: Optional[str] = None
+    logo_url: Optional[str] = None
+    website: Optional[str] = None
+    emergency_service_available: Optional[bool] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None
+
+
+# --- Partner Customer Booking Slots Schemas ---
+
+class PartnerBookingItem(BaseModel):
+    id: uuid.UUID
+    ticket_number: str
+    patient_name: str
+    patient_phone: Optional[str] = None
+    patient_id: Optional[uuid.UUID] = None
+    ticket_source: str
+    status: str
+    appointment_date: Optional[date] = None
+    appointment_time: Optional[str] = None
+    department_id: uuid.UUID
+    department_name: Optional[str] = None
+    department_code: Optional[str] = None
+    doctor_id: Optional[uuid.UUID] = None
+    doctor_name: Optional[str] = None
+    doctor_specialty: Optional[str] = None
+    service_id: Optional[uuid.UUID] = None
+    service_name: Optional[str] = None
+    position: int = 1
+    estimated_wait_minutes: int = 0
+    created_at: datetime
+    serving_started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+
+    model_config = {"from_attributes": True}
+
+
+class PartnerBookingsSummary(BaseModel):
+    total_bookings: int = 0
+    online_bookings: int = 0
+    walkin_bookings: int = 0
+    waiting_count: int = 0
+    serving_count: int = 0
+    completed_count: int = 0
+
+
+class PartnerBookingsResponse(BaseModel):
+    bookings: List[PartnerBookingItem] = []
+    summary: PartnerBookingsSummary = Field(default_factory=PartnerBookingsSummary)
+
 
 

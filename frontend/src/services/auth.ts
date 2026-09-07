@@ -84,13 +84,55 @@ export class AuthService {
 
   static async registerPatient(payload: {
     full_name: string;
-    phone_number: string;
+    contact_identifier?: string;
+    phone_number?: string;
     email?: string;
     password: string;
     gender?: string;
     blood_type?: string;
   }): Promise<AuthTokens> {
     const res = await fetch(`${API_BASE}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      let msg = 'Registration failed';
+      if (typeof errorData.detail === 'string') {
+        msg = errorData.detail;
+      } else if (Array.isArray(errorData.detail) && errorData.detail.length > 0) {
+        msg = errorData.detail[0]?.msg || 'Invalid registration details';
+      }
+      throw new Error(msg);
+    }
+
+    const data: AuthTokens = await res.json();
+    this.setSession(data);
+    return data;
+  }
+
+  static async registerPartner(payload: {
+    hospital_name?: string;
+    description?: string;
+    address?: string;
+    city?: string;
+    logo_url?: string;
+    emergency_service_available?: boolean;
+    contact_identifier?: string;
+    hospital_phone?: string;
+    hospital_email?: string;
+    website?: string;
+    admin_full_name?: string;
+    admin_email?: string;
+    admin_phone?: string;
+    password?: string;
+    admin_password?: string;
+    initial_department_name?: string;
+    initial_department_room?: string;
+  }): Promise<AuthTokens> {
+    const res = await fetch(`${API_BASE}/auth/partner-register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),

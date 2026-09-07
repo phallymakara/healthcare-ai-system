@@ -1,5 +1,6 @@
 import uuid
-from typing import Optional
+from datetime import datetime, date
+from typing import Optional, List
 from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
@@ -9,17 +10,111 @@ from app.core.database import get_db
 from app.core.deps import get_current_user, get_optional_current_user, require_hospital_staff
 from app.models.user import User
 from app.models.queue import Ticket
-from app.models.enums import TicketSource
+from app.models.enums import TicketSource, TicketStatus
 from app.schemas.queue import (
     BookTicketRequest,
     WalkInTicketRequest,
     TicketActionRequest,
     TicketResponse,
     TicketDetailResponse,
+    SlotAvailabilityItem,
+    SlotsAvailabilityResponse,
 )
 from app.services.queue_service import QueueService
 
+DEFAULT_TIME_SLOTS = [
+    '08:00 AM - 09:00 AM',
+    '09:00 AM - 10:00 AM',
+    '10:00 AM - 11:00 AM',
+    '11:00 AM - 12:00 PM',
+    '01:30 PM - 02:30 PM',
+    '02:30 PM - 03:30 PM',
+    '03:30 PM - 04:30 PM',
+    '04:30 PM - 05:30 PM',
+]
+
 router = APIRouter(prefix="/tickets", tags=["Tickets & Appointments"])
+
+
+@router.get("/slots/availability", response_model=SlotsAvailabilityResponse)
+async def get_slots_availability(
+    hospital_id: uuid.UUID,
+    date: str,
+    department_id: Optional[uuid.UUID] = None,
+    doctor_id: Optional[uuid.UUID] = None,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Get real-time booking availability for all appointment time slots on a given date.
+    Returns which slots are available vs already booked.
+    """
+    try:
+        parsed_date = datetime.strptime(date, "%Y-%m-%d").date()
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid date format, expected YYYY-MM-DD")
+
+    query = select(Ticket).where(
+        Ticket.hospital_id == hospital_id,
+        Ticket.appointment_date == parsed_date,
+        Ticket.status != TicketStatus.CANCELLED,
+    )
+    if department_id:
+        query = query.where(Ticket.department_id == department_id)
+    if doctor_id:
+        query = query.where(Ticket.doctor_id == doctor_id)
+
+    res = await db.execute(query)
+    booked_tickets = res.scalars().all()
+
+    # Tally bookings per slot string
+    booked_counts: dict[str, int] = {}
+    for t in booked_tickets:
+        if t.appointment_time:
+            time_key = t.appointment_time.strip()
+            # Match against predefined slots (exact or prefix match)
+            matched = False
+            for s in DEFAULT_TIME_SLOTS:
+                if s.lower() == time_key.lower() or time_key.lower().startswith(s[:5].lower()):
+                    booked_counts[s] = booked_counts.get(s, 0) + 1
+                    matched = True
+                    break
+            if not matched:
+                booked_counts[time_key] = booked_counts.get(time_key, 0) + 1
+
+    slot_items: List[SlotAvailabilityItem] = []
+    total_slots = len(DEFAULT_TIME_SLOTS)
+    available_slots_count = 0
+    booked_slots_count = 0
+
+    for slot in DEFAULT_TIME_SLOTS:
+        count = booked_counts.get(slot, 0)
+        max_cap = 1
+        is_booked = count >= max_cap
+        if is_booked:
+            booked_slots_count += 1
+        else:
+            available_slots_count += 1
+
+        slot_items.append(
+            SlotAvailabilityItem(
+                slot=slot,
+                is_booked=is_booked,
+                booked_count=count,
+                max_capacity=max_cap,
+                available_spots=max(0, max_cap - count),
+            )
+        )
+
+    return SlotsAvailabilityResponse(
+        date=date,
+        hospital_id=hospital_id,
+        department_id=department_id,
+        doctor_id=doctor_id,
+        total_slots=total_slots,
+        available_slots=available_slots_count,
+        booked_slots=booked_slots_count,
+        slots=slot_items,
+    )
 
 
 @router.post("/book", response_model=TicketResponse, status_code=status.HTTP_201_CREATED)
@@ -29,12 +124,13 @@ async def book_ticket(
     current_user: Optional[User] = Depends(get_optional_current_user),
 ):
     """Remote patient ticket reservation with live queue estimation"""
-    # 1. Get or create today's queue session for this department/doctor
+    # 1. Get or create queue session for this department/doctor on the appointment date (or today)
     queue_sess = await QueueService.get_or_create_queue_session(
         db,
         hospital_id=data.hospital_id,
         department_id=data.department_id,
         doctor_id=data.doctor_id,
+        session_date=data.appointment_date,
     )
 
     patient_name = data.patient_name or (current_user.full_name if current_user else "Anonymous Patient")
@@ -50,6 +146,8 @@ async def book_ticket(
         doctor_id=data.doctor_id,
         service_id=data.service_id,
         ticket_source=TicketSource.ONLINE,
+        appointment_date=data.appointment_date,
+        appointment_time=data.appointment_time,
     )
 
 
@@ -95,6 +193,18 @@ async def get_ticket_detail(
     if not ticket:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket not found")
     return TicketDetailResponse.model_validate(ticket)
+
+
+@router.post("/{ticket_id}/call", response_model=TicketResponse)
+async def call_specific_patient(
+    ticket_id: uuid.UUID,
+    action: TicketActionRequest = TicketActionRequest(),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_hospital_staff),
+):
+    """Staff Counter Action: Call a specific patient to the consultation counter"""
+    ticket = await QueueService.call_specific_ticket(db, ticket_id=ticket_id, staff_user=current_user, note=action.note)
+    return TicketResponse.model_validate(ticket)
 
 
 @router.post("/{ticket_id}/start", response_model=TicketResponse)
