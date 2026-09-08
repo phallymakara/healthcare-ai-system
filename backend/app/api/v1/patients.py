@@ -1,7 +1,7 @@
 import uuid
 import re
 from typing import List, Optional
-from fastapi import APIRouter, Depends, status, HTTPException, Query
+from fastapi import APIRouter, Depends, status, HTTPException, Query, UploadFile, File
 from sqlalchemy import select, and_, or_, func
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,6 +9,12 @@ from pydantic import BaseModel
 
 from app.core.database import get_db
 from app.core.deps import get_current_user
+from app.services.azure_storage import azure_storage_service
+from app.schemas.partner import (
+    AssetUploadResponse,
+    AssetMetadataResponse,
+    AssetDeleteResponse,
+)
 from app.models import (
     Hospital,
     HospitalBranch,
@@ -104,6 +110,7 @@ class PatientProfileResponse(BaseModel):
     full_name: str
     phone_number: Optional[str] = None
     email: Optional[str] = None
+    profile_photo_url: Optional[str] = None
     date_of_birth: Optional[str] = None
     gender: Optional[str] = None
     blood_type: Optional[str] = None
@@ -324,6 +331,7 @@ async def get_my_profile(
         full_name=current_user.full_name,
         phone_number=current_user.phone_number,
         email=current_user.email,
+        profile_photo_url=current_user.profile_photo_url,
         date_of_birth=profile.date_of_birth.isoformat() if (profile and profile.date_of_birth) else None,
         gender=profile.gender if profile else None,
         blood_type=profile.blood_type if profile else None,
@@ -364,9 +372,87 @@ async def update_my_profile(
         full_name=current_user.full_name,
         phone_number=current_user.phone_number,
         email=current_user.email,
+        profile_photo_url=current_user.profile_photo_url,
         date_of_birth=profile.date_of_birth.isoformat() if profile.date_of_birth else None,
         gender=profile.gender,
         blood_type=profile.blood_type,
         emergency_contact_name=profile.emergency_contact_name,
         emergency_contact_phone=profile.emergency_contact_phone,
     )
+
+
+# --- Patient Profile Avatar CRUD (Azure Blob Storage) ---
+
+@router.post("/profile/photo", response_model=AssetUploadResponse, status_code=status.HTTP_201_CREATED)
+async def upload_patient_photo(
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """CREATE / UPDATE: Upload or replace patient profile photo in Azure Blob Storage."""
+    owner_prefix = azure_storage_service.user_avatar_prefix(str(current_user.id))
+    result = await azure_storage_service.replace_asset(
+        file=file,
+        owner_prefix=owner_prefix,
+        subfolder="avatar",
+        old_blob_url=current_user.profile_photo_url,
+    )
+
+    current_user.profile_photo_url = result["url"]
+    await db.commit()
+    await db.refresh(current_user)
+
+    return AssetUploadResponse(
+        url=result["url"],
+        blob_name=result["blob_name"],
+        content_type=result.get("content_type"),
+        size=result.get("size"),
+        is_mock=result.get("is_mock", False),
+        message="Patient avatar uploaded successfully",
+    )
+
+
+@router.get("/profile/photo", response_model=AssetMetadataResponse)
+async def get_patient_photo_metadata(
+    current_user: User = Depends(get_current_user),
+):
+    """READ: Retrieve patient profile photo URL and Azure Storage metadata."""
+    if not current_user.profile_photo_url:
+        return AssetMetadataResponse(url=None, exists=False)
+
+    owner_prefix = azure_storage_service.user_avatar_prefix(str(current_user.id))
+    meta = await azure_storage_service.get_asset_metadata(
+        current_user.profile_photo_url,
+        required_prefix=owner_prefix
+    )
+    return AssetMetadataResponse(**meta)
+
+
+@router.put("/profile/photo", response_model=AssetUploadResponse)
+async def replace_patient_photo(
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """UPDATE: Explicitly replace patient avatar with automatic cleanup of old blob."""
+    return await upload_patient_photo(file=file, db=db, current_user=current_user)
+
+
+@router.delete("/profile/photo", response_model=AssetDeleteResponse)
+async def delete_patient_photo(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """DELETE: Remove patient avatar from Azure Blob Storage and reset DB field to null."""
+    if current_user.profile_photo_url:
+        owner_prefix = azure_storage_service.user_avatar_prefix(str(current_user.id))
+        await azure_storage_service.delete_asset(
+            current_user.profile_photo_url,
+            required_prefix=owner_prefix
+        )
+        current_user.profile_photo_url = None
+        await db.commit()
+        await db.refresh(current_user)
+
+    return AssetDeleteResponse(success=True, message="Patient avatar deleted successfully")
+

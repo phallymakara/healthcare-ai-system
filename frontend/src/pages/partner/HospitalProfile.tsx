@@ -43,6 +43,7 @@ export const HospitalProfile: React.FC = () => {
   const [logoError, setLogoError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   const getFriendlyErrorMessage = (rawError: any): string => {
     if (!rawError) return isKm ? 'មិនអាចរក្សាទុកការផ្លាស់ប្តូរបានទេ។ សូមពិនិត្យមើលព័ត៌មានម្តងទៀត។' : 'Unable to save changes. Please review your information.';
@@ -127,19 +128,72 @@ export const HospitalProfile: React.FC = () => {
     loadProfile();
   }, []);
 
-  const handleLogoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        setLogoError(isKm ? 'ទំហំរូបភាពត្រូវតែតូចជាង 2MB' : 'Image size must be under 2MB');
-        return;
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      setLogoError(isKm ? 'ទំហំរូបភាពត្រូវតែតូចជាង 5MB' : 'Image size must be under 5MB');
+      return;
+    }
+
+    setLogoError(null);
+    setUploadingLogo(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch(`${API_BASE}/partners/profile/logo`, {
+        method: 'POST',
+        headers: {
+          ...AuthService.getAuthHeaders(),
+        },
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => null);
+        throw new Error(errData?.detail || 'Failed to upload hospital logo');
       }
-      setLogoError(null);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setLogoUrl(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+
+      const data = await res.json();
+      if (data.url) {
+        setLogoUrl(data.url);
+      }
+    } catch (err: any) {
+      console.error('[Logo Upload Error]:', err);
+      setLogoError(isKm ? 'មិនអាចផ្ទុករូបសញ្ញាឡើងបានទេ។ សូមព្យាយាមម្តងទៀត។' : (err.message || 'Failed to upload logo.'));
+    } finally {
+      setUploadingLogo(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleDeleteLogo = async () => {
+    if (!logoUrl) return;
+    setUploadingLogo(true);
+    setLogoError(null);
+    try {
+      const res = await fetch(`${API_BASE}/partners/profile/logo`, {
+        method: 'DELETE',
+        headers: AuthService.getAuthHeaders(),
+      });
+      if (res.ok) {
+        setLogoUrl('');
+      } else {
+        const errData = await res.json().catch(() => null);
+        throw new Error(errData?.detail || 'Failed to delete logo');
+      }
+    } catch (err: any) {
+      console.error('[Logo Delete Error]:', err);
+      setLogoError(isKm ? 'មិនអាចលុបរូបសញ្ញាបានទេ។' : (err.message || 'Failed to remove logo.'));
+    } finally {
+      setUploadingLogo(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -353,7 +407,7 @@ export const HospitalProfile: React.FC = () => {
                 />
 
                 <div
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={() => !uploadingLogo && fileInputRef.current?.click()}
                   style={{
                     width: '96px',
                     height: '96px',
@@ -364,15 +418,23 @@ export const HospitalProfile: React.FC = () => {
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    cursor: 'pointer',
+                    cursor: uploadingLogo ? 'not-allowed' : 'pointer',
                     position: 'relative',
                     overflow: 'hidden',
                     boxShadow: 'none',
                     flexShrink: 0,
+                    opacity: uploadingLogo ? 0.6 : 1,
                   }}
                   title={isKm ? 'ចុចដើម្បីផ្លាស់ប្តូររូបសញ្ញា' : 'Click to change logo'}
                 >
-                  {logoUrl.trim() ? (
+                  {uploadingLogo ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                      <RefreshCw size={22} className="spin" color="var(--accent-primary)" />
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                        {isKm ? 'កំពុងផ្ទុក...' : 'Uploading...'}
+                      </span>
+                    </div>
+                  ) : logoUrl.trim() ? (
                     <>
                       <img
                         src={logoUrl.trim()}
@@ -419,16 +481,18 @@ export const HospitalProfile: React.FC = () => {
                     {logoUrl.trim() && (
                       <button
                         type="button"
-                        onClick={() => setLogoUrl('')}
+                        onClick={handleDeleteLogo}
+                        disabled={uploadingLogo}
                         style={{
                           background: 'transparent',
                           border: 'none',
                           color: '#dc2626',
                           fontSize: '0.95rem',
-                          cursor: 'pointer',
+                          cursor: uploadingLogo ? 'not-allowed' : 'pointer',
                           padding: '0.2rem 0',
                           fontFamily: kmFont,
                           textDecoration: 'underline',
+                          opacity: uploadingLogo ? 0.5 : 1,
                         }}
                       >
                         {isKm ? 'លុបរូបចេញ' : 'Remove'}

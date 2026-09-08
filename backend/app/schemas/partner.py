@@ -322,4 +322,26 @@ class PartnerBookingsResponse(BaseModel):
     summary: PartnerBookingsSummary = Field(default_factory=PartnerBookingsSummary)
 
 
+# --- Asset Storage CRUD Schemas ---
 
+class AssetUploadResponse(BaseModel):
+    url: str
+    blob_name: str
+    content_type: Optional[str] = None
+    size: Optional[int] = None
+    is_mock: bool = False
+    message: str = "Asset uploaded successfully"
+
+
+class AssetMetadataResponse(BaseModel):
+    url: Optional[str] = None
+    blob_name: Optional[str] = None
+    exists: bool = False
+    size: Optional[int] = None
+    content_type: Optional[str] = None
+    last_modified: Optional[str] = None
+
+
+class AssetDeleteResponse(BaseModel):
+    success: bool
+    message: str

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, UploadFile, File, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -13,7 +13,13 @@ from app.schemas.auth import (
     TokenResponse,
     UserResponse,
 )
+from app.schemas.partner import (
+    AssetUploadResponse,
+    AssetMetadataResponse,
+    AssetDeleteResponse,
+)
 from app.services.auth_service import AuthService
+from app.services.azure_storage import azure_storage_service
 
 router = APIRouter(prefix="/auth", tags=["Authentication & Accounts"])
 
@@ -48,6 +54,82 @@ async def get_current_user_profile(current_user: User = Depends(get_current_user
     return UserResponse.model_validate(current_user)
 
 
+# --- User Profile Avatar CRUD (Azure Blob Storage) ---
+
+@router.post("/me/avatar", response_model=AssetUploadResponse, status_code=status.HTTP_201_CREATED)
+async def upload_my_avatar(
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """CREATE / UPDATE: Upload or replace personal profile avatar in Azure Blob Storage."""
+    owner_prefix = azure_storage_service.user_avatar_prefix(str(current_user.id))
+    result = await azure_storage_service.replace_asset(
+        file=file,
+        owner_prefix=owner_prefix,
+        subfolder="avatar",
+        old_blob_url=current_user.profile_photo_url,
+    )
+
+    current_user.profile_photo_url = result["url"]
+    await db.commit()
+    await db.refresh(current_user)
+
+    return AssetUploadResponse(
+        url=result["url"],
+        blob_name=result["blob_name"],
+        content_type=result.get("content_type"),
+        size=result.get("size"),
+        is_mock=result.get("is_mock", False),
+        message="Profile avatar uploaded successfully",
+    )
+
+
+@router.get("/me/avatar", response_model=AssetMetadataResponse)
+async def get_my_avatar_metadata(
+    current_user: User = Depends(get_current_user),
+):
+    """READ: Retrieve current user avatar URL and Azure Storage metadata."""
+    if not current_user.profile_photo_url:
+        return AssetMetadataResponse(url=None, exists=False)
+
+    owner_prefix = azure_storage_service.user_avatar_prefix(str(current_user.id))
+    meta = await azure_storage_service.get_asset_metadata(
+        current_user.profile_photo_url,
+        required_prefix=owner_prefix
+    )
+    return AssetMetadataResponse(**meta)
+
+
+@router.put("/me/avatar", response_model=AssetUploadResponse)
+async def replace_my_avatar(
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """UPDATE: Explicitly replace personal profile avatar with automatic cleanup of old blob."""
+    return await upload_my_avatar(file=file, db=db, current_user=current_user)
+
+
+@router.delete("/me/avatar", response_model=AssetDeleteResponse)
+async def delete_my_avatar(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """DELETE: Remove personal profile avatar from Azure Blob Storage and reset DB field to null."""
+    if current_user.profile_photo_url:
+        owner_prefix = azure_storage_service.user_avatar_prefix(str(current_user.id))
+        await azure_storage_service.delete_asset(
+            current_user.profile_photo_url,
+            required_prefix=owner_prefix
+        )
+        current_user.profile_photo_url = None
+        await db.commit()
+        await db.refresh(current_user)
+
+    return AssetDeleteResponse(success=True, message="Profile avatar deleted successfully")
+
+
 @router.get("/admin/ping")
 async def admin_only_endpoint(
     current_user: User = Depends(require_roles([UserRole.SUPER_ADMIN]))
@@ -57,3 +139,4 @@ async def admin_only_endpoint(
         "status": "authorized",
         "message": f"Welcome Super Admin {current_user.full_name}",
     }
+

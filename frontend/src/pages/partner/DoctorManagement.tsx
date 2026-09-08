@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { AuthService } from '../../services/auth';
 import { useLanguage } from '../../context/LanguageContext';
 import { API_BASE } from '../../services/api';
+import { Camera, RefreshCw, UserCheck } from 'lucide-react';
 
 const DAY_DEFS = [
   { dayIndex: 0, labelKey: 'day_mon', fullKey: 'day_mon_full' },
@@ -38,6 +39,13 @@ export const DoctorManagement: React.FC = () => {
   const [docSpecialtyError, setDocSpecialtyError] = useState<string | null>(null);
   const [docDeptError, setDocDeptError] = useState<string | null>(null);
   const [docSubmitError, setDocSubmitError] = useState<string | null>(null);
+
+  // Doctor Photo State (Azure Blob Storage)
+  const [docPhotoUrl, setDocPhotoUrl] = useState<string>('');
+  const [docPhotoFile, setDocPhotoFile] = useState<File | null>(null);
+  const [docUploadingPhoto, setDocUploadingPhoto] = useState(false);
+  const [docPhotoError, setDocPhotoError] = useState<string | null>(null);
+  const docPhotoInputRef = useRef<HTMLInputElement>(null);
   const [docLoading, setDocLoading] = useState(false);
   const [activeDropdownDocId, setActiveDropdownDocId] = useState<string | null>(null);
 
@@ -82,6 +90,10 @@ export const DoctorManagement: React.FC = () => {
     setDocMinutes(15);
     setDocIsAvailable(true);
     setDocIsActive(true);
+    setDocPhotoUrl('');
+    setDocPhotoFile(null);
+    setDocUploadingPhoto(false);
+    setDocPhotoError(null);
     setDocNameError(null);
     setDocSpecialtyError(null);
     setDocDeptError(null);
@@ -100,11 +112,88 @@ export const DoctorManagement: React.FC = () => {
     setDocMinutes(doc.avg_consultation_minutes || 15);
     setDocIsAvailable(doc.is_available ?? true);
     setDocIsActive(doc.is_active ?? true);
+    setDocPhotoUrl(doc.photo_url || '');
+    setDocPhotoFile(null);
+    setDocUploadingPhoto(false);
+    setDocPhotoError(null);
     setDocNameError(null);
     setDocSpecialtyError(null);
     setDocDeptError(null);
     setDocSubmitError(null);
     setDocModalOpen(true);
+  };
+
+  // Photo Upload & Deletion Handlers
+  const handlePhotoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      setDocPhotoError(isKm ? 'ទំហំរូបភាពត្រូវតែតូចជាង 5MB' : 'Image size must be under 5MB');
+      return;
+    }
+
+    setDocPhotoError(null);
+
+    if (editingDocId) {
+      setDocUploadingPhoto(true);
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await fetch(`${API_BASE}/partners/doctors/${editingDocId}/photo`, {
+          method: 'POST',
+          headers: AuthService.getAuthHeaders(),
+          body: formData,
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => null);
+          throw new Error(err?.detail || 'Failed to upload photo');
+        }
+        const data = await res.json();
+        setDocPhotoUrl(data.url);
+        setDoctors(prev => prev.map(d => d.id === editingDocId ? { ...d, photo_url: data.url } : d));
+      } catch (err: any) {
+        console.error('Doctor photo upload error:', err);
+        setDocPhotoError(isKm ? 'មិនអាចផ្ទុករូបថតបានទេ។' : (err.message || 'Failed to upload photo.'));
+      } finally {
+        setDocUploadingPhoto(false);
+      }
+    } else {
+      setDocPhotoFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setDocPhotoUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleDeleteDocPhoto = async () => {
+    setDocPhotoError(null);
+    if (editingDocId && docPhotoUrl) {
+      setDocUploadingPhoto(true);
+      try {
+        const res = await fetch(`${API_BASE}/partners/doctors/${editingDocId}/photo`, {
+          method: 'DELETE',
+          headers: AuthService.getAuthHeaders(),
+        });
+        if (res.ok) {
+          setDocPhotoUrl('');
+          setDocPhotoFile(null);
+          setDoctors(prev => prev.map(d => d.id === editingDocId ? { ...d, photo_url: null } : d));
+        } else {
+          throw new Error('Failed to delete doctor photo');
+        }
+      } catch (err: any) {
+        console.error('Doctor photo delete error:', err);
+        setDocPhotoError(isKm ? 'មិនអាចលុបរូបថតបានទេ។' : 'Failed to delete photo.');
+      } finally {
+        setDocUploadingPhoto(false);
+      }
+    } else {
+      setDocPhotoUrl('');
+      setDocPhotoFile(null);
+    }
   };
 
   // Save Doctor Profile (Create or Update)
@@ -167,6 +256,20 @@ export const DoctorManagement: React.FC = () => {
         }
         setDocSubmitError(msg);
         return;
+      }
+
+      const savedDoc = await res.json();
+      const targetDocId = editingDocId || savedDoc.id;
+
+      // If pending photo was selected for new doctor, upload it now
+      if (docPhotoFile && targetDocId) {
+        const formData = new FormData();
+        formData.append('file', docPhotoFile);
+        await fetch(`${API_BASE}/partners/doctors/${targetDocId}/photo`, {
+          method: 'POST',
+          headers: AuthService.getAuthHeaders(),
+          body: formData,
+        }).catch((e) => console.error('Failed to upload doctor photo:', e));
       }
 
       setDocModalOpen(false);
@@ -356,16 +459,38 @@ export const DoctorManagement: React.FC = () => {
                     borderBottomRightRadius: idx === doctors.length - 1 ? '6px' : 0,
                   }}
                 >
-                  {/* Doctor Info Column */}
-                  <div style={{ minWidth: '240px', flex: '1.5' }}>
+                  {/* Doctor Info Column with Avatar */}
+                  <div style={{ minWidth: '260px', flex: '1.5', display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                    <div style={{
+                      width: '42px',
+                      height: '42px',
+                      borderRadius: '50%',
+                      border: '1px solid var(--border-color)',
+                      overflow: 'hidden',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                      background: '#f8fafc',
+                    }}>
+                      {doc.photo_url ? (
+                        <img
+                          src={doc.photo_url}
+                          alt={doc.full_name}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }}
+                        />
+                      ) : (
+                        <UserCheck size={20} color="var(--accent-primary)" />
+                      )}
+                    </div>
                     <div>
                       <div style={{ fontSize: '1.28rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: kmFont, lineHeight: 1.25 }}>
                         {doc.full_name}
                       </div>
-                    </div>
-
-                    <div style={{ fontSize: '1.02rem', color: 'var(--text-muted)', marginTop: '2px', fontFamily: kmFont }}>
-                      {deptObj ? deptObj.name : t('doc_general')} • {doc.specialty}
+                      <div style={{ fontSize: '1.02rem', color: 'var(--text-muted)', marginTop: '2px', fontFamily: kmFont }}>
+                        {deptObj ? deptObj.name : t('doc_general')} • {doc.specialty}
+                      </div>
                     </div>
                   </div>
 
@@ -549,6 +674,78 @@ export const DoctorManagement: React.FC = () => {
               </h3>
 
             <form onSubmit={handleSaveDoctor} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {/* Doctor Avatar Picker (Azure Blob Storage) */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '0.5rem' }}>
+                <input
+                  type="file"
+                  ref={docPhotoInputRef}
+                  accept="image/*"
+                  onChange={handlePhotoFileChange}
+                  style={{ display: 'none' }}
+                />
+                <div
+                  onClick={() => !docUploadingPhoto && docPhotoInputRef.current?.click()}
+                  style={{
+                    width: '74px',
+                    height: '74px',
+                    borderRadius: '50%',
+                    border: '1px dashed var(--border-color)',
+                    backgroundColor: '#ffffff',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: docUploadingPhoto ? 'not-allowed' : 'pointer',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    boxShadow: 'none',
+                    opacity: docUploadingPhoto ? 0.6 : 1,
+                  }}
+                  title={isKm ? 'ចុចដើម្បីប្តូររូបថត' : 'Click to change photo'}
+                >
+                  {docUploadingPhoto ? (
+                    <RefreshCw size={20} className="spin" color="var(--accent-primary)" />
+                  ) : docPhotoUrl ? (
+                    <img
+                      src={docPhotoUrl}
+                      alt="Doctor Preview"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }}
+                    />
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', color: 'var(--text-muted)' }}>
+                      <Camera size={22} color="var(--accent-primary)" />
+                      <span style={{ fontSize: '0.75rem', fontFamily: kmFont }}>{isKm ? 'រូបថត' : 'Photo'}</span>
+                    </div>
+                  )}
+                </div>
+
+                {docPhotoUrl && (
+                  <button
+                    type="button"
+                    onClick={handleDeleteDocPhoto}
+                    disabled={docUploadingPhoto}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#dc2626',
+                      fontSize: '0.88rem',
+                      cursor: docUploadingPhoto ? 'not-allowed' : 'pointer',
+                      marginTop: '4px',
+                      fontFamily: kmFont,
+                      textDecoration: 'underline',
+                    }}
+                  >
+                    {isKm ? 'លុបរូបចេញ' : 'Remove Photo'}
+                  </button>
+                )}
+
+                {docPhotoError && (
+                  <div style={{ color: '#dc2626', fontSize: '0.85rem', marginTop: '4px', fontFamily: kmFont }}>
+                    {docPhotoError}
+                  </div>
+                )}
+              </div>
               <div>
                 <label style={{ display: 'block', fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px', fontFamily: kmFont }}>
                   {t('doc_dept_label')}

@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List, Optional, Union
 from pydantic import AnyHttpUrl, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 import json
@@ -65,6 +65,13 @@ class Settings(BaseSettings):
     # LangGraph Configuration (set in .env)
     LANGGRAPH_CHECKPOINT_DATABASE_URL: str = ""
     LANGGRAPH_STRICT_MSGPACK: bool = True
+
+    # Azure Blob Storage Configuration (set in .env)
+    AZURE_STORAGE_CONNECTION_STRING: str = ""
+    AZURE_STORAGE_CONTAINER_NAME: str = "public-profiles"
+    AZURE_STORAGE_CUSTOM_DOMAIN: Optional[str] = None
+    AZURE_STORAGE_ACCOUNT_NAME: str = ""
+    AZURE_STORAGE_ACCOUNT_KEY: str = ""
 
     @model_validator(mode="after")
     def assemble_urls(self):

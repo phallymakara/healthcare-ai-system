@@ -8,6 +8,7 @@ export interface UserProfile {
   role: 'PATIENT' | 'HOSPITAL_ADMIN' | 'RECEPTIONIST' | 'DOCTOR' | 'NURSE' | 'SUPER_ADMIN';
   is_active: boolean;
   is_verified: boolean;
+  profile_photo_url?: string;
   hospital_id?: string;
   branch_id?: string;
   patient_profile?: {

@@ -362,8 +362,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   justifyContent: 'center',
                   color: 'var(--text-main)',
                   flexShrink: 0,
+                  overflow: 'hidden',
                 }}>
-                  <User size={17} />
+                  {currentUser.profile_photo_url ? (
+                    <img
+                      src={currentUser.profile_photo_url}
+                      alt={currentUser.full_name}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      onError={(e) => {
+                        (e.currentTarget as HTMLElement).style.display = 'none';
+                      }}
+                    />
+                  ) : (
+                    <User size={17} />
+                  )}
                 </div>
                 <div style={{
                   fontSize: '0.98rem',

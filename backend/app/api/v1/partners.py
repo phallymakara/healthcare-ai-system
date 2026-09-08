@@ -1,7 +1,7 @@
 import uuid
 from datetime import date
 from typing import List, Optional
-from fastapi import APIRouter, Depends, status, HTTPException
+from fastapi import APIRouter, Depends, status, HTTPException, UploadFile, File
 from sqlalchemy import select, and_, or_, func, delete
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.deps import get_current_user, require_hospital_staff
 from app.core.security import get_password_hash
+from app.services.azure_storage import azure_storage_service
 from app.models import (
     Hospital,
     HospitalBranch,
@@ -48,6 +49,9 @@ from app.schemas.partner import (
     PartnerBookingItem,
     PartnerBookingsSummary,
     PartnerBookingsResponse,
+    AssetUploadResponse,
+    AssetMetadataResponse,
+    AssetDeleteResponse,
 )
 
 router = APIRouter(prefix="/partners", tags=["Hospital & Clinic Partner Platform"])
@@ -524,6 +528,105 @@ async def delete_partner_doctor(
     return None
 
 
+# --- Doctor Photo CRUD (Azure Blob Storage) ---
+
+@router.post("/doctors/{doctor_id}/photo", response_model=AssetUploadResponse, status_code=status.HTTP_201_CREATED)
+async def upload_doctor_photo(
+    doctor_id: uuid.UUID,
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_hospital_staff),
+):
+    """CREATE / UPDATE: Upload or replace doctor photo in Azure Blob Storage."""
+    hospital_id = current_user.hospital_id or (await db.execute(select(Hospital.id))).scalar()
+    res = await db.execute(
+        select(Doctor).where(and_(Doctor.id == doctor_id, Doctor.hospital_id == hospital_id))
+    )
+    doc = res.scalar_one_or_none()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Doctor not found in this hospital")
+
+    owner_prefix = azure_storage_service.doctor_photo_prefix(str(hospital_id), str(doctor_id))
+    result = await azure_storage_service.replace_asset(
+        file=file,
+        owner_prefix=owner_prefix,
+        subfolder="",
+        old_blob_url=doc.photo_url,
+    )
+
+    doc.photo_url = result["url"]
+    await db.commit()
+    await db.refresh(doc)
+
+    return AssetUploadResponse(
+        url=result["url"],
+        blob_name=result["blob_name"],
+        content_type=result.get("content_type"),
+        size=result.get("size"),
+        is_mock=result.get("is_mock", False),
+        message="Doctor photo uploaded successfully",
+    )
+
+
+@router.get("/doctors/{doctor_id}/photo", response_model=AssetMetadataResponse)
+async def get_doctor_photo_metadata(
+    doctor_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_hospital_staff),
+):
+    """READ: Retrieve doctor photo URL and Azure Storage metadata."""
+    hospital_id = current_user.hospital_id or (await db.execute(select(Hospital.id))).scalar()
+    res = await db.execute(
+        select(Doctor).where(and_(Doctor.id == doctor_id, Doctor.hospital_id == hospital_id))
+    )
+    doc = res.scalar_one_or_none()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Doctor not found")
+
+    if not doc.photo_url:
+        return AssetMetadataResponse(url=None, exists=False)
+
+    owner_prefix = azure_storage_service.doctor_photo_prefix(str(hospital_id), str(doctor_id))
+    meta = await azure_storage_service.get_asset_metadata(doc.photo_url, required_prefix=owner_prefix)
+    return AssetMetadataResponse(**meta)
+
+
+@router.put("/doctors/{doctor_id}/photo", response_model=AssetUploadResponse)
+async def replace_doctor_photo(
+    doctor_id: uuid.UUID,
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_hospital_staff),
+):
+    """UPDATE: Replace doctor photo with auto-cleanup of previous blob."""
+    return await upload_doctor_photo(doctor_id=doctor_id, file=file, db=db, current_user=current_user)
+
+
+@router.delete("/doctors/{doctor_id}/photo", response_model=AssetDeleteResponse)
+async def delete_doctor_photo(
+    doctor_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_hospital_staff),
+):
+    """DELETE: Remove doctor photo from Azure Blob Storage and reset DB photo_url to null."""
+    hospital_id = current_user.hospital_id or (await db.execute(select(Hospital.id))).scalar()
+    res = await db.execute(
+        select(Doctor).where(and_(Doctor.id == doctor_id, Doctor.hospital_id == hospital_id))
+    )
+    doc = res.scalar_one_or_none()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Doctor not found")
+
+    if doc.photo_url:
+        owner_prefix = azure_storage_service.doctor_photo_prefix(str(hospital_id), str(doctor_id))
+        await azure_storage_service.delete_asset(doc.photo_url, required_prefix=owner_prefix)
+        doc.photo_url = None
+        await db.commit()
+        await db.refresh(doc)
+
+    return AssetDeleteResponse(success=True, message="Doctor photo deleted successfully")
+
+
 # --- Staff Management ---
 
 @router.get("/staff", response_model=List[StaffResponse])
@@ -718,6 +821,95 @@ async def update_partner_hospital_profile(
         is_active=hosp.is_active,
         is_verified=hosp.is_verified,
     )
+
+
+# --- Hospital Logo CRUD (Azure Blob Storage) ---
+
+@router.post("/profile/logo", response_model=AssetUploadResponse, status_code=status.HTTP_201_CREATED)
+async def upload_hospital_logo(
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_hospital_staff),
+):
+    """CREATE / UPDATE: Upload or replace hospital logo in Azure Blob Storage."""
+    hospital_id = current_user.hospital_id or (await db.execute(select(Hospital.id))).scalar()
+    res = await db.execute(select(Hospital).where(Hospital.id == hospital_id))
+    hosp = res.scalar_one_or_none()
+    if not hosp:
+        raise HTTPException(status_code=404, detail="Hospital not found")
+
+    owner_prefix = azure_storage_service.hospital_logo_prefix(str(hospital_id))
+    result = await azure_storage_service.replace_asset(
+        file=file,
+        owner_prefix=owner_prefix,
+        subfolder="logo",
+        old_blob_url=hosp.logo_url,
+    )
+
+    hosp.logo_url = result["url"]
+    await db.commit()
+    await db.refresh(hosp)
+
+    return AssetUploadResponse(
+        url=result["url"],
+        blob_name=result["blob_name"],
+        content_type=result.get("content_type"),
+        size=result.get("size"),
+        is_mock=result.get("is_mock", False),
+        message="Hospital logo uploaded successfully",
+    )
+
+
+@router.get("/profile/logo", response_model=AssetMetadataResponse)
+async def get_hospital_logo_metadata(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_hospital_staff),
+):
+    """READ: Retrieve hospital logo URL and storage metadata."""
+    hospital_id = current_user.hospital_id or (await db.execute(select(Hospital.id))).scalar()
+    res = await db.execute(select(Hospital).where(Hospital.id == hospital_id))
+    hosp = res.scalar_one_or_none()
+    if not hosp:
+        raise HTTPException(status_code=404, detail="Hospital not found")
+
+    if not hosp.logo_url:
+        return AssetMetadataResponse(url=None, exists=False)
+
+    owner_prefix = azure_storage_service.hospital_logo_prefix(str(hospital_id))
+    meta = await azure_storage_service.get_asset_metadata(hosp.logo_url, required_prefix=owner_prefix)
+    return AssetMetadataResponse(**meta)
+
+
+@router.put("/profile/logo", response_model=AssetUploadResponse)
+async def replace_hospital_logo(
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_hospital_staff),
+):
+    """UPDATE: Explicitly replace hospital logo with automatic cleanup of old blob."""
+    return await upload_hospital_logo(file=file, db=db, current_user=current_user)
+
+
+@router.delete("/profile/logo", response_model=AssetDeleteResponse)
+async def delete_hospital_logo(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_hospital_staff),
+):
+    """DELETE: Remove hospital logo from Azure Blob Storage and reset DB logo_url to null."""
+    hospital_id = current_user.hospital_id or (await db.execute(select(Hospital.id))).scalar()
+    res = await db.execute(select(Hospital).where(Hospital.id == hospital_id))
+    hosp = res.scalar_one_or_none()
+    if not hosp:
+        raise HTTPException(status_code=404, detail="Hospital not found")
+
+    if hosp.logo_url:
+        owner_prefix = azure_storage_service.hospital_logo_prefix(str(hospital_id))
+        await azure_storage_service.delete_asset(hosp.logo_url, required_prefix=owner_prefix)
+        hosp.logo_url = None
+        await db.commit()
+        await db.refresh(hosp)
+
+    return AssetDeleteResponse(success=True, message="Hospital logo deleted successfully")
 
 
 @router.get("/bookings", response_model=PartnerBookingsResponse)
