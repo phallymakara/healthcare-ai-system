@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Search, 
   Activity, 
@@ -16,9 +16,10 @@ import {
   X, 
   Menu 
 } from 'lucide-react';
-import { UserProfile } from '../services/auth';
+import { UserProfile, AuthService } from '../services/auth';
 import { useLanguage } from '../context/LanguageContext';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { API_BASE } from '../services/api';
 import prosethLogo from '../assets/ProsethBot.svg';
 
 export type NavTab = 
@@ -55,9 +56,63 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const { t } = useLanguage();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showNotifMenu, setShowNotifMenu] = useState(false);
+  const notifRef = useRef<HTMLDivElement>(null);
 
-  const isPartner = currentUser && ['DOCTOR', 'RECEPTIONIST', 'HOSPITAL_ADMIN'].includes(currentUser.role);
+  useEffect(() => {
+    const handleNotifClickOutside = (e: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setShowNotifMenu(false);
+      }
+    };
+    if (showNotifMenu) {
+      document.addEventListener('mousedown', handleNotifClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleNotifClickOutside);
+    };
+  }, [showNotifMenu]);
+
+  const isPartner = currentUser && ['DOCTOR', 'RECEPTIONIST', 'HOSPITAL_ADMIN', 'NURSE'].includes(currentUser.role);
   const isAdmin = currentUser && currentUser.role === 'SUPER_ADMIN';
+
+  const [hospitalInfo, setHospitalInfo] = useState<{ name: string; logo_url?: string } | null>(() => {
+    try {
+      const cached = localStorage.getItem('partner_hospital_profile');
+      return cached ? JSON.parse(cached) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [logoImgError, setLogoImgError] = useState(false);
+
+  useEffect(() => {
+    if (isPartner) {
+      const fetchHosp = () => {
+        fetch(`${API_BASE}/partners/profile`, {
+          headers: AuthService.getAuthHeaders(),
+        })
+          .then((res) => (res.ok ? res.json() : null))
+          .then((data) => {
+            if (data && data.name) {
+              const info = { name: data.name, logo_url: data.logo_url || '' };
+              setHospitalInfo(info);
+              setLogoImgError(false);
+              try {
+                localStorage.setItem('partner_hospital_profile', JSON.stringify(info));
+              } catch {}
+            }
+          })
+          .catch(() => {});
+      };
+
+      fetchHosp();
+
+      window.addEventListener('hospital-profile-updated', fetchHosp);
+      return () => {
+        window.removeEventListener('hospital-profile-updated', fetchHosp);
+      };
+    }
+  }, [isPartner, activeTab]);
 
   const handleNavClick = (tab: NavTab) => {
     onSelectTab(tab);
@@ -66,29 +121,80 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <>
-      {/* Mobile Top Header */}
-      <div className="mobile-header">
-        <button
-          onClick={() => handleNavClick('patient_triage')}
-          className="brand-logo"
-          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-        >
-          <img
-            src={prosethLogo}
-            alt="Proseth Logo"
-            style={{ height: '36px', width: 'auto', objectFit: 'contain' }}
-          />
-          <div>
-            <span style={{
-              fontSize: '1.15rem',
-              fontWeight: 800,
-              color: 'var(--text-main)',
-              fontFamily: 'var(--font-khmer), sans-serif',
-            }}>
-              ជំនួយការសុខភាព
-            </span>
-          </div>
-        </button>
+        {/* Mobile Top Header */}
+        <div className="mobile-header">
+          {isPartner ? (
+            <button
+              onClick={() => handleNavClick('partner_dashboard')}
+              className="brand-logo"
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: '0.65rem' }}
+            >
+              {hospitalInfo?.logo_url && !logoImgError ? (
+                <img
+                  src={hospitalInfo.logo_url}
+                  alt={hospitalInfo.name || 'Hospital Logo'}
+                  onError={() => setLogoImgError(true)}
+                  style={{ height: '42px', width: '42px', objectFit: 'cover', borderRadius: '50%', border: '1px solid var(--border-color)', flexShrink: 0 }}
+                />
+              ) : (
+                <div
+                  style={{
+                    height: '42px',
+                    width: '42px',
+                    borderRadius: '50%',
+                    background: '#f1f5f9',
+                    border: '1px solid var(--border-color)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--text-main)',
+                    flexShrink: 0,
+                  }}
+                >
+                  <Building2 size={22} />
+                </div>
+              )}
+              <div style={{ textAlign: 'left', flex: 1, minWidth: 0 }}>
+                <span
+                  style={{
+                    fontSize: '1.05rem',
+                    fontWeight: 800,
+                    color: 'var(--text-main)',
+                    fontFamily: 'var(--font-khmer), sans-serif',
+                    display: 'block',
+                    lineHeight: 1.25,
+                    wordBreak: 'break-word',
+                  }}
+                >
+                  {hospitalInfo?.name || t('nav_partner_console')}
+                </span>
+              </div>
+            </button>
+          ) : (
+            <button
+              onClick={() => handleNavClick('landing')}
+              className="brand-logo"
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: '0.65rem' }}
+            >
+              <img
+                src={prosethLogo}
+                alt="Proseth Logo"
+                style={{ height: '36px', width: 'auto', objectFit: 'contain' }}
+              />
+              <div>
+                <span
+                  style={{
+                    fontSize: '1.15rem',
+                    fontWeight: 800,
+                    color: 'var(--text-main)',
+                    fontFamily: 'var(--font-khmer), sans-serif',
+                  }}
+                >
+                  {t('app_title')}
+                </span>
+              </div>
+            </button>
+          )}
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <LanguageSwitcher />
@@ -113,30 +219,114 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Left Sidebar (Desktop Fixed / Mobile Drawer) */}
       <aside className={`sidebar-container ${mobileOpen ? 'open' : ''}`}>
-        {/* Top Brand Logo */}
-        <div className="sidebar-header">
-          <button
-            onClick={() => handleNavClick('patient_triage')}
-            className="brand-logo"
-            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, textAlign: 'left' }}
-          >
-            <img
-              src={prosethLogo}
-              alt="Proseth Logo"
-              style={{ height: '42px', width: 'auto', objectFit: 'contain' }}
-            />
-            <div>
-              <div style={{
-                fontSize: '1.2rem',
-                fontWeight: 800,
-                color: 'var(--text-main)',
-                lineHeight: 1.25,
-                fontFamily: 'var(--font-khmer), sans-serif',
-              }}>
-                ជំនួយការសុខភាព
+        {/* Top Brand / Hospital Header */}
+        <div className="sidebar-header" style={{ padding: '1rem 1.15rem', borderBottom: '1px solid var(--border-color)' }}>
+          {isPartner ? (
+            <button
+              onClick={() => handleNavClick('partner_dashboard')}
+              className="brand-logo"
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: 0,
+                textAlign: 'left',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                width: '100%',
+              }}
+              title={hospitalInfo?.name || t('nav_partner_console')}
+            >
+              {hospitalInfo?.logo_url && !logoImgError ? (
+                <img
+                  src={hospitalInfo.logo_url}
+                  alt={hospitalInfo.name || 'Hospital Logo'}
+                  onError={() => setLogoImgError(true)}
+                  style={{
+                    height: '48px',
+                    width: '48px',
+                    objectFit: 'cover',
+                    borderRadius: '50%',
+                    border: '1px solid var(--border-color)',
+                    flexShrink: 0,
+                  }}
+                />
+              ) : (
+                <div
+                  style={{
+                    height: '48px',
+                    width: '48px',
+                    borderRadius: '50%',
+                    background: '#f1f5f9',
+                    border: '1px solid var(--border-color)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--text-main)',
+                    flexShrink: 0,
+                  }}
+                >
+                  <Building2 size={25} />
+                </div>
+              )}
+              <div style={{ overflow: 'hidden', flex: 1, minWidth: 0 }}>
+                <div
+                  style={{
+                    fontSize: '1.1rem',
+                    fontWeight: 800,
+                    color: 'var(--text-main)',
+                    lineHeight: 1.28,
+                    fontFamily: 'var(--font-khmer), sans-serif',
+                    wordBreak: 'break-word',
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                  }}
+                  title={hospitalInfo?.name || ''}
+                >
+                  {hospitalInfo?.name || t('nav_partner_console')}
+                </div>
               </div>
-            </div>
-          </button>
+            </button>
+          ) : (
+            <button
+              onClick={() => handleNavClick('landing')}
+              className="brand-logo"
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: 0,
+                textAlign: 'left',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                width: '100%',
+              }}
+              title={t('app_title')}
+            >
+              <img
+                src={prosethLogo}
+                alt="Proseth Logo"
+                style={{ height: '42px', width: 'auto', objectFit: 'contain', flexShrink: 0 }}
+              />
+              <div>
+                <div
+                  style={{
+                    fontSize: '1.2rem',
+                    fontWeight: 800,
+                    color: 'var(--text-main)',
+                    lineHeight: 1.25,
+                    fontFamily: 'var(--font-khmer), sans-serif',
+                  }}
+                >
+                  {t('app_title')}
+                </div>
+              </div>
+            </button>
+          )}
         </div>
 
         {/* Navigation Items */}
@@ -248,16 +438,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
           )}
         </nav>
 
-        {/* Bottom Section (Language Switcher + Notifications + User info / Sign in) */}
+        {/* Bottom Section (Notifications + Language Switcher + User info / Sign in) */}
         <div className="sidebar-footer">
-          {/* Language Switcher in Sidebar Footer */}
-          <div style={{ width: '100%', marginBottom: '0.75rem', display: 'flex', justifyContent: 'center' }}>
-            <LanguageSwitcher style={{ width: '100%', justifyContent: 'center' }} />
-          </div>
-
           {/* Notifications Trigger */}
           {currentUser && (
-            <div style={{ position: 'relative', width: '100%', marginBottom: '0.6rem' }}>
+            <div ref={notifRef} style={{ position: 'relative', width: '100%', marginBottom: '0.4rem' }}>
               <button
                 onClick={() => setShowNotifMenu(!showNotifMenu)}
                 style={{
@@ -292,34 +477,39 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 )}
               </button>
 
-              {/* Notifications Popup */}
+              {/* Notifications Popup - Aligns flush with sidebar footer */}
               {showNotifMenu && (
                 <div
                   style={{
                     position: 'absolute',
-                    bottom: 'calc(100% + 6px)',
+                    bottom: 'calc(100% + 8px)',
                     left: 0,
-                    width: '280px',
+                    right: 0,
+                    width: '100%',
+                    boxSizing: 'border-box',
                     background: '#ffffff',
                     border: '1px solid var(--border-color)',
                     borderRadius: '8px',
                     zIndex: 200,
-                    padding: '0.95rem',
-                    boxShadow: 'none',
+                    padding: '0.85rem',
+                    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.08)',
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.45rem' }}>
-                    <span style={{ fontSize: '0.92rem', fontWeight: 700 }}>{t('notifications')}</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.65rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.45rem' }}>
+                    <span style={{ fontSize: '0.92rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: 'var(--font-khmer), sans-serif' }}>
+                      {t('notifications')}
+                    </span>
                     <button
                       onClick={() => setShowNotifMenu(false)}
-                      style={{ background: 'transparent', border: 'none', color: 'var(--text-dim)', cursor: 'pointer' }}
+                      style={{ background: 'transparent', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      aria-label="Close notifications"
                     >
                       <X size={15} />
                     </button>
                   </div>
 
                   {notifications.length === 0 ? (
-                    <div style={{ fontSize: '0.85rem', color: 'var(--text-dim)', textAlign: 'center', padding: '0.85rem 0' }}>
+                    <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)', textAlign: 'center', padding: '1.25rem 0.5rem', fontFamily: 'var(--font-khmer), sans-serif', lineHeight: 1.4 }}>
                       {t('no_notifications')}
                     </div>
                   ) : (
@@ -335,10 +525,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             fontSize: '0.82rem',
                           }}
                         >
-                          <div style={{ fontWeight: 700, color: 'var(--accent-primary)', marginBottom: '2px', fontSize: '0.88rem' }}>
+                          <div style={{ fontWeight: 700, color: 'var(--accent-primary)', marginBottom: '2px', fontSize: '0.88rem', fontFamily: 'var(--font-khmer), sans-serif' }}>
                             {n.title}
                           </div>
-                          <div style={{ color: 'var(--text-muted)' }}>{n.message}</div>
+                          <div style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-khmer), sans-serif', lineHeight: 1.35 }}>{n.message}</div>
                         </div>
                       ))}
                     </div>
@@ -347,6 +537,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
               )}
             </div>
           )}
+
+          {/* Language Switcher in Sidebar Footer - Under Notification button, left aligned, no container fill */}
+          <div style={{ width: '100%', marginBottom: '0.65rem' }}>
+            <LanguageSwitcher dropUp variant="sidebar" style={{ width: '100%' }} />
+          </div>
 
           {/* User Profile or Sign In Button - Displays clean user profile without Patient badge */}
           {currentUser ? (

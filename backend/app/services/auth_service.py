@@ -211,12 +211,13 @@ class AuthService:
                 h_name = "Healthcare Partner Clinic"
 
         logger.info("Initiating hospital partner registration for contact: %s", resolved_email or resolved_phone)
+        safe_logo = data.logo_url if data.logo_url and len(data.logo_url) <= 512 else None
         hospital = Hospital(
             id=uuid.uuid4(),
             name=h_name,
             slug=generate_slug(h_name),
             description=data.description,
-            logo_url=data.logo_url,
+            logo_url=safe_logo,
             address=data.address or "",
             phone=str(resolved_phone).strip() if resolved_phone else None,
             email=str(resolved_email).strip().lower() if resolved_email else None,

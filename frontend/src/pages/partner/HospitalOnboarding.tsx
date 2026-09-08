@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Building2,
   ArrowRight,
@@ -7,6 +7,7 @@ import {
   Camera,
   MapPin,
   ExternalLink,
+  RefreshCw,
 } from 'lucide-react';
 import { AuthService, UserProfile } from '../../services/auth';
 import { API_BASE } from '../../services/api';
@@ -49,24 +50,110 @@ export const HospitalOnboarding: React.FC<HospitalOnboardingProps> = ({
 
   // Inline Validation Errors
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
-  const handleLogoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        setErrors((p) => ({
-          ...p,
-          logo: isKm ? 'ទំហំរូបភាពត្រូវតែតូចជាង 2MB' : 'Image size must be under 2MB',
-        }));
-        return;
+  // Fetch recently updated hospital profile and logo on mount
+  useEffect(() => {
+    let isMounted = true;
+    const fetchHospitalProfile = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/partners/profile`, {
+          headers: AuthService.getAuthHeaders(),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (!isMounted) return;
+          if (data.logo_url) setLogoUrl(data.logo_url);
+          if (data.name && !hospitalName) setHospitalName(data.name);
+          if (data.contact_phone && !hospitalPhone) setHospitalPhone(data.contact_phone);
+          if (data.contact_email && !hospitalEmail) setHospitalEmail(data.contact_email);
+          if (data.website && !website) setWebsite(data.website);
+          if (data.emergency_service_available !== undefined) {
+            setEmergencyAvailable(Boolean(data.emergency_service_available));
+          }
+          if (data.address && !address) setAddress(data.address);
+          if (data.city && !city) setCity(data.city);
+          if (data.latitude) setLatitude(String(data.latitude));
+          if (data.longitude) {
+            setLongitude(String(data.longitude));
+            if (data.latitude) {
+              setGoogleMapsUrl(`https://maps.google.com/?q=${data.latitude},${data.longitude}`);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('[HospitalOnboarding] Failed to load hospital profile:', err);
       }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setLogoUrl(reader.result as string);
-        setErrors((p) => ({ ...p, logo: '' }));
-      };
-      reader.readAsDataURL(file);
+    };
+
+    fetchHospitalProfile();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const handleLogoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      setErrors((p) => ({
+        ...p,
+        logo: isKm ? 'ទំហំរូបភាពត្រូវតែតូចជាង 5MB' : 'Image size must be under 5MB',
+      }));
+      return;
     }
+
+    setErrors((p) => ({ ...p, logo: '' }));
+    setUploadingLogo(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch(`${API_BASE}/partners/profile/logo`, {
+        method: 'POST',
+        headers: {
+          ...AuthService.getAuthHeaders(),
+        },
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => null);
+        throw new Error(errData?.detail || 'Failed to upload hospital logo');
+      }
+
+      const data = await res.json();
+      if (data.url) {
+        setLogoUrl(data.url);
+      }
+    } catch (err: any) {
+      console.error('[Onboarding Logo Upload Error]:', err);
+      setErrors((p) => ({
+        ...p,
+        logo: isKm ? 'មិនអាចផ្ទុករូបសញ្ញាឡើងបានទេ។ សូមព្យាយាមម្តងទៀត។' : (err.message || 'Failed to upload logo.'),
+      }));
+    } finally {
+      setUploadingLogo(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleDeleteLogo = async () => {
+    if (!logoUrl) return;
+    try {
+      if (logoUrl.includes('blob.core.windows.net') || logoUrl.includes('/logo/')) {
+        await fetch(`${API_BASE}/partners/profile/logo`, {
+          method: 'DELETE',
+          headers: AuthService.getAuthHeaders(),
+        });
+      }
+    } catch (err) {
+      console.warn('Failed to delete blob from storage:', err);
+    }
+    setLogoUrl('');
   };
 
   const parseGoogleMapsInput = (input: string) => {
@@ -107,12 +194,21 @@ export const HospitalOnboarding: React.FC<HospitalOnboardingProps> = ({
         errs.hospitalName = t('err_facility_name');
       }
     } else if (step === 2) {
-      if (hospitalEmail.trim() && !hospitalEmail.includes('@')) {
+      if (!hospitalPhone.trim()) {
+        errs.hospitalPhone = isKm ? 'សូមបញ្ចូលលេខទូរស័ព្ទផ្នែកទទួលភ្ញៀវសាធារណៈ។' : 'Please enter reception phone number.';
+      }
+      if (!hospitalEmail.trim() || !hospitalEmail.includes('@')) {
         errs.hospitalEmail = t('err_facility_email');
       }
     } else if (step === 3) {
       if (!address.trim()) {
-        errs.address = t('err_facility_address');
+        errs.address = isKm ? 'សូមបញ្ចូលអាសយដ្ឋានផ្លូវ។' : 'Please enter street address.';
+      }
+      if (!city.trim()) {
+        errs.city = isKm ? 'សូមបញ្ចូលរាជធានី ឬខេត្ត។' : 'Please enter city or province.';
+      }
+      if (!googleMapsUrl.trim() && (!latitude || !longitude)) {
+        errs.map = isKm ? 'សូមបញ្ចូលតំណភ្ជាប់ Google Maps ឬកូអរដោនេទីតាំង។' : 'Please provide a Google Maps link or coordinates.';
       }
     }
 
@@ -143,10 +239,12 @@ export const HospitalOnboarding: React.FC<HospitalOnboardingProps> = ({
     }
     setErrors({});
 
+    const cleanLogo = (logoUrl && !logoUrl.startsWith('data:') && logoUrl.length <= 512) ? logoUrl.trim() : null;
+
     // If user filled in anything, save in background
     if (
       hospitalName.trim() ||
-      logoUrl.trim() ||
+      cleanLogo ||
       address.trim() ||
       city.trim() ||
       hospitalPhone.trim() ||
@@ -162,7 +260,7 @@ export const HospitalOnboarding: React.FC<HospitalOnboardingProps> = ({
         },
         body: JSON.stringify({
           name: hospitalName.trim() || undefined,
-          logo_url: logoUrl.trim() || null,
+          logo_url: cleanLogo,
           address: address.trim() || null,
           city: city.trim() || null,
           contact_phone: hospitalPhone.trim() || null,
@@ -188,10 +286,12 @@ export const HospitalOnboarding: React.FC<HospitalOnboardingProps> = ({
     setErrors({});
 
     try {
+      const cleanLogo = (logoUrl && !logoUrl.startsWith('data:') && logoUrl.length <= 512) ? logoUrl.trim() : null;
+
       // Update Hospital Profile
       const profilePayload: any = {
         name: hospitalName.trim(),
-        logo_url: logoUrl.trim() || null,
+        logo_url: cleanLogo,
         address: address.trim() || null,
         city: city.trim() || null,
         contact_phone: hospitalPhone.trim() || null,
@@ -260,16 +360,47 @@ export const HospitalOnboarding: React.FC<HospitalOnboardingProps> = ({
             marginBottom: '0.85rem',
           }}
         >
-          <img
-            src={prosethLogo}
-            alt="Proseth Logo"
-            style={{
-              width: '52px',
-              height: '52px',
-              objectFit: 'contain',
-              display: 'block',
-            }}
-          />
+          {logoUrl.trim() ? (
+            <div
+              style={{
+                width: '64px',
+                height: '64px',
+                borderRadius: '50%',
+                border: '1.5px solid var(--border-color)',
+                backgroundColor: 'var(--bg-secondary, #f8fafc)',
+                overflow: 'hidden',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: 'none',
+              }}
+            >
+              <img
+                src={logoUrl.trim()}
+                alt={hospitalName || 'Hospital Logo'}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  display: 'block',
+                }}
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = prosethLogo;
+                }}
+              />
+            </div>
+          ) : (
+            <img
+              src={prosethLogo}
+              alt="Proseth Logo"
+              style={{
+                width: '52px',
+                height: '52px',
+                objectFit: 'contain',
+                display: 'block',
+              }}
+            />
+          )}
         </div>
         <h1
           style={{
@@ -282,6 +413,18 @@ export const HospitalOnboarding: React.FC<HospitalOnboardingProps> = ({
         >
           {t('onboard_welcome_title')}
         </h1>
+        {hospitalName.trim() && (
+          <p
+            style={{
+              fontSize: '1rem',
+              fontWeight: 600,
+              color: 'var(--accent-primary)',
+              margin: '0.35rem 0 0 0',
+            }}
+          >
+            {hospitalName}
+          </p>
+        )}
       </div>
 
       {/* Stepper Indicator */}
@@ -448,7 +591,25 @@ export const HospitalOnboarding: React.FC<HospitalOnboardingProps> = ({
               }}
               title={isKm ? 'ចុចដើម្បីជ្រើសរើសរូបសញ្ញា' : 'Click to select logo'}
             >
-              {logoUrl.trim() ? (
+              {uploadingLogo ? (
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '0.45rem',
+                    color: 'var(--accent-primary)',
+                  }}
+                >
+                  <RefreshCw
+                    size={28}
+                    style={{ animation: 'spin 1s linear infinite' }}
+                  />
+                  <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>
+                    {isKm ? 'កំពុងផ្ទុកឡើង...' : 'Uploading...'}
+                  </span>
+                </div>
+              ) : logoUrl.trim() ? (
                 <>
                   <img
                     src={logoUrl.trim()}
@@ -499,10 +660,10 @@ export const HospitalOnboarding: React.FC<HospitalOnboardingProps> = ({
             </div>
 
             {/* Remove Action (Only shown when an image is present) */}
-            {logoUrl && (
+            {logoUrl && !uploadingLogo && (
               <button
                 type="button"
-                onClick={() => setLogoUrl('')}
+                onClick={handleDeleteLogo}
                 style={{
                   background: 'transparent',
                   border: 'none',
@@ -622,17 +783,20 @@ export const HospitalOnboarding: React.FC<HospitalOnboardingProps> = ({
                   marginBottom: '0.5rem',
                 }}
               >
-                {t('facility_phone_label')}
+                {t('facility_phone_label')} <span style={{ color: '#dc2626' }}>*</span>
               </label>
               <input
                 type="text"
                 value={hospitalPhone}
-                onChange={(e) => setHospitalPhone(e.target.value)}
+                onChange={(e) => {
+                  setHospitalPhone(e.target.value);
+                  if (errors.hospitalPhone) setErrors((p) => ({ ...p, hospitalPhone: '' }));
+                }}
                 placeholder="023 888 999"
                 style={{
                   width: '100%',
                   padding: '0.85rem 1.1rem',
-                  border: '1px solid var(--border-color)',
+                  border: `1px solid ${errors.hospitalPhone ? '#dc2626' : 'var(--border-color)'}`,
                   borderRadius: 'var(--radius-md, 8px)',
                   fontSize: '1.05rem',
                   color: 'var(--text-main)',
@@ -642,6 +806,18 @@ export const HospitalOnboarding: React.FC<HospitalOnboardingProps> = ({
                   boxShadow: 'none',
                 }}
               />
+              {errors.hospitalPhone && (
+                <span
+                  style={{
+                    color: '#dc2626',
+                    fontSize: '0.88rem',
+                    marginTop: '4px',
+                    display: 'block',
+                  }}
+                >
+                  {errors.hospitalPhone}
+                </span>
+              )}
             </div>
 
             <div>
@@ -654,7 +830,7 @@ export const HospitalOnboarding: React.FC<HospitalOnboardingProps> = ({
                   marginBottom: '0.5rem',
                 }}
               >
-                {t('facility_email_label')}
+                {t('facility_email_label')} <span style={{ color: '#dc2626' }}>*</span>
               </label>
               <input
                 type="email"
@@ -785,7 +961,7 @@ export const HospitalOnboarding: React.FC<HospitalOnboardingProps> = ({
                 marginBottom: '0.5rem',
               }}
             >
-              {t('facility_address_label')}
+              {t('facility_address_label')} <span style={{ color: '#dc2626' }}>*</span>
             </label>
             <input
               type="text"
@@ -833,17 +1009,20 @@ export const HospitalOnboarding: React.FC<HospitalOnboardingProps> = ({
                 marginBottom: '0.5rem',
               }}
             >
-              {t('facility_city_label')}
+              {t('facility_city_label')} <span style={{ color: '#dc2626' }}>*</span>
             </label>
             <input
               type="text"
               value={city}
-              onChange={(e) => setCity(e.target.value)}
+              onChange={(e) => {
+                setCity(e.target.value);
+                if (errors.city) setErrors((p) => ({ ...p, city: '' }));
+              }}
               placeholder={t('facility_city_placeholder')}
               style={{
                 width: '100%',
                 padding: '0.85rem 1.1rem',
-                border: '1px solid var(--border-color)',
+                border: `1px solid ${errors.city ? '#dc2626' : 'var(--border-color)'}`,
                 borderRadius: 'var(--radius-md, 8px)',
                 fontSize: '1.05rem',
                 color: 'var(--text-main)',
@@ -853,6 +1032,18 @@ export const HospitalOnboarding: React.FC<HospitalOnboardingProps> = ({
                 boxShadow: 'none',
               }}
             />
+            {errors.city && (
+              <span
+                style={{
+                  color: '#dc2626',
+                  fontSize: '0.88rem',
+                  marginTop: '4px',
+                  display: 'block',
+                }}
+              >
+                {errors.city}
+              </span>
+            )}
           </div>
 
           {/* Google Maps Location Input */}
@@ -866,7 +1057,7 @@ export const HospitalOnboarding: React.FC<HospitalOnboardingProps> = ({
                 marginBottom: '0.5rem',
               }}
             >
-              {t('facility_map_label')}
+              {t('facility_map_label')} <span style={{ color: '#dc2626' }}>*</span>
             </label>
             <input
               type="text"

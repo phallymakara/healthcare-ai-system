@@ -174,6 +174,8 @@ async def issue_walk_in_ticket(
         doctor_id=data.doctor_id,
         service_id=data.service_id,
         ticket_source=TicketSource.WALK_IN,
+        appointment_date=data.appointment_date,
+        appointment_time=data.appointment_time,
     )
 
 

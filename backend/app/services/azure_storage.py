@@ -104,6 +104,71 @@ class AzureBlobStorageService:
     # CRUD Operations
     # -------------------------------------------------------------
 
+    async def upload_raw_bytes(
+        self,
+        file_bytes: bytes,
+        content_type: str,
+        owner_prefix: str,
+        subfolder: str = "",
+        ext: str = "webp",
+    ) -> Dict[str, Any]:
+        """
+        CREATE from bytes: Upload raw image bytes to isolated Azure Blob Storage path.
+        """
+        if len(file_bytes) > MAX_FILE_SIZE:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"File exceeds maximum size of 5MB ({len(file_bytes)} bytes)."
+            )
+
+        filename = f"{uuid.uuid4().hex}.{ext}"
+        clean_prefix = owner_prefix.strip("/")
+        if subfolder:
+            blob_name = f"{clean_prefix}/{subfolder.strip('/')}/{filename}"
+        else:
+            blob_name = f"{clean_prefix}/{filename}"
+
+        if not self.is_configured:
+            logger.warning("Azure Storage not configured. Falling back to local/placeholder asset.")
+            mock_url = f"/assets/mock-uploads/{blob_name}"
+            return {
+                "url": mock_url,
+                "blob_name": blob_name,
+                "content_type": content_type,
+                "size": len(file_bytes),
+                "is_mock": True,
+            }
+
+        container_client = self._get_container_client()
+        if not container_client:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Azure Storage is temporarily unavailable. Please try again later."
+            )
+
+        try:
+            from azure.storage.blob import ContentSettings
+            blob_client = container_client.get_blob_client(blob_name)
+            blob_client.upload_blob(
+                file_bytes,
+                overwrite=True,
+                content_settings=ContentSettings(content_type=content_type),
+            )
+            public_url = self._build_public_url(blob_name)
+            return {
+                "url": public_url,
+                "blob_name": blob_name,
+                "content_type": content_type,
+                "size": len(file_bytes),
+                "is_mock": False,
+            }
+        except Exception as e:
+            logger.error(f"Failed to upload raw bytes to blob '{blob_name}': {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to upload image to cloud storage."
+            )
+
     async def upload_asset(
         self,
         file: UploadFile,
@@ -125,54 +190,13 @@ class AzureBlobStorageService:
         elif file.filename and "." in file.filename:
             ext = file.filename.rsplit(".", 1)[-1].lower()
 
-        filename = f"{uuid.uuid4().hex}.{ext}"
-        clean_prefix = owner_prefix.strip("/")
-        if subfolder:
-            blob_name = f"{clean_prefix}/{subfolder.strip('/')}/{filename}"
-        else:
-            blob_name = f"{clean_prefix}/{filename}"
-
-        if not self.is_configured:
-            logger.warning("Azure Storage not configured. Falling back to local/placeholder asset.")
-            # Graceful local fallback simulation
-            mock_url = f"/assets/mock-uploads/{blob_name}"
-            return {
-                "url": mock_url,
-                "blob_name": blob_name,
-                "content_type": file.content_type,
-                "size": len(content),
-                "is_mock": True
-            }
-
-        container_client = self._get_container_client()
-        if not container_client:
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="Azure Storage is temporarily unavailable. Please try again later."
-            )
-
-        try:
-            from azure.storage.blob import ContentSettings
-            blob_client = container_client.get_blob_client(blob_name)
-            blob_client.upload_blob(
-                content,
-                overwrite=True,
-                content_settings=ContentSettings(content_type=file.content_type)
-            )
-            public_url = self._build_public_url(blob_name)
-            return {
-                "url": public_url,
-                "blob_name": blob_name,
-                "content_type": file.content_type,
-                "size": len(content),
-                "is_mock": False
-            }
-        except Exception as e:
-            logger.error(f"Failed to upload blob '{blob_name}' to Azure Storage: {e}")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to upload image to cloud storage."
-            )
+        return await self.upload_raw_bytes(
+            file_bytes=content,
+            content_type=file.content_type or "image/webp",
+            owner_prefix=owner_prefix,
+            subfolder=subfolder,
+            ext=ext,
+        )
 
     async def get_asset_metadata(
         self,

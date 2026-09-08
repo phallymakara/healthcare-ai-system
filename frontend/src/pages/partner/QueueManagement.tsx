@@ -4,11 +4,7 @@ import {
   Clock,
   User,
   Phone,
-  Search,
-  RefreshCw,
   CheckCircle2,
-  AlertCircle,
-  Plus,
   X,
   Play,
   Volume2,
@@ -56,6 +52,22 @@ interface BookingsSummary {
   completed_count: number;
 }
 
+interface StandardTimeSlot {
+  key: string;
+  labelKm: string;
+}
+
+const STANDARD_TIME_SLOTS: StandardTimeSlot[] = [
+  { key: '08:00 AM - 09:00 AM', labelKm: '០៨:០០ ព្រឹក - ០៩:០០ ព្រឹក' },
+  { key: '09:00 AM - 10:00 AM', labelKm: '០៩:០០ ព្រឹក - ១០:០០ ព្រឹក' },
+  { key: '10:00 AM - 11:00 AM', labelKm: '១០:០០ ព្រឹក - ១១:០០ ព្រឹក' },
+  { key: '11:00 AM - 12:00 PM', labelKm: '១១:០០ ព្រឹក - ១២:០០ ថ្ងៃត្រង់' },
+  { key: '01:30 PM - 02:30 PM', labelKm: '០១:៣០ រសៀល - ០២:៣០ រសៀល' },
+  { key: '02:30 PM - 03:30 PM', labelKm: '០២:៣០ រសៀល - ០៣:៣០ រសៀល' },
+  { key: '03:30 PM - 04:30 PM', labelKm: '០៣:៣០ រសៀល - ០៤:៣០ រសៀល' },
+  { key: '04:30 PM - 05:30 PM', labelKm: '០៤:៣០ រសៀល - ០៥:៣០ រសៀល' },
+];
+
 export const QueueManagement: React.FC = () => {
   const { language, t } = useLanguage();
   const isKm = language === 'km';
@@ -82,11 +94,11 @@ export const QueueManagement: React.FC = () => {
 
   // Filters State
   const [selectedDeptId, setSelectedDeptId] = useState<string>('');
-  const [selectedDoctorId, setSelectedDoctorId] = useState<string>('');
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [selectedSource, setSelectedSource] = useState<string>('ALL'); // 'ALL' | 'ONLINE' | 'WALK_IN'
-  const [selectedStatus, setSelectedStatus] = useState<string>('ALL'); // 'ALL' | 'WAITING' | 'CALLED' | 'SERVING' | 'COMPLETED' | 'SKIPPED'
-  const [searchQuery, setSearchQuery] = useState<string>('');
+
+  // Time Slot Availability Filter: 'ALL' | 'AVAILABLE' | 'UNAVAILABLE'
+  const [slotAvailabilityFilter, setSlotAvailabilityFilter] = useState<'ALL' | 'AVAILABLE' | 'UNAVAILABLE'>('ALL');
+  const [walkInSlotTime, setWalkInSlotTime] = useState<string>('');
 
   // Walk-in modal state & errors
   const [walkInModalOpen, setWalkInModalOpen] = useState(false);
@@ -168,22 +180,20 @@ export const QueueManagement: React.FC = () => {
         setServices(srvs);
       }
     } catch {
-      setActionError('Error loading hospital configuration.');
+      setActionError(t('qm_err_config'));
     }
   };
 
   // Fetch customer booking slots from backend
-  const loadBookings = async () => {
-    setLoading(true);
-    setActionError(null);
+  const loadBookings = async (showLoadingSpinner: boolean = true) => {
+    if (showLoadingSpinner) {
+      setLoading(true);
+      setActionError(null);
+    }
     try {
       const params = new URLSearchParams();
       if (selectedDeptId) params.append('department_id', selectedDeptId);
-      if (selectedDoctorId) params.append('doctor_id', selectedDoctorId);
       if (selectedDate) params.append('booking_date', selectedDate);
-      if (selectedSource && selectedSource !== 'ALL') params.append('source', selectedSource);
-      if (selectedStatus && selectedStatus !== 'ALL') params.append('status_filter', selectedStatus);
-      if (searchQuery.trim()) params.append('search', searchQuery.trim());
 
       const res = await fetch(`${API_BASE}/partners/bookings?${params.toString()}`, {
         headers: AuthService.getAuthHeaders(),
@@ -195,13 +205,17 @@ export const QueueManagement: React.FC = () => {
         if (data.summary) {
           setSummary(data.summary);
         }
-      } else {
-        setActionError('Failed to fetch booking slots.');
+      } else if (showLoadingSpinner) {
+        setActionError(t('qm_err_load_schedule'));
       }
     } catch {
-      setActionError('Connection error loading booking slots.');
+      if (showLoadingSpinner) {
+        setActionError(t('qm_err_load_schedule'));
+      }
     } finally {
-      setLoading(false);
+      if (showLoadingSpinner) {
+        setLoading(false);
+      }
     }
   };
 
@@ -211,29 +225,51 @@ export const QueueManagement: React.FC = () => {
 
   useEffect(() => {
     loadBookings();
-  }, [selectedDeptId, selectedDoctorId, selectedDate, selectedSource, selectedStatus]);
+  }, [selectedDeptId, selectedDate]);
 
-  // WebSocket Live Subscription
+  // WebSocket Live Subscription & Real-time Background Sync
   useEffect(() => {
+    const user = AuthService.getStoredUser();
+    const hospitalId = user?.hospital_id;
     const targetDept = selectedDeptId || (departments.length > 0 ? departments[0].id : null);
-    if (targetDept) {
-      const ws = new RealTimeQueueClient(`queue:${targetDept}`);
-      ws.connect();
-      const unsub = ws.subscribe(() => {
-        loadBookings();
-      });
-      return () => {
-        unsub();
-        ws.disconnect();
-      };
-    }
-  }, [selectedDeptId, departments]);
 
-  // Handle Search submit
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    loadBookings();
-  };
+    const clients: RealTimeQueueClient[] = [];
+    const unsubscribers: Array<() => void> = [];
+
+    const handleRealtimeUpdate = () => {
+      loadBookings(false);
+    };
+
+    if (hospitalId) {
+      const hospWs = new RealTimeQueueClient(`hospital:${hospitalId}`);
+      hospWs.connect();
+      unsubscribers.push(hospWs.subscribe(handleRealtimeUpdate));
+      clients.push(hospWs);
+    }
+
+    if (targetDept) {
+      const deptWs = new RealTimeQueueClient(`queue:${targetDept}`);
+      deptWs.connect();
+      unsubscribers.push(deptWs.subscribe(handleRealtimeUpdate));
+      clients.push(deptWs);
+    }
+
+    const globalWs = new RealTimeQueueClient('global');
+    globalWs.connect();
+    unsubscribers.push(globalWs.subscribe(handleRealtimeUpdate));
+    clients.push(globalWs);
+
+    // Heartbeat silent poll every 4 seconds to guarantee live real-time sync without user manual reload
+    const interval = setInterval(() => {
+      loadBookings(false);
+    }, 4000);
+
+    return () => {
+      clearInterval(interval);
+      unsubscribers.forEach((unsub) => unsub());
+      clients.forEach((c) => c.disconnect());
+    };
+  }, [selectedDeptId, departments, selectedDate]);
 
   // Actions on individual booking slots
   const handleCallTicket = async (ticketId: string) => {
@@ -246,13 +282,13 @@ export const QueueManagement: React.FC = () => {
         body: JSON.stringify({ note: 'Called from Customer Booking Slots view' }),
       });
       if (!res.ok) {
-        setActionError('Unable to call patient ticket.');
+        setActionError(t('qm_err_recall'));
         return;
       }
       playCallingChime();
       await loadBookings();
     } catch {
-      setActionError('Network error calling patient.');
+      setActionError(t('qm_err_recall'));
     } finally {
       setActionLoading(false);
     }
@@ -267,12 +303,12 @@ export const QueueManagement: React.FC = () => {
         headers: { 'Content-Type': 'application/json', ...AuthService.getAuthHeaders() },
       });
       if (!res.ok) {
-        setActionError('Unable to start consultation.');
+        setActionError(t('qm_err_start_consult'));
         return;
       }
       await loadBookings();
     } catch {
-      setActionError('Network error starting consultation.');
+      setActionError(t('qm_err_start_consult'));
     } finally {
       setActionLoading(false);
     }
@@ -287,12 +323,12 @@ export const QueueManagement: React.FC = () => {
         headers: { 'Content-Type': 'application/json', ...AuthService.getAuthHeaders() },
       });
       if (!res.ok) {
-        setActionError('Unable to complete consultation.');
+        setActionError(t('qm_err_complete_consult'));
         return;
       }
       await loadBookings();
     } catch {
-      setActionError('Network error completing consultation.');
+      setActionError(t('qm_err_complete_consult'));
     } finally {
       setActionLoading(false);
     }
@@ -307,12 +343,12 @@ export const QueueManagement: React.FC = () => {
         headers: { 'Content-Type': 'application/json', ...AuthService.getAuthHeaders() },
       });
       if (!res.ok) {
-        setActionError('Unable to skip patient.');
+        setActionError(t('qm_err_skip'));
         return;
       }
       await loadBookings();
     } catch {
-      setActionError('Network error skipping patient.');
+      setActionError(t('qm_err_skip'));
     } finally {
       setActionLoading(false);
     }
@@ -328,13 +364,13 @@ export const QueueManagement: React.FC = () => {
         body: JSON.stringify({ note: 'Recalled from Customer Booking Slots view' }),
       });
       if (!res.ok) {
-        setActionError('Unable to recall patient.');
+        setActionError(t('qm_err_recall'));
         return;
       }
       playCallingChime();
       await loadBookings();
     } catch {
-      setActionError('Network error recalling patient.');
+      setActionError(t('qm_err_recall'));
     } finally {
       setActionLoading(false);
     }
@@ -349,12 +385,12 @@ export const QueueManagement: React.FC = () => {
         headers: { 'Content-Type': 'application/json', ...AuthService.getAuthHeaders() },
       });
       if (!res.ok) {
-        setActionError('Unable to mark as no-show.');
+        setActionError(t('qm_err_status'));
         return;
       }
       await loadBookings();
     } catch {
-      setActionError('Network error marking no-show.');
+      setActionError(t('qm_err_status'));
     } finally {
       setActionLoading(false);
     }
@@ -367,7 +403,7 @@ export const QueueManagement: React.FC = () => {
     setWalkInError(null);
 
     if (!walkInName.trim()) {
-      setWalkInNameError('Please enter the patient full name.');
+      setWalkInNameError(t('qm_err_enter_name'));
       return;
     }
 
@@ -384,11 +420,13 @@ export const QueueManagement: React.FC = () => {
           service_id: walkInServiceId || undefined,
           patient_name: walkInName.trim(),
           patient_phone: walkInPhone.trim() || undefined,
+          appointment_date: selectedDate || new Date().toISOString().split('T')[0],
+          appointment_time: walkInSlotTime || undefined,
         }),
       });
 
       if (!res.ok) {
-        setWalkInError('Unable to issue walk-in ticket. Please try again.');
+        setWalkInError(t('qm_err_issue_ticket'));
         return;
       }
 
@@ -402,6 +440,8 @@ export const QueueManagement: React.FC = () => {
         department_name: selectedDeptObj ? selectedDeptObj.name : 'General',
         doctor_name: selectedDocObj ? selectedDocObj.full_name : null,
         service_name: selectedSrvObj ? selectedSrvObj.name : null,
+        appointment_date: selectedDate || new Date().toISOString().split('T')[0],
+        appointment_time: walkInSlotTime || undefined,
         issued_at: new Date(),
       });
 
@@ -410,9 +450,9 @@ export const QueueManagement: React.FC = () => {
       setWalkInPhone('');
       setWalkInDoctorId('');
       setWalkInServiceId('');
-      await loadBookings();
+      await loadBookings(false);
     } catch {
-      setWalkInError('Connection issue issuing walk-in ticket. Please try again.');
+      setWalkInError(t('qm_err_issue_ticket'));
     } finally {
       setActionLoading(false);
     }
@@ -427,30 +467,36 @@ export const QueueManagement: React.FC = () => {
     setWalkInModalOpen(false);
   };
 
-  // Doctors & Services filtered by walkInDeptId
-  const availableDoctors = doctors.filter(
-    (d: any) => !walkInDeptId || d.department_id === walkInDeptId
-  );
+  // Services filtered by walkInDeptId
   const availableServices = services.filter(
     (s: any) => !walkInDeptId || s.department_id === walkInDeptId
   );
 
-  // Status Badge Rendering Helper
+  // Status Badge Rendering Helper (Clean dot indicator without filled background colors)
   const renderStatusBadge = (status: string) => {
     switch (status) {
       case 'WAITING':
         return (
           <span
             style={{
-              padding: '0.25rem 0.65rem',
-              borderRadius: '4px',
-              fontSize: '0.78rem',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              fontSize: '0.84rem',
               fontWeight: 600,
-              background: '#fef3c7',
-              color: '#92400e',
-              border: '1px solid #fde68a',
+              color: '#d97706',
+              fontFamily: kmFont,
             }}
           >
+            <span
+              style={{
+                width: '7px',
+                height: '7px',
+                borderRadius: '50%',
+                backgroundColor: '#d97706',
+                display: 'inline-block',
+              }}
+            />
             {t('cbs_status_waiting')}
           </span>
         );
@@ -458,15 +504,24 @@ export const QueueManagement: React.FC = () => {
         return (
           <span
             style={{
-              padding: '0.25rem 0.65rem',
-              borderRadius: '4px',
-              fontSize: '0.78rem',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              fontSize: '0.84rem',
               fontWeight: 600,
-              background: '#e0f2fe',
-              color: '#0369a1',
-              border: '1px solid #bae6fd',
+              color: '#0284c7',
+              fontFamily: kmFont,
             }}
           >
+            <span
+              style={{
+                width: '7px',
+                height: '7px',
+                borderRadius: '50%',
+                backgroundColor: '#0284c7',
+                display: 'inline-block',
+              }}
+            />
             {t('cbs_status_called')}
           </span>
         );
@@ -474,15 +529,24 @@ export const QueueManagement: React.FC = () => {
         return (
           <span
             style={{
-              padding: '0.25rem 0.65rem',
-              borderRadius: '4px',
-              fontSize: '0.78rem',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              fontSize: '0.84rem',
               fontWeight: 600,
-              background: '#dcfce7',
-              color: '#15803d',
-              border: '1px solid #bbf7d0',
+              color: '#059669',
+              fontFamily: kmFont,
             }}
           >
+            <span
+              style={{
+                width: '7px',
+                height: '7px',
+                borderRadius: '50%',
+                backgroundColor: '#059669',
+                display: 'inline-block',
+              }}
+            />
             {t('cbs_status_serving')}
           </span>
         );
@@ -490,15 +554,24 @@ export const QueueManagement: React.FC = () => {
         return (
           <span
             style={{
-              padding: '0.25rem 0.65rem',
-              borderRadius: '4px',
-              fontSize: '0.78rem',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              fontSize: '0.84rem',
               fontWeight: 600,
-              background: '#f1f5f9',
-              color: '#475569',
-              border: '1px solid #e2e8f0',
+              color: 'var(--text-muted)',
+              fontFamily: kmFont,
             }}
           >
+            <span
+              style={{
+                width: '7px',
+                height: '7px',
+                borderRadius: '50%',
+                backgroundColor: '#94a3b8',
+                display: 'inline-block',
+              }}
+            />
             {t('cbs_status_completed')}
           </span>
         );
@@ -507,15 +580,24 @@ export const QueueManagement: React.FC = () => {
         return (
           <span
             style={{
-              padding: '0.25rem 0.65rem',
-              borderRadius: '4px',
-              fontSize: '0.78rem',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              fontSize: '0.84rem',
               fontWeight: 600,
-              background: '#ffe4e6',
-              color: '#be123c',
-              border: '1px solid #fecdd3',
+              color: '#dc2626',
+              fontFamily: kmFont,
             }}
           >
+            <span
+              style={{
+                width: '7px',
+                height: '7px',
+                borderRadius: '50%',
+                backgroundColor: '#dc2626',
+                display: 'inline-block',
+              }}
+            />
             {t('cbs_status_skipped')}
           </span>
         );
@@ -523,15 +605,24 @@ export const QueueManagement: React.FC = () => {
         return (
           <span
             style={{
-              padding: '0.25rem 0.65rem',
-              borderRadius: '4px',
-              fontSize: '0.78rem',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              fontSize: '0.84rem',
               fontWeight: 600,
-              background: '#f3f4f6',
-              color: '#374151',
-              border: '1px solid #e5e7eb',
+              color: 'var(--text-muted)',
+              fontFamily: kmFont,
             }}
           >
+            <span
+              style={{
+                width: '7px',
+                height: '7px',
+                borderRadius: '50%',
+                backgroundColor: '#94a3b8',
+                display: 'inline-block',
+              }}
+            />
             {status}
           </span>
         );
@@ -548,14 +639,624 @@ export const QueueManagement: React.FC = () => {
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   };
 
+  // Live Slot Schedule Calculations for selected date
+  const slotGroups = STANDARD_TIME_SLOTS.map((slot) => {
+    const matched = bookings.filter((b) => {
+      if (b.appointment_time) {
+        const apt = b.appointment_time.trim().toLowerCase();
+        const sKey = slot.key.trim().toLowerCase();
+        if (apt === sKey || apt.startsWith(sKey.slice(0, 5)) || sKey.startsWith(apt.slice(0, 5))) {
+          return true;
+        }
+      }
+      return false;
+    });
+    return {
+      slot,
+      isBooked: matched.length > 0,
+      bookings: matched,
+    };
+  });
+
+  const generalBookings = bookings.filter((b) => {
+    return !slotGroups.some((g) => g.bookings.some((item) => item.id === b.id));
+  });
+
+  const availableSlotsCount = slotGroups.filter((g) => !g.isBooked).length;
+  const bookedSlotsCount = slotGroups.filter((g) => g.isBooked).length;
+
+  const filteredSlotGroups = slotGroups.filter((g) => {
+    if (slotAvailabilityFilter === 'AVAILABLE') return !g.isBooked;
+    if (slotAvailabilityFilter === 'UNAVAILABLE') return g.isBooked;
+    return true;
+  });
+
+  // Reusable card renderer for booked patient tickets
+  const renderBookingCard = (item: any) => {
+    const isOnline = item.ticket_source === 'ONLINE';
+    const isServing = item.status === 'SERVING';
+    const isCalled = item.status === 'CALLED';
+    const isWaiting = item.status === 'WAITING';
+    const isSkipped = item.status === 'SKIPPED' || item.status === 'NO_SHOW';
+    const isCompleted = item.status === 'COMPLETED';
+
+    return (
+      <div
+        key={item.id}
+        style={{
+          background: '#ffffff',
+          border: isServing
+            ? '1px solid #059669'
+            : isCalled
+            ? '1px solid #0284c7'
+            : '1px solid var(--border-color)',
+          borderRadius: '6px',
+          padding: '1.15rem 1.3rem',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.9rem',
+          boxShadow: 'none',
+        }}
+      >
+        {/* Slot Top Meta Bar */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '0.75rem',
+            borderBottom: '1px solid var(--border-color)',
+            paddingBottom: '0.75rem',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+            {/* Time Slot Badge */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                fontSize: '0.9rem',
+                fontWeight: 700,
+                color: 'var(--text-main)',
+                fontFamily: kmFont,
+                background: '#f8fafc',
+                border: '1px solid var(--border-color)',
+                padding: '0.25rem 0.6rem',
+                borderRadius: '4px',
+              }}
+            >
+              <Clock size={14} style={{ color: 'var(--text-muted)' }} />
+              <span>
+                {item.appointment_time ||
+                  new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            </div>
+
+            {/* Date Badge */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                fontSize: '0.85rem',
+                color: 'var(--text-muted)',
+              }}
+            >
+              <Calendar size={14} />
+              <span>{item.appointment_date || new Date(item.created_at).toISOString().split('T')[0]}</span>
+            </div>
+
+            {/* Ticket Number */}
+            <div
+              style={{
+                fontSize: '1.05rem',
+                fontWeight: 800,
+                fontFamily: kmFont,
+                color: 'var(--text-main)',
+                letterSpacing: '0.04em',
+              }}
+            >
+              #{item.ticket_number}
+            </div>
+
+            {/* Ticket Source Indicator */}
+            {isOnline ? (
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.3rem',
+                  padding: '0.2rem 0.55rem',
+                  borderRadius: '4px',
+                  fontSize: '0.78rem',
+                  fontWeight: 500,
+                  border: '1px solid var(--border-color)',
+                  color: 'var(--text-muted)',
+                  fontFamily: kmFont,
+                }}
+              >
+                <Smartphone size={12} />
+                {t('cbs_source_online')}
+              </span>
+            ) : (
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.3rem',
+                  padding: '0.2rem 0.55rem',
+                  borderRadius: '4px',
+                  fontSize: '0.78rem',
+                  fontWeight: 500,
+                  border: '1px solid var(--border-color)',
+                  color: 'var(--text-muted)',
+                  fontFamily: kmFont,
+                }}
+              >
+                <User size={12} />
+                {t('cbs_source_walkin')}
+              </span>
+            )}
+          </div>
+
+          {/* Status Badge */}
+          <div>{renderStatusBadge(item.status)}</div>
+        </div>
+
+        {/* Slot Details Body Grid */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+            gap: '0.85rem',
+          }}
+        >
+          {/* Patient Info */}
+          <div>
+            <div
+              style={{
+                fontSize: '0.75rem',
+                color: 'var(--text-muted)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+                fontWeight: 600,
+              }}
+            >
+              {t('cbs_slot_patient')}
+            </div>
+            <div
+              style={{
+                fontSize: '1rem',
+                fontWeight: 700,
+                color: 'var(--text-main)',
+                marginTop: '0.2rem',
+              }}
+            >
+              {item.patient_name}
+            </div>
+            {item.patient_phone && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  fontSize: '0.82rem',
+                  color: 'var(--text-muted)',
+                  marginTop: '0.2rem',
+                }}
+              >
+                <Phone size={12} />
+                <span>{item.patient_phone}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Doctor & Department */}
+          <div>
+            <div
+              style={{
+                fontSize: '0.75rem',
+                color: 'var(--text-muted)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+                fontWeight: 600,
+              }}
+            >
+              {t('cbs_slot_doctor')}
+            </div>
+            <div
+              style={{
+                fontSize: '0.92rem',
+                fontWeight: 600,
+                color: 'var(--text-main)',
+                marginTop: '0.2rem',
+              }}
+            >
+              {item.doctor_name ? (
+                <>
+                  {item.doctor_name}{' '}
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 400 }}>
+                    ({item.doctor_specialty || t('qm_specialist_default')})
+                  </span>
+                </>
+              ) : (
+                <span style={{ color: 'var(--text-muted)' }}>{t('qm_any_specialist')}</span>
+              )}
+            </div>
+            <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
+              {item.department_name} {item.department_code ? `(${item.department_code})` : ''}
+            </div>
+          </div>
+
+          {/* Service */}
+          <div>
+            <div
+              style={{
+                fontSize: '0.75rem',
+                color: 'var(--text-muted)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+                fontWeight: 600,
+              }}
+            >
+              {t('cbs_slot_service')}
+            </div>
+            <div
+              style={{
+                fontSize: '0.9rem',
+                fontWeight: 600,
+                color: 'var(--text-main)',
+                marginTop: '0.2rem',
+              }}
+            >
+              {item.service_name || t('qm_standard_consultation')}
+            </div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
+              {t('cbs_queue_pos')}: #{item.position || 1} • {t('cbs_est_wait')}: ~
+              {item.estimated_wait_minutes || 0} {t('pd_mins')}
+            </div>
+          </div>
+
+          {/* Live Consultation Timer if Serving */}
+          {isServing && (
+            <div
+              style={{
+                background: '#ffffff',
+                border: '1px solid var(--border-color)',
+                borderRadius: '4px',
+                padding: '0.55rem 0.75rem',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+              }}
+            >
+              <div style={{ fontSize: '0.72rem', fontWeight: 600, color: '#059669', fontFamily: kmFont }}>
+                {t('qm_consultation_time')}
+              </div>
+              <div
+                style={{
+                  fontSize: '1.3rem',
+                  fontWeight: 800,
+                  fontFamily: 'monospace',
+                  color: '#059669',
+                  marginTop: '0.15rem',
+                }}
+              >
+                {formatElapsedTimer(item.serving_started_at)}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Slot Action Controls Bar */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+            flexWrap: 'wrap',
+            gap: '0.55rem',
+            borderTop: '1px solid var(--border-color)',
+            paddingTop: '0.75rem',
+          }}
+        >
+          {/* Actions for WAITING */}
+          {isWaiting && (
+            <>
+              <button
+                onClick={() => handleCallTicket(item.id)}
+                disabled={actionLoading}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  padding: '0.45rem 0.9rem',
+                  background: 'transparent',
+                  border: '1px solid var(--text-main)',
+                  borderRadius: '4px',
+                  color: 'var(--text-main)',
+                  fontSize: '0.84rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontFamily: kmFont,
+                  boxShadow: 'none',
+                }}
+              >
+                <Volume2 size={14} />
+                {t('cbs_call_patient')}
+              </button>
+
+              <button
+                onClick={() => handleStartServing(item.id)}
+                disabled={actionLoading}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  padding: '0.45rem 0.9rem',
+                  background: 'transparent',
+                  border: '1px solid #059669',
+                  borderRadius: '4px',
+                  color: '#059669',
+                  fontSize: '0.84rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontFamily: kmFont,
+                  boxShadow: 'none',
+                }}
+              >
+                <Play size={13} />
+                {t('cbs_start_consult')}
+              </button>
+
+              <button
+                onClick={() => handleSkip(item.id)}
+                disabled={actionLoading}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  padding: '0.45rem 0.75rem',
+                  background: 'transparent',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '4px',
+                  color: 'var(--text-muted)',
+                  fontSize: '0.82rem',
+                  cursor: 'pointer',
+                  fontFamily: kmFont,
+                  boxShadow: 'none',
+                }}
+              >
+                {t('cbs_skip_patient')}
+              </button>
+            </>
+          )}
+
+          {/* Actions for CALLED */}
+          {isCalled && (
+            <>
+              <button
+                onClick={() => handleStartServing(item.id)}
+                disabled={actionLoading}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  padding: '0.45rem 0.9rem',
+                  background: 'transparent',
+                  border: '1px solid #059669',
+                  borderRadius: '4px',
+                  color: '#059669',
+                  fontSize: '0.84rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontFamily: kmFont,
+                  boxShadow: 'none',
+                }}
+              >
+                <Play size={13} />
+                {t('cbs_start_consult')}
+              </button>
+
+              <button
+                onClick={() => handleCallTicket(item.id)}
+                disabled={actionLoading}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  padding: '0.45rem 0.75rem',
+                  background: 'transparent',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '4px',
+                  color: 'var(--text-main)',
+                  fontSize: '0.82rem',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  fontFamily: kmFont,
+                  boxShadow: 'none',
+                }}
+              >
+                <Volume2 size={13} />
+                {t('cbs_recall_patient')}
+              </button>
+
+              <button
+                onClick={() => handleSkip(item.id)}
+                disabled={actionLoading}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  padding: '0.45rem 0.75rem',
+                  background: 'transparent',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '4px',
+                  color: 'var(--text-muted)',
+                  fontSize: '0.82rem',
+                  cursor: 'pointer',
+                  fontFamily: kmFont,
+                  boxShadow: 'none',
+                }}
+              >
+                {t('cbs_skip_patient')}
+              </button>
+            </>
+          )}
+
+          {/* Actions for SERVING */}
+          {isServing && (
+            <>
+              <button
+                onClick={() => handleComplete(item.id)}
+                disabled={actionLoading}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  padding: '0.45rem 1rem',
+                  background: 'transparent',
+                  border: '1px solid #059669',
+                  borderRadius: '4px',
+                  color: '#059669',
+                  fontSize: '0.84rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontFamily: kmFont,
+                  boxShadow: 'none',
+                }}
+              >
+                <CheckCircle2 size={15} />
+                {t('cbs_finish_consult')}
+              </button>
+
+              <button
+                onClick={() => handleRecall(item.id)}
+                disabled={actionLoading}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  padding: '0.45rem 0.75rem',
+                  background: 'transparent',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '4px',
+                  color: 'var(--text-main)',
+                  fontSize: '0.82rem',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  fontFamily: kmFont,
+                  boxShadow: 'none',
+                }}
+              >
+                <RotateCcw size={13} />
+                {t('cbs_recall_patient')}
+              </button>
+
+              <button
+                onClick={() => handleNoShow(item.id)}
+                disabled={actionLoading}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  padding: '0.45rem 0.75rem',
+                  background: 'transparent',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '4px',
+                  color: '#dc2626',
+                  fontSize: '0.8rem',
+                  cursor: 'pointer',
+                  fontFamily: kmFont,
+                  boxShadow: 'none',
+                }}
+              >
+                <UserX size={13} />
+                {t('cbs_noshow_patient')}
+              </button>
+            </>
+          )}
+
+          {/* Actions for SKIPPED */}
+          {isSkipped && (
+            <>
+              <button
+                onClick={() => handleRecall(item.id)}
+                disabled={actionLoading}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  padding: '0.45rem 0.75rem',
+                  background: 'transparent',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '4px',
+                  color: 'var(--text-main)',
+                  fontSize: '0.82rem',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  fontFamily: kmFont,
+                  boxShadow: 'none',
+                }}
+              >
+                <RotateCcw size={13} />
+                {t('cbs_recall_patient')}
+              </button>
+
+              <button
+                onClick={() => handleNoShow(item.id)}
+                disabled={actionLoading}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  padding: '0.45rem 0.75rem',
+                  background: 'transparent',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '4px',
+                  color: '#dc2626',
+                  fontSize: '0.8rem',
+                  cursor: 'pointer',
+                  fontFamily: kmFont,
+                  boxShadow: 'none',
+                }}
+              >
+                <UserX size={13} />
+                {t('cbs_noshow_patient')}
+              </button>
+            </>
+          )}
+
+          {/* State for COMPLETED */}
+          {isCompleted && (
+            <div
+              style={{
+                fontSize: '0.82rem',
+                color: 'var(--text-muted)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                fontFamily: kmFont,
+              }}
+            >
+              <Check size={14} style={{ color: '#059669' }} />
+              <span>{t('cbs_status_completed')}</span>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div
       style={{
         width: '100%',
-        minHeight: 'calc(100vh - 120px)',
+        fontFamily: kmFont,
         display: 'flex',
         flexDirection: 'column',
-        fontFamily: kmFont,
         gap: '1.25rem',
       }}
     >
@@ -563,26 +1264,32 @@ export const QueueManagement: React.FC = () => {
       <style>{`
         @media print {
           body * {
-            visibility: hidden !important;
+            visibility: hidden;
           }
-          #thermal-slip-print-area, #thermal-slip-print-area * {
-            visibility: visible !important;
+          #thermal-receipt-slip, #thermal-receipt-slip * {
+            visibility: visible;
           }
-          #thermal-slip-print-area {
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
-            width: 80mm !important;
-            padding: 4mm !important;
-            margin: 0 !important;
-            background: #ffffff !important;
-            color: #000000 !important;
-            font-family: monospace !important;
+          #thermal-receipt-slip {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 80mm;
+            margin: 0;
+            padding: 10px;
+            box-shadow: none !important;
+            border: none !important;
           }
+        }
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        .spin {
+          animation: spin 1s linear infinite;
         }
       `}</style>
 
-      {/* Top Header & Walk-In Button */}
+      {/* Top Header & + Walk-In Action Button */}
       <div
         style={{
           display: 'flex',
@@ -590,33 +1297,28 @@ export const QueueManagement: React.FC = () => {
           alignItems: 'center',
           flexWrap: 'wrap',
           gap: '1rem',
-          background: '#ffffff',
-          padding: '1.25rem 1.5rem',
-          borderRadius: '6px',
-          border: '1px solid var(--border-color)',
-          boxShadow: 'none',
+          borderBottom: '1px solid var(--border-color)',
+          paddingBottom: '1rem',
+          marginBottom: '0.25rem',
         }}
       >
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-            <Calendar size={22} style={{ color: 'var(--text-main)' }} />
-            <h1
-              style={{
-                fontSize: '1.4rem',
-                fontWeight: 700,
-                color: 'var(--text-main)',
-                margin: 0,
-                fontFamily: kmFont,
-              }}
-            >
-              {t('cbs_title')}
-            </h1>
-          </div>
+          <h1
+            style={{
+              fontSize: '1.28rem',
+              fontWeight: 700,
+              color: 'var(--text-main)',
+              margin: 0,
+              fontFamily: kmFont,
+            }}
+          >
+            {t('cbs_title')}
+          </h1>
           <p
             style={{
-              fontSize: '0.88rem',
+              fontSize: '0.9rem',
               color: 'var(--text-muted)',
-              margin: '0.35rem 0 0 0',
+              margin: '0.3rem 0 0 0',
               fontFamily: kmFont,
             }}
           >
@@ -624,66 +1326,41 @@ export const QueueManagement: React.FC = () => {
           </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <button
-            onClick={() => loadBookings()}
-            title={t('cbs_refresh')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: '38px',
-              height: '38px',
-              background: '#ffffff',
-              border: '1px solid var(--border-color)',
-              borderRadius: '4px',
-              color: 'var(--text-main)',
-              cursor: 'pointer',
-              boxShadow: 'none',
-            }}
-          >
-            <RefreshCw size={16} className={loading ? 'spin' : ''} />
-          </button>
-
-          <button
-            onClick={() => {
-              setWalkInName('');
-              setWalkInPhone('');
-              setWalkInDeptId(selectedDeptId || (departments.length > 0 ? departments[0].id : ''));
-              setWalkInDoctorId('');
-              setWalkInServiceId('');
-              setWalkInNameError(null);
-              setWalkInError(null);
-              setIssuedTicketSlip(null);
-              setWalkInModalOpen(true);
-            }}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.45rem',
-              padding: '0.6rem 1.1rem',
-              background: 'var(--text-main)',
-              border: '1px solid var(--text-main)',
-              borderRadius: '4px',
-              color: '#ffffff',
-              fontSize: '0.9rem',
-              fontWeight: 600,
-              fontFamily: kmFont,
-              cursor: 'pointer',
-              boxShadow: 'none',
-            }}
-          >
-            <Plus size={16} />
-            {t('qm_issue_walkin')}
-          </button>
-        </div>
+        <button
+          onClick={() => {
+            setWalkInName('');
+            setWalkInPhone('');
+            setWalkInDeptId(selectedDeptId || (departments.length > 0 ? departments[0].id : ''));
+            setWalkInDoctorId('');
+            setWalkInServiceId('');
+            setWalkInSlotTime('');
+            setWalkInNameError(null);
+            setWalkInError(null);
+            setIssuedTicketSlip(null);
+            setWalkInModalOpen(true);
+          }}
+          style={{
+            padding: '0.55rem 1rem',
+            background: 'transparent',
+            border: '1px solid var(--text-main)',
+            borderRadius: '4px',
+            color: 'var(--text-main)',
+            fontSize: '0.875rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+            boxShadow: 'none',
+            fontFamily: kmFont,
+          }}
+        >
+          {t('qm_issue_walkin_btn')}
+        </button>
       </div>
 
       {/* Summary KPI Cards Bar */}
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
           gap: '0.85rem',
         }}
       >
@@ -692,19 +1369,20 @@ export const QueueManagement: React.FC = () => {
             background: '#ffffff',
             border: '1px solid var(--border-color)',
             borderRadius: '6px',
-            padding: '1rem',
+            padding: '0.95rem 1.15rem',
             boxShadow: 'none',
           }}
         >
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontFamily: kmFont }}>
+          <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontFamily: kmFont, fontWeight: 500 }}>
             {t('cbs_stat_total')}
           </div>
           <div
             style={{
-              fontSize: '1.75rem',
-              fontWeight: 800,
+              fontSize: '1.6rem',
+              fontWeight: 700,
               color: 'var(--text-main)',
-              marginTop: '0.25rem',
+              marginTop: '0.2rem',
+              lineHeight: 1.2,
             }}
           >
             {summary.total_bookings}
@@ -716,7 +1394,7 @@ export const QueueManagement: React.FC = () => {
             background: '#ffffff',
             border: '1px solid var(--border-color)',
             borderRadius: '6px',
-            padding: '1rem',
+            padding: '0.95rem 1.15rem',
             boxShadow: 'none',
           }}
         >
@@ -725,9 +1403,10 @@ export const QueueManagement: React.FC = () => {
               display: 'flex',
               alignItems: 'center',
               gap: '0.35rem',
-              fontSize: '0.8rem',
-              color: '#059669',
+              fontSize: '0.82rem',
+              color: 'var(--text-muted)',
               fontFamily: kmFont,
+              fontWeight: 500,
             }}
           >
             <Smartphone size={14} />
@@ -735,10 +1414,11 @@ export const QueueManagement: React.FC = () => {
           </div>
           <div
             style={{
-              fontSize: '1.75rem',
-              fontWeight: 800,
-              color: '#059669',
-              marginTop: '0.25rem',
+              fontSize: '1.6rem',
+              fontWeight: 700,
+              color: 'var(--text-main)',
+              marginTop: '0.2rem',
+              lineHeight: 1.2,
             }}
           >
             {summary.online_bookings}
@@ -750,7 +1430,7 @@ export const QueueManagement: React.FC = () => {
             background: '#ffffff',
             border: '1px solid var(--border-color)',
             borderRadius: '6px',
-            padding: '1rem',
+            padding: '0.95rem 1.15rem',
             boxShadow: 'none',
           }}
         >
@@ -759,9 +1439,10 @@ export const QueueManagement: React.FC = () => {
               display: 'flex',
               alignItems: 'center',
               gap: '0.35rem',
-              fontSize: '0.8rem',
-              color: '#4b5563',
+              fontSize: '0.82rem',
+              color: 'var(--text-muted)',
               fontFamily: kmFont,
+              fontWeight: 500,
             }}
           >
             <User size={14} />
@@ -769,10 +1450,11 @@ export const QueueManagement: React.FC = () => {
           </div>
           <div
             style={{
-              fontSize: '1.75rem',
-              fontWeight: 800,
-              color: '#4b5563',
-              marginTop: '0.25rem',
+              fontSize: '1.6rem',
+              fontWeight: 700,
+              color: 'var(--text-main)',
+              marginTop: '0.2rem',
+              lineHeight: 1.2,
             }}
           >
             {summary.walkin_bookings}
@@ -784,19 +1466,20 @@ export const QueueManagement: React.FC = () => {
             background: '#ffffff',
             border: '1px solid var(--border-color)',
             borderRadius: '6px',
-            padding: '1rem',
+            padding: '0.95rem 1.15rem',
             boxShadow: 'none',
           }}
         >
-          <div style={{ fontSize: '0.8rem', color: '#d97706', fontFamily: kmFont }}>
+          <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontFamily: kmFont, fontWeight: 500 }}>
             {t('cbs_stat_waiting')}
           </div>
           <div
             style={{
-              fontSize: '1.75rem',
-              fontWeight: 800,
+              fontSize: '1.6rem',
+              fontWeight: 700,
               color: '#d97706',
-              marginTop: '0.25rem',
+              marginTop: '0.2rem',
+              lineHeight: 1.2,
             }}
           >
             {summary.waiting_count}
@@ -808,19 +1491,20 @@ export const QueueManagement: React.FC = () => {
             background: '#ffffff',
             border: '1px solid var(--border-color)',
             borderRadius: '6px',
-            padding: '1rem',
+            padding: '0.95rem 1.15rem',
             boxShadow: 'none',
           }}
         >
-          <div style={{ fontSize: '0.8rem', color: '#16a34a', fontFamily: kmFont }}>
+          <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontFamily: kmFont, fontWeight: 500 }}>
             {t('cbs_stat_serving')}
           </div>
           <div
             style={{
-              fontSize: '1.75rem',
-              fontWeight: 800,
-              color: '#16a34a',
-              marginTop: '0.25rem',
+              fontSize: '1.6rem',
+              fontWeight: 700,
+              color: '#059669',
+              marginTop: '0.2rem',
+              lineHeight: 1.2,
             }}
           >
             {summary.serving_count}
@@ -832,19 +1516,20 @@ export const QueueManagement: React.FC = () => {
             background: '#ffffff',
             border: '1px solid var(--border-color)',
             borderRadius: '6px',
-            padding: '1rem',
+            padding: '0.95rem 1.15rem',
             boxShadow: 'none',
           }}
         >
-          <div style={{ fontSize: '0.8rem', color: '#64748b', fontFamily: kmFont }}>
+          <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontFamily: kmFont, fontWeight: 500 }}>
             {t('cbs_stat_completed')}
           </div>
           <div
             style={{
-              fontSize: '1.75rem',
-              fontWeight: 800,
-              color: '#64748b',
-              marginTop: '0.25rem',
+              fontSize: '1.6rem',
+              fontWeight: 700,
+              color: 'var(--text-muted)',
+              marginTop: '0.2rem',
+              lineHeight: 1.2,
             }}
           >
             {summary.completed_count}
@@ -852,295 +1537,108 @@ export const QueueManagement: React.FC = () => {
         </div>
       </div>
 
-      {/* Filter and Search Bar */}
+      {/* Filter Bar */}
       <div
         style={{
           background: '#ffffff',
           border: '1px solid var(--border-color)',
           borderRadius: '6px',
-          padding: '1.1rem 1.25rem',
+          padding: '0.85rem 1.25rem',
           display: 'flex',
-          flexDirection: 'column',
-          gap: '0.85rem',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '0.75rem',
           boxShadow: 'none',
         }}
       >
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: '0.75rem',
-          }}
-        >
-          {/* Department Filter */}
-          <div style={{ flex: '1 1 200px' }}>
-            <select
-              value={selectedDeptId}
-              onChange={(e) => setSelectedDeptId(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '0.55rem 0.85rem',
-                fontSize: '0.88rem',
-                borderRadius: '4px',
-                border: '1px solid var(--border-color)',
-                background: '#ffffff',
-                color: 'var(--text-main)',
-                fontFamily: kmFont,
-                boxShadow: 'none',
-                outline: 'none',
-              }}
-            >
-              <option value="">{t('cbs_all_departments')}</option>
-              {departments.map((dept) => (
-                <option key={dept.id} value={dept.id}>
-                  {dept.name} {dept.code ? `(${dept.code})` : ''}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Doctor Filter */}
-          <div style={{ flex: '1 1 200px' }}>
-            <select
-              value={selectedDoctorId}
-              onChange={(e) => setSelectedDoctorId(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '0.55rem 0.85rem',
-                fontSize: '0.88rem',
-                borderRadius: '4px',
-                border: '1px solid var(--border-color)',
-                background: '#ffffff',
-                color: 'var(--text-main)',
-                fontFamily: kmFont,
-                boxShadow: 'none',
-                outline: 'none',
-              }}
-            >
-              <option value="">{t('cbs_all_doctors')}</option>
-              {doctors.map((doc) => (
-                <option key={doc.id} value={doc.id}>
-                  {doc.full_name} ({doc.specialty})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Date Picker & Quick Date Buttons */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              style={{
-                padding: '0.5rem 0.75rem',
-                fontSize: '0.88rem',
-                borderRadius: '4px',
-                border: '1px solid var(--border-color)',
-                background: '#ffffff',
-                color: 'var(--text-main)',
-                fontFamily: kmFont,
-                boxShadow: 'none',
-                outline: 'none',
-              }}
-            />
-            <button
-              onClick={() => setSelectedDate(new Date().toISOString().split('T')[0])}
-              style={{
-                padding: '0.5rem 0.75rem',
-                fontSize: '0.82rem',
-                fontWeight: 600,
-                borderRadius: '4px',
-                border: '1px solid var(--border-color)',
-                background:
-                  selectedDate === new Date().toISOString().split('T')[0]
-                    ? 'var(--text-main)'
-                    : '#ffffff',
-                color:
-                  selectedDate === new Date().toISOString().split('T')[0]
-                    ? '#ffffff'
-                    : 'var(--text-main)',
-                cursor: 'pointer',
-                fontFamily: kmFont,
-                boxShadow: 'none',
-              }}
-            >
-              {t('cbs_today')}
-            </button>
-            <button
-              onClick={() => setSelectedDate('')}
-              style={{
-                padding: '0.5rem 0.75rem',
-                fontSize: '0.82rem',
-                fontWeight: 600,
-                borderRadius: '4px',
-                border: '1px solid var(--border-color)',
-                background: selectedDate === '' ? 'var(--text-main)' : '#ffffff',
-                color: selectedDate === '' ? '#ffffff' : 'var(--text-main)',
-                cursor: 'pointer',
-                fontFamily: kmFont,
-                boxShadow: 'none',
-              }}
-            >
-              {t('cbs_all_dates')}
-            </button>
-          </div>
-        </div>
-
-        {/* Second Filter Row: Source tabs, Status tabs, Search bar */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: '0.75rem',
-            justifyContent: 'space-between',
-          }}
-        >
-          {/* Source Tabs */}
-          <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
-            {[
-              { key: 'ALL', label: t('cbs_source_all') },
-              { key: 'ONLINE', label: t('cbs_source_online') },
-              { key: 'WALK_IN', label: t('cbs_source_walkin') },
-            ].map((s) => (
-              <button
-                key={s.key}
-                onClick={() => setSelectedSource(s.key)}
-                style={{
-                  padding: '0.42rem 0.75rem',
-                  fontSize: '0.82rem',
-                  fontWeight: selectedSource === s.key ? 700 : 500,
-                  borderRadius: '4px',
-                  border: '1px solid var(--border-color)',
-                  background: selectedSource === s.key ? 'var(--text-main)' : '#ffffff',
-                  color: selectedSource === s.key ? '#ffffff' : 'var(--text-main)',
-                  cursor: 'pointer',
-                  fontFamily: kmFont,
-                  boxShadow: 'none',
-                }}
-              >
-                {s.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Status Select */}
-          <div style={{ minWidth: '160px' }}>
-            <select
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '0.45rem 0.75rem',
-                fontSize: '0.85rem',
-                borderRadius: '4px',
-                border: '1px solid var(--border-color)',
-                background: '#ffffff',
-                color: 'var(--text-main)',
-                fontFamily: kmFont,
-                boxShadow: 'none',
-                outline: 'none',
-              }}
-            >
-              <option value="ALL">{t('cbs_status_all')}</option>
-              <option value="WAITING">{t('cbs_status_waiting')}</option>
-              <option value="CALLED">{t('cbs_status_called')}</option>
-              <option value="SERVING">{t('cbs_status_serving')}</option>
-              <option value="COMPLETED">{t('cbs_status_completed')}</option>
-              <option value="SKIPPED">{t('cbs_status_skipped')}</option>
-            </select>
-          </div>
-
-          {/* Search Form */}
-          <form
-            onSubmit={handleSearchSubmit}
+        {/* Department Filter */}
+        <div style={{ flex: '1 1 240px', maxWidth: '360px' }}>
+          <select
+            value={selectedDeptId}
+            onChange={(e) => setSelectedDeptId(e.target.value)}
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.4rem',
-              flex: '1 1 240px',
-              maxWidth: '380px',
+              width: '100%',
+              padding: '0.55rem 0.85rem',
+              fontSize: '0.88rem',
+              borderRadius: '4px',
+              border: '1px solid var(--border-color)',
+              background: '#ffffff',
+              color: 'var(--text-main)',
+              fontFamily: kmFont,
+              boxShadow: 'none',
+              outline: 'none',
             }}
           >
-            <div
-              style={{
-                position: 'relative',
-                width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-              }}
-            >
-              <Search
-                size={16}
-                style={{
-                  position: 'absolute',
-                  left: '10px',
-                  color: 'var(--text-muted)',
-                }}
-              />
-              <input
-                type="text"
-                placeholder={t('cbs_search_placeholder')}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '0.48rem 0.75rem 0.48rem 32px',
-                  fontSize: '0.85rem',
-                  borderRadius: '4px',
-                  border: '1px solid var(--border-color)',
-                  boxShadow: 'none',
-                  outline: 'none',
-                  fontFamily: kmFont,
-                  boxSizing: 'border-box',
-                }}
-              />
-            </div>
-            <button
-              type="submit"
-              style={{
-                padding: '0.48rem 0.85rem',
-                background: '#ffffff',
-                border: '1px solid var(--border-color)',
-                borderRadius: '4px',
-                color: 'var(--text-main)',
-                fontSize: '0.82rem',
-                fontWeight: 600,
-                fontFamily: kmFont,
-                cursor: 'pointer',
-                boxShadow: 'none',
-              }}
-            >
-              <Search size={14} />
-            </button>
-          </form>
+            <option value="">{t('cbs_all_departments')}</option>
+            {departments.map((dept) => (
+              <option key={dept.id} value={dept.id}>
+                {dept.name} {dept.code ? `(${dept.code})` : ''}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Date Picker & Quick Date Button */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            style={{
+              padding: '0.5rem 0.75rem',
+              fontSize: '0.88rem',
+              borderRadius: '4px',
+              border: '1px solid var(--border-color)',
+              background: '#ffffff',
+              color: 'var(--text-main)',
+              fontFamily: kmFont,
+              boxShadow: 'none',
+              outline: 'none',
+            }}
+          />
+          <button
+            onClick={() => setSelectedDate(new Date().toISOString().split('T')[0])}
+            style={{
+              padding: '0.52rem 0.85rem',
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              borderRadius: '4px',
+              border:
+                selectedDate === new Date().toISOString().split('T')[0]
+                  ? '1px solid var(--text-main)'
+                  : '1px solid var(--border-color)',
+              background: 'transparent',
+              color:
+                selectedDate === new Date().toISOString().split('T')[0]
+                  ? 'var(--text-main)'
+                  : 'var(--text-muted)',
+              cursor: 'pointer',
+              fontFamily: kmFont,
+              boxShadow: 'none',
+            }}
+          >
+            {t('cbs_today')}
+          </button>
         </div>
       </div>
 
-      {/* Action Notification or Error Banner */}
+      {/* Action Error Message (Plain Minimalist Text without Containers) */}
       {actionError && (
         <div
           style={{
-            padding: '0.75rem 1rem',
-            background: '#fef2f2',
-            border: '1px solid #fca5a5',
-            borderRadius: '4px',
             color: '#dc2626',
-            fontSize: '0.88rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
+            fontSize: '0.92rem',
+            fontWeight: 500,
             fontFamily: kmFont,
+            margin: '0.2rem 0',
           }}
         >
-          <AlertCircle size={18} />
-          <span>{actionError}</span>
+          {actionError}
         </div>
       )}
 
-      {/* Booking Slots Grid / Cards */}
+      {/* Booking Slots Grid / Live Schedule */}
       {loading ? (
         <div
           style={{
@@ -1156,531 +1654,313 @@ export const QueueManagement: React.FC = () => {
         >
           {t('qm_loading')}
         </div>
-      ) : bookings.length === 0 ? (
-        <div
-          style={{
-            textAlign: 'center',
-            padding: '4rem 2rem',
-            background: '#ffffff',
-            borderRadius: '6px',
-            border: '1px solid var(--border-color)',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '0.75rem',
-          }}
-        >
-          <Calendar size={44} style={{ color: 'var(--text-muted)', opacity: 0.6 }} />
+      ) : selectedDate ? (
+        /* Live Available / Unavailable Slots View based on Date */
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+          {/* Live Slots Availability Header Bar */}
           <div
             style={{
-              fontSize: '1.05rem',
-              fontWeight: 600,
-              color: 'var(--text-main)',
+              background: '#ffffff',
+              border: '1px solid var(--border-color)',
+              borderRadius: '6px',
+              padding: '0.9rem 1.25rem',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '0.85rem',
+              boxShadow: 'none',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                <Calendar size={17} style={{ color: 'var(--text-muted)' }} />
+                <span style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: kmFont }}>
+                  {t('cbs_slots_overview')}: {selectedDate}
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.35rem',
+                    fontSize: '0.84rem',
+                    fontWeight: 600,
+                    color: '#059669',
+                    fontFamily: kmFont,
+                  }}
+                >
+                  <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#059669', display: 'inline-block' }} />
+                  {t('cbs_available_count')}: {availableSlotsCount}
+                </span>
+
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.35rem',
+                    fontSize: '0.84rem',
+                    fontWeight: 600,
+                    color: bookedSlotsCount > 0 ? '#dc2626' : 'var(--text-muted)',
+                    fontFamily: kmFont,
+                  }}
+                >
+                  <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: bookedSlotsCount > 0 ? '#dc2626' : '#94a3b8', display: 'inline-block' }} />
+                  {t('cbs_booked_count')}: {bookedSlotsCount}
+                </span>
+              </div>
+            </div>
+
+            {/* Slot Quick Filter Tabs */}
+            <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
+              {[
+                { key: 'ALL', label: `${t('cbs_filter_all_slots')} (${STANDARD_TIME_SLOTS.length})` },
+                { key: 'AVAILABLE', label: `${t('cbs_filter_available_only')} (${availableSlotsCount})` },
+                { key: 'UNAVAILABLE', label: `${t('cbs_filter_booked_only')} (${bookedSlotsCount})` },
+              ].map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setSlotAvailabilityFilter(tab.key as any)}
+                  style={{
+                    padding: '0.45rem 0.85rem',
+                    fontSize: '0.84rem',
+                    fontWeight: slotAvailabilityFilter === tab.key ? 700 : 500,
+                    borderRadius: '4px',
+                    border:
+                      slotAvailabilityFilter === tab.key
+                        ? '1px solid var(--text-main)'
+                        : '1px solid var(--border-color)',
+                    background: 'transparent',
+                    color:
+                      slotAvailabilityFilter === tab.key
+                        ? 'var(--text-main)'
+                        : 'var(--text-muted)',
+                    cursor: 'pointer',
+                    fontFamily: kmFont,
+                    boxShadow: 'none',
+                  }}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Time Slots List */}
+          {filteredSlotGroups.length === 0 ? (
+            <div
+              style={{
+                textAlign: 'center',
+                paddingTop: '9.5rem',
+                paddingBottom: '6rem',
+                fontFamily: kmFont,
+                color: 'var(--text-muted)',
+                fontSize: '0.98rem',
+              }}
+            >
+              {t('cbs_no_bookings')}
+            </div>
+          ) : (
+            <div className="slots-schedule-grid">
+              {filteredSlotGroups.map((group) => {
+                const isBooked = group.isBooked;
+
+                if (isBooked) {
+                  // Booked / Unavailable Slot Container (Full width across all 3 columns to display patient tickets)
+                  return (
+                    <div
+                      key={group.slot.key}
+                      className="slot-card-unavailable"
+                      style={{
+                        gridColumn: '1 / -1',
+                        width: '100%',
+                        background: '#ffffff',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: '6px',
+                        padding: '0.85rem 1.15rem',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.75rem',
+                        boxShadow: 'none',
+                        fontFamily: kmFont,
+                        cursor: 'not-allowed',
+                      }}
+                    >
+                      {/* Slot Header */}
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          flexWrap: 'wrap',
+                          gap: '0.65rem',
+                          borderBottom: '1px solid var(--border-color)',
+                          paddingBottom: '0.55rem',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.4rem',
+                              fontSize: '0.92rem',
+                              fontWeight: 700,
+                              color: 'var(--text-main)',
+                              fontFamily: kmFont,
+                            }}
+                          >
+                            <Clock size={15} style={{ color: 'var(--text-muted)' }} />
+                            <span>{isKm ? group.slot.labelKm : group.slot.key}</span>
+                          </div>
+
+                          <span
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.35rem',
+                              fontSize: '0.82rem',
+                              fontWeight: 600,
+                              color: '#dc2626',
+                              fontFamily: kmFont,
+                            }}
+                          >
+                            <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#dc2626', display: 'inline-block' }} />
+                            {t('cbs_slot_unavailable')} ({group.bookings.length})
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Booked Patient Tickets */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        {group.bookings.map((item) => renderBookingCard(item))}
+                      </div>
+                    </div>
+                  );
+                }
+
+                // Available Slot Card (Clickable to Issue Walk-In / Book this slot)
+                return (
+                  <div
+                    key={group.slot.key}
+                    className="slot-card-available"
+                    onClick={() => {
+                      setWalkInName('');
+                      setWalkInPhone('');
+                      setWalkInDeptId(selectedDeptId || (departments.length > 0 ? departments[0].id : ''));
+                      setWalkInDoctorId('');
+                      setWalkInServiceId('');
+                      setWalkInSlotTime(group.slot.key);
+                      setWalkInNameError(null);
+                      setWalkInError(null);
+                      setIssuedTicketSlip(null);
+                      setWalkInModalOpen(true);
+                    }}
+                    title={
+                      isKm
+                        ? `ចុចដើម្បីកក់ ឬចេញសំបុត្រសម្រាប់ម៉ោង ${group.slot.labelKm}`
+                        : `Click to book or issue ticket for ${group.slot.key}`
+                    }
+                    style={{
+                      borderRadius: '6px',
+                      padding: '0.75rem 1rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: '0.65rem',
+                      boxShadow: 'none',
+                      fontFamily: kmFont,
+                      minHeight: '48px',
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.45rem',
+                        fontSize: '0.88rem',
+                        fontWeight: 700,
+                        color: 'var(--text-main)',
+                        fontFamily: kmFont,
+                      }}
+                    >
+                      <Clock size={15} style={{ color: 'var(--text-muted)' }} />
+                      <span>{isKm ? group.slot.labelKm : group.slot.key}</span>
+                    </div>
+
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.35rem',
+                        fontSize: '0.82rem',
+                        fontWeight: 600,
+                        color: '#059669',
+                        fontFamily: kmFont,
+                        whiteSpace: 'nowrap',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#059669', display: 'inline-block' }} />
+                      {t('cbs_slot_available')}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* General Tickets for Date that didn't match slot strings */}
+          {generalBookings.length > 0 && (
+            <div
+              style={{
+                background: '#ffffff',
+                border: '1px solid var(--border-color)',
+                borderRadius: '6px',
+                padding: '1rem 1.25rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.85rem',
+                marginTop: '0.35rem',
+              }}
+            >
+              <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: kmFont }}>
+                {t('cbs_general_walkins')} ({generalBookings.length})
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                {generalBookings.map((item) => renderBookingCard(item))}
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        /* View when 'All Dates' is chosen */
+        bookings.length === 0 ? (
+          <div
+            style={{
+              textAlign: 'center',
+              paddingTop: '9.5rem',
+              paddingBottom: '6rem',
               fontFamily: kmFont,
+              color: 'var(--text-muted)',
+              fontSize: '0.98rem',
             }}
           >
             {t('cbs_no_bookings')}
           </div>
-          <p
+        ) : (
+          <div
             style={{
-              fontSize: '0.88rem',
-              color: 'var(--text-muted)',
-              maxWidth: '450px',
-              margin: 0,
-              fontFamily: kmFont,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.85rem',
             }}
           >
-            {t('cbs_subtitle')}
-          </p>
-        </div>
-      ) : (
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '0.85rem',
-          }}
-        >
-          {bookings.map((item) => {
-            const isOnline = item.ticket_source === 'ONLINE';
-            const isServing = item.status === 'SERVING';
-            const isCalled = item.status === 'CALLED';
-            const isWaiting = item.status === 'WAITING';
-            const isSkipped = item.status === 'SKIPPED' || item.status === 'NO_SHOW';
-            const isCompleted = item.status === 'COMPLETED';
-
-            return (
-              <div
-                key={item.id}
-                style={{
-                  background: '#ffffff',
-                  border: isServing
-                    ? '1.5px solid #16a34a'
-                    : isCalled
-                    ? '1.5px solid #0284c7'
-                    : '1px solid var(--border-color)',
-                  borderRadius: '6px',
-                  padding: '1.25rem 1.4rem',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '1rem',
-                  boxShadow: 'none',
-                }}
-              >
-                {/* Slot Top Meta Bar */}
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    flexWrap: 'wrap',
-                    gap: '0.75rem',
-                    borderBottom: '1px solid var(--border-color)',
-                    paddingBottom: '0.85rem',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', flexWrap: 'wrap' }}>
-                    {/* Time Slot Badge */}
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.35rem',
-                        fontSize: '0.95rem',
-                        fontWeight: 700,
-                        color: 'var(--text-main)',
-                        fontFamily: 'monospace',
-                        background: '#f8fafc',
-                        border: '1px solid var(--border-color)',
-                        padding: '0.3rem 0.65rem',
-                        borderRadius: '4px',
-                      }}
-                    >
-                      <Clock size={15} style={{ color: 'var(--text-muted)' }} />
-                      <span>{item.appointment_time || new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                    </div>
-
-                    {/* Date Badge */}
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.35rem',
-                        fontSize: '0.85rem',
-                        color: 'var(--text-muted)',
-                      }}
-                    >
-                      <Calendar size={14} />
-                      <span>
-                        {item.appointment_date || new Date(item.created_at).toISOString().split('T')[0]}
-                      </span>
-                    </div>
-
-                    {/* Ticket Monospace Number */}
-                    <div
-                      style={{
-                        fontSize: '1.05rem',
-                        fontWeight: 800,
-                        fontFamily: 'monospace',
-                        color: 'var(--text-main)',
-                        letterSpacing: '0.04em',
-                      }}
-                    >
-                      #{item.ticket_number}
-                    </div>
-
-                    {/* Ticket Source Pill */}
-                    {isOnline ? (
-                      <span
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '0.3rem',
-                          padding: '0.2rem 0.55rem',
-                          borderRadius: '4px',
-                          fontSize: '0.75rem',
-                          fontWeight: 600,
-                          background: '#ecfdf5',
-                          color: '#047857',
-                          border: '1px solid #a7f3d0',
-                        }}
-                      >
-                        <Smartphone size={12} />
-                        {t('cbs_source_online')}
-                      </span>
-                    ) : (
-                      <span
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '0.3rem',
-                          padding: '0.2rem 0.55rem',
-                          borderRadius: '4px',
-                          fontSize: '0.75rem',
-                          fontWeight: 600,
-                          background: '#f3f4f6',
-                          color: '#4b5563',
-                          border: '1px solid #e5e7eb',
-                        }}
-                      >
-                        <User size={12} />
-                        {t('cbs_source_walkin')}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Status Badge */}
-                  <div>{renderStatusBadge(item.status)}</div>
-                </div>
-
-                {/* Slot Details Body Grid */}
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-                    gap: '1rem',
-                  }}
-                >
-                  {/* Patient Info */}
-                  <div>
-                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>
-                      {t('cbs_slot_patient')}
-                    </div>
-                    <div style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-main)', marginTop: '0.2rem' }}>
-                      {item.patient_name}
-                    </div>
-                    {item.patient_phone && (
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.35rem',
-                          fontSize: '0.85rem',
-                          color: 'var(--text-muted)',
-                          marginTop: '0.2rem',
-                        }}
-                      >
-                        <Phone size={13} />
-                        <span>{item.patient_phone}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Doctor & Department */}
-                  <div>
-                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>
-                      {t('cbs_slot_doctor')}
-                    </div>
-                    <div style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-main)', marginTop: '0.2rem' }}>
-                      {item.doctor_name ? (
-                        <>
-                          {item.doctor_name}{' '}
-                          <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontWeight: 400 }}>
-                            ({item.doctor_specialty || 'Specialist'})
-                          </span>
-                        </>
-                      ) : (
-                        <span style={{ color: 'var(--text-muted)' }}>{t('qm_any_specialist')}</span>
-                      )}
-                    </div>
-                    <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
-                      {item.department_name} {item.department_code ? `(${item.department_code})` : ''}
-                    </div>
-                  </div>
-
-                  {/* Service */}
-                  <div>
-                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>
-                      {t('cbs_slot_service')}
-                    </div>
-                    <div style={{ fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-main)', marginTop: '0.2rem' }}>
-                      {item.service_name || t('qm_standard_consultation')}
-                    </div>
-                    <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
-                      {t('cbs_queue_pos')}: #{item.position || 1} • {t('cbs_est_wait')}: ~{item.estimated_wait_minutes || 0} {t('pd_mins')}
-                    </div>
-                  </div>
-
-                  {/* Live Consultation Timer if Serving */}
-                  {isServing && (
-                    <div
-                      style={{
-                        background: '#f0fdf4',
-                        border: '1px solid #bbf7d0',
-                        borderRadius: '4px',
-                        padding: '0.65rem 0.85rem',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#15803d' }}>
-                        {t('qm_consultation_time')}
-                      </div>
-                      <div
-                        style={{
-                          fontSize: '1.4rem',
-                          fontWeight: 800,
-                          fontFamily: 'monospace',
-                          color: '#15803d',
-                          marginTop: '0.15rem',
-                        }}
-                      >
-                        {formatElapsedTimer(item.serving_started_at)}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Slot Action Controls Bar */}
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'flex-end',
-                    flexWrap: 'wrap',
-                    gap: '0.65rem',
-                    borderTop: '1px solid var(--border-color)',
-                    paddingTop: '0.85rem',
-                  }}
-                >
-                  {/* Actions for WAITING */}
-                  {isWaiting && (
-                    <>
-                      <button
-                        onClick={() => handleCallTicket(item.id)}
-                        disabled={actionLoading}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.4rem',
-                          padding: '0.5rem 0.95rem',
-                          background: 'var(--text-main)',
-                          border: '1px solid var(--text-main)',
-                          borderRadius: '4px',
-                          color: '#ffffff',
-                          fontSize: '0.85rem',
-                          fontWeight: 600,
-                          cursor: 'pointer',
-                          fontFamily: kmFont,
-                          boxShadow: 'none',
-                        }}
-                      >
-                        <Volume2 size={15} />
-                        {t('cbs_call_patient')}
-                      </button>
-
-                      <button
-                        onClick={() => handleStartServing(item.id)}
-                        disabled={actionLoading}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.4rem',
-                          padding: '0.5rem 0.95rem',
-                          background: 'transparent',
-                          border: '1px solid var(--text-main)',
-                          borderRadius: '4px',
-                          color: 'var(--text-main)',
-                          fontSize: '0.85rem',
-                          fontWeight: 600,
-                          cursor: 'pointer',
-                          fontFamily: kmFont,
-                          boxShadow: 'none',
-                        }}
-                      >
-                        <Play size={14} />
-                        {t('cbs_start_consult')}
-                      </button>
-
-                      <button
-                        onClick={() => handleSkip(item.id)}
-                        disabled={actionLoading}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.35rem',
-                          padding: '0.5rem 0.85rem',
-                          background: 'transparent',
-                          border: '1px solid var(--border-color)',
-                          borderRadius: '4px',
-                          color: 'var(--text-muted)',
-                          fontSize: '0.82rem',
-                          cursor: 'pointer',
-                          fontFamily: kmFont,
-                          boxShadow: 'none',
-                        }}
-                      >
-                        {t('cbs_skip_patient')}
-                      </button>
-                    </>
-                  )}
-
-                  {/* Actions for CALLED */}
-                  {isCalled && (
-                    <>
-                      <button
-                        onClick={() => handleStartServing(item.id)}
-                        disabled={actionLoading}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.4rem',
-                          padding: '0.5rem 0.95rem',
-                          background: 'var(--text-main)',
-                          border: '1px solid var(--text-main)',
-                          borderRadius: '4px',
-                          color: '#ffffff',
-                          fontSize: '0.85rem',
-                          fontWeight: 600,
-                          cursor: 'pointer',
-                          fontFamily: kmFont,
-                          boxShadow: 'none',
-                        }}
-                      >
-                        <Play size={14} />
-                        {t('cbs_start_consult')}
-                      </button>
-
-                      <button
-                        onClick={() => handleCallTicket(item.id)}
-                        disabled={actionLoading}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.35rem',
-                          padding: '0.5rem 0.85rem',
-                          background: 'transparent',
-                          border: '1px solid var(--border-color)',
-                          borderRadius: '4px',
-                          color: 'var(--text-main)',
-                          fontSize: '0.85rem',
-                          cursor: 'pointer',
-                          fontFamily: kmFont,
-                          boxShadow: 'none',
-                        }}
-                      >
-                        <Volume2 size={14} />
-                        {t('cbs_recall_patient')}
-                      </button>
-
-                      <button
-                        onClick={() => handleSkip(item.id)}
-                        disabled={actionLoading}
-                        style={{
-                          padding: '0.5rem 0.85rem',
-                          background: 'transparent',
-                          border: '1px solid var(--border-color)',
-                          borderRadius: '4px',
-                          color: 'var(--text-muted)',
-                          fontSize: '0.82rem',
-                          cursor: 'pointer',
-                          fontFamily: kmFont,
-                          boxShadow: 'none',
-                        }}
-                      >
-                        {t('cbs_skip_patient')}
-                      </button>
-                    </>
-                  )}
-
-                  {/* Actions for SERVING */}
-                  {isServing && (
-                    <button
-                      onClick={() => handleComplete(item.id)}
-                      disabled={actionLoading}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.4rem',
-                        padding: '0.55rem 1.15rem',
-                        background: '#16a34a',
-                        border: '1px solid #16a34a',
-                        borderRadius: '4px',
-                        color: '#ffffff',
-                        fontSize: '0.88rem',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        fontFamily: kmFont,
-                        boxShadow: 'none',
-                      }}
-                    >
-                      <CheckCircle2 size={16} />
-                      {t('cbs_finish_consult')}
-                    </button>
-                  )}
-
-                  {/* Actions for SKIPPED */}
-                  {isSkipped && (
-                    <>
-                      <button
-                        onClick={() => handleRecall(item.id)}
-                        disabled={actionLoading}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.35rem',
-                          padding: '0.5rem 0.85rem',
-                          background: 'transparent',
-                          border: '1px solid var(--text-main)',
-                          borderRadius: '4px',
-                          color: 'var(--text-main)',
-                          fontSize: '0.85rem',
-                          fontWeight: 600,
-                          cursor: 'pointer',
-                          fontFamily: kmFont,
-                          boxShadow: 'none',
-                        }}
-                      >
-                        <RotateCcw size={14} />
-                        {t('cbs_recall_patient')}
-                      </button>
-
-                      <button
-                        onClick={() => handleNoShow(item.id)}
-                        disabled={actionLoading}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.35rem',
-                          padding: '0.5rem 0.85rem',
-                          background: 'transparent',
-                          border: '1px solid var(--border-color)',
-                          borderRadius: '4px',
-                          color: '#dc2626',
-                          fontSize: '0.82rem',
-                          cursor: 'pointer',
-                          fontFamily: kmFont,
-                          boxShadow: 'none',
-                        }}
-                      >
-                        <UserX size={14} />
-                        {t('cbs_noshow_patient')}
-                      </button>
-                    </>
-                  )}
-
-                  {/* State for COMPLETED */}
-                  {isCompleted && (
-                    <div
-                      style={{
-                        fontSize: '0.82rem',
-                        color: 'var(--text-muted)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.35rem',
-                        fontFamily: kmFont,
-                      }}
-                    >
-                      <Check size={14} style={{ color: '#16a34a' }} />
-                      <span>{t('cbs_status_completed')}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+            {bookings.map((item) => renderBookingCard(item))}
+          </div>
+        )
       )}
 
       {/* Walk-in Intake / Thermal Slip Modal */}
@@ -1880,68 +2160,32 @@ export const QueueManagement: React.FC = () => {
                     />
                   </div>
 
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px', fontFamily: kmFont }}>
-                      {t('qm_department')} *
-                    </label>
-                    <select
-                      value={walkInDeptId}
-                      onChange={(e) => {
-                        setWalkInDeptId(e.target.value);
-                        setWalkInDoctorId('');
-                        setWalkInServiceId('');
-                      }}
+                  {/* Selected Slot & Department Info Badge */}
+                  {walkInSlotTime && (
+                    <div
                       style={{
-                        width: '100%',
-                        padding: '0.72rem 0.85rem',
-                        fontSize: '0.95rem',
-                        fontFamily: kmFont,
-                        borderRadius: '4px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '0.65rem 0.85rem',
+                        background: '#f8fafc',
                         border: '1px solid var(--border-color)',
-                        boxShadow: 'none',
-                        outline: 'none',
-                        background: '#ffffff',
-                        color: 'var(--text-main)',
-                        boxSizing: 'border-box',
+                        borderRadius: '4px',
+                        fontSize: '0.86rem',
+                        fontFamily: kmFont,
                       }}
                     >
-                      {departments.map((dept) => (
-                        <option key={dept.id} value={dept.id}>
-                          {dept.name} {dept.code ? `(${dept.code})` : ''}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px', fontFamily: kmFont }}>
-                      {t('qm_preferred_doctor')}
-                    </label>
-                    <select
-                      value={walkInDoctorId}
-                      onChange={(e) => setWalkInDoctorId(e.target.value)}
-                      style={{
-                        width: '100%',
-                        padding: '0.72rem 0.85rem',
-                        fontSize: '0.95rem',
-                        fontFamily: kmFont,
-                        borderRadius: '4px',
-                        border: '1px solid var(--border-color)',
-                        boxShadow: 'none',
-                        outline: 'none',
-                        background: '#ffffff',
-                        color: 'var(--text-main)',
-                        boxSizing: 'border-box',
-                      }}
-                    >
-                      <option value="">{t('qm_any_specialist')}</option>
-                      {availableDoctors.map((doc) => (
-                        <option key={doc.id} value={doc.id}>
-                          {doc.full_name} ({doc.specialty})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--text-main)', fontWeight: 700 }}>
+                        <Clock size={15} style={{ color: '#16a34a' }} />
+                        <span>
+                          {STANDARD_TIME_SLOTS.find((s) => s.key === walkInSlotTime)?.labelKm || walkInSlotTime}
+                        </span>
+                      </div>
+                      <span style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+                        {departments.find((d) => d.id === (walkInDeptId || selectedDeptId))?.name}
+                      </span>
+                    </div>
+                  )}
 
                   <div>
                     <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px', fontFamily: kmFont }}>
@@ -2008,10 +2252,10 @@ export const QueueManagement: React.FC = () => {
                         fontSize: '0.95rem',
                         fontWeight: 600,
                         fontFamily: kmFont,
-                        background: 'var(--text-main)',
+                        background: 'transparent',
                         border: '1px solid var(--text-main)',
                         borderRadius: '4px',
-                        color: '#ffffff',
+                        color: 'var(--text-main)',
                         cursor: 'pointer',
                         boxShadow: 'none',
                       }}

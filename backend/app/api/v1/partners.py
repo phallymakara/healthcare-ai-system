@@ -1,4 +1,6 @@
 import uuid
+import secrets
+import string
 from datetime import date
 from typing import List, Optional
 from fastapi import APIRouter, Depends, status, HTTPException, UploadFile, File
@@ -10,6 +12,8 @@ from app.core.database import get_db
 from app.core.deps import get_current_user, require_hospital_staff
 from app.core.security import get_password_hash
 from app.services.azure_storage import azure_storage_service
+from app.services.notification_service import NotificationService
+from app.schemas.notification import NotificationChannel, NotificationType
 from app.models import (
     Hospital,
     HospitalBranch,
@@ -75,25 +79,91 @@ async def get_partner_dashboard(
     hosp_res = await db.execute(select(Hospital).where(Hospital.id == hospital_id))
     hospital = hosp_res.scalar_one()
 
-    # 2. Get today's tickets for this hospital
+    # 2. Get real-time queue counts across all active tickets for this hospital
+    waiting_res = await db.execute(
+        select(func.count(Ticket.id)).where(
+            and_(
+                Ticket.hospital_id == hospital_id,
+                Ticket.status == TicketStatus.WAITING,
+            )
+        )
+    )
+    waiting_count = waiting_res.scalar() or 0
+
+    serving_res = await db.execute(
+        select(func.count(Ticket.id)).where(
+            and_(
+                Ticket.hospital_id == hospital_id,
+                Ticket.status.in_([TicketStatus.CALLED, TicketStatus.SERVING]),
+            )
+        )
+    )
+    serving_count = serving_res.scalar() or 0
+
+    # 3. Get operational ticket batch for today (or fallback to latest operational date)
     today = date.today()
     tickets_res = await db.execute(
         select(Ticket).where(
             and_(
                 Ticket.hospital_id == hospital_id,
-                func.date(Ticket.created_at) == today,
+                or_(
+                    func.date(Ticket.created_at) == today,
+                    Ticket.appointment_date == today,
+                ),
             )
         )
     )
     today_tickets = tickets_res.scalars().all()
 
+    if not today_tickets:
+        latest_date_res = await db.execute(
+            select(func.date(Ticket.created_at))
+            .where(Ticket.hospital_id == hospital_id)
+            .order_by(func.date(Ticket.created_at).desc())
+            .limit(1)
+        )
+        latest_date = latest_date_res.scalar()
+        if latest_date:
+            ref_tickets_res = await db.execute(
+                select(Ticket).where(
+                    and_(
+                        Ticket.hospital_id == hospital_id,
+                        func.date(Ticket.created_at) == latest_date,
+                    )
+                )
+            )
+            today_tickets = ref_tickets_res.scalars().all()
+
     total_tickets = len(today_tickets)
-    waiting_count = len([t for t in today_tickets if t.status == TicketStatus.WAITING])
-    serving_count = len([t for t in today_tickets if t.status in [TicketStatus.CALLED, TicketStatus.SERVING]])
     completed_count = len([t for t in today_tickets if t.status == TicketStatus.COMPLETED])
     skipped_no_show = len([t for t in today_tickets if t.status in [TicketStatus.SKIPPED, TicketStatus.NO_SHOW]])
+    clearance_rate = round((completed_count / max(1, total_tickets)) * 100) if total_tickets > 0 else 0
 
-    # 3. Get all departments & their active queue sessions
+    online_bookings = len([t for t in today_tickets if t.ticket_source == TicketSource.ONLINE])
+    walkin_tickets = len([t for t in today_tickets if t.ticket_source == TicketSource.WALK_IN])
+
+    # 4. Resource counts (Departments, Staff & Doctors, Services)
+    dept_count_res = await db.execute(
+        select(func.count(Department.id)).where(Department.hospital_id == hospital_id)
+    )
+    total_departments = dept_count_res.scalar() or 0
+
+    staff_count_res = await db.execute(
+        select(func.count(User.id)).where(User.hospital_id == hospital_id)
+    )
+    total_staff = staff_count_res.scalar() or 0
+    if total_staff == 0:
+        doc_count_res = await db.execute(
+            select(func.count(Doctor.id)).where(Doctor.hospital_id == hospital_id)
+        )
+        total_staff = doc_count_res.scalar() or 0
+
+    service_count_res = await db.execute(
+        select(func.count(Service.id)).where(Service.hospital_id == hospital_id)
+    )
+    total_services = service_count_res.scalar() or 0
+
+    # 5. Get all departments & their active queue status
     dept_res = await db.execute(
         select(Department)
         .where(Department.hospital_id == hospital_id)
@@ -106,14 +176,29 @@ async def get_partner_dashboard(
     total_wait_samples = 0
 
     for d in departments:
-        # Find today's session
         today_session = next(
-            (s for s in d.queue_sessions if s.session_date == today), None
+            (s for s in d.queue_sessions if s.session_date == today or s.status == QueueStatus.ACTIVE), None
         )
-        d_tickets = [t for t in today_tickets if t.department_id == d.id]
-        d_waiting = len([t for t in d_tickets if t.status == TicketStatus.WAITING])
-        d_completed = len([t for t in d_tickets if t.status == TicketStatus.COMPLETED])
-        d_serving_num = today_session.current_serving_number if today_session else None
+        d_waiting_res = await db.execute(
+            select(func.count(Ticket.id)).where(
+                and_(
+                    Ticket.department_id == d.id,
+                    Ticket.status == TicketStatus.WAITING,
+                )
+            )
+        )
+        d_waiting = d_waiting_res.scalar() or 0
+
+        d_serving_res = await db.execute(
+            select(Ticket.ticket_number).where(
+                and_(
+                    Ticket.department_id == d.id,
+                    Ticket.status.in_([TicketStatus.CALLED, TicketStatus.SERVING]),
+                )
+            ).order_by(Ticket.updated_at.desc()).limit(1)
+        )
+        d_serving_num = d_serving_res.scalar() or (today_session.current_serving_number if today_session else None)
+        d_completed = len([t for t in today_tickets if t.department_id == d.id and t.status == TicketStatus.COMPLETED])
         d_status = today_session.status if today_session else QueueStatus.ACTIVE
         d_avg_wait = d.avg_consultation_minutes * d_waiting
 
@@ -137,9 +222,6 @@ async def get_partner_dashboard(
 
     avg_wait = int(total_wait_minutes / max(1, total_wait_samples)) if total_wait_samples > 0 else 15
 
-    online_bookings = len([t for t in today_tickets if t.ticket_source == TicketSource.ONLINE])
-    walkin_tickets = len([t for t in today_tickets if t.ticket_source == TicketSource.WALK_IN])
-
     # Hourly flow for hours 08:00 to 18:00
     hourly_flow: List[HourlyFlowItem] = []
     for h in range(8, 19):
@@ -160,7 +242,12 @@ async def get_partner_dashboard(
         walkin_tickets_today=walkin_tickets,
         hourly_flow=hourly_flow,
         departments=dept_summaries,
+        total_departments=total_departments,
+        total_staff=total_staff,
+        total_services=total_services,
+        clearance_rate=clearance_rate,
     )
+
 
 
 # --- Departments ---
@@ -336,6 +423,30 @@ async def update_partner_service(
     await db.commit()
     await db.refresh(srv)
     return srv
+
+
+@router.delete("/services/{service_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_partner_service(
+    service_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_hospital_staff),
+):
+    hospital_id = current_user.hospital_id or (await db.execute(select(Hospital.id))).scalar()
+    res = await db.execute(
+        select(Service).where(
+            and_(
+                Service.id == service_id,
+                Service.hospital_id == hospital_id,
+            )
+        )
+    )
+    srv = res.scalar_one_or_none()
+    if not srv:
+        raise HTTPException(status_code=404, detail="Service not found")
+
+    await db.delete(srv)
+    await db.commit()
+    return None
 
 
 # --- Doctors & Schedules ---
@@ -648,6 +759,18 @@ async def list_partner_staff(
     return res.scalars().all()
 
 
+def generate_random_staff_password(length: int = 10) -> str:
+    chars = string.ascii_letters + string.digits
+    pwd = [
+        secrets.choice(string.ascii_uppercase),
+        secrets.choice(string.ascii_lowercase),
+        secrets.choice(string.digits),
+    ]
+    pwd += [secrets.choice(chars) for _ in range(length - 3)]
+    secrets.SystemRandom().shuffle(pwd)
+    return "".join(pwd)
+
+
 @router.post("/staff", response_model=StaffResponse, status_code=status.HTTP_201_CREATED)
 async def create_partner_staff(
     data: StaffCreateSchema,
@@ -656,26 +779,59 @@ async def create_partner_staff(
 ):
     hospital_id = current_user.hospital_id or (await db.execute(select(Hospital.id))).scalar()
 
+    email_clean = data.email.strip().lower() if data.email else None
+    phone_clean = data.phone_number.strip() if data.phone_number else None
+
+    if not email_clean and not phone_clean:
+        raise HTTPException(status_code=400, detail="Either email or phone number must be provided")
+
     # Check if email already exists
-    existing = await db.execute(select(User).where(User.email == data.email.strip().lower()))
-    if existing.scalar_one_or_none():
-        raise HTTPException(status_code=400, detail="A user with this email address already exists")
+    if email_clean:
+        existing = await db.execute(select(User).where(User.email == email_clean))
+        if existing.scalar_one_or_none():
+            raise HTTPException(status_code=400, detail="A user with this email address already exists")
+
+    # Check if phone number already exists
+    if phone_clean:
+        existing_phone = await db.execute(select(User).where(User.phone_number == phone_clean))
+        if existing_phone.scalar_one_or_none():
+            raise HTTPException(status_code=400, detail="A user with this phone number already exists")
+
+    raw_password = (
+        data.password.strip()
+        if (data.password and len(data.password.strip()) >= 6)
+        else generate_random_staff_password(10)
+    )
 
     new_staff = User(
         id=uuid.uuid4(),
         hospital_id=hospital_id,
         full_name=data.full_name.strip(),
-        email=data.email.strip().lower(),
-        phone_number=data.phone_number.strip() if data.phone_number else None,
+        email=email_clean,
+        phone_number=phone_clean,
         role=data.role,
-        hashed_password=get_password_hash(data.password),
+        hashed_password=get_password_hash(raw_password),
         is_active=True,
         is_verified=True,
     )
     db.add(new_staff)
     await db.commit()
     await db.refresh(new_staff)
-    return new_staff
+
+    # Dispatch notification / log simulated credentials dispatch to user
+    contact_target = new_staff.phone_number or new_staff.email
+    await NotificationService.dispatch(
+        title="Staff Account Credentials",
+        message=f"Welcome {new_staff.full_name}! Your login account is {contact_target} and your temporary password is: {raw_password}",
+        notification_type=NotificationType.GENERAL,
+        user_id=new_staff.id,
+        phone_number=new_staff.phone_number,
+        channel=NotificationChannel.SMS if new_staff.phone_number else NotificationChannel.IN_APP,
+    )
+
+    res_data = StaffResponse.model_validate(new_staff)
+    res_data.temp_password = raw_password
+    return res_data
 
 
 @router.put("/staff/{user_id}", response_model=StaffResponse)
@@ -696,14 +852,21 @@ async def update_partner_staff(
     if data.full_name is not None:
         staff.full_name = data.full_name.strip()
     if data.email is not None:
-        email_clean = data.email.strip().lower()
+        email_clean = data.email.strip().lower() if data.email else None
         if email_clean != staff.email:
-            existing = await db.execute(select(User).where(and_(User.email == email_clean, User.id != user_id)))
-            if existing.scalar_one_or_none():
-                raise HTTPException(status_code=400, detail="This email address is already in use")
+            if email_clean:
+                existing = await db.execute(select(User).where(and_(User.email == email_clean, User.id != user_id)))
+                if existing.scalar_one_or_none():
+                    raise HTTPException(status_code=400, detail="This email address is already in use")
             staff.email = email_clean
     if data.phone_number is not None:
-        staff.phone_number = data.phone_number.strip() if data.phone_number else None
+        phone_clean = data.phone_number.strip() if data.phone_number else None
+        if phone_clean != staff.phone_number:
+            if phone_clean:
+                existing_p = await db.execute(select(User).where(and_(User.phone_number == phone_clean, User.id != user_id)))
+                if existing_p.scalar_one_or_none():
+                    raise HTTPException(status_code=400, detail="This phone number is already in use")
+            staff.phone_number = phone_clean
     if data.role is not None:
         staff.role = data.role
     if data.is_active is not None:
@@ -792,7 +955,36 @@ async def update_partner_hospital_profile(
     if data.contact_email is not None:
         hosp.email = str(data.contact_email)
     if data.logo_url is not None:
-        hosp.logo_url = data.logo_url
+        if not data.logo_url.strip():
+            hosp.logo_url = None
+        elif data.logo_url.startswith("data:image/"):
+            try:
+                import base64
+                header, encoded = data.logo_url.split(",", 1)
+                mime = header.split(";")[0].replace("data:", "")
+                file_bytes = base64.b64decode(encoded)
+                owner_prefix = azure_storage_service.hospital_logo_prefix(str(hospital_id))
+                ext = "png"
+                if "jpeg" in mime or "jpg" in mime:
+                    ext = "jpg"
+                elif "webp" in mime:
+                    ext = "webp"
+                upload_res = await azure_storage_service.upload_raw_bytes(
+                    file_bytes=file_bytes,
+                    content_type=mime,
+                    owner_prefix=owner_prefix,
+                    subfolder="logo",
+                    ext=ext,
+                )
+                hosp.logo_url = upload_res["url"]
+            except Exception as e:
+                import logging
+                logging.getLogger("partners").error(f"Failed to auto-upload base64 logo: {e}")
+        elif len(data.logo_url) <= 512:
+            hosp.logo_url = data.logo_url
+        else:
+            import logging
+            logging.getLogger("partners").warning("Ignored oversized logo_url string (>512 chars)")
     if data.website is not None:
         hosp.website = data.website
     if data.emergency_service_available is not None:

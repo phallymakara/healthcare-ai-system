@@ -52,7 +52,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Brand Logo - Navigates to Landing page (Left) */}
         <div className="header-brand">
           <button 
-            onClick={() => onSelectTab('patient_triage')} 
+            onClick={() => onSelectTab('landing')} 
             className="brand-logo"
             style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
           >

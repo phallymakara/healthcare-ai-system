@@ -19,6 +19,10 @@ const SimulatedHospitalLogo: React.FC<{ name: string; logoUrl?: string; size?: n
 }) => {
   const [imgError, setImgError] = useState(false);
 
+  useEffect(() => {
+    setImgError(false);
+  }, [logoUrl]);
+
   const initials = useMemo(() => {
     if (!name) return 'HP';
     const clean = name.replace(/[^a-zA-Z\s]/g, '').trim();
@@ -87,6 +91,10 @@ const SimulatedDoctorAvatar: React.FC<{ name: string; photoUrl?: string; size?: 
   size = 38,
 }) => {
   const [imgError, setImgError] = useState(false);
+
+  useEffect(() => {
+    setImgError(false);
+  }, [photoUrl]);
 
   const initials = useMemo(() => {
     if (!name) return 'DR';
@@ -759,7 +767,7 @@ export const HospitalDiscovery: React.FC<HospitalDiscoveryProps> = ({
                       fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
                     }}
                   >
-                    {bookingLoading ? t('chat_booking_saving') : t('confirm_and_get_ticket')}
+                    {bookingLoading ? t('chat_booking_saving') : t('confirm')}
                   </button>
                 </div>
               </form>

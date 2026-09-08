@@ -34,6 +34,8 @@ class WalkInTicketRequest(BaseModel):
     service_id: Optional[uuid.UUID] = None
     patient_name: str = Field(..., min_length=2)
     patient_phone: Optional[str] = None
+    appointment_date: Optional[date] = None
+    appointment_time: Optional[str] = None
 
 
 class TicketActionRequest(BaseModel):

@@ -409,33 +409,35 @@ export const DoctorManagement: React.FC = () => {
         </div>
       ) : (
         /* Doctor Rows Layout */
-        <div style={{
-          background: '#ffffff',
-          border: '1px solid var(--border-color)',
-          borderRadius: '6px',
-          overflow: 'visible',
-          boxShadow: 'none',
-        }}>
-          {doctors.length === 0 ? (
-            <div style={{
-              minHeight: '60vh',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '3rem 2rem',
-              textAlign: 'center',
-              color: 'var(--text-muted)',
-              fontSize: '1.1rem',
-              lineHeight: 1.7,
-              fontFamily: kmFont,
-            }}>
-              <div style={{ maxWidth: '520px' }}>
-                {t('doc_no_doctors')}
-              </div>
+        doctors.length === 0 ? (
+          <div style={{
+            minHeight: '60vh',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '3rem 2rem',
+            textAlign: 'center',
+            color: 'var(--text-muted)',
+            fontSize: '1.1rem',
+            lineHeight: 1.7,
+            fontFamily: kmFont,
+            background: 'transparent',
+            border: 'none',
+          }}>
+            <div style={{ maxWidth: '520px' }}>
+              {t('doc_no_doctors')}
             </div>
-          ) : (
-            doctors.map((doc, idx) => {
+          </div>
+        ) : (
+          <div style={{
+            background: '#ffffff',
+            border: '1px solid var(--border-color)',
+            borderRadius: '6px',
+            overflow: 'visible',
+            boxShadow: 'none',
+          }}>
+            {doctors.map((doc, idx) => {
               const deptObj = departments.find((d) => d.id === doc.department_id);
               const scheduleDays = (doc.schedules || []).map((s: any) => s.day_of_week);
 
@@ -659,9 +661,9 @@ export const DoctorManagement: React.FC = () => {
                   </div>
                 </div>
               );
-            })
-          )}
-        </div>
+            })}
+          </div>
+        )
       )}
 
       {/* Add / Edit Doctor Modal */}

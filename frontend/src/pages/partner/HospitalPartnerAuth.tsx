@@ -252,24 +252,24 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
           <div
             style={{
               width: '100%',
-              maxWidth: '660px',
+              maxWidth: '490px',
               backgroundColor: 'var(--bg-primary, #ffffff)',
               border: '1px solid var(--border-color)',
               borderRadius: 'var(--radius-lg, 10px)',
-              padding: '3.25rem 3rem',
+              padding: '2.1rem 2rem',
               boxShadow: 'none',
               boxSizing: 'border-box',
               transition: 'max-width 0.2s ease',
             }}
           >
             {/* Header Title */}
-            <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
+            <div style={{ textAlign: 'center', marginBottom: '1.65rem' }}>
               <h1
                 style={{
-                  fontSize: '1.95rem',
+                  fontSize: '1.55rem',
                   fontWeight: 700,
                   color: 'var(--text-main)',
-                  marginBottom: '0.75rem',
+                  marginBottom: '0.5rem',
                   lineHeight: 1.3,
                 }}
               >
@@ -277,9 +277,9 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
               </h1>
               <p
                 style={{
-                  fontSize: '1.12rem',
+                  fontSize: '0.98rem',
                   color: 'var(--text-muted)',
-                  lineHeight: 1.65,
+                  lineHeight: 1.55,
                   margin: 0,
                 }}
               >
@@ -295,14 +295,14 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
             {view === 'login' && (
               <form onSubmit={handleLoginSubmit}>
                 {/* Account Input */}
-                <div style={{ marginBottom: '1.65rem' }}>
+                <div style={{ marginBottom: '1.25rem' }}>
                   <label
                     style={{
                       display: 'block',
-                      fontSize: '1.05rem',
+                      fontSize: '0.94rem',
                       fontWeight: 600,
                       color: 'var(--text-main)',
-                      marginBottom: '0.6rem',
+                      marginBottom: '0.45rem',
                     }}
                   >
                     {t('partner_login_account_label')}
@@ -319,12 +319,12 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                     placeholder={t('partner_login_account_placeholder')}
                     style={{
                       width: '100%',
-                      padding: '0.95rem 1.15rem',
+                      padding: '0.75rem 1rem',
                       border: `1px solid ${
                         loginErrors.account ? '#dc2626' : 'var(--border-color)'
                       }`,
-                      borderRadius: 'var(--radius-md, 8px)',
-                      fontSize: '1.08rem',
+                      borderRadius: '6px',
+                      fontSize: '0.98rem',
                       color: 'var(--text-main)',
                       background: 'var(--bg-primary, #ffffff)',
                       boxSizing: 'border-box',
@@ -336,8 +336,8 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                     <span
                       style={{
                         color: '#dc2626',
-                        fontSize: '0.88rem',
-                        marginTop: '6px',
+                        fontSize: '0.85rem',
+                        marginTop: '4px',
                         display: 'block',
                       }}
                     >
@@ -347,14 +347,14 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                 </div>
 
                 {/* Password Input */}
-                <div style={{ marginBottom: '1.85rem' }}>
+                <div style={{ marginBottom: '1.4rem' }}>
                   <label
                     style={{
                       display: 'block',
-                      fontSize: '1.05rem',
+                      fontSize: '0.94rem',
                       fontWeight: 600,
                       color: 'var(--text-main)',
-                      marginBottom: '0.6rem',
+                      marginBottom: '0.45rem',
                     }}
                   >
                     {t('partner_login_password_label')}
@@ -372,12 +372,12 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                       placeholder="••••••••"
                       style={{
                         width: '100%',
-                        padding: '0.95rem 2.85rem 0.95rem 1.15rem',
+                        padding: '0.75rem 2.65rem 0.75rem 1rem',
                         border: `1px solid ${
                           loginErrors.password ? '#dc2626' : 'var(--border-color)'
                         }`,
-                        borderRadius: 'var(--radius-md, 8px)',
-                        fontSize: '1.08rem',
+                        borderRadius: '6px',
+                        fontSize: '0.98rem',
                         color: 'var(--text-main)',
                         background: 'var(--bg-primary, #ffffff)',
                         boxSizing: 'border-box',
@@ -473,40 +473,40 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                   disabled={loading}
                   style={{
                     width: '100%',
-                    padding: '0.95rem 1.35rem',
+                    padding: '0.82rem 1.25rem',
                     backgroundColor: 'var(--accent-primary)',
                     color: '#ffffff',
                     border: 'none',
-                    borderRadius: 'var(--radius-md, 8px)',
-                    fontSize: '1.12rem',
+                    borderRadius: '6px',
+                    fontSize: '1.02rem',
                     fontWeight: 600,
                     cursor: loading ? 'not-allowed' : 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: '0.65rem',
+                    gap: '0.55rem',
                     boxShadow: 'none',
                     fontFamily: kmFont,
                   }}
                 >
-                  <LogIn size={20} />
+                  <LogIn size={18} />
                   <span>{loading ? t('chat_processing') : t('partner_login_btn')}</span>
                 </button>
 
                 {/* Secondary Action: Switch to Register */}
                 <div
                   style={{
-                    marginTop: '2rem',
-                    paddingTop: '1.75rem',
+                    marginTop: '1.4rem',
+                    paddingTop: '1.25rem',
                     borderTop: '1px solid var(--border-color)',
                     textAlign: 'center',
                   }}
                 >
                   <div
                     style={{
-                      fontSize: '1.05rem',
+                      fontSize: '0.95rem',
                       color: 'var(--text-muted)',
-                      marginBottom: '0.85rem',
+                      marginBottom: '0.65rem',
                     }}
                   >
                     {isKm
@@ -522,12 +522,12 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                     }}
                     style={{
                       width: '100%',
-                      padding: '0.9rem 1.25rem',
+                      padding: '0.75rem 1.15rem',
                       background: 'transparent',
                       border: '1px solid var(--border-color)',
-                      borderRadius: 'var(--radius-md, 8px)',
+                      borderRadius: '6px',
                       color: 'var(--text-main)',
-                      fontSize: '1.06rem',
+                      fontSize: '0.98rem',
                       fontWeight: 600,
                       cursor: 'pointer',
                       boxShadow: 'none',
@@ -544,14 +544,14 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
             {view === 'register' && (
               <form onSubmit={handleRegisterSubmit}>
                 {/* Admin Full Name */}
-                <div style={{ marginBottom: '1.5rem' }}>
+                <div style={{ marginBottom: '1.15rem' }}>
                   <label
                     style={{
                       display: 'block',
-                      fontSize: '1.05rem',
+                      fontSize: '0.94rem',
                       fontWeight: 600,
                       color: 'var(--text-main)',
-                      marginBottom: '0.6rem',
+                      marginBottom: '0.45rem',
                     }}
                   >
                     {t('admin_name_label')}
@@ -568,12 +568,12 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                     placeholder="e.g. Dr. Dararith"
                     style={{
                       width: '100%',
-                      padding: '0.95rem 1.15rem',
+                      padding: '0.75rem 1rem',
                       border: `1px solid ${
                         registerErrors.adminFullName ? '#dc2626' : 'var(--border-color)'
                       }`,
-                      borderRadius: 'var(--radius-md, 8px)',
-                      fontSize: '1.08rem',
+                      borderRadius: '6px',
+                      fontSize: '0.98rem',
                       color: 'var(--text-main)',
                       background: 'var(--bg-primary, #ffffff)',
                       boxSizing: 'border-box',
@@ -585,8 +585,8 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                     <span
                       style={{
                         color: '#dc2626',
-                        fontSize: '0.88rem',
-                        marginTop: '6px',
+                        fontSize: '0.85rem',
+                        marginTop: '4px',
                         display: 'block',
                       }}
                     >
@@ -596,14 +596,14 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                 </div>
 
                 {/* Official Email or Phone */}
-                <div style={{ marginBottom: '1.5rem' }}>
+                <div style={{ marginBottom: '1.15rem' }}>
                   <label
                     style={{
                       display: 'block',
-                      fontSize: '1.05rem',
+                      fontSize: '0.94rem',
                       fontWeight: 600,
                       color: 'var(--text-main)',
-                      marginBottom: '0.6rem',
+                      marginBottom: '0.45rem',
                     }}
                   >
                     {t('facility_contact_label')}
@@ -620,12 +620,12 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                     placeholder={t('facility_contact_placeholder')}
                     style={{
                       width: '100%',
-                      padding: '0.95rem 1.15rem',
+                      padding: '0.75rem 1rem',
                       border: `1px solid ${
                         registerErrors.officialContact ? '#dc2626' : 'var(--border-color)'
                       }`,
-                      borderRadius: 'var(--radius-md, 8px)',
-                      fontSize: '1.08rem',
+                      borderRadius: '6px',
+                      fontSize: '0.98rem',
                       color: 'var(--text-main)',
                       background: 'var(--bg-primary, #ffffff)',
                       boxSizing: 'border-box',
@@ -637,8 +637,8 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                     <span
                       style={{
                         color: '#dc2626',
-                        fontSize: '0.88rem',
-                        marginTop: '6px',
+                        fontSize: '0.85rem',
+                        marginTop: '4px',
                         display: 'block',
                       }}
                     >
@@ -648,14 +648,14 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                 </div>
 
                 {/* Password */}
-                <div style={{ marginBottom: '1.5rem' }}>
+                <div style={{ marginBottom: '1.15rem' }}>
                   <label
                     style={{
                       display: 'block',
-                      fontSize: '1.05rem',
+                      fontSize: '0.94rem',
                       fontWeight: 600,
                       color: 'var(--text-main)',
-                      marginBottom: '0.6rem',
+                      marginBottom: '0.45rem',
                     }}
                   >
                     {t('partner_login_password_label')}
@@ -673,12 +673,12 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                       placeholder="••••••••"
                       style={{
                         width: '100%',
-                        padding: '0.95rem 2.85rem 0.95rem 1.15rem',
+                        padding: '0.75rem 2.65rem 0.75rem 1rem',
                         border: `1px solid ${
                           registerErrors.password ? '#dc2626' : 'var(--border-color)'
                         }`,
-                        borderRadius: 'var(--radius-md, 8px)',
-                        fontSize: '1.08rem',
+                        borderRadius: '6px',
+                        fontSize: '0.98rem',
                         color: 'var(--text-main)',
                         background: 'var(--bg-primary, #ffffff)',
                         boxSizing: 'border-box',
@@ -706,15 +706,15 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                       tabIndex={-1}
                       aria-label={showRegisterPassword ? 'Hide password' : 'Show password'}
                     >
-                      {showRegisterPassword ? <EyeOff size={19} /> : <Eye size={19} />}
+                      {showRegisterPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
                   {registerErrors.password && (
                     <span
                       style={{
                         color: '#dc2626',
-                        fontSize: '0.88rem',
-                        marginTop: '6px',
+                        fontSize: '0.85rem',
+                        marginTop: '4px',
                         display: 'block',
                       }}
                     >
@@ -724,14 +724,14 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                 </div>
 
                 {/* Retype Password */}
-                <div style={{ marginBottom: '1.85rem' }}>
+                <div style={{ marginBottom: '1.4rem' }}>
                   <label
                     style={{
                       display: 'block',
-                      fontSize: '1.05rem',
+                      fontSize: '0.94rem',
                       fontWeight: 600,
                       color: 'var(--text-main)',
-                      marginBottom: '0.6rem',
+                      marginBottom: '0.45rem',
                     }}
                   >
                     {t('partner_retype_password_label')}
@@ -749,12 +749,12 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                       placeholder="••••••••"
                       style={{
                         width: '100%',
-                        padding: '0.95rem 2.85rem 0.95rem 1.15rem',
+                        padding: '0.75rem 2.65rem 0.75rem 1rem',
                         border: `1px solid ${
                           registerErrors.confirmPassword ? '#dc2626' : 'var(--border-color)'
                         }`,
-                        borderRadius: 'var(--radius-md, 8px)',
-                        fontSize: '1.08rem',
+                        borderRadius: '6px',
+                        fontSize: '0.98rem',
                         color: 'var(--text-main)',
                         background: 'var(--bg-primary, #ffffff)',
                         boxSizing: 'border-box',
@@ -782,15 +782,15 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                       tabIndex={-1}
                       aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
                     >
-                      {showConfirmPassword ? <EyeOff size={19} /> : <Eye size={19} />}
+                      {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
                   {registerErrors.confirmPassword && (
                     <span
                       style={{
                         color: '#dc2626',
-                        fontSize: '0.88rem',
-                        marginTop: '6px',
+                        fontSize: '0.85rem',
+                        marginTop: '4px',
                         display: 'block',
                       }}
                     >
@@ -818,40 +818,40 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                   disabled={loading}
                   style={{
                     width: '100%',
-                    padding: '0.95rem 1.35rem',
+                    padding: '0.82rem 1.25rem',
                     backgroundColor: 'var(--accent-primary)',
                     color: '#ffffff',
                     border: 'none',
-                    borderRadius: 'var(--radius-md, 8px)',
-                    fontSize: '1.12rem',
+                    borderRadius: '6px',
+                    fontSize: '1.02rem',
                     fontWeight: 600,
                     cursor: loading ? 'not-allowed' : 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: '0.65rem',
+                    gap: '0.55rem',
                     boxShadow: 'none',
                     fontFamily: kmFont,
                   }}
                 >
                   <span>{loading ? t('chat_processing') : t('partner_register_btn')}</span>
-                  <ArrowRight size={20} />
+                  <ArrowRight size={18} />
                 </button>
 
                 {/* Secondary Action: Back to Sign In */}
                 <div
                   style={{
-                    marginTop: '2rem',
-                    paddingTop: '1.75rem',
+                    marginTop: '1.4rem',
+                    paddingTop: '1.25rem',
                     borderTop: '1px solid var(--border-color)',
                     textAlign: 'center',
                   }}
                 >
                   <div
                     style={{
-                      fontSize: '1.05rem',
+                      fontSize: '0.95rem',
                       color: 'var(--text-muted)',
-                      marginBottom: '0.85rem',
+                      marginBottom: '0.65rem',
                     }}
                   >
                     {isKm
@@ -867,12 +867,12 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                     }}
                     style={{
                       width: '100%',
-                      padding: '0.9rem 1.25rem',
+                      padding: '0.75rem 1.15rem',
                       background: 'transparent',
                       border: '1px solid var(--border-color)',
-                      borderRadius: 'var(--radius-md, 8px)',
+                      borderRadius: '6px',
                       color: 'var(--text-main)',
-                      fontSize: '1.06rem',
+                      fontSize: '0.98rem',
                       fontWeight: 600,
                       cursor: 'pointer',
                       boxShadow: 'none',
@@ -888,8 +888,8 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
             {/* Bottom Switcher: Link to Patient App */}
             <div
               style={{
-                marginTop: '2.25rem',
-                paddingTop: '1.75rem',
+                marginTop: '1.4rem',
+                paddingTop: '1.1rem',
                 borderTop: '1px solid var(--border-color)',
                 textAlign: 'center',
               }}
@@ -901,10 +901,10 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                   background: 'transparent',
                   border: 'none',
                   color: 'var(--text-muted)',
-                  fontSize: '1.05rem',
+                  fontSize: '0.94rem',
                   cursor: 'pointer',
                   textDecoration: 'underline',
-                  padding: '6px 12px',
+                  padding: '4px 8px',
                   fontFamily: kmFont,
                 }}
               >

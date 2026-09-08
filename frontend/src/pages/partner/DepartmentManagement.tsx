@@ -40,6 +40,8 @@ export const DepartmentManagement: React.FC = () => {
   const [srvDeptError, setSrvDeptError] = useState<string | null>(null);
   const [srvSubmitError, setSrvSubmitError] = useState<string | null>(null);
   const [srvLoading, setSrvLoading] = useState(false);
+  const [activeDropdownSrvId, setActiveDropdownSrvId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'departments' | 'services'>('departments');
 
   const loadData = async () => {
     setLoading(true);
@@ -256,81 +258,166 @@ export const DepartmentManagement: React.FC = () => {
     }
   };
 
+  // Toggle Service Active Status
+  const handleToggleActiveService = async (srv: any) => {
+    setActiveDropdownSrvId(null);
+    try {
+      await fetch(`${API_BASE}/partners/services/${srv.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...AuthService.getAuthHeaders() },
+        body: JSON.stringify({ is_active: !srv.is_active }),
+      });
+      await loadData();
+    } catch {
+      // Ignore background error
+    }
+  };
+
+  // Delete Service
+  const handleDeleteService = async (srvId: string) => {
+    setActiveDropdownSrvId(null);
+    try {
+      await fetch(`${API_BASE}/partners/services/${srvId}`, {
+        method: 'DELETE',
+        headers: AuthService.getAuthHeaders(),
+      });
+      await loadData();
+    } catch {
+      // Ignore background error
+    }
+  };
+
   return (
     <div style={{ width: '100%', fontFamily: kmFont }}>
-      {/* Top Controls: + Add Department & + Add Service aligned to the left */}
-      <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1.5rem' }}>
-        <button
-          onClick={handleOpenNewDept}
-          style={{
-            padding: '0.55rem 1rem',
-            background: 'transparent',
-            border: '1px solid var(--text-main)',
-            borderRadius: '4px',
-            color: 'var(--text-main)',
-            fontSize: '0.875rem',
-            fontWeight: 600,
-            cursor: 'pointer',
-            boxShadow: 'none',
-            fontFamily: kmFont,
-          }}
-        >
-          {t('dept_add_btn')}
-        </button>
-        <button
-          onClick={handleOpenNewService}
-          disabled={departments.length === 0}
-          style={{
-            padding: '0.55rem 1rem',
-            background: 'transparent',
-            border: '1px solid var(--text-main)',
-            borderRadius: '4px',
-            color: 'var(--text-main)',
-            fontSize: '0.875rem',
-            fontWeight: 600,
-            cursor: departments.length === 0 ? 'not-allowed' : 'pointer',
-            opacity: departments.length === 0 ? 0.5 : 1,
-            boxShadow: 'none',
-            fontFamily: kmFont,
-          }}
-        >
-          {t('dept_add_service_btn')}
-        </button>
+      {/* Top Header: Tabs on Left, Context Action on Right */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          borderBottom: '1px solid var(--border-color)',
+          marginBottom: '1.5rem',
+          flexWrap: 'wrap',
+          gap: '1rem',
+        }}
+      >
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button
+            onClick={() => setActiveTab('departments')}
+            style={{
+              padding: '0.65rem 1.15rem',
+              fontSize: '0.95rem',
+              fontWeight: activeTab === 'departments' ? 700 : 500,
+              fontFamily: kmFont,
+              color: activeTab === 'departments' ? 'var(--text-main)' : 'var(--text-muted)',
+              background: 'transparent',
+              border: 'none',
+              borderBottom: activeTab === 'departments' ? '2px solid var(--text-main)' : '2px solid transparent',
+              marginBottom: '-1px',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              transition: 'all 0.15s',
+            }}
+          >
+            {t('dept_title_depts')}
+          </button>
+          <button
+            onClick={() => setActiveTab('services')}
+            style={{
+              padding: '0.65rem 1.15rem',
+              fontSize: '0.95rem',
+              fontWeight: activeTab === 'services' ? 700 : 500,
+              fontFamily: kmFont,
+              color: activeTab === 'services' ? 'var(--text-main)' : 'var(--text-muted)',
+              background: 'transparent',
+              border: 'none',
+              borderBottom: activeTab === 'services' ? '2px solid var(--text-main)' : '2px solid transparent',
+              marginBottom: '-1px',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              transition: 'all 0.15s',
+            }}
+          >
+            {t('dept_title_services')}
+          </button>
+        </div>
+
+        <div>
+          {activeTab === 'departments' ? (
+            <button
+              onClick={handleOpenNewDept}
+              style={{
+                padding: '0.55rem 1rem',
+                background: 'transparent',
+                border: '1px solid var(--text-main)',
+                borderRadius: '4px',
+                color: 'var(--text-main)',
+                fontSize: '0.875rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                boxShadow: 'none',
+                fontFamily: kmFont,
+                marginBottom: '6px',
+              }}
+            >
+              {t('dept_add_btn')}
+            </button>
+          ) : (
+            <button
+              onClick={handleOpenNewService}
+              disabled={departments.length === 0}
+              style={{
+                padding: '0.55rem 1rem',
+                background: 'transparent',
+                border: '1px solid var(--text-main)',
+                borderRadius: '4px',
+                color: 'var(--text-main)',
+                fontSize: '0.875rem',
+                fontWeight: 600,
+                cursor: departments.length === 0 ? 'not-allowed' : 'pointer',
+                opacity: departments.length === 0 ? 0.5 : 1,
+                boxShadow: 'none',
+                fontFamily: kmFont,
+                marginBottom: '6px',
+              }}
+            >
+              {t('dept_add_service_btn')}
+            </button>
+          )}
+        </div>
       </div>
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)', fontSize: '0.9rem', fontFamily: kmFont }}>
           {t('dept_loading')}
         </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
-          {/* Section 1: Clinical Departments Row Layout */}
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-              <h2 style={{ fontSize: '1.15rem', fontWeight: 600, margin: 0, color: 'var(--text-main)', fontFamily: kmFont }}>
-                {t('dept_title_depts')}
-              </h2>
-            </div>
-
-            <div style={{
-              background: '#ffffff',
-              border: '1px solid var(--border-color)',
-              borderRadius: '6px',
-              overflow: 'visible',
-              boxShadow: 'none',
-            }}>
-              {departments.length === 0 ? (
-                <div style={{
-                  padding: '2rem',
-                  textAlign: 'center',
-                  color: 'var(--text-muted)',
-                  fontSize: '0.875rem',
-                  fontFamily: kmFont,
-                }}>
-                  {t('dept_no_depts')}
-                </div>
-              ) : (
-                departments.map((dept, idx) => (
+      ) : activeTab === 'departments' ? (
+        /* Tab 1: Clinical Departments */
+        departments.length === 0 ? (
+          <div
+            style={{
+              minHeight: '55vh',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '2rem',
+              textAlign: 'center',
+              color: 'var(--text-muted)',
+              fontSize: '1rem',
+              fontFamily: kmFont,
+            }}
+          >
+            {t('dept_no_depts')}
+          </div>
+        ) : (
+          <div style={{
+            background: '#ffffff',
+            border: '1px solid var(--border-color)',
+            borderRadius: '6px',
+            boxShadow: 'none',
+            overflow: 'visible',
+          }}>
+                {departments.map((dept, idx) => (
                   <div
                     key={dept.id}
                     style={{
@@ -498,38 +585,36 @@ export const DepartmentManagement: React.FC = () => {
                       )}
                     </div>
                   </div>
-                ))
-              )}
-            </div>
+                ))}
+              </div>
+            )
+      ) : (
+        /* Tab 2: Services & Pricing */
+        services.length === 0 ? (
+          <div
+            style={{
+              minHeight: '55vh',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '2rem',
+              textAlign: 'center',
+              color: 'var(--text-muted)',
+              fontSize: '1rem',
+              fontFamily: kmFont,
+            }}
+          >
+            {t('dept_no_services')}
           </div>
-
-          {/* Section 2: Services & Pricing Row Layout */}
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: 'var(--text-main)', fontFamily: kmFont }}>
-                {t('dept_title_services')}
-              </h2>
-            </div>
-
-            <div style={{
-              background: '#ffffff',
-              border: '1px solid var(--border-color)',
-              borderRadius: '6px',
-              overflow: 'hidden',
-              boxShadow: 'none',
-            }}>
-              {services.length === 0 ? (
-                <div style={{
-                  padding: '2rem',
-                  textAlign: 'center',
-                  color: 'var(--text-muted)',
-                  fontSize: '0.95rem',
-                  fontFamily: kmFont,
-                }}>
-                  {t('dept_no_services')}
-                </div>
-              ) : (
-                services.map((srv, idx) => {
+        ) : (
+          <div style={{
+            background: '#ffffff',
+            border: '1px solid var(--border-color)',
+            borderRadius: '6px',
+            boxShadow: 'none',
+            overflow: 'visible',
+          }}>
+                {services.map((srv, idx) => {
                   const parentDept = departments.find((d) => d.id === srv.department_id);
                   return (
                     <div
@@ -543,12 +628,25 @@ export const DepartmentManagement: React.FC = () => {
                         padding: '1.1rem 1.35rem',
                         borderBottom: idx === services.length - 1 ? 'none' : '1px solid var(--border-color)',
                         background: '#ffffff',
+                        position: 'relative',
+                        zIndex: activeDropdownSrvId === srv.id ? 50 : 1,
+                        borderTopLeftRadius: idx === 0 ? '6px' : 0,
+                        borderTopRightRadius: idx === 0 ? '6px' : 0,
+                        borderBottomLeftRadius: idx === services.length - 1 ? '6px' : 0,
+                        borderBottomRightRadius: idx === services.length - 1 ? '6px' : 0,
                       }}
                     >
                       {/* Service Name & Description */}
                       <div style={{ minWidth: '220px', flex: '1.5' }}>
-                        <div style={{ fontSize: '1.18rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: kmFont }}>
-                          {srv.name}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                          <div style={{ fontSize: '1.18rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: kmFont }}>
+                            {srv.name}
+                          </div>
+                          {!srv.is_active && (
+                            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', border: '1px solid var(--border-color)', borderRadius: '3px', padding: '1px 5px', fontWeight: 500 }}>
+                              {t('doc_inactive')}
+                            </span>
+                          )}
                         </div>
                         {srv.description && (
                           <div style={{ fontSize: '0.95rem', color: 'var(--text-muted)', marginTop: '3px', fontFamily: kmFont }}>
@@ -587,33 +685,116 @@ export const DepartmentManagement: React.FC = () => {
                         </div>
                       </div>
 
-                      {/* Edit Button */}
-                      <div>
+                      {/* Actions: Three-dot dropdown menu */}
+                      <div style={{ position: 'relative', zIndex: activeDropdownSrvId === srv.id ? 60 : 'auto' }}>
                         <button
-                          onClick={() => handleOpenEditService(srv)}
+                          onClick={() => setActiveDropdownSrvId(activeDropdownSrvId === srv.id ? null : srv.id)}
                           style={{
-                            padding: '0.45rem 0.85rem',
-                            fontSize: '0.92rem',
-                            fontWeight: 500,
+                            padding: '0.3rem 0.75rem',
+                            fontSize: '1.1rem',
+                            fontWeight: 700,
+                            letterSpacing: '1px',
                             background: 'transparent',
                             border: '1px solid var(--border-color)',
                             borderRadius: '4px',
                             color: 'var(--text-main)',
                             cursor: 'pointer',
                             boxShadow: 'none',
-                            fontFamily: kmFont,
                           }}
                         >
-                          {t('doc_edit')}
+                          ···
                         </button>
+
+                        {activeDropdownSrvId === srv.id && (
+                          <>
+                            <div
+                              onClick={() => setActiveDropdownSrvId(null)}
+                              style={{
+                                position: 'fixed',
+                                inset: 0,
+                                zIndex: 99,
+                                background: 'transparent',
+                              }}
+                            />
+                            <div style={{
+                              position: 'absolute',
+                              right: 0,
+                              top: 'calc(100% + 4px)',
+                              background: '#ffffff',
+                              border: '1px solid var(--border-color)',
+                              borderRadius: '4px',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              minWidth: '110px',
+                              zIndex: 100,
+                              boxShadow: 'none',
+                              overflow: 'hidden',
+                            }}>
+                              <button
+                                onClick={() => handleToggleActiveService(srv)}
+                                style={{
+                                  padding: '0.55rem 0.85rem',
+                                  fontSize: '0.92rem',
+                                  fontWeight: 500,
+                                  textAlign: 'left',
+                                  background: 'transparent',
+                                  border: 'none',
+                                  borderBottom: '1px solid var(--border-color)',
+                                  color: srv.is_active ? '#059669' : 'var(--text-muted)',
+                                  cursor: 'pointer',
+                                  boxShadow: 'none',
+                                  fontFamily: kmFont,
+                                }}
+                              >
+                                {srv.is_active ? t('doc_active') : t('doc_inactive')}
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setActiveDropdownSrvId(null);
+                                  handleOpenEditService(srv);
+                                }}
+                                style={{
+                                  padding: '0.55rem 0.85rem',
+                                  fontSize: '0.92rem',
+                                  fontWeight: 500,
+                                  textAlign: 'left',
+                                  background: 'transparent',
+                                  border: 'none',
+                                  borderBottom: '1px solid var(--border-color)',
+                                  color: 'var(--text-main)',
+                                  cursor: 'pointer',
+                                  boxShadow: 'none',
+                                  fontFamily: kmFont,
+                                }}
+                              >
+                                {t('doc_edit')}
+                              </button>
+                              <button
+                                onClick={() => handleDeleteService(srv.id)}
+                                style={{
+                                  padding: '0.55rem 0.85rem',
+                                  fontSize: '0.92rem',
+                                  fontWeight: 500,
+                                  textAlign: 'left',
+                                  background: 'transparent',
+                                  border: 'none',
+                                  color: '#dc2626',
+                                  cursor: 'pointer',
+                                  boxShadow: 'none',
+                                  fontFamily: kmFont,
+                                }}
+                              >
+                                {t('doc_delete')}
+                              </button>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
                   );
-                })
-              )}
-            </div>
-          </div>
-        </div>
+                })}
+              </div>
+            )
       )}
 
       {/* Add / Edit Department Modal */}

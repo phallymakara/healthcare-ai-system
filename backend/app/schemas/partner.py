@@ -207,16 +207,20 @@ class PartnerDashboardMetricsResponse(BaseModel):
     walkin_tickets_today: int = 0
     hourly_flow: List[HourlyFlowItem] = []
     departments: List[DepartmentQueueSummary]
+    total_departments: int = 0
+    total_staff: int = 0
+    total_services: int = 0
+    clearance_rate: int = 0
 
 
 # --- Staff Schemas ---
 
 class StaffCreateSchema(BaseModel):
     full_name: str = Field(..., min_length=2, max_length=128)
-    email: EmailStr
+    email: Optional[EmailStr] = None
     phone_number: Optional[str] = None
     role: UserRole = UserRole.RECEPTIONIST
-    password: str = Field(..., min_length=6, max_length=128)
+    password: Optional[str] = Field(None, min_length=6, max_length=128)
 
 
 class StaffUpdateSchema(BaseModel):
@@ -238,6 +242,7 @@ class StaffResponse(BaseModel):
     is_active: bool
     is_verified: bool
     created_at: datetime
+    temp_password: Optional[str] = None
 
     model_config = {"from_attributes": True}
 

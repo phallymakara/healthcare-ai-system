@@ -3,10 +3,8 @@ import {
   Camera,
   Phone,
   Mail,
-  MapPin,
   Globe,
   ExternalLink,
-  Save,
   RefreshCw,
 } from 'lucide-react';
 import { AuthService } from '../../services/auth';
@@ -39,7 +37,12 @@ export const HospitalProfile: React.FC = () => {
 
   // Inline Field Errors (Plain text, no container, zero shadow)
   const [nameError, setNameError] = useState<string | null>(null);
+  const [cityError, setCityError] = useState<string | null>(null);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
   const [emailError, setEmailError] = useState<string | null>(null);
+  const [emergencyPhoneError, setEmergencyPhoneError] = useState<string | null>(null);
+  const [addressError, setAddressError] = useState<string | null>(null);
+  const [mapError, setMapError] = useState<string | null>(null);
   const [logoError, setLogoError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -159,6 +162,7 @@ export const HospitalProfile: React.FC = () => {
       const data = await res.json();
       if (data.url) {
         setLogoUrl(data.url);
+        window.dispatchEvent(new CustomEvent('hospital-profile-updated'));
       }
     } catch (err: any) {
       console.error('[Logo Upload Error]:', err);
@@ -182,6 +186,7 @@ export const HospitalProfile: React.FC = () => {
       });
       if (res.ok) {
         setLogoUrl('');
+        window.dispatchEvent(new CustomEvent('hospital-profile-updated'));
       } else {
         const errData = await res.json().catch(() => null);
         throw new Error(errData?.detail || 'Failed to delete logo');
@@ -200,7 +205,12 @@ export const HospitalProfile: React.FC = () => {
   const handleSave = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setNameError(null);
+    setCityError(null);
+    setPhoneError(null);
     setEmailError(null);
+    setEmergencyPhoneError(null);
+    setAddressError(null);
+    setMapError(null);
     setLogoError(null);
     setSubmitError(null);
     setSuccessMessage(null);
@@ -212,8 +222,33 @@ export const HospitalProfile: React.FC = () => {
       hasError = true;
     }
 
-    if (contactEmail.trim() && !contactEmail.includes('@')) {
+    if (!city.trim()) {
+      setCityError(isKm ? 'សូមបញ្ចូលរាជធានី ឬខេត្ត។' : 'Please enter city or province.');
+      hasError = true;
+    }
+
+    if (!contactPhone.trim()) {
+      setPhoneError(isKm ? 'សូមបញ្ចូលលេខទូរស័ព្ទផ្នែកទទួលភ្ញៀវសាធារណៈ។' : 'Please enter reception phone number.');
+      hasError = true;
+    }
+
+    if (!contactEmail.trim() || !contactEmail.includes('@')) {
       setEmailError(t('prof_err_email'));
+      hasError = true;
+    }
+
+    if (!emergencyPhone.trim()) {
+      setEmergencyPhoneError(isKm ? 'សូមបញ្ចូលលេខទូរស័ព្ទសង្គ្រោះបន្ទាន់ 24/7។' : 'Please enter 24/7 emergency phone number.');
+      hasError = true;
+    }
+
+    if (!address.trim()) {
+      setAddressError(isKm ? 'សូមបញ្ចូលអាសយដ្ឋានផ្លូវ។' : 'Please enter street address.');
+      hasError = true;
+    }
+
+    if (!googleMapsUrl.trim() && (!latitude || !longitude)) {
+      setMapError(isKm ? 'សូមបញ្ចូលតំណភ្ជាប់ Google Maps ឬកូអរដោនេទីតាំង។' : 'Please provide a Google Maps link or coordinates.');
       hasError = true;
     }
 
@@ -250,6 +285,7 @@ export const HospitalProfile: React.FC = () => {
       }
 
       setSuccessMessage(t('prof_success'));
+      window.dispatchEvent(new CustomEvent('hospital-profile-updated'));
       setTimeout(() => setSuccessMessage(null), 4000);
     } catch (err) {
       console.error('[HospitalProfile Save Error]: Network or runtime failure', err);
@@ -269,79 +305,6 @@ export const HospitalProfile: React.FC = () => {
         paddingBottom: '3rem',
       }}
     >
-      {/* Page Header */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '1rem',
-          marginBottom: '1.25rem',
-        }}
-      >
-        <div>
-          <h1
-            style={{
-              fontSize: '1.55rem',
-              fontWeight: 700,
-              color: 'var(--text-main)',
-              margin: '0 0 0.35rem 0',
-              lineHeight: 1.25,
-              fontFamily: kmFont,
-            }}
-          >
-            {t('prof_page_title')}
-          </h1>
-          <p
-            style={{
-              fontSize: '1.02rem',
-              color: 'var(--text-muted)',
-              margin: 0,
-              fontFamily: kmFont,
-            }}
-          >
-            {t('prof_page_subtitle')}
-          </p>
-        </div>
-
-        {/* Top Save Action */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          {successMessage && (
-            <span style={{ color: '#16a34a', fontSize: '0.95rem', fontWeight: 600, fontFamily: kmFont }}>
-              ✓ {successMessage}
-            </span>
-          )}
-          <button
-            type="button"
-            onClick={() => handleSave()}
-            disabled={saving || loading}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              padding: '0.65rem 1.4rem',
-              backgroundColor: 'var(--accent-primary)',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '4px',
-              fontSize: '1.02rem',
-              fontWeight: 600,
-              cursor: saving || loading ? 'not-allowed' : 'pointer',
-              opacity: saving || loading ? 0.7 : 1,
-              boxShadow: 'none',
-              fontFamily: kmFont,
-            }}
-          >
-            {saving ? (
-              <RefreshCw size={17} style={{ animation: 'spin 1s linear infinite' }} />
-            ) : (
-              <Save size={17} />
-            )}
-            <span>{saving ? t('prof_saving') : t('prof_save_btn')}</span>
-          </button>
-        </div>
-      </div>
 
       {loading ? (
         <div
@@ -409,8 +372,8 @@ export const HospitalProfile: React.FC = () => {
                 <div
                   onClick={() => !uploadingLogo && fileInputRef.current?.click()}
                   style={{
-                    width: '96px',
-                    height: '96px',
+                    width: '124px',
+                    height: '124px',
                     borderRadius: '50%',
                     border: '1px dashed var(--border-color)',
                     backgroundColor: '#ffffff',
@@ -429,8 +392,8 @@ export const HospitalProfile: React.FC = () => {
                 >
                   {uploadingLogo ? (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-                      <RefreshCw size={22} className="spin" color="var(--accent-primary)" />
-                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                      <RefreshCw size={26} className="spin" color="var(--accent-primary)" />
+                      <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
                         {isKm ? 'កំពុងផ្ទុក...' : 'Uploading...'}
                       </span>
                     </div>
@@ -455,7 +418,7 @@ export const HospitalProfile: React.FC = () => {
                           bottom: 0,
                           left: 0,
                           right: 0,
-                          height: '26px',
+                          height: '30px',
                           backgroundColor: 'rgba(0, 0, 0, 0.45)',
                           display: 'flex',
                           alignItems: 'center',
@@ -463,13 +426,13 @@ export const HospitalProfile: React.FC = () => {
                           color: '#ffffff',
                         }}
                       >
-                        <Camera size={15} strokeWidth={2} />
+                        <Camera size={18} strokeWidth={2} />
                       </div>
                     </>
                   ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.2rem', color: 'var(--text-muted)' }}>
-                      <Camera size={26} color="var(--accent-primary)" />
-                      <span style={{ fontSize: '0.85rem', fontWeight: 500, fontFamily: kmFont }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.35rem', color: 'var(--text-muted)' }}>
+                      <Camera size={32} color="var(--accent-primary)" />
+                      <span style={{ fontSize: '0.92rem', fontWeight: 500, fontFamily: kmFont }}>
                         {isKm ? 'រូបសញ្ញា' : 'Logo'}
                       </span>
                     </div>
@@ -573,19 +536,22 @@ export const HospitalProfile: React.FC = () => {
                     fontFamily: kmFont,
                   }}
                 >
-                  {t('prof_city_region')}
+                  {t('prof_city_region')} <span style={{ color: '#dc2626' }}>*</span>
                 </label>
                 <input
                   type="text"
                   value={city}
-                  onChange={(e) => setCity(e.target.value)}
+                  onChange={(e) => {
+                    setCity(e.target.value);
+                    if (cityError) setCityError(null);
+                  }}
                   placeholder={t('prof_city_placeholder') || 'ឧ. រាជធានីភ្នំពេញ'}
                   style={{
                     width: '100%',
                     padding: '0.72rem 0.95rem',
                     fontSize: '1.05rem',
                     borderRadius: '4px',
-                    border: '1px solid var(--border-color)',
+                    border: cityError ? '1px solid #dc2626' : '1px solid var(--border-color)',
                     background: '#ffffff',
                     color: 'var(--text-main)',
                     boxSizing: 'border-box',
@@ -594,6 +560,11 @@ export const HospitalProfile: React.FC = () => {
                     fontFamily: kmFont,
                   }}
                 />
+                {cityError && (
+                  <div style={{ color: '#dc2626', fontSize: '0.88rem', marginTop: '4px', fontFamily: kmFont }}>
+                    {cityError}
+                  </div>
+                )}
               </div>
 
               {/* Website */}
@@ -727,8 +698,7 @@ export const HospitalProfile: React.FC = () => {
 
           {/* SECTION 2: COMMUNICATIONS & EMERGENCY */}
           <div style={{ paddingBottom: '1.5rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.25rem' }}>
-              <Phone size={22} color="var(--accent-primary)" />
+            <div style={{ marginBottom: '1.25rem' }}>
               <h2
                 style={{
                   fontSize: '1.25rem',
@@ -761,20 +731,23 @@ export const HospitalProfile: React.FC = () => {
                     fontFamily: kmFont,
                   }}
                 >
-                  {t('prof_reception_phone')}
+                  {t('prof_reception_phone')} <span style={{ color: '#dc2626' }}>*</span>
                 </label>
                 <div style={{ position: 'relative' }}>
                   <input
                     type="text"
                     value={contactPhone}
-                    onChange={(e) => setContactPhone(e.target.value)}
+                    onChange={(e) => {
+                      setContactPhone(e.target.value);
+                      if (phoneError) setPhoneError(null);
+                    }}
                     placeholder="023 888 999"
                     style={{
                       width: '100%',
                       padding: '0.72rem 0.95rem 0.72rem 2.6rem',
                       fontSize: '1.05rem',
                       borderRadius: '4px',
-                      border: '1px solid var(--border-color)',
+                      border: phoneError ? '1px solid #dc2626' : '1px solid var(--border-color)',
                       background: '#ffffff',
                       color: 'var(--text-main)',
                       boxSizing: 'border-box',
@@ -794,6 +767,11 @@ export const HospitalProfile: React.FC = () => {
                     }}
                   />
                 </div>
+                {phoneError && (
+                  <div style={{ color: '#dc2626', fontSize: '0.88rem', marginTop: '4px', fontFamily: kmFont }}>
+                    {phoneError}
+                  </div>
+                )}
               </div>
 
               {/* Official Email */}
@@ -808,7 +786,7 @@ export const HospitalProfile: React.FC = () => {
                     fontFamily: kmFont,
                   }}
                 >
-                  {t('prof_official_email')}
+                  {t('prof_official_email')} <span style={{ color: '#dc2626' }}>*</span>
                 </label>
                 <div style={{ position: 'relative' }}>
                   <input
@@ -863,20 +841,23 @@ export const HospitalProfile: React.FC = () => {
                     fontFamily: kmFont,
                   }}
                 >
-                  {t('prof_emergency_hotline')}
+                  {t('prof_emergency_hotline')} <span style={{ color: '#dc2626' }}>*</span>
                 </label>
                 <div style={{ position: 'relative' }}>
                   <input
                     type="text"
                     value={emergencyPhone}
-                    onChange={(e) => setEmergencyPhone(e.target.value)}
+                    onChange={(e) => {
+                      setEmergencyPhone(e.target.value);
+                      if (emergencyPhoneError) setEmergencyPhoneError(null);
+                    }}
                     placeholder="119 / 012 999 119"
                     style={{
                       width: '100%',
                       padding: '0.72rem 0.95rem 0.72rem 2.6rem',
                       fontSize: '1.05rem',
                       borderRadius: '4px',
-                      border: '1px solid var(--border-color)',
+                      border: emergencyPhoneError ? '1px solid #dc2626' : '1px solid var(--border-color)',
                       background: '#ffffff',
                       color: 'var(--text-main)',
                       boxSizing: 'border-box',
@@ -896,14 +877,18 @@ export const HospitalProfile: React.FC = () => {
                     }}
                   />
                 </div>
+                {emergencyPhoneError && (
+                  <div style={{ color: '#dc2626', fontSize: '0.88rem', marginTop: '4px', fontFamily: kmFont }}>
+                    {emergencyPhoneError}
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
           {/* SECTION 3: PHYSICAL ADDRESS & GOOGLE MAPS */}
           <div style={{ paddingBottom: '1.5rem', marginBottom: '1.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.25rem' }}>
-              <MapPin size={22} color="var(--accent-primary)" />
+            <div style={{ marginBottom: '1.25rem' }}>
               <h2
                 style={{
                   fontSize: '1.25rem',
@@ -929,19 +914,22 @@ export const HospitalProfile: React.FC = () => {
                   fontFamily: kmFont,
                 }}
               >
-                {t('prof_street_address')}
+                {t('prof_street_address')} <span style={{ color: '#dc2626' }}>*</span>
               </label>
               <input
                 type="text"
                 value={address}
-                onChange={(e) => setAddress(e.target.value)}
+                onChange={(e) => {
+                  setAddress(e.target.value);
+                  if (addressError) setAddressError(null);
+                }}
                 placeholder={t('prof_street_placeholder')}
                 style={{
                   width: '100%',
                   padding: '0.72rem 0.95rem',
                   fontSize: '1.05rem',
                   borderRadius: '4px',
-                  border: '1px solid var(--border-color)',
+                  border: addressError ? '1px solid #dc2626' : '1px solid var(--border-color)',
                   background: '#ffffff',
                   color: 'var(--text-main)',
                   boxSizing: 'border-box',
@@ -950,6 +938,11 @@ export const HospitalProfile: React.FC = () => {
                   fontFamily: kmFont,
                 }}
               />
+              {addressError && (
+                <div style={{ color: '#dc2626', fontSize: '0.88rem', marginTop: '4px', fontFamily: kmFont }}>
+                  {addressError}
+                </div>
+              )}
             </div>
 
             {/* Google Maps Auto-Fill Input */}
@@ -964,19 +957,22 @@ export const HospitalProfile: React.FC = () => {
                   fontFamily: kmFont,
                 }}
               >
-                {t('prof_map_paste_label')}
+                {t('prof_map_paste_label')} <span style={{ color: '#dc2626' }}>*</span>
               </label>
               <input
                 type="text"
                 value={googleMapsUrl}
-                onChange={(e) => parseGoogleMapsInput(e.target.value)}
+                onChange={(e) => {
+                  parseGoogleMapsInput(e.target.value);
+                  if (mapError) setMapError(null);
+                }}
                 placeholder={t('prof_map_paste_placeholder')}
                 style={{
                   width: '100%',
                   padding: '0.72rem 0.95rem',
                   fontSize: '1.05rem',
                   borderRadius: '4px',
-                  border: '1px solid var(--border-color)',
+                  border: mapError ? '1px solid #dc2626' : '1px solid var(--border-color)',
                   background: '#ffffff',
                   color: 'var(--text-main)',
                   boxSizing: 'border-box',
@@ -985,6 +981,11 @@ export const HospitalProfile: React.FC = () => {
                   fontFamily: kmFont,
                 }}
               />
+              {mapError && (
+                <div style={{ color: '#dc2626', fontSize: '0.88rem', marginTop: '4px', fontFamily: kmFont }}>
+                  {mapError}
+                </div>
+              )}
             </div>
 
             {/* Lat / Lng inputs */}
@@ -1174,11 +1175,11 @@ export const HospitalProfile: React.FC = () => {
                   alignItems: 'center',
                   gap: '0.5rem',
                   padding: '0.7rem 1.6rem',
-                  backgroundColor: 'var(--accent-primary)',
-                  color: '#ffffff',
-                  border: 'none',
+                  background: 'transparent',
+                  color: 'var(--text-main)',
+                  border: '1px solid var(--text-main)',
                   borderRadius: '4px',
-                  fontSize: '1.05rem',
+                  fontSize: '0.98rem',
                   fontWeight: 600,
                   cursor: saving || loading ? 'not-allowed' : 'pointer',
                   opacity: saving || loading ? 0.7 : 1,
@@ -1186,10 +1187,8 @@ export const HospitalProfile: React.FC = () => {
                   fontFamily: kmFont,
                 }}
               >
-                {saving ? (
+                {saving && (
                   <RefreshCw size={17} style={{ animation: 'spin 1s linear infinite' }} />
-                ) : (
-                  <Save size={17} />
                 )}
                 <span>{saving ? t('prof_saving') : t('prof_save_btn')}</span>
               </button>
