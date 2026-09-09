@@ -285,7 +285,13 @@ export const HospitalDiscovery: React.FC<HospitalDiscoveryProps> = ({
       });
 
       if (!res.ok) {
-        setFormError(language === 'km' ? 'មិនអាចកក់សំបុត្របានទេនៅពេលនេះ។ សូមព្យាយាមម្តងទៀត។' : 'Unable to reserve a ticket at this moment. Please try again.');
+        const errData = await res.json().catch(() => null);
+        setFormError(
+          errData?.detail ||
+            (language === 'km'
+              ? 'មិនអាចកក់សំបុត្របានទេនៅពេលនេះ។ សូមព្យាយាមម្តងទៀត។'
+              : 'Unable to reserve a ticket at this moment. Please try again.')
+        );
         return;
       }
 

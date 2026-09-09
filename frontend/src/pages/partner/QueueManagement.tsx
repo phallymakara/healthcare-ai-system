@@ -679,9 +679,23 @@ export const QueueManagement: React.FC = () => {
 
   // Effective bookings strictly matching department selection (both client-side and server-side guaranteed)
   const effectiveBookings = useMemo(() => {
-    if (!selectedDeptId) return bookings;
-    return bookings.filter((b) => b.department_id === selectedDeptId);
-  }, [bookings, selectedDeptId]);
+    let list = bookings;
+    if (selectedDeptId) {
+      list = list.filter((b) => b.department_id === selectedDeptId);
+    }
+    if (selectedDate) {
+      list = list.filter((b) => {
+        if (b.appointment_date) {
+          return b.appointment_date.startsWith(selectedDate);
+        }
+        if (b.created_at) {
+          return b.created_at.startsWith(selectedDate);
+        }
+        return true;
+      });
+    }
+    return list;
+  }, [bookings, selectedDeptId, selectedDate]);
 
   // Dynamic Summary calculations strictly respecting selected department filter
   const effectiveSummary = useMemo(() => {
@@ -712,11 +726,12 @@ export const QueueManagement: React.FC = () => {
     const matched = effectiveBookings.filter((b) => {
       const aptRaw = b.appointment_time || (b.created_at ? formatLocalTimeAmPm(b.created_at) : '');
       if (!aptRaw) return false;
-      const apt = aptRaw.trim().toUpperCase();
+      const apt = aptRaw.replace(/\u202F|\u00A0/g, ' ').replace(/\s+/g, ' ').trim().toUpperCase();
 
       if (apt === sKey) return true;
 
-      const aptMin = parseTimeToMinutes(apt);
+      const checkTime = apt.includes(' - ') ? apt.split(' - ')[0].trim() : apt;
+      const aptMin = parseTimeToMinutes(checkTime);
       if (aptMin !== null && slotStartMin !== null && slotEndMin !== null) {
         if (aptMin >= slotStartMin && aptMin < slotEndMin) {
           return true;
@@ -724,9 +739,14 @@ export const QueueManagement: React.FC = () => {
       }
       return false;
     });
+
+    const activeBookings = matched.filter(
+      (b) => b.status !== 'CANCELLED' && b.status !== 'SKIPPED' && b.status !== 'NO_SHOW'
+    );
+
     return {
       slot,
-      isBooked: matched.length > 0,
+      isBooked: activeBookings.length > 0,
       bookings: matched,
     };
   });

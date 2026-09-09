@@ -1,8 +1,9 @@
+import re
 import uuid
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from typing import Optional, List
 from fastapi import APIRouter, Depends, status, HTTPException
-from sqlalchemy import select, or_, func
+from sqlalchemy import select, or_, and_, func
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -33,6 +34,45 @@ DEFAULT_TIME_SLOTS = [
     '04:30 PM - 05:30 PM',
 ]
 
+
+def parse_time_to_minutes(time_str: Optional[str]) -> Optional[int]:
+    """Parses time strings like '09:30 AM', '10:49 AM', '14:30' into minutes from midnight."""
+    if not time_str:
+        return None
+    cleaned = time_str.strip().upper().replace("\u202f", " ").replace("\u00a0", " ")
+    m = re.match(r"^(\d{1,2}):(\d{2})(?:\s*([AP]M))?$", cleaned)
+    if not m:
+        return None
+    hours = int(m.group(1))
+    minutes = int(m.group(2))
+    ampm = m.group(3)
+    if ampm == "PM" and hours < 12:
+        hours += 12
+    elif ampm == "AM" and hours == 12:
+        hours = 0
+    return hours * 60 + minutes
+
+
+def match_slot_for_time(time_str: Optional[str]) -> Optional[str]:
+    """Finds which standard time slot (e.g. '09:00 AM - 10:00 AM') a given time string belongs to."""
+    if not time_str:
+        return None
+    cleaned = re.sub(r"\s+", " ", time_str.strip().upper().replace("\u202f", " ").replace("\u00a0", " "))
+    for s in DEFAULT_TIME_SLOTS:
+        if s.upper() == cleaned:
+            return s
+    check_time = cleaned.split(" - ")[0].strip() if " - " in cleaned else cleaned
+    t_min = parse_time_to_minutes(check_time)
+    if t_min is not None:
+        for s in DEFAULT_TIME_SLOTS:
+            parts = s.split(" - ")
+            s_start = parse_time_to_minutes(parts[0])
+            s_end = parse_time_to_minutes(parts[1])
+            if s_start is not None and s_end is not None and s_start <= t_min < s_end:
+                return s
+    return None
+
+
 router = APIRouter(prefix="/tickets", tags=["Tickets & Appointments"])
 
 
@@ -55,8 +95,11 @@ async def get_slots_availability(
 
     query = select(Ticket).where(
         Ticket.hospital_id == hospital_id,
-        Ticket.appointment_date == parsed_date,
-        Ticket.status != TicketStatus.CANCELLED,
+        or_(
+            Ticket.appointment_date == parsed_date,
+            and_(Ticket.appointment_date.is_(None), func.date(Ticket.created_at) == parsed_date),
+        ),
+        Ticket.status.notin_([TicketStatus.CANCELLED, TicketStatus.SKIPPED, TicketStatus.NO_SHOW]),
     )
     if department_id:
         query = query.where(Ticket.department_id == department_id)
@@ -66,20 +109,17 @@ async def get_slots_availability(
     res = await db.execute(query)
     booked_tickets = res.scalars().all()
 
-    # Tally bookings per slot string
+    # Tally bookings per standard slot string
     booked_counts: dict[str, int] = {}
     for t in booked_tickets:
-        if t.appointment_time:
-            time_key = t.appointment_time.strip()
-            # Match against predefined slots (exact or prefix match)
-            matched = False
-            for s in DEFAULT_TIME_SLOTS:
-                if s.lower() == time_key.lower() or time_key.lower().startswith(s[:5].lower()):
-                    booked_counts[s] = booked_counts.get(s, 0) + 1
-                    matched = True
-                    break
-            if not matched:
-                booked_counts[time_key] = booked_counts.get(time_key, 0) + 1
+        raw_time = t.appointment_time
+        if not raw_time and t.created_at:
+            local_time = t.created_at + timedelta(hours=7)
+            raw_time = local_time.strftime("%I:%M %p")
+
+        matched_slot = match_slot_for_time(raw_time)
+        if matched_slot:
+            booked_counts[matched_slot] = booked_counts.get(matched_slot, 0) + 1
 
     slot_items: List[SlotAvailabilityItem] = []
     total_slots = len(DEFAULT_TIME_SLOTS)
@@ -124,6 +164,36 @@ async def book_ticket(
     current_user: Optional[User] = Depends(get_optional_current_user),
 ):
     """Remote patient ticket reservation with live queue estimation"""
+    # Verify slot is not already booked
+    if data.appointment_date and data.appointment_time:
+        target_slot = match_slot_for_time(data.appointment_time) or data.appointment_time.strip()
+        chk_query = select(Ticket).where(
+            Ticket.hospital_id == data.hospital_id,
+            or_(
+                Ticket.appointment_date == data.appointment_date,
+                and_(Ticket.appointment_date.is_(None), func.date(Ticket.created_at) == data.appointment_date),
+            ),
+            Ticket.status.notin_([TicketStatus.CANCELLED, TicketStatus.SKIPPED, TicketStatus.NO_SHOW]),
+        )
+        if data.department_id:
+            chk_query = chk_query.where(Ticket.department_id == data.department_id)
+        if data.doctor_id:
+            chk_query = chk_query.where(Ticket.doctor_id == data.doctor_id)
+
+        chk_res = await db.execute(chk_query)
+        existing_tickets = chk_res.scalars().all()
+        for et in existing_tickets:
+            raw_time = et.appointment_time
+            if not raw_time and et.created_at:
+                local_time = et.created_at + timedelta(hours=7)
+                raw_time = local_time.strftime("%I:%M %p")
+            et_slot = match_slot_for_time(raw_time) or (raw_time.strip() if raw_time else None)
+            if et_slot and et_slot.upper() == target_slot.upper():
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="This time slot has already been booked. Please choose an available time slot.",
+                )
+
     # 1. Get or create queue session for this department/doctor on the appointment date (or today)
     queue_sess = await QueueService.get_or_create_queue_session(
         db,
@@ -158,6 +228,36 @@ async def issue_walk_in_ticket(
     current_user: User = Depends(require_hospital_staff),
 ):
     """Receptionist Counter Action: Issue walk-in ticket for a physical arrival"""
+    # Verify slot is not already booked if a specific slot time was provided
+    if data.appointment_date and data.appointment_time:
+        target_slot = match_slot_for_time(data.appointment_time) or data.appointment_time.strip()
+        chk_query = select(Ticket).where(
+            Ticket.hospital_id == data.hospital_id,
+            or_(
+                Ticket.appointment_date == data.appointment_date,
+                and_(Ticket.appointment_date.is_(None), func.date(Ticket.created_at) == data.appointment_date),
+            ),
+            Ticket.status.notin_([TicketStatus.CANCELLED, TicketStatus.SKIPPED, TicketStatus.NO_SHOW]),
+        )
+        if data.department_id:
+            chk_query = chk_query.where(Ticket.department_id == data.department_id)
+        if data.doctor_id:
+            chk_query = chk_query.where(Ticket.doctor_id == data.doctor_id)
+
+        chk_res = await db.execute(chk_query)
+        existing_tickets = chk_res.scalars().all()
+        for et in existing_tickets:
+            raw_time = et.appointment_time
+            if not raw_time and et.created_at:
+                local_time = et.created_at + timedelta(hours=7)
+                raw_time = local_time.strftime("%I:%M %p")
+            et_slot = match_slot_for_time(raw_time) or (raw_time.strip() if raw_time else None)
+            if et_slot and et_slot.upper() == target_slot.upper():
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="This time slot has already been booked. Please choose an available time slot.",
+                )
+
     queue_sess = await QueueService.get_or_create_queue_session(
         db,
         hospital_id=data.hospital_id,

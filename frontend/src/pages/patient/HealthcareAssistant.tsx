@@ -256,7 +256,13 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
       });
 
       if (!res.ok) {
-        setBookingFormError(language === 'km' ? 'មិនអាចកក់សំបុត្របានទេនៅពេលនេះ។ សូមព្យាយាមម្តងទៀត។' : 'Unable to reserve ticket right now. Please try again.');
+        const errData = await res.json().catch(() => null);
+        setBookingFormError(
+          errData?.detail ||
+            (language === 'km'
+              ? 'មិនអាចកក់សំបុត្របានទេនៅពេលនេះ។ សូមព្យាយាមម្តងទៀត។'
+              : 'Unable to reserve ticket right now. Please try again.')
+        );
         return;
       }
 

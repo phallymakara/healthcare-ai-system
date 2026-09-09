@@ -224,6 +224,7 @@ export const km: Record<TranslationKey, string> = {
   slot_checking: "កំពុងពិនិត្យវេនទំនេរ...",
   slot_summary: "{available} / {total} វេនទំនេរ",
   slot_already_booked_err: "វេននេះត្រូវបានកក់រួចហើយ សូមជ្រើសរើសវេនផ្សេងទៀត។",
+  slot_all_booked_err: "ម៉ោងពិគ្រោះទាំងអស់សម្រាប់ថ្ងៃនេះត្រូវបានកក់ពេញហើយ សូមជ្រើសរើសកាលបរិច្ឆេទផ្សេងទៀត។",
   confirm_ticket_btn: "កក់សំបុត្រ",
   cancel: "បោះបង់",
   book_digital_ticket: "កក់សំបុត្រឌីជីថល",

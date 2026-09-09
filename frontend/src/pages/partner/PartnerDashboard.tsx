@@ -4,7 +4,6 @@ import {
   Users,
   Layers,
   Globe,
-  ArrowUpRight,
   Activity,
   CheckCircle2,
   TrendingUp,
@@ -18,7 +17,7 @@ interface PartnerDashboardProps {
   onNavigateToQueue?: (deptId?: string) => void;
 }
 
-export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateToQueue }) => {
+export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateToQueue: _onNavigateToQueue }) => {
   const { language, t } = useLanguage();
   const isKm = language === 'km';
   const kmFont = isKm ? 'var(--font-khmer)' : 'inherit';
@@ -594,13 +593,13 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateTo
                         }}
                       >
                         <div>
-                          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, marginBottom: '3px', fontFamily: kmFont }}>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, marginBottom: '2px', fontFamily: kmFont }}>
                             {t('pd_serving_now')}
                           </div>
                           <div
                             style={{
-                              fontSize: '1.5rem',
-                              fontWeight: 800,
+                              fontSize: '1.05rem',
+                              fontWeight: 700,
                               color: dept.current_serving_number ? 'var(--accent-primary, #0284c7)' : 'var(--text-muted)',
                               fontFamily: 'monospace',
                             }}
@@ -610,44 +609,22 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateTo
                         </div>
 
                         <div>
-                          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, marginBottom: '3px', fontFamily: kmFont }}>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, marginBottom: '2px', fontFamily: kmFont }}>
                             {t('pd_in_line')}
                           </div>
-                          <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                          <div style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-main)' }}>
                             {dept.waiting_count}{' '}
-                            <span style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-muted)' }}>
+                            <span style={{ fontSize: '0.82rem', fontWeight: 500, color: 'var(--text-muted)' }}>
                               {t('pd_patients')}
                             </span>
                           </div>
                         </div>
                       </div>
 
-                      <div style={{ marginTop: '0.65rem', fontSize: '0.82rem', color: 'var(--text-muted)', fontFamily: kmFont }}>
+                      <div style={{ marginTop: '0.55rem', fontSize: '0.8rem', color: 'var(--text-muted)', fontFamily: kmFont }}>
                         {t('pd_completed_today')}: <strong style={{ color: 'var(--text-main)' }}>{dept.completed_today || 0}</strong>
                       </div>
                     </div>
-
-                    {/* Direct Manage Counter Action Button */}
-                    <button
-                      onClick={() => onNavigateToQueue?.(dept.department_id)}
-                      className="btn btn-outline"
-                      style={{
-                        width: '100%',
-                        marginTop: '1rem',
-                        padding: '0.45rem 0.75rem',
-                        fontSize: '0.85rem',
-                        fontWeight: 600,
-                        fontFamily: kmFont,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '6px',
-                        borderRadius: '4px',
-                      }}
-                    >
-                      {t('pd_manage_counter')}
-                      <ArrowUpRight size={14} />
-                    </button>
                   </div>
                 ))}
               </div>

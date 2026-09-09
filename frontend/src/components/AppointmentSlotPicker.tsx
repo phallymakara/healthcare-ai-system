@@ -71,18 +71,25 @@ export const AppointmentSlotPicker: React.FC<AppointmentSlotPickerProps> = ({
         if (data.slots && data.slots.length > 0) {
           setSlots(data.slots);
 
-          // If current selected slot is booked, notify with plain error text
           const currentSlotData = data.slots.find((s: SlotAvailability) => s.slot === selectedSlot);
+          const firstAvailable = data.slots.find((s: SlotAvailability) => !s.is_booked);
+
           if (currentSlotData && currentSlotData.is_booked) {
-            const errorMsg = t('slot_already_booked_err');
+            if (firstAvailable) {
+              // Auto-switch to available slot cleanly
+              onSelectSlot(firstAvailable.slot);
+              setLocalSlotError(null);
+              if (onSlotError) onSlotError(null);
+            } else {
+              // All slots are booked for this date
+              const errorMsg = t('slot_all_booked_err');
+              setLocalSlotError(errorMsg);
+              if (onSlotError) onSlotError(errorMsg);
+            }
+          } else if (!firstAvailable) {
+            const errorMsg = t('slot_all_booked_err');
             setLocalSlotError(errorMsg);
             if (onSlotError) onSlotError(errorMsg);
-
-            // Auto-select first available slot
-            const firstAvailable = data.slots.find((s: SlotAvailability) => !s.is_booked);
-            if (firstAvailable) {
-              onSelectSlot(firstAvailable.slot);
-            }
           } else {
             setLocalSlotError(null);
             if (onSlotError) onSlotError(null);

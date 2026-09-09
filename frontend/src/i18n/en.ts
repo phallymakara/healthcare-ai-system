@@ -222,6 +222,7 @@ export const en = {
   slot_checking: "Checking slot availability...",
   slot_summary: "{available} of {total} slots available",
   slot_already_booked_err: "This time slot is already booked. Please select an available slot.",
+  slot_all_booked_err: "All appointment time slots for this date are fully booked. Please choose another date.",
   confirm_ticket_btn: "Book Ticket",
   cancel: "Cancel",
   book_digital_ticket: "Book Digital Ticket",
