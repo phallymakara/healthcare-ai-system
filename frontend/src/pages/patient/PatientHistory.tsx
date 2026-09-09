@@ -395,13 +395,13 @@ export const PatientHistory: React.FC<PatientHistoryProps> = ({
   };
 
   return (
-    <div style={{ maxWidth: '1080px', margin: '0 auto', width: '100%', fontFamily: kmFont }}>
+    <div style={{ maxWidth: '1060px', margin: '0 auto', width: '100%', fontFamily: kmFont }}>
       {!selectedRecord ? (
         /* ================= MASTER VIEW: PAST MEDICAL RECORDS LIST ================= */
         <div>
           {/* Header & Search Bar Placed Directly Underneath */}
-          <div style={{ marginBottom: '1.75rem' }}>
-            <div style={{ marginBottom: '1rem' }}>
+          <div style={{ marginBottom: '1.6rem' }}>
+            <div style={{ marginBottom: '1.15rem' }}>
               <h2
                 style={{
                   fontSize: '1.45rem',
@@ -430,16 +430,17 @@ export const PatientHistory: React.FC<PatientHistoryProps> = ({
             <form
               onSubmit={handleSearchSubmit}
               style={{
+                position: 'relative',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px',
                 width: '100%',
-                maxWidth: '680px',
+                maxWidth: '620px',
                 marginBottom: '1rem',
               }}
             >
               <input
                 type="text"
+                className="input-search-rounded"
                 placeholder={t('history_search_placeholder')}
                 value={searchQuery}
                 onChange={(e) => {
@@ -447,37 +448,39 @@ export const PatientHistory: React.FC<PatientHistoryProps> = ({
                   setSearchError(null);
                 }}
                 style={{
-                  flex: 1,
-                  padding: '0.52rem 0.95rem',
-                  fontSize: '0.9rem',
+                  width: '100%',
+                  padding: '0.74rem 7.5rem 0.74rem 1.35rem',
+                  fontSize: '0.94rem',
                   border: searchError ? '1px solid #dc2626' : '1px solid var(--border-color)',
-                  borderRadius: '4px',
+                  borderRadius: 'var(--radius-full)',
                   outline: 'none',
                   fontFamily: kmFont,
                   background: '#ffffff',
+                  boxSizing: 'border-box',
                 }}
               />
               <button
                 type="submit"
+                className="btn btn-primary"
                 style={{
-                  padding: '0.52rem 1.1rem',
+                  position: 'absolute',
+                  right: '5px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  padding: '0.52rem 1.15rem',
                   fontSize: '0.9rem',
                   fontWeight: 600,
-                  background: 'transparent',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: '4px',
-                  color: 'var(--text-main)',
                   cursor: 'pointer',
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '6px',
                   whiteSpace: 'nowrap',
-                  flexShrink: 0,
+                  borderRadius: 'var(--radius-full)',
                   boxShadow: 'none',
                   fontFamily: kmFont,
                 }}
               >
-                <Search size={14} />
+                <Search size={15} />
                 <span>{isKm ? 'ស្វែងរក' : 'Search'}</span>
               </button>
             </form>
@@ -502,55 +505,58 @@ export const PatientHistory: React.FC<PatientHistoryProps> = ({
                 type="button"
                 onClick={() => setStatusFilter('ALL')}
                 style={{
-                  padding: '0.35rem 0.85rem',
+                  padding: '0.42rem 0.95rem',
                   fontSize: '0.85rem',
                   fontWeight: statusFilter === 'ALL' ? 700 : 500,
-                  border: statusFilter === 'ALL' ? '1px solid var(--text-main)' : '1px solid var(--border-color)',
-                  borderRadius: '4px',
-                  background: 'transparent',
-                  color: statusFilter === 'ALL' ? 'var(--text-main)' : 'var(--text-muted)',
+                  border: statusFilter === 'ALL' ? '1px solid var(--accent-primary)' : '1px solid var(--border-color)',
+                  borderRadius: 'var(--radius-full)',
+                  background: statusFilter === 'ALL' ? 'var(--accent-primary)' : 'transparent',
+                  color: statusFilter === 'ALL' ? '#ffffff' : 'var(--text-muted)',
                   cursor: 'pointer',
                   boxShadow: 'none',
                   fontFamily: kmFont,
+                  transition: 'all 0.15s ease',
                 }}
               >
-                {t('history_filter_all')} ({records.length})
+                {t('history_filter_all')}
               </button>
               <button
                 type="button"
                 onClick={() => setStatusFilter('COMPLETED')}
                 style={{
-                  padding: '0.35rem 0.85rem',
+                  padding: '0.42rem 0.95rem',
                   fontSize: '0.85rem',
                   fontWeight: statusFilter === 'COMPLETED' ? 700 : 500,
-                  border: statusFilter === 'COMPLETED' ? '1px solid var(--text-main)' : '1px solid var(--border-color)',
-                  borderRadius: '4px',
-                  background: 'transparent',
-                  color: statusFilter === 'COMPLETED' ? 'var(--text-main)' : 'var(--text-muted)',
+                  border: statusFilter === 'COMPLETED' ? '1px solid var(--accent-primary)' : '1px solid var(--border-color)',
+                  borderRadius: 'var(--radius-full)',
+                  background: statusFilter === 'COMPLETED' ? 'var(--accent-primary)' : 'transparent',
+                  color: statusFilter === 'COMPLETED' ? '#ffffff' : 'var(--text-muted)',
                   cursor: 'pointer',
                   boxShadow: 'none',
                   fontFamily: kmFont,
+                  transition: 'all 0.15s ease',
                 }}
               >
-                {t('history_filter_completed')} ({records.filter((r) => r.status === 'COMPLETED').length})
+                {t('history_filter_completed')}
               </button>
               <button
                 type="button"
                 onClick={() => setStatusFilter('CANCELLED')}
                 style={{
-                  padding: '0.35rem 0.85rem',
+                  padding: '0.42rem 0.95rem',
                   fontSize: '0.85rem',
                   fontWeight: statusFilter === 'CANCELLED' ? 700 : 500,
-                  border: statusFilter === 'CANCELLED' ? '1px solid var(--text-main)' : '1px solid var(--border-color)',
-                  borderRadius: '4px',
-                  background: 'transparent',
-                  color: statusFilter === 'CANCELLED' ? 'var(--text-main)' : 'var(--text-muted)',
+                  border: statusFilter === 'CANCELLED' ? '1px solid var(--accent-primary)' : '1px solid var(--border-color)',
+                  borderRadius: 'var(--radius-full)',
+                  background: statusFilter === 'CANCELLED' ? 'var(--accent-primary)' : 'transparent',
+                  color: statusFilter === 'CANCELLED' ? '#ffffff' : 'var(--text-muted)',
                   cursor: 'pointer',
                   boxShadow: 'none',
                   fontFamily: kmFont,
+                  transition: 'all 0.15s ease',
                 }}
               >
-                {t('history_filter_cancelled')} ({records.filter((r) => r.status === 'CANCELLED').length})
+                {t('history_filter_cancelled')}
               </button>
             </div>
           </div>
@@ -566,7 +572,7 @@ export const PatientHistory: React.FC<PatientHistoryProps> = ({
               style={{
                 background: '#ffffff',
                 border: '1px solid var(--border-color)',
-                borderRadius: '6px',
+                borderRadius: '16px',
                 padding: '3rem 2rem',
                 textAlign: 'center',
                 boxShadow: 'none',
@@ -601,11 +607,11 @@ export const PatientHistory: React.FC<PatientHistoryProps> = ({
                   type="button"
                   onClick={onExploreHospitals}
                   style={{
-                    padding: '0.55rem 1.25rem',
-                    fontSize: '0.95rem',
+                    padding: '0.55rem 1.35rem',
+                    fontSize: '0.94rem',
                     fontWeight: 600,
                     border: '1px solid var(--border-color)',
-                    borderRadius: '4px',
+                    borderRadius: 'var(--radius-full)',
                     background: 'transparent',
                     color: 'var(--text-main)',
                     cursor: 'pointer',
@@ -637,24 +643,24 @@ export const PatientHistory: React.FC<PatientHistoryProps> = ({
                     style={{
                       background: '#ffffff',
                       border: '1px solid var(--border-color)',
-                      borderRadius: '6px',
-                      padding: '1.2rem 1.35rem',
+                      borderRadius: '16px',
+                      padding: '1.15rem 1.45rem',
                       cursor: 'pointer',
                       transition: 'border-color 0.15s ease',
                       boxShadow: 'none',
                       fontFamily: kmFont,
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-                      {/* Hospital Circular Logo (56px × 56px) */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.1rem' }}>
+                      {/* Hospital Circular Logo (54px × 54px) */}
                       {rec.hospital_logo_url ? (
                         <img
                           src={rec.hospital_logo_url}
                           alt={rec.hospital_name}
                           style={{
-                            width: '56px',
-                            height: '56px',
-                            minWidth: '56px',
+                            width: '54px',
+                            height: '54px',
+                            minWidth: '54px',
                             borderRadius: '50%',
                             objectFit: 'cover',
                             border: '1px solid var(--border-color)',
@@ -668,9 +674,9 @@ export const PatientHistory: React.FC<PatientHistoryProps> = ({
                       ) : (
                         <div
                           style={{
-                            width: '56px',
-                            height: '56px',
-                            minWidth: '56px',
+                            width: '54px',
+                            height: '54px',
+                            minWidth: '54px',
                             borderRadius: '50%',
                             border: '1px solid var(--border-color)',
                             display: 'flex',
@@ -678,7 +684,7 @@ export const PatientHistory: React.FC<PatientHistoryProps> = ({
                             justifyContent: 'center',
                             background: '#ffffff',
                             fontWeight: 700,
-                            fontSize: '1rem',
+                            fontSize: '1.05rem',
                             color: 'var(--text-main)',
                             flexShrink: 0,
                           }}
@@ -695,15 +701,15 @@ export const PatientHistory: React.FC<PatientHistoryProps> = ({
                       )}
 
                       {/* Content details */}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', flex: 1 }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', flex: 1 }}>
                         {/* Hospital Name + Status */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                          <span style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-main)', fontFamily: kmFont }}>
+                          <span style={{ fontWeight: 700, fontSize: '1.06rem', color: 'var(--text-main)', fontFamily: kmFont }}>
                             {formatFacilityName(rec.hospital_name, language)}
                           </span>
                           <span
                             style={{
-                              fontSize: '0.78rem',
+                              fontSize: '0.84rem',
                               fontWeight: 600,
                               color: isCompleted ? '#16a34a' : '#dc2626',
                               fontFamily: kmFont,
@@ -714,7 +720,7 @@ export const PatientHistory: React.FC<PatientHistoryProps> = ({
                         </div>
 
                         {/* Department • Doctor • Room */}
-                        <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)', fontFamily: kmFont }}>
+                        <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontFamily: kmFont, lineHeight: 1.5 }}>
                           <span style={{ fontWeight: 500, color: 'var(--text-main)' }}>
                             {formatDepartmentName(rec.department_name, language)}
                           </span>
@@ -738,18 +744,18 @@ export const PatientHistory: React.FC<PatientHistoryProps> = ({
                             display: 'flex',
                             alignItems: 'center',
                             gap: '12px',
-                            fontSize: '0.84rem',
+                            fontSize: '0.86rem',
                             color: 'var(--text-muted)',
                             flexWrap: 'wrap',
                           }}
                         >
                           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                            <Calendar size={13} color="var(--text-muted)" />
+                            <Calendar size={14} color="var(--text-muted)" />
                             <span>{rec.visited_date}</span>
                           </span>
                           {rec.duration_minutes > 0 && (
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                              <Clock size={13} color="var(--text-muted)" />
+                              <Clock size={14} color="var(--text-muted)" />
                               <span>{rec.duration_minutes} {t('history_mins')}</span>
                             </span>
                           )}
@@ -757,10 +763,10 @@ export const PatientHistory: React.FC<PatientHistoryProps> = ({
 
                         {/* Primary Diagnosis & Quick Indicators */}
                         {isCompleted && (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '0.2rem', flexWrap: 'wrap' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '0.15rem', flexWrap: 'wrap' }}>
                             <span
                               style={{
-                                fontSize: '0.82rem',
+                                fontSize: '0.84rem',
                                 fontWeight: 600,
                                 color: 'var(--text-main)',
                                 fontFamily: kmFont,
@@ -769,12 +775,12 @@ export const PatientHistory: React.FC<PatientHistoryProps> = ({
                               {t('history_diagnosis')}: {isKm ? rec.diagnosis.condition_km : rec.diagnosis.condition_en}
                             </span>
                             {rec.prescriptions.length > 0 && (
-                              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontFamily: kmFont }}>
+                              <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontFamily: kmFont }}>
                                 • {rec.prescriptions.length} {isKm ? 'វេជ្ជបញ្ជា' : 'Prescriptions'}
                               </span>
                             )}
                             {rec.billing.total_paid > 0 && (
-                              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontFamily: kmFont }}>
+                              <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontFamily: kmFont }}>
                                 • ${rec.billing.total_paid.toFixed(2)}
                               </span>
                             )}
@@ -797,12 +803,11 @@ export const PatientHistory: React.FC<PatientHistoryProps> = ({
               type="button"
               onClick={() => setSelectedRecord(null)}
               style={{
-                padding: '0.45rem 0.95rem',
-                fontSize: '0.9rem',
+                padding: '0.2rem 0',
+                fontSize: '0.925rem',
                 fontWeight: 600,
-                background: 'transparent',
-                border: '1px solid var(--border-color)',
-                borderRadius: '4px',
+                background: 'none',
+                border: 'none',
                 color: 'var(--text-main)',
                 cursor: 'pointer',
                 display: 'inline-flex',
@@ -822,7 +827,7 @@ export const PatientHistory: React.FC<PatientHistoryProps> = ({
             style={{
               background: '#ffffff',
               border: '1px solid var(--border-color)',
-              borderRadius: '6px',
+              borderRadius: '16px',
               padding: '1.75rem',
               boxShadow: 'none',
               fontFamily: kmFont,
@@ -1164,12 +1169,12 @@ export const PatientHistory: React.FC<PatientHistoryProps> = ({
                 type="button"
                 onClick={handlePrintReceipt}
                 style={{
-                  padding: '0.48rem 0.95rem',
+                  padding: '0.45rem 1.15rem',
                   fontSize: '0.88rem',
                   fontWeight: 600,
                   background: 'transparent',
                   border: '1px solid var(--border-color)',
-                  borderRadius: '4px',
+                  borderRadius: 'var(--radius-full)',
                   color: 'var(--text-main)',
                   cursor: 'pointer',
                   boxShadow: 'none',
@@ -1188,12 +1193,12 @@ export const PatientHistory: React.FC<PatientHistoryProps> = ({
                   type="button"
                   onClick={onExploreHospitals}
                   style={{
-                    padding: '0.48rem 1.1rem',
+                    padding: '0.45rem 1.15rem',
                     fontSize: '0.88rem',
                     fontWeight: 600,
                     background: 'transparent',
-                    border: '1px solid var(--text-main)',
-                    borderRadius: '4px',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: 'var(--radius-full)',
                     color: 'var(--text-main)',
                     cursor: 'pointer',
                     boxShadow: 'none',

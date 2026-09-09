@@ -68,4 +68,5 @@ async def assistant_chat(
         booked_ticket=agent_result.get("booked_ticket"),
         matching_hospitals=matching_objs,
         suggested_actions=agent_result.get("suggested_actions", []),
+        detected_language=agent_result.get("detected_language", "en"),
     )

@@ -157,7 +157,7 @@ export const AdminDashboard: React.FC = () => {
       </div>
 
       {/* Tab Bar */}
-      <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', marginBottom: '2rem', overflowX: 'auto' }}>
+      <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.65rem', marginBottom: '2rem', overflowX: 'auto' }}>
         {tabs.map((tab) => {
           const isActive = activeTab === tab.key;
           return (
@@ -166,18 +166,17 @@ export const AdminDashboard: React.FC = () => {
               onClick={() => { setActiveTab(tab.key); setActionError(null); }}
               style={{
                 display: 'flex', alignItems: 'center', gap: '7px',
-                padding: '0.7rem 1.25rem',
+                padding: '0.5rem 1.15rem',
                 fontSize: '0.925rem',
                 fontWeight: isActive ? 700 : 500,
                 fontFamily: kmFont,
-                color: isActive ? 'var(--accent-primary)' : 'var(--text-muted)',
-                background: 'transparent',
+                color: isActive ? '#ffffff' : 'var(--text-muted)',
+                background: isActive ? 'var(--accent-primary)' : 'transparent',
                 border: 'none',
-                borderBottom: isActive ? '2px solid var(--accent-primary)' : '2px solid transparent',
-                marginBottom: '-1px',
+                borderRadius: 'var(--radius-full)',
                 cursor: 'pointer',
                 whiteSpace: 'nowrap',
-                transition: 'color 0.15s',
+                transition: 'all 0.15s ease',
               }}
             >
               {tab.icon}
@@ -186,7 +185,8 @@ export const AdminDashboard: React.FC = () => {
                 <span style={{
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                   minWidth: '18px', height: '18px', borderRadius: '9px',
-                  background: 'var(--accent-rose)', color: '#fff',
+                  background: isActive ? '#ffffff' : 'var(--accent-rose)',
+                  color: isActive ? 'var(--accent-primary)' : '#ffffff',
                   fontSize: '0.7rem', fontWeight: 700, padding: '0 4px',
                 }}>
                   {tab.badge}
@@ -380,10 +380,11 @@ export const AdminDashboard: React.FC = () => {
             <div style={{ position: 'relative', width: '280px' }}>
               <input
                 type="text"
+                className="input-search-rounded"
                 placeholder={t('admin_search_placeholder')}
                 value={userSearch}
                 onChange={(e) => setUserSearch(e.target.value)}
-                style={{ width: '100%', padding: '0.5rem 0.85rem 0.5rem 2.25rem', background: 'transparent', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'var(--text-main)', fontSize: '0.875rem', fontFamily: kmFont }}
+                style={{ width: '100%', padding: '0.5rem 1rem 0.5rem 2.25rem', background: 'transparent', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-full)', color: 'var(--text-main)', fontSize: '0.875rem', fontFamily: kmFont }}
               />
               <Search size={15} color="var(--text-dim)" style={{ position: 'absolute', left: '0.7rem', top: '50%', transform: 'translateY(-50%)' }} />
             </div>

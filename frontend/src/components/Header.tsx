@@ -52,7 +52,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Brand Logo - Navigates to Landing page (Left) */}
         <div className="header-brand">
           <button 
-            onClick={() => onSelectTab('landing')} 
+            onClick={() => onSelectTab('patient_triage')} 
             className="brand-logo"
             style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
           >
@@ -74,175 +74,184 @@ export const Header: React.FC<HeaderProps> = ({
           {(!currentUser || isPatient) && (
             <>
               <button
-                  onClick={() => {
-                    if (activeTab === 'landing' || !currentUser) {
-                      document.getElementById('patient-features')?.scrollIntoView({ behavior: 'smooth' });
-                    } else {
-                      onSelectTab('patient_triage');
-                    }
-                  }}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    borderBottom: activeTab === 'patient_triage' ? '2px solid var(--accent-primary)' : '2px solid transparent',
-                    color: activeTab === 'patient_triage' ? 'var(--accent-primary)' : 'var(--text-muted)',
-                    fontWeight: activeTab === 'patient_triage' ? 700 : 500,
-                    padding: '0.5rem 0',
-                    fontSize: '1.02rem',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {t('nav_chat')}
-                </button>
-
-                <button
-                  onClick={() => {
-                    if (activeTab === 'landing' || !currentUser) {
-                      document.getElementById('hospital-features')?.scrollIntoView({ behavior: 'smooth' });
-                    } else {
-                      onSelectTab('patient_discovery');
-                    }
-                  }}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    borderBottom: activeTab === 'patient_discovery' ? '2px solid var(--accent-primary)' : '2px solid transparent',
-                    color: activeTab === 'patient_discovery' ? 'var(--accent-primary)' : 'var(--text-muted)',
-                    fontWeight: activeTab === 'patient_discovery' ? 700 : 500,
-                    padding: '0.5rem 0',
-                    fontSize: '1.02rem',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {t('nav_hospitals')}
-                </button>
-
-                {isPatient && (
-                  <>
-                    <button
-                      onClick={() => onSelectTab('patient_live_ticket')}
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        borderBottom: activeTab === 'patient_live_ticket' ? '2px solid var(--accent-primary)' : '2px solid transparent',
-                        color: activeTab === 'patient_live_ticket' ? 'var(--accent-primary)' : 'var(--text-muted)',
-                        fontWeight: activeTab === 'patient_live_ticket' ? 700 : 500,
-                        padding: '0.5rem 0',
-                        fontSize: '1.02rem',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      {t('nav_live_queue')}
-                    </button>
-
-                    <button
-                      onClick={() => onSelectTab('patient_history')}
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        borderBottom: activeTab === 'patient_history' ? '2px solid var(--accent-primary)' : '2px solid transparent',
-                        color: activeTab === 'patient_history' ? 'var(--accent-primary)' : 'var(--text-muted)',
-                        fontWeight: activeTab === 'patient_history' ? 700 : 500,
-                        padding: '0.5rem 0',
-                        fontSize: '1.02rem',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      {t('nav_history')}
-                    </button>
-                  </>
-                )}
-              </>
-            )}
-
-            {/* Hospital Partner Navigation */}
-            {isPartner && (
-              <>
-                <button
-                  onClick={() => onSelectTab('partner_counter')}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    borderBottom: activeTab === 'partner_counter' ? '2px solid var(--accent-emerald)' : '2px solid transparent',
-                    color: activeTab === 'partner_counter' ? 'var(--accent-emerald)' : 'var(--text-muted)',
-                    fontWeight: activeTab === 'partner_counter' ? 700 : 500,
-                    padding: '0.5rem 0',
-                    fontSize: '1.02rem',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {t('nav_counter')}
-                </button>
-
-                <button
-                  onClick={() => onSelectTab('partner_dashboard')}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    borderBottom: activeTab === 'partner_dashboard' ? '2px solid var(--accent-emerald)' : '2px solid transparent',
-                    color: activeTab === 'partner_dashboard' ? 'var(--accent-emerald)' : 'var(--text-muted)',
-                    fontWeight: activeTab === 'partner_dashboard' ? 700 : 500,
-                    padding: '0.5rem 0',
-                    fontSize: '1.02rem',
-                    cursor: 'pointer',
-                  }}
-                >
-                  Overview
-                </button>
-
-                <button
-                  onClick={() => onSelectTab('partner_doctors')}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    borderBottom: activeTab === 'partner_doctors' ? '2px solid var(--accent-emerald)' : '2px solid transparent',
-                    color: activeTab === 'partner_doctors' ? 'var(--accent-emerald)' : 'var(--text-muted)',
-                    fontWeight: activeTab === 'partner_doctors' ? 700 : 500,
-                    padding: '0.5rem 0',
-                    fontSize: '1.02rem',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {t('nav_doctor_shifts')}
-                </button>
-
-                <button
-                  onClick={() => onSelectTab('partner_departments')}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    borderBottom: activeTab === 'partner_departments' ? '2px solid var(--accent-emerald)' : '2px solid transparent',
-                    color: activeTab === 'partner_departments' ? 'var(--accent-emerald)' : 'var(--text-muted)',
-                    fontWeight: activeTab === 'partner_departments' ? 700 : 500,
-                    padding: '0.5rem 0',
-                    fontSize: '1.02rem',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {t('nav_departments')}
-                </button>
-              </>
-            )}
-
-            {/* Super Admin Navigation */}
-            {isAdmin && (
-              <button
-                onClick={() => onSelectTab('admin_center')}
+                onClick={() => {
+                  if (activeTab === 'landing' || !currentUser) {
+                    document.getElementById('patient-features')?.scrollIntoView({ behavior: 'smooth' });
+                  } else {
+                    onSelectTab('patient_triage');
+                  }
+                }}
                 style={{
-                  background: 'transparent',
+                  background: activeTab === 'patient_triage' ? 'var(--accent-primary)' : 'transparent',
                   border: 'none',
-                  borderBottom: activeTab === 'admin_center' ? '2px solid #7c3aed' : '2px solid transparent',
-                  color: activeTab === 'admin_center' ? '#7c3aed' : 'var(--text-muted)',
-                  fontWeight: activeTab === 'admin_center' ? 700 : 500,
-                  padding: '0.5rem 0',
-                  fontSize: '1.02rem',
+                  borderRadius: 'var(--radius-full)',
+                  color: activeTab === 'patient_triage' ? '#ffffff' : 'var(--text-muted)',
+                  fontWeight: activeTab === 'patient_triage' ? 700 : 500,
+                  padding: '0.45rem 1.05rem',
+                  fontSize: '0.96rem',
                   cursor: 'pointer',
+                  transition: 'all 0.15s ease',
                 }}
               >
-                {t('nav_admin')}
+                {t('nav_chat')}
               </button>
-            )}
-          </nav>
+
+              <button
+                onClick={() => {
+                  if (activeTab === 'landing' || !currentUser) {
+                    document.getElementById('hospital-features')?.scrollIntoView({ behavior: 'smooth' });
+                  } else {
+                    onSelectTab('patient_discovery');
+                  }
+                }}
+                style={{
+                  background: activeTab === 'patient_discovery' ? 'var(--accent-primary)' : 'transparent',
+                  border: 'none',
+                  borderRadius: 'var(--radius-full)',
+                  color: activeTab === 'patient_discovery' ? '#ffffff' : 'var(--text-muted)',
+                  fontWeight: activeTab === 'patient_discovery' ? 700 : 500,
+                  padding: '0.45rem 1.05rem',
+                  fontSize: '0.96rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                {t('nav_hospitals')}
+              </button>
+
+              {isPatient && (
+                <>
+                  <button
+                    onClick={() => onSelectTab('patient_live_ticket')}
+                    style={{
+                      background: activeTab === 'patient_live_ticket' ? 'var(--accent-primary)' : 'transparent',
+                      border: 'none',
+                      borderRadius: 'var(--radius-full)',
+                      color: activeTab === 'patient_live_ticket' ? '#ffffff' : 'var(--text-muted)',
+                      fontWeight: activeTab === 'patient_live_ticket' ? 700 : 500,
+                      padding: '0.45rem 1.05rem',
+                      fontSize: '0.96rem',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    {t('nav_live_queue')}
+                  </button>
+
+                  <button
+                    onClick={() => onSelectTab('patient_history')}
+                    style={{
+                      background: activeTab === 'patient_history' ? 'var(--accent-primary)' : 'transparent',
+                      border: 'none',
+                      borderRadius: 'var(--radius-full)',
+                      color: activeTab === 'patient_history' ? '#ffffff' : 'var(--text-muted)',
+                      fontWeight: activeTab === 'patient_history' ? 700 : 500,
+                      padding: '0.45rem 1.05rem',
+                      fontSize: '0.96rem',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    {t('nav_history')}
+                  </button>
+                </>
+              )}
+            </>
+          )}
+
+          {/* Hospital Partner Navigation */}
+          {isPartner && (
+            <>
+              <button
+                onClick={() => onSelectTab('partner_counter')}
+                style={{
+                  background: activeTab === 'partner_counter' ? 'var(--accent-primary)' : 'transparent',
+                  border: 'none',
+                  borderRadius: 'var(--radius-full)',
+                  color: activeTab === 'partner_counter' ? '#ffffff' : 'var(--text-muted)',
+                  fontWeight: activeTab === 'partner_counter' ? 700 : 500,
+                  padding: '0.45rem 1.05rem',
+                  fontSize: '0.96rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                {t('nav_counter')}
+              </button>
+
+              <button
+                onClick={() => onSelectTab('partner_dashboard')}
+                style={{
+                  background: activeTab === 'partner_dashboard' ? 'var(--accent-primary)' : 'transparent',
+                  border: 'none',
+                  borderRadius: 'var(--radius-full)',
+                  color: activeTab === 'partner_dashboard' ? '#ffffff' : 'var(--text-muted)',
+                  fontWeight: activeTab === 'partner_dashboard' ? 700 : 500,
+                  padding: '0.45rem 1.05rem',
+                  fontSize: '0.96rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                {t('nav_overview')}
+              </button>
+
+              <button
+                onClick={() => onSelectTab('partner_doctors')}
+                style={{
+                  background: activeTab === 'partner_doctors' ? 'var(--accent-primary)' : 'transparent',
+                  border: 'none',
+                  borderRadius: 'var(--radius-full)',
+                  color: activeTab === 'partner_doctors' ? '#ffffff' : 'var(--text-muted)',
+                  fontWeight: activeTab === 'partner_doctors' ? 700 : 500,
+                  padding: '0.45rem 1.05rem',
+                  fontSize: '0.96rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                {t('nav_doctor_shifts')}
+              </button>
+
+              <button
+                onClick={() => onSelectTab('partner_departments')}
+                style={{
+                  background: activeTab === 'partner_departments' ? 'var(--accent-primary)' : 'transparent',
+                  border: 'none',
+                  borderRadius: 'var(--radius-full)',
+                  color: activeTab === 'partner_departments' ? '#ffffff' : 'var(--text-muted)',
+                  fontWeight: activeTab === 'partner_departments' ? 700 : 500,
+                  padding: '0.45rem 1.05rem',
+                  fontSize: '0.96rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                {t('nav_departments')}
+              </button>
+            </>
+          )}
+
+          {/* Super Admin Navigation */}
+          {isAdmin && (
+            <button
+              onClick={() => onSelectTab('admin_center')}
+              style={{
+                background: activeTab === 'admin_center' ? 'var(--accent-primary)' : 'transparent',
+                border: 'none',
+                borderRadius: 'var(--radius-full)',
+                color: activeTab === 'admin_center' ? '#ffffff' : 'var(--text-muted)',
+                fontWeight: activeTab === 'admin_center' ? 700 : 500,
+                padding: '0.45rem 1.05rem',
+                fontSize: '0.96rem',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              {t('nav_admin')}
+            </button>
+          )}
+        </nav>
 
         {/* Right Header Utilities (Right) */}
         <div className="header-actions">
@@ -432,98 +441,114 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       {/* Mobile Navigation Dropdown */}
+      {/* Mobile Navigation Dropdown - Displays notifications, language switcher, and user profile at top */}
       {mobileMenuOpen && (
-        <div className="header-mobile-dropdown">
-          {(!currentUser || isPatient) && (
-            <>
+        <div className="header-mobile-dropdown" style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', padding: '1.1rem 1.35rem' }}>
+          {/* 1. Notifications Button (Only when logged in) */}
+          {currentUser && (
+            <div style={{ position: 'relative', width: '100%' }}>
               <button
-                onClick={() => {
-                  if (activeTab === 'landing' || !currentUser) {
-                    document.getElementById('patient-features')?.scrollIntoView({ behavior: 'smooth' });
-                    setMobileMenuOpen(false);
-                  } else {
-                    onSelectTab('patient_triage');
-                    setMobileMenuOpen(false);
-                  }
+                onClick={() => setShowNotifMenu(!showNotifMenu)}
+                style={{
+                  background: 'transparent',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '6px',
+                  padding: '0.6rem 0.85rem',
+                  color: 'var(--text-main)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  width: '100%',
+                  boxShadow: 'none',
+                  fontFamily: 'var(--font-khmer), sans-serif',
                 }}
-                className={`header-mobile-link ${activeTab === 'patient_triage' ? 'active' : ''}`}
               >
-                Chat
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Bell size={18} />
+                  <span style={{ fontSize: '0.95rem', fontWeight: 600 }}>Notifications</span>
+                </div>
+                {notifications.length > 0 && (
+                  <span style={{
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    color: '#ffffff',
+                    background: 'var(--accent-primary)',
+                    padding: '2px 7px',
+                    borderRadius: '9999px',
+                  }}>
+                    {notifications.length}
+                  </span>
+                )}
               </button>
-
-              <button
-                onClick={() => {
-                  if (activeTab === 'landing' || !currentUser) {
-                    document.getElementById('hospital-features')?.scrollIntoView({ behavior: 'smooth' });
-                    setMobileMenuOpen(false);
-                  } else {
-                    onSelectTab('patient_discovery');
-                    setMobileMenuOpen(false);
-                  }
-                }}
-                className={`header-mobile-link ${activeTab === 'patient_discovery' ? 'active' : ''}`}
-              >
-                Hospital & Clinic
-              </button>
-
-              {isPatient && currentUser && (
-                <>
-                  <button
-                    onClick={() => { onSelectTab('patient_live_ticket'); setMobileMenuOpen(false); }}
-                    className={`header-mobile-link ${activeTab === 'patient_live_ticket' ? 'active' : ''}`}
-                  >
-                    {t('nav_live_queue')}
-                  </button>
-
-                  <button
-                    onClick={() => { onSelectTab('patient_history'); setMobileMenuOpen(false); }}
-                    className={`header-mobile-link ${activeTab === 'patient_history' ? 'active' : ''}`}
-                  >
-                    History
-                  </button>
-                </>
-              )}
-            </>
+            </div>
           )}
 
-          {isPartner && (
-            <>
-              <button
-                onClick={() => { onSelectTab('partner_counter'); setMobileMenuOpen(false); }}
-                className={`header-mobile-link ${activeTab === 'partner_counter' ? 'active' : ''}`}
-              >
-                Counter Console
-              </button>
+          {/* 2. Language Switcher */}
+          <div style={{ width: '100%' }}>
+            <LanguageSwitcher variant="sidebar" style={{ width: '100%' }} />
+          </div>
 
+          {/* 3. User Profile or Sign In Button */}
+          {currentUser ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.35rem 0' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{
+                  width: '34px',
+                  height: '34px',
+                  borderRadius: '50%',
+                  border: '1px solid var(--border-color)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--text-main)',
+                }}>
+                  <User size={17} />
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.98rem', fontWeight: 600, color: 'var(--text-main)' }}>
+                    {currentUser.full_name}
+                  </div>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                    {currentUser.role === 'PATIENT' ? 'Patient' : currentUser.role}
+                  </div>
+                </div>
+              </div>
               <button
-                onClick={() => { onSelectTab('partner_dashboard'); setMobileMenuOpen(false); }}
-                className={`header-mobile-link ${activeTab === 'partner_dashboard' ? 'active' : ''}`}
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  onLogout();
+                }}
+                title={t('sign_out')}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#dc2626',
+                  cursor: 'pointer',
+                  padding: '6px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  fontSize: '0.85rem',
+                }}
               >
-                Overview
+                <LogOut size={16} />
               </button>
-
-              <button
-                onClick={() => { onSelectTab('partner_doctors'); setMobileMenuOpen(false); }}
-                className={`header-mobile-link ${activeTab === 'partner_doctors' ? 'active' : ''}`}
-              >
-                Doctor Shifts
-              </button>
-
-              <button
-                onClick={() => { onSelectTab('partner_departments'); setMobileMenuOpen(false); }}
-                className={`header-mobile-link ${activeTab === 'partner_departments' ? 'active' : ''}`}
-              >
-                Departments
-              </button>
-            </>
-          )}
-
-          {isAdmin && (
+            </div>
+          ) : (
             <button
-              onClick={() => { onSelectTab('admin_center'); setMobileMenuOpen(false); }}
-              className={`header-mobile-link ${activeTab === 'admin_center' ? 'active' : ''}`}
+              onClick={() => {
+                setMobileMenuOpen(false);
+                onOpenAuth();
+              }}
+              className="btn btn-primary"
+              style={{
+                width: '100%',
+                padding: '0.68rem 1.15rem',
+                fontSize: '0.98rem',
+              }}
             >
-              Admin Center
+              <LogIn size={18} /> {t('sign_in')}
             </button>
           )}
         </div>

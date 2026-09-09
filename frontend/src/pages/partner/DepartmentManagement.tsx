@@ -296,6 +296,7 @@ export const DepartmentManagement: React.FC = () => {
           alignItems: 'center',
           justifyContent: 'space-between',
           borderBottom: '1px solid var(--border-color)',
+          paddingBottom: '0.65rem',
           marginBottom: '1.5rem',
           flexWrap: 'wrap',
           gap: '1rem',
@@ -305,18 +306,17 @@ export const DepartmentManagement: React.FC = () => {
           <button
             onClick={() => setActiveTab('departments')}
             style={{
-              padding: '0.65rem 1.15rem',
+              padding: '0.5rem 1.15rem',
               fontSize: '0.95rem',
               fontWeight: activeTab === 'departments' ? 700 : 500,
               fontFamily: kmFont,
-              color: activeTab === 'departments' ? 'var(--text-main)' : 'var(--text-muted)',
-              background: 'transparent',
+              color: activeTab === 'departments' ? '#ffffff' : 'var(--text-muted)',
+              background: activeTab === 'departments' ? 'var(--accent-primary)' : 'transparent',
               border: 'none',
-              borderBottom: activeTab === 'departments' ? '2px solid var(--text-main)' : '2px solid transparent',
-              marginBottom: '-1px',
+              borderRadius: 'var(--radius-full)',
               cursor: 'pointer',
               whiteSpace: 'nowrap',
-              transition: 'all 0.15s',
+              transition: 'all 0.15s ease',
             }}
           >
             {t('dept_title_depts')}
@@ -324,18 +324,17 @@ export const DepartmentManagement: React.FC = () => {
           <button
             onClick={() => setActiveTab('services')}
             style={{
-              padding: '0.65rem 1.15rem',
+              padding: '0.5rem 1.15rem',
               fontSize: '0.95rem',
               fontWeight: activeTab === 'services' ? 700 : 500,
               fontFamily: kmFont,
-              color: activeTab === 'services' ? 'var(--text-main)' : 'var(--text-muted)',
-              background: 'transparent',
+              color: activeTab === 'services' ? '#ffffff' : 'var(--text-muted)',
+              background: activeTab === 'services' ? 'var(--accent-primary)' : 'transparent',
               border: 'none',
-              borderBottom: activeTab === 'services' ? '2px solid var(--text-main)' : '2px solid transparent',
-              marginBottom: '-1px',
+              borderRadius: 'var(--radius-full)',
               cursor: 'pointer',
               whiteSpace: 'nowrap',
-              transition: 'all 0.15s',
+              transition: 'all 0.15s ease',
             }}
           >
             {t('dept_title_services')}
@@ -347,10 +346,10 @@ export const DepartmentManagement: React.FC = () => {
             <button
               onClick={handleOpenNewDept}
               style={{
-                padding: '0.55rem 1rem',
+                padding: '0.55rem 1.15rem',
                 background: 'transparent',
                 border: '1px solid var(--text-main)',
-                borderRadius: '4px',
+                borderRadius: 'var(--radius-full)',
                 color: 'var(--text-main)',
                 fontSize: '0.875rem',
                 fontWeight: 600,
@@ -358,6 +357,7 @@ export const DepartmentManagement: React.FC = () => {
                 boxShadow: 'none',
                 fontFamily: kmFont,
                 marginBottom: '6px',
+                transition: 'all 0.15s ease',
               }}
             >
               {t('dept_add_btn')}
@@ -367,10 +367,10 @@ export const DepartmentManagement: React.FC = () => {
               onClick={handleOpenNewService}
               disabled={departments.length === 0}
               style={{
-                padding: '0.55rem 1rem',
+                padding: '0.55rem 1.15rem',
                 background: 'transparent',
                 border: '1px solid var(--text-main)',
-                borderRadius: '4px',
+                borderRadius: 'var(--radius-full)',
                 color: 'var(--text-main)',
                 fontSize: '0.875rem',
                 fontWeight: 600,
@@ -379,6 +379,7 @@ export const DepartmentManagement: React.FC = () => {
                 boxShadow: 'none',
                 fontFamily: kmFont,
                 marginBottom: '6px',
+                transition: 'all 0.15s ease',
               }}
             >
               {t('dept_add_service_btn')}
@@ -411,13 +412,13 @@ export const DepartmentManagement: React.FC = () => {
           </div>
         ) : (
           <div style={{
-            background: '#ffffff',
-            border: '1px solid var(--border-color)',
-            borderRadius: '6px',
+            background: 'transparent',
+            border: 'none',
+            borderRadius: 0,
             boxShadow: 'none',
             overflow: 'visible',
           }}>
-                {departments.map((dept, idx) => (
+                {departments.map((dept) => (
                   <div
                     key={dept.id}
                     style={{
@@ -426,15 +427,11 @@ export const DepartmentManagement: React.FC = () => {
                       justifyContent: 'space-between',
                       flexWrap: 'wrap',
                       gap: '1rem',
-                      padding: '1rem 1.25rem',
-                      borderBottom: idx === departments.length - 1 ? 'none' : '1px solid var(--border-color)',
-                      background: '#ffffff',
+                      padding: '1.1rem 0',
+                      borderBottom: '1px solid var(--border-color)',
+                      background: 'transparent',
                       position: 'relative',
                       zIndex: activeDropdownDeptId === dept.id ? 50 : 1,
-                      borderTopLeftRadius: idx === 0 ? '6px' : 0,
-                      borderTopRightRadius: idx === 0 ? '6px' : 0,
-                      borderBottomLeftRadius: idx === departments.length - 1 ? '6px' : 0,
-                      borderBottomRightRadius: idx === departments.length - 1 ? '6px' : 0,
                     }}
                   >
                     {/* Department Name & Code */}
@@ -520,30 +517,31 @@ export const DepartmentManagement: React.FC = () => {
                             position: 'absolute',
                             right: 0,
                             top: 'calc(100% + 4px)',
-                            background: '#ffffff',
-                            border: '1px solid var(--border-color)',
-                            borderRadius: '4px',
+                            background: 'var(--bg-primary, #ffffff)',
+                            border: 'none',
+                            borderRadius: 0,
                             display: 'flex',
                             flexDirection: 'column',
                             minWidth: '110px',
                             zIndex: 100,
                             boxShadow: 'none',
-                            overflow: 'hidden',
                           }}>
                             <button
                               onClick={() => handleToggleActive(dept)}
+                              onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
+                              onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
                               style={{
-                                padding: '0.55rem 0.85rem',
+                                padding: '0.45rem 0.75rem',
                                 fontSize: '0.92rem',
                                 fontWeight: 500,
                                 textAlign: 'left',
                                 background: 'transparent',
                                 border: 'none',
-                                borderBottom: '1px solid var(--border-color)',
                                 color: dept.is_active ? '#059669' : 'var(--text-muted)',
                                 cursor: 'pointer',
                                 boxShadow: 'none',
                                 fontFamily: kmFont,
+                                transition: 'opacity 0.15s ease',
                               }}
                             >
                               {dept.is_active ? t('doc_active') : t('doc_inactive')}
@@ -553,26 +551,30 @@ export const DepartmentManagement: React.FC = () => {
                                 setActiveDropdownDeptId(null);
                                 handleOpenEditDept(dept);
                               }}
+                              onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
+                              onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
                               style={{
-                                padding: '0.55rem 0.85rem',
+                                padding: '0.45rem 0.75rem',
                                 fontSize: '0.92rem',
                                 fontWeight: 500,
                                 textAlign: 'left',
                                 background: 'transparent',
                                 border: 'none',
-                                borderBottom: '1px solid var(--border-color)',
                                 color: 'var(--text-main)',
                                 cursor: 'pointer',
                                 boxShadow: 'none',
                                 fontFamily: kmFont,
+                                transition: 'opacity 0.15s ease',
                               }}
                             >
                               {t('doc_edit')}
                             </button>
                             <button
                               onClick={() => handleDeleteDept(dept.id)}
+                              onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
+                              onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
                               style={{
-                                padding: '0.55rem 0.85rem',
+                                padding: '0.45rem 0.75rem',
                                 fontSize: '0.92rem',
                                 fontWeight: 500,
                                 textAlign: 'left',
@@ -582,6 +584,7 @@ export const DepartmentManagement: React.FC = () => {
                                 cursor: 'pointer',
                                 boxShadow: 'none',
                                 fontFamily: kmFont,
+                                transition: 'opacity 0.15s ease',
                               }}
                             >
                               {t('doc_delete')}
@@ -614,13 +617,13 @@ export const DepartmentManagement: React.FC = () => {
           </div>
         ) : (
           <div style={{
-            background: '#ffffff',
-            border: '1px solid var(--border-color)',
-            borderRadius: '6px',
+            background: 'transparent',
+            border: 'none',
+            borderRadius: 0,
             boxShadow: 'none',
             overflow: 'visible',
           }}>
-                {services.map((srv, idx) => {
+                {services.map((srv) => {
                   const parentDept = departments.find((d) => d.id === srv.department_id);
                   return (
                     <div
@@ -631,15 +634,11 @@ export const DepartmentManagement: React.FC = () => {
                         justifyContent: 'space-between',
                         flexWrap: 'wrap',
                         gap: '1rem',
-                        padding: '1.1rem 1.35rem',
-                        borderBottom: idx === services.length - 1 ? 'none' : '1px solid var(--border-color)',
-                        background: '#ffffff',
+                        padding: '1.1rem 0',
+                        borderBottom: '1px solid var(--border-color)',
+                        background: 'transparent',
                         position: 'relative',
                         zIndex: activeDropdownSrvId === srv.id ? 50 : 1,
-                        borderTopLeftRadius: idx === 0 ? '6px' : 0,
-                        borderTopRightRadius: idx === 0 ? '6px' : 0,
-                        borderBottomLeftRadius: idx === services.length - 1 ? '6px' : 0,
-                        borderBottomRightRadius: idx === services.length - 1 ? '6px' : 0,
                       }}
                     >
                       {/* Service Name & Description */}
@@ -732,30 +731,31 @@ export const DepartmentManagement: React.FC = () => {
                               position: 'absolute',
                               right: 0,
                               top: 'calc(100% + 4px)',
-                              background: '#ffffff',
-                              border: '1px solid var(--border-color)',
-                              borderRadius: '4px',
+                              background: 'var(--bg-primary, #ffffff)',
+                              border: 'none',
+                              borderRadius: 0,
                               display: 'flex',
                               flexDirection: 'column',
                               minWidth: '110px',
                               zIndex: 100,
                               boxShadow: 'none',
-                              overflow: 'hidden',
                             }}>
                               <button
                                 onClick={() => handleToggleActiveService(srv)}
+                                onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
+                                onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
                                 style={{
-                                  padding: '0.55rem 0.85rem',
+                                  padding: '0.45rem 0.75rem',
                                   fontSize: '0.92rem',
                                   fontWeight: 500,
                                   textAlign: 'left',
                                   background: 'transparent',
                                   border: 'none',
-                                  borderBottom: '1px solid var(--border-color)',
                                   color: srv.is_active ? '#059669' : 'var(--text-muted)',
                                   cursor: 'pointer',
                                   boxShadow: 'none',
                                   fontFamily: kmFont,
+                                  transition: 'opacity 0.15s ease',
                                 }}
                               >
                                 {srv.is_active ? t('doc_active') : t('doc_inactive')}
@@ -765,26 +765,30 @@ export const DepartmentManagement: React.FC = () => {
                                   setActiveDropdownSrvId(null);
                                   handleOpenEditService(srv);
                                 }}
+                                onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
+                                onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
                                 style={{
-                                  padding: '0.55rem 0.85rem',
+                                  padding: '0.45rem 0.75rem',
                                   fontSize: '0.92rem',
                                   fontWeight: 500,
                                   textAlign: 'left',
                                   background: 'transparent',
                                   border: 'none',
-                                  borderBottom: '1px solid var(--border-color)',
                                   color: 'var(--text-main)',
                                   cursor: 'pointer',
                                   boxShadow: 'none',
                                   fontFamily: kmFont,
+                                  transition: 'opacity 0.15s ease',
                                 }}
                               >
                                 {t('doc_edit')}
                               </button>
                               <button
                                 onClick={() => handleDeleteService(srv.id)}
+                                onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
+                                onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
                                 style={{
-                                  padding: '0.55rem 0.85rem',
+                                  padding: '0.45rem 0.75rem',
                                   fontSize: '0.92rem',
                                   fontWeight: 500,
                                   textAlign: 'left',
@@ -794,6 +798,7 @@ export const DepartmentManagement: React.FC = () => {
                                   cursor: 'pointer',
                                   boxShadow: 'none',
                                   fontFamily: kmFont,
+                                  transition: 'opacity 0.15s ease',
                                 }}
                               >
                                 {t('doc_delete')}
@@ -833,9 +838,9 @@ export const DepartmentManagement: React.FC = () => {
                   }}
                   style={{
                     width: '100%',
-                    padding: '0.72rem 0.85rem',
-                    fontSize: '0.95rem',
-                    borderRadius: '4px',
+                    padding: '0.65rem 1.15rem',
+                    fontSize: '0.98rem',
+                    borderRadius: 'var(--radius-full)',
                     border: deptNameError ? '1px solid #dc2626' : '1px solid var(--border-color)',
                     boxShadow: 'none',
                     outline: 'none',
@@ -864,9 +869,9 @@ export const DepartmentManagement: React.FC = () => {
                   }}
                   style={{
                     width: '100%',
-                    padding: '0.72rem 0.85rem',
-                    fontSize: '0.95rem',
-                    borderRadius: '4px',
+                    padding: '0.65rem 1.15rem',
+                    fontSize: '0.98rem',
+                    borderRadius: 'var(--radius-full)',
                     border: deptCodeError ? '1px solid #dc2626' : '1px solid var(--border-color)',
                     boxShadow: 'none',
                     outline: 'none',
@@ -893,9 +898,9 @@ export const DepartmentManagement: React.FC = () => {
                   onChange={(e) => setDeptMinutes(Number(e.target.value))}
                   style={{
                     width: '100%',
-                    padding: '0.72rem 0.85rem',
-                    fontSize: '0.95rem',
-                    borderRadius: '4px',
+                    padding: '0.65rem 1.15rem',
+                    fontSize: '0.98rem',
+                    borderRadius: 'var(--radius-full)',
                     border: '1px solid var(--border-color)',
                     boxShadow: 'none',
                     outline: 'none',
@@ -933,12 +938,12 @@ export const DepartmentManagement: React.FC = () => {
                   onClick={() => setDeptModalOpen(false)}
                   style={{
                     flex: 1,
-                    padding: '0.75rem 1rem',
+                    padding: '0.7rem 1.25rem',
                     fontSize: '0.98rem',
                     fontWeight: 500,
                     background: 'transparent',
                     border: '1px solid var(--border-color)',
-                    borderRadius: '4px',
+                    borderRadius: 'var(--radius-full)',
                     color: 'var(--text-muted)',
                     cursor: 'pointer',
                     boxShadow: 'none',
@@ -952,12 +957,12 @@ export const DepartmentManagement: React.FC = () => {
                   disabled={deptLoading}
                   style={{
                     flex: 1,
-                    padding: '0.75rem 1rem',
+                    padding: '0.7rem 1.25rem',
                     fontSize: '0.98rem',
                     fontWeight: 600,
                     background: 'transparent',
                     border: '1px solid var(--text-main)',
-                    borderRadius: '4px',
+                    borderRadius: 'var(--radius-full)',
                     color: 'var(--text-main)',
                     cursor: 'pointer',
                     boxShadow: 'none',
@@ -995,9 +1000,9 @@ export const DepartmentManagement: React.FC = () => {
                   }}
                   style={{
                     width: '100%',
-                    padding: '0.72rem 0.85rem',
-                    fontSize: '0.95rem',
-                    borderRadius: '4px',
+                    padding: '0.65rem 1.15rem',
+                    fontSize: '0.98rem',
+                    borderRadius: 'var(--radius-full)',
                     border: srvDeptError ? '1px solid #dc2626' : '1px solid var(--border-color)',
                     boxShadow: 'none',
                     outline: 'none',
@@ -1034,9 +1039,9 @@ export const DepartmentManagement: React.FC = () => {
                   }}
                   style={{
                     width: '100%',
-                    padding: '0.72rem 0.85rem',
-                    fontSize: '0.95rem',
-                    borderRadius: '4px',
+                    padding: '0.65rem 1.15rem',
+                    fontSize: '0.98rem',
+                    borderRadius: 'var(--radius-full)',
                     border: srvNameError ? '1px solid #dc2626' : '1px solid var(--border-color)',
                     boxShadow: 'none',
                     outline: 'none',
@@ -1064,9 +1069,9 @@ export const DepartmentManagement: React.FC = () => {
                     onChange={(e) => setSrvDuration(Number(e.target.value))}
                     style={{
                       width: '100%',
-                      padding: '0.72rem 0.85rem',
-                      fontSize: '0.95rem',
-                      borderRadius: '4px',
+                      padding: '0.65rem 1.15rem',
+                      fontSize: '0.98rem',
+                      borderRadius: 'var(--radius-full)',
                       border: '1px solid var(--border-color)',
                       boxShadow: 'none',
                       outline: 'none',
@@ -1088,9 +1093,9 @@ export const DepartmentManagement: React.FC = () => {
                     onChange={(e) => setSrvPrice(Number(e.target.value))}
                     style={{
                       width: '100%',
-                      padding: '0.72rem 0.85rem',
-                      fontSize: '0.95rem',
-                      borderRadius: '4px',
+                      padding: '0.65rem 1.15rem',
+                      fontSize: '0.98rem',
+                      borderRadius: 'var(--radius-full)',
                       border: '1px solid var(--border-color)',
                       boxShadow: 'none',
                       outline: 'none',
@@ -1112,9 +1117,9 @@ export const DepartmentManagement: React.FC = () => {
                   rows={2}
                   style={{
                     width: '100%',
-                    padding: '0.72rem 0.85rem',
-                    fontSize: '0.95rem',
-                    borderRadius: '4px',
+                    padding: '0.65rem 1.15rem',
+                    fontSize: '0.98rem',
+                    borderRadius: '12px',
                     border: '1px solid var(--border-color)',
                     boxShadow: 'none',
                     outline: 'none',
@@ -1149,12 +1154,12 @@ export const DepartmentManagement: React.FC = () => {
                   onClick={() => setSrvModalOpen(false)}
                   style={{
                     flex: 1,
-                    padding: '0.75rem 1rem',
+                    padding: '0.7rem 1.25rem',
                     fontSize: '0.98rem',
                     fontWeight: 500,
                     background: 'transparent',
                     border: '1px solid var(--border-color)',
-                    borderRadius: '4px',
+                    borderRadius: 'var(--radius-full)',
                     color: 'var(--text-muted)',
                     cursor: 'pointer',
                     boxShadow: 'none',
@@ -1168,12 +1173,12 @@ export const DepartmentManagement: React.FC = () => {
                   disabled={srvLoading}
                   style={{
                     flex: 1,
-                    padding: '0.75rem 1rem',
+                    padding: '0.7rem 1.25rem',
                     fontSize: '0.98rem',
                     fontWeight: 600,
                     background: 'transparent',
                     border: '1px solid var(--text-main)',
-                    borderRadius: '4px',
+                    borderRadius: 'var(--radius-full)',
                     color: 'var(--text-main)',
                     cursor: 'pointer',
                     boxShadow: 'none',

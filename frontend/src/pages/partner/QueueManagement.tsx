@@ -1379,7 +1379,7 @@ export const QueueManagement: React.FC = () => {
         }
       `}</style>
 
-      {/* Top Header & + Walk-In Action Button */}
+      {/* Top Header */}
       <div
         style={{
           display: 'flex',
@@ -1387,8 +1387,7 @@ export const QueueManagement: React.FC = () => {
           alignItems: 'center',
           flexWrap: 'wrap',
           gap: '1rem',
-          borderBottom: '1px solid var(--border-color)',
-          paddingBottom: '1rem',
+          paddingBottom: '0.5rem',
           marginBottom: '0.25rem',
         }}
       >
@@ -1415,35 +1414,6 @@ export const QueueManagement: React.FC = () => {
             {t('cbs_subtitle')}
           </p>
         </div>
-
-        <button
-          onClick={() => {
-            setWalkInName('');
-            setWalkInPhone('');
-            setWalkInDeptId(selectedDeptId || (departments.length > 0 ? departments[0].id : ''));
-            setWalkInDoctorId('');
-            setWalkInServiceId('');
-            setWalkInSlotTime('');
-            setWalkInNameError(null);
-            setWalkInError(null);
-            setIssuedTicketSlip(null);
-            setWalkInModalOpen(true);
-          }}
-          style={{
-            padding: '0.55rem 1rem',
-            background: 'transparent',
-            border: '1px solid var(--text-main)',
-            borderRadius: '4px',
-            color: 'var(--text-main)',
-            fontSize: '0.875rem',
-            fontWeight: 600,
-            cursor: 'pointer',
-            boxShadow: 'none',
-            fontFamily: kmFont,
-          }}
-        >
-          {t('qm_issue_walkin_btn')}
-        </button>
       </div>
 
       {/* Summary KPI Cards Bar */}
@@ -1627,13 +1597,9 @@ export const QueueManagement: React.FC = () => {
         </div>
       </div>
 
-      {/* Filter Bar */}
+      {/* Filter Bar & Walk-In Button (Containerless) */}
       <div
         style={{
-          background: '#ffffff',
-          border: '1px solid var(--border-color)',
-          borderRadius: '6px',
-          padding: '0.85rem 1.25rem',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -1649,9 +1615,9 @@ export const QueueManagement: React.FC = () => {
             onChange={(e) => setSelectedDeptId(e.target.value)}
             style={{
               width: '100%',
-              padding: '0.55rem 0.85rem',
+              padding: '0.55rem 1rem',
               fontSize: '0.88rem',
-              borderRadius: '4px',
+              borderRadius: 'var(--radius-full)',
               border: '1px solid var(--border-color)',
               background: '#ffffff',
               color: 'var(--text-main)',
@@ -1669,46 +1635,78 @@ export const QueueManagement: React.FC = () => {
           </select>
         </div>
 
-        {/* Date Picker & Quick Date Button */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            style={{
-              padding: '0.5rem 0.75rem',
-              fontSize: '0.88rem',
-              borderRadius: '4px',
-              border: '1px solid var(--border-color)',
-              background: '#ffffff',
-              color: 'var(--text-main)',
-              fontFamily: kmFont,
-              boxShadow: 'none',
-              outline: 'none',
-            }}
-          />
+        {/* Date Picker, Quick Date Button & + Walk-In Action Button */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              style={{
+                padding: '0.5rem 0.85rem',
+                fontSize: '0.88rem',
+                borderRadius: 'var(--radius-full)',
+                border: '1px solid var(--border-color)',
+                background: '#ffffff',
+                color: 'var(--text-main)',
+                fontFamily: kmFont,
+                boxShadow: 'none',
+                outline: 'none',
+              }}
+            />
+            <button
+              onClick={() => setSelectedDate(new Date().toISOString().split('T')[0])}
+              style={{
+                padding: '0.52rem 0.95rem',
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                borderRadius: 'var(--radius-full)',
+                border:
+                  selectedDate === new Date().toISOString().split('T')[0]
+                    ? '1px solid var(--text-main)'
+                    : '1px solid var(--border-color)',
+                background: 'transparent',
+                color:
+                  selectedDate === new Date().toISOString().split('T')[0]
+                    ? 'var(--text-main)'
+                    : 'var(--text-muted)',
+                cursor: 'pointer',
+                fontFamily: kmFont,
+                boxShadow: 'none',
+              }}
+            >
+              {t('cbs_today')}
+            </button>
+          </div>
+
           <button
-            onClick={() => setSelectedDate(new Date().toISOString().split('T')[0])}
+            onClick={() => {
+              setWalkInName('');
+              setWalkInPhone('');
+              setWalkInDeptId(selectedDeptId || (departments.length > 0 ? departments[0].id : ''));
+              setWalkInDoctorId('');
+              setWalkInServiceId('');
+              setWalkInSlotTime('');
+              setWalkInNameError(null);
+              setWalkInError(null);
+              setIssuedTicketSlip(null);
+              setWalkInModalOpen(true);
+            }}
             style={{
-              padding: '0.52rem 0.85rem',
-              fontSize: '0.85rem',
-              fontWeight: 600,
-              borderRadius: '4px',
-              border:
-                selectedDate === new Date().toISOString().split('T')[0]
-                  ? '1px solid var(--text-main)'
-                  : '1px solid var(--border-color)',
+              padding: '0.52rem 1.15rem',
               background: 'transparent',
-              color:
-                selectedDate === new Date().toISOString().split('T')[0]
-                  ? 'var(--text-main)'
-                  : 'var(--text-muted)',
+              border: '1px solid var(--text-main)',
+              borderRadius: 'var(--radius-full)',
+              color: 'var(--text-main)',
+              fontSize: '0.875rem',
+              fontWeight: 600,
               cursor: 'pointer',
-              fontFamily: kmFont,
               boxShadow: 'none',
+              fontFamily: kmFont,
+              transition: 'all 0.15s ease',
             }}
           >
-            {t('cbs_today')}
+            {t('qm_issue_walkin_btn')}
           </button>
         </div>
       </div>
@@ -1747,13 +1745,13 @@ export const QueueManagement: React.FC = () => {
       ) : selectedDate && selectedDeptId ? (
         /* Live Available / Unavailable Slots View for Filtered Department */
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-          {/* Live Slots Availability Header Bar */}
+          {/* Live Slots Availability Header Bar (Containerless) */}
           <div
             style={{
-              background: '#ffffff',
-              border: '1px solid var(--border-color)',
-              borderRadius: '6px',
-              padding: '0.9rem 1.25rem',
+              background: 'transparent',
+              border: 'none',
+              borderRadius: 0,
+              padding: '0.65rem 0',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
@@ -1804,7 +1802,7 @@ export const QueueManagement: React.FC = () => {
             </div>
 
             {/* Slot Quick Filter Tabs */}
-            <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap' }}>
               {[
                 { key: 'ALL', label: `${t('cbs_filter_all_slots')} (${STANDARD_TIME_SLOTS.length})` },
                 { key: 'AVAILABLE', label: `${t('cbs_filter_available_only')} (${availableSlotsCount})` },
@@ -1814,22 +1812,26 @@ export const QueueManagement: React.FC = () => {
                   key={tab.key}
                   onClick={() => setSlotAvailabilityFilter(tab.key as any)}
                   style={{
-                    padding: '0.45rem 0.85rem',
+                    padding: '0.45rem 0.95rem',
                     fontSize: '0.84rem',
                     fontWeight: slotAvailabilityFilter === tab.key ? 700 : 500,
-                    borderRadius: '4px',
+                    borderRadius: 'var(--radius-full)',
                     border:
                       slotAvailabilityFilter === tab.key
-                        ? '1px solid var(--text-main)'
+                        ? '1px solid var(--accent-primary)'
                         : '1px solid var(--border-color)',
-                    background: 'transparent',
+                    background:
+                      slotAvailabilityFilter === tab.key
+                        ? 'var(--accent-primary)'
+                        : 'transparent',
                     color:
                       slotAvailabilityFilter === tab.key
-                        ? 'var(--text-main)'
+                        ? '#ffffff'
                         : 'var(--text-muted)',
                     cursor: 'pointer',
                     fontFamily: kmFont,
                     boxShadow: 'none',
+                    transition: 'all 0.15s ease',
                   }}
                 >
                   {tab.label}

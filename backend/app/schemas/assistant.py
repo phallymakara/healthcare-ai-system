@@ -54,3 +54,4 @@ class AssistantChatResponse(BaseModel):
     matching_hospitals: List[TriageHospitalMatch] = []
     booked_ticket: Optional[dict] = None
     suggested_actions: List[str] = []
+    detected_language: Optional[str] = None

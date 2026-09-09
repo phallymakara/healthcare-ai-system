@@ -454,17 +454,18 @@ export const DoctorManagement: React.FC = () => {
           onClick={handleOpenNewDoc}
           disabled={departments.length === 0}
           style={{
-            padding: '0.65rem 1.25rem',
+            padding: '0.55rem 1.15rem',
             background: 'transparent',
             border: '1px solid var(--text-main)',
-            borderRadius: '4px',
+            borderRadius: 'var(--radius-full)',
             color: 'var(--text-main)',
-            fontSize: '1rem',
+            fontSize: '0.875rem',
             fontWeight: 600,
             cursor: departments.length === 0 ? 'not-allowed' : 'pointer',
             opacity: departments.length === 0 ? 0.5 : 1,
             boxShadow: 'none',
             fontFamily: kmFont,
+            transition: 'all 0.15s ease',
           }}
         >
           {t('doc_add_btn')}
@@ -508,13 +509,13 @@ export const DoctorManagement: React.FC = () => {
               style={{ display: 'none' }}
             />
             <div style={{
-              background: '#ffffff',
-              border: '1px solid var(--border-color)',
-              borderRadius: '6px',
+              background: 'transparent',
+              border: 'none',
+              borderRadius: 0,
               overflow: 'visible',
               boxShadow: 'none',
             }}>
-              {doctors.map((doc, idx) => {
+              {doctors.map((doc) => {
                 const deptObj = departments.find((d) => d.id === doc.department_id);
                 const scheduleDays = (doc.schedules || []).map((s: any) => s.day_of_week);
 
@@ -527,15 +528,11 @@ export const DoctorManagement: React.FC = () => {
                       justifyContent: 'space-between',
                       flexWrap: 'wrap',
                       gap: '1rem',
-                      padding: '0.65rem 1.25rem',
-                      borderBottom: idx === doctors.length - 1 ? 'none' : '1px solid var(--border-color)',
-                      background: '#ffffff',
+                      padding: '0.85rem 0',
+                      borderBottom: '1px solid var(--border-color)',
+                      background: 'transparent',
                       position: 'relative',
                       zIndex: activeDropdownDocId === doc.id ? 50 : 1,
-                      borderTopLeftRadius: idx === 0 ? '6px' : 0,
-                      borderTopRightRadius: idx === 0 ? '6px' : 0,
-                      borderBottomLeftRadius: idx === doctors.length - 1 ? '6px' : 0,
-                      borderBottomRightRadius: idx === doctors.length - 1 ? '6px' : 0,
                     }}
                   >
                     {/* Doctor Info Column with Avatar */}
@@ -686,30 +683,31 @@ export const DoctorManagement: React.FC = () => {
                           position: 'absolute',
                           right: 0,
                           top: 'calc(100% + 4px)',
-                          background: '#ffffff',
-                          border: '1px solid var(--border-color)',
-                          borderRadius: '4px',
+                          background: 'var(--bg-primary, #ffffff)',
+                          border: 'none',
+                          borderRadius: 0,
                           display: 'flex',
                           flexDirection: 'column',
-                          minWidth: '150px',
+                          minWidth: '140px',
                           zIndex: 100,
                           boxShadow: 'none',
-                          overflow: 'hidden',
                         }}>
                         <button
                           onClick={() => handleToggleAvailable(doc)}
+                          onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
+                          onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
                           style={{
-                            padding: '0.65rem 0.95rem',
-                            fontSize: '0.95rem',
+                            padding: '0.5rem 0.8rem',
+                            fontSize: '0.92rem',
                             fontWeight: 500,
                             textAlign: 'left',
                             background: 'transparent',
                             border: 'none',
-                            borderBottom: '1px solid var(--border-color)',
                             color: doc.is_available ? '#059669' : 'var(--text-muted)',
                             cursor: 'pointer',
                             boxShadow: 'none',
                             fontFamily: kmFont,
+                            transition: 'opacity 0.15s ease',
                           }}
                         >
                           {doc.is_available ? t('doc_active') : t('doc_inactive')}
@@ -719,18 +717,20 @@ export const DoctorManagement: React.FC = () => {
                             setActiveDropdownDocId(null);
                             handleOpenEditDoc(doc);
                           }}
+                          onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
+                          onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
                           style={{
-                            padding: '0.65rem 0.95rem',
-                            fontSize: '0.95rem',
+                            padding: '0.5rem 0.8rem',
+                            fontSize: '0.92rem',
                             fontWeight: 500,
                             textAlign: 'left',
                             background: 'transparent',
                             border: 'none',
-                            borderBottom: '1px solid var(--border-color)',
                             color: 'var(--text-main)',
                             cursor: 'pointer',
                             boxShadow: 'none',
                             fontFamily: kmFont,
+                            transition: 'opacity 0.15s ease',
                           }}
                         >
                           {t('doc_edit')}
@@ -740,27 +740,31 @@ export const DoctorManagement: React.FC = () => {
                             setActiveDropdownDocId(null);
                             handleOpenShifts(doc);
                           }}
+                          onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
+                          onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
                           style={{
-                            padding: '0.65rem 0.95rem',
-                            fontSize: '0.95rem',
+                            padding: '0.5rem 0.8rem',
+                            fontSize: '0.92rem',
                             fontWeight: 500,
                             textAlign: 'left',
                             background: 'transparent',
                             border: 'none',
-                            borderBottom: '1px solid var(--border-color)',
                             color: 'var(--text-main)',
                             cursor: 'pointer',
                             boxShadow: 'none',
                             fontFamily: kmFont,
+                            transition: 'opacity 0.15s ease',
                           }}
                         >
                           {t('doc_manage_shifts')}
                         </button>
                         <button
                           onClick={() => handleDeleteDoctor(doc.id)}
+                          onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
+                          onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
                           style={{
-                            padding: '0.65rem 0.95rem',
-                            fontSize: '0.95rem',
+                            padding: '0.5rem 0.8rem',
+                            fontSize: '0.92rem',
                             fontWeight: 500,
                             textAlign: 'left',
                             background: 'transparent',
@@ -769,6 +773,7 @@ export const DoctorManagement: React.FC = () => {
                             cursor: 'pointer',
                             boxShadow: 'none',
                             fontFamily: kmFont,
+                            transition: 'opacity 0.15s ease',
                           }}
                         >
                           {t('doc_delete')}
@@ -879,9 +884,9 @@ export const DoctorManagement: React.FC = () => {
                   }}
                   style={{
                     width: '100%',
-                    padding: '0.65rem 0.85rem',
+                    padding: '0.65rem 1.15rem',
                     fontSize: '0.98rem',
-                    borderRadius: '4px',
+                    borderRadius: 'var(--radius-full)',
                     border: docDeptError ? '1px solid #dc2626' : '1px solid var(--border-color)',
                     boxShadow: 'none',
                     outline: 'none',
@@ -918,9 +923,9 @@ export const DoctorManagement: React.FC = () => {
                   }}
                   style={{
                     width: '100%',
-                    padding: '0.65rem 0.85rem',
+                    padding: '0.65rem 1.15rem',
                     fontSize: '0.98rem',
-                    borderRadius: '4px',
+                    borderRadius: 'var(--radius-full)',
                     border: docNameError ? '1px solid #dc2626' : '1px solid var(--border-color)',
                     boxShadow: 'none',
                     outline: 'none',
@@ -949,9 +954,9 @@ export const DoctorManagement: React.FC = () => {
                   }}
                   style={{
                     width: '100%',
-                    padding: '0.65rem 0.85rem',
+                    padding: '0.65rem 1.15rem',
                     fontSize: '0.98rem',
-                    borderRadius: '4px',
+                    borderRadius: 'var(--radius-full)',
                     border: docSpecialtyError ? '1px solid #dc2626' : '1px solid var(--border-color)',
                     boxShadow: 'none',
                     outline: 'none',
@@ -966,8 +971,6 @@ export const DoctorManagement: React.FC = () => {
                 )}
               </div>
 
-
-
               <div>
                 <label style={{ display: 'block', fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px', fontFamily: kmFont }}>
                   {t('doc_license_label')}
@@ -979,9 +982,9 @@ export const DoctorManagement: React.FC = () => {
                   onChange={(e) => setDocLicense(e.target.value)}
                   style={{
                     width: '100%',
-                    padding: '0.65rem 0.85rem',
+                    padding: '0.65rem 1.15rem',
                     fontSize: '0.98rem',
-                    borderRadius: '4px',
+                    borderRadius: 'var(--radius-full)',
                     border: '1px solid var(--border-color)',
                     boxShadow: 'none',
                     outline: 'none',
@@ -990,7 +993,6 @@ export const DoctorManagement: React.FC = () => {
                   }}
                 />
               </div>
-
 
               {docSubmitError && (
                 <div style={{ color: '#dc2626', fontSize: '0.88rem', fontFamily: kmFont }}>
@@ -1004,16 +1006,17 @@ export const DoctorManagement: React.FC = () => {
                   onClick={() => setDocModalOpen(false)}
                   style={{
                     flex: 1,
-                    padding: '0.7rem 1.15rem',
+                    padding: '0.7rem 1.25rem',
                     fontSize: '1rem',
                     fontWeight: 500,
                     background: 'transparent',
                     border: '1px solid var(--border-color)',
-                    borderRadius: '4px',
+                    borderRadius: 'var(--radius-full)',
                     color: 'var(--text-muted)',
                     cursor: 'pointer',
                     boxShadow: 'none',
                     fontFamily: kmFont,
+                    transition: 'all 0.15s ease',
                   }}
                 >
                   {t('cancel')}
@@ -1023,16 +1026,17 @@ export const DoctorManagement: React.FC = () => {
                   disabled={docLoading}
                   style={{
                     flex: 1,
-                    padding: '0.7rem 1.15rem',
+                    padding: '0.7rem 1.25rem',
                     fontSize: '1rem',
                     fontWeight: 600,
                     background: 'transparent',
                     border: '1px solid var(--text-main)',
-                    borderRadius: '4px',
+                    borderRadius: 'var(--radius-full)',
                     color: 'var(--text-main)',
                     cursor: 'pointer',
                     boxShadow: 'none',
                     fontFamily: kmFont,
+                    transition: 'all 0.15s ease',
                   }}
                 >
                   {editingDocId ? t('doc_btn_save') : t('doc_btn_create')}
@@ -1072,14 +1076,15 @@ export const DoctorManagement: React.FC = () => {
                         style={{
                           padding: '0.6rem 0.4rem',
                           fontSize: '0.92rem',
-                          fontWeight: checked ? 600 : 400,
-                          background: 'transparent',
-                          border: checked ? '1px solid var(--text-main)' : '1px solid var(--border-color)',
-                          borderRadius: '4px',
-                          color: checked ? 'var(--text-main)' : 'var(--text-muted)',
+                          fontWeight: checked ? 700 : 500,
+                          background: checked ? 'var(--accent-primary)' : 'transparent',
+                          border: checked ? '1px solid var(--accent-primary)' : '1px solid var(--border-color)',
+                          borderRadius: 'var(--radius-full)',
+                          color: checked ? '#ffffff' : 'var(--text-muted)',
                           cursor: 'pointer',
                           boxShadow: 'none',
                           fontFamily: kmFont,
+                          transition: 'all 0.15s ease',
                         }}
                       >
                         {t(day.fullKey)}
@@ -1100,9 +1105,9 @@ export const DoctorManagement: React.FC = () => {
                     onChange={(e) => setShiftStartTime(e.target.value)}
                     style={{
                       width: '100%',
-                      padding: '0.65rem 0.85rem',
+                      padding: '0.65rem 1.15rem',
                       fontSize: '0.98rem',
-                      borderRadius: '4px',
+                      borderRadius: 'var(--radius-full)',
                       border: '1px solid var(--border-color)',
                       boxShadow: 'none',
                       outline: 'none',
@@ -1122,9 +1127,9 @@ export const DoctorManagement: React.FC = () => {
                     onChange={(e) => setShiftEndTime(e.target.value)}
                     style={{
                       width: '100%',
-                      padding: '0.65rem 0.85rem',
+                      padding: '0.65rem 1.15rem',
                       fontSize: '0.98rem',
-                      borderRadius: '4px',
+                      borderRadius: 'var(--radius-full)',
                       border: '1px solid var(--border-color)',
                       boxShadow: 'none',
                       outline: 'none',
@@ -1134,7 +1139,6 @@ export const DoctorManagement: React.FC = () => {
                   />
                 </div>
               </div>
-
 
               {shiftSubmitError && (
                 <div style={{ color: '#dc2626', fontSize: '0.88rem', fontFamily: kmFont }}>
@@ -1148,16 +1152,17 @@ export const DoctorManagement: React.FC = () => {
                   onClick={() => setShiftModalOpen(false)}
                   style={{
                     flex: 1,
-                    padding: '0.7rem 1.15rem',
+                    padding: '0.7rem 1.25rem',
                     fontSize: '1rem',
                     fontWeight: 500,
                     background: 'transparent',
                     border: '1px solid var(--border-color)',
-                    borderRadius: '4px',
+                    borderRadius: 'var(--radius-full)',
                     color: 'var(--text-muted)',
                     cursor: 'pointer',
                     boxShadow: 'none',
                     fontFamily: kmFont,
+                    transition: 'all 0.15s ease',
                   }}
                 >
                   {t('cancel')}
@@ -1167,16 +1172,17 @@ export const DoctorManagement: React.FC = () => {
                   disabled={shiftLoading}
                   style={{
                     flex: 1,
-                    padding: '0.7rem 1.15rem',
+                    padding: '0.7rem 1.25rem',
                     fontSize: '1rem',
                     fontWeight: 600,
                     background: 'transparent',
                     border: '1px solid var(--text-main)',
-                    borderRadius: '4px',
+                    borderRadius: 'var(--radius-full)',
                     color: 'var(--text-main)',
                     cursor: 'pointer',
                     boxShadow: 'none',
                     fontFamily: kmFont,
+                    transition: 'all 0.15s ease',
                   }}
                 >
                   {t('doc_save_shifts')}

@@ -105,7 +105,8 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateTo
           style={{
             display: 'block',
             marginBottom: '1rem',
-            fontSize: '0.9rem',
+            fontSize: '0.92rem',
+            color: '#dc2626',
             fontFamily: kmFont,
           }}
         >
@@ -148,36 +149,85 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateTo
 
             return (
               <>
-                {/* 1. Facility Capacity & Resources Overview (Unboxed Row) */}
+                {/* 1. Facility Capacity & Resources Overview (3 Separate Rounded Cards) */}
                 <div
                   style={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    alignItems: 'center',
-                    gap: '2.5rem',
-                    marginBottom: '1.6rem',
-                    padding: '0.35rem 0.1rem',
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                    gap: '1.25rem',
+                    marginBottom: '1.5rem',
                   }}
                 >
-                  {/* Departments */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', color: 'var(--text-muted)' }}>
-                    <Building2 size={21} />
-                    <span style={{ fontSize: '1.1rem', fontWeight: 600, fontFamily: kmFont }}>{t('pd_total_departments')}:</span>
-                    <strong style={{ fontSize: '1.65rem', fontWeight: 800, color: 'var(--text-main)', lineHeight: 1 }}>{totalDepts}</strong>
+                  {/* Container 1: Departments */}
+                  <div
+                    style={{
+                      background: '#ffffff',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: '16px',
+                      padding: '1.25rem 1.5rem',
+                      boxShadow: 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '1rem',
+                    }}
+                  >
+                    <Building2 size={24} color="var(--text-muted)" style={{ flexShrink: 0 }} />
+                    <div>
+                      <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)', fontWeight: 500, fontFamily: kmFont }}>
+                        {t('pd_total_departments')}
+                      </div>
+                      <div style={{ fontSize: '1.65rem', fontWeight: 800, color: 'var(--text-main)', lineHeight: 1.15 }}>
+                        {totalDepts}
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Staff & Doctors */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', color: 'var(--text-muted)' }}>
-                    <Users size={21} />
-                    <span style={{ fontSize: '1.1rem', fontWeight: 600, fontFamily: kmFont }}>{t('pd_total_staff')}:</span>
-                    <strong style={{ fontSize: '1.65rem', fontWeight: 800, color: 'var(--text-main)', lineHeight: 1 }}>{totalStaff}</strong>
+                  {/* Container 2: Staff & Doctors */}
+                  <div
+                    style={{
+                      background: '#ffffff',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: '16px',
+                      padding: '1.25rem 1.5rem',
+                      boxShadow: 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '1rem',
+                    }}
+                  >
+                    <Users size={24} color="var(--text-muted)" style={{ flexShrink: 0 }} />
+                    <div>
+                      <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)', fontWeight: 500, fontFamily: kmFont }}>
+                        {t('pd_total_staff')}
+                      </div>
+                      <div style={{ fontSize: '1.65rem', fontWeight: 800, color: 'var(--text-main)', lineHeight: 1.15 }}>
+                        {totalStaff}
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Services */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', color: 'var(--text-muted)' }}>
-                    <Layers size={21} />
-                    <span style={{ fontSize: '1.1rem', fontWeight: 600, fontFamily: kmFont }}>{t('pd_total_services')}:</span>
-                    <strong style={{ fontSize: '1.65rem', fontWeight: 800, color: 'var(--text-main)', lineHeight: 1 }}>{totalServices}</strong>
+                  {/* Container 3: Medical Services */}
+                  <div
+                    style={{
+                      background: '#ffffff',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: '16px',
+                      padding: '1.25rem 1.5rem',
+                      boxShadow: 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '1rem',
+                    }}
+                  >
+                    <Layers size={24} color="var(--text-muted)" style={{ flexShrink: 0 }} />
+                    <div>
+                      <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)', fontWeight: 500, fontFamily: kmFont }}>
+                        {t('pd_total_services')}
+                      </div>
+                      <div style={{ fontSize: '1.65rem', fontWeight: 800, color: 'var(--text-main)', lineHeight: 1.15 }}>
+                        {totalServices}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -195,8 +245,8 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateTo
                     style={{
                       background: '#ffffff',
                       border: '1px solid var(--border-color)',
-                      borderRadius: '6px',
-                      padding: '1.35rem 1.4rem',
+                      borderRadius: '16px',
+                      padding: '1.5rem 1.6rem',
                       display: 'flex',
                       flexDirection: 'column',
                       justifyContent: 'space-between',
@@ -205,69 +255,61 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateTo
                   >
                     <div>
                       {/* Card Header */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.85rem', color: 'var(--accent-primary, #0284c7)' }}>
-                        <Activity size={17} />
-                        <span style={{ fontSize: '0.85rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.02em', fontFamily: kmFont }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', color: 'var(--accent-primary, #0284c7)' }}>
+                        <Activity size={18} />
+                        <span style={{ fontSize: '0.88rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.02em', fontFamily: kmFont }}>
                           {t('pd_live_floor_activity')}
                         </span>
                       </div>
 
                       {/* Hero Metric: Active in Clinic */}
-                      <div style={{ marginBottom: '1.15rem' }}>
-                        <div style={{ fontSize: '2.3rem', fontWeight: 700, color: 'var(--text-main)', lineHeight: 1.15 }}>
+                      <div style={{ marginBottom: '1.25rem' }}>
+                        <div style={{ fontSize: '2.4rem', fontWeight: 800, color: 'var(--text-main)', lineHeight: 1.1 }}>
                           {activePatients}
                         </div>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px', fontFamily: kmFont }}>
+                        <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '4px', fontFamily: kmFont }}>
                           {t('pd_active_on_floor')}
                         </div>
                       </div>
 
-                      {/* Sub-Cards: Serving vs Waiting */}
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                        {/* Sub-Card 1A: In Consultation */}
-                        <div
-                          style={{
-                            background: '#ffffff',
-                            border: '1px solid var(--border-color)',
-                            borderRadius: '6px',
-                            padding: '0.75rem 0.85rem',
-                            boxShadow: 'none',
-                          }}
-                        >
+                      {/* Sub-Metrics: Clean Side-by-Side (Unboxed) */}
+                      <div
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: '1fr 1fr',
+                          gap: '1rem',
+                          paddingTop: '1.15rem',
+                          borderTop: '1px solid var(--border-color)',
+                        }}
+                      >
+                        {/* Serving Now */}
+                        <div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '4px' }}>
-                            <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: 'var(--accent-primary, #0284c7)', display: 'inline-block' }} />
-                            <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', fontFamily: kmFont }}>
+                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--accent-primary, #0284c7)', display: 'inline-block' }} />
+                            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)', fontFamily: kmFont }}>
                               {t('pd_currently_serving')}
                             </span>
                           </div>
-                          <div style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--accent-primary, #0284c7)', lineHeight: 1.1 }}>
+                          <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--accent-primary, #0284c7)', lineHeight: 1.1 }}>
                             {servingCount}
                           </div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px', fontFamily: kmFont }}>
+                          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '3px', fontFamily: kmFont }}>
                             {t('pd_serving_now')}
                           </div>
                         </div>
 
-                        {/* Sub-Card 1B: Waiting in Queue */}
-                        <div
-                          style={{
-                            background: '#ffffff',
-                            border: '1px solid var(--border-color)',
-                            borderRadius: '6px',
-                            padding: '0.75rem 0.85rem',
-                            boxShadow: 'none',
-                          }}
-                        >
+                        {/* Waiting in Queue */}
+                        <div style={{ paddingLeft: '1rem', borderLeft: '1px solid var(--border-color)' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '4px' }}>
-                            <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: 'var(--accent-amber, #d97706)', display: 'inline-block' }} />
-                            <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', fontFamily: kmFont }}>
+                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--accent-amber, #d97706)', display: 'inline-block' }} />
+                            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)', fontFamily: kmFont }}>
                               {t('pd_currently_waiting')}
                             </span>
                           </div>
-                          <div style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--accent-amber, #d97706)', lineHeight: 1.1 }}>
+                          <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--accent-amber, #d97706)', lineHeight: 1.1 }}>
                             {waitingCount}
                           </div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px', fontFamily: kmFont }}>
+                          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '3px', fontFamily: kmFont }}>
                             {t('pd_in_line')}
                           </div>
                         </div>
@@ -280,8 +322,8 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateTo
                     style={{
                       background: '#ffffff',
                       border: '1px solid var(--border-color)',
-                      borderRadius: '6px',
-                      padding: '1.35rem 1.4rem',
+                      borderRadius: '16px',
+                      padding: '1.5rem 1.6rem',
                       display: 'flex',
                       flexDirection: 'column',
                       justifyContent: 'space-between',
@@ -290,72 +332,65 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateTo
                   >
                     <div>
                       {/* Card Header */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.85rem', color: 'var(--text-main)' }}>
-                        <TrendingUp size={17} />
-                        <span style={{ fontSize: '0.85rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.02em', fontFamily: kmFont }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', color: 'var(--text-main)' }}>
+                        <TrendingUp size={18} />
+                        <span style={{ fontSize: '0.88rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.02em', fontFamily: kmFont }}>
                           {t('pd_total_visits')}
                         </span>
                       </div>
 
                       {/* Hero Metric: Total Visits Today */}
-                      <div style={{ marginBottom: '1.15rem' }}>
-                        <div style={{ fontSize: '2.3rem', fontWeight: 700, color: 'var(--text-main)', lineHeight: 1.15 }}>
+                      <div style={{ marginBottom: '1.25rem' }}>
+                        <div style={{ fontSize: '2.4rem', fontWeight: 800, color: 'var(--text-main)', lineHeight: 1.1 }}>
                           {totalTickets}
                         </div>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px', fontFamily: kmFont }}>
+                        <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '4px', fontFamily: kmFont }}>
                           {onlineTickets} Online • {walkinTickets} Walk-in
                         </div>
                       </div>
 
-                      {/* Sub-Cards: Online vs Walk-in Channels */}
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
-                        {/* Sub-Card 2A: Online Bookings */}
-                        <div
-                          style={{
-                            background: '#ffffff',
-                            border: '1px solid var(--border-color)',
-                            borderRadius: '6px',
-                            padding: '0.75rem 0.85rem',
-                            boxShadow: 'none',
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-muted)', marginBottom: '3px' }}>
-                            <Globe size={13} />
-                            <span style={{ fontSize: '0.78rem', fontWeight: 600, fontFamily: kmFont }}>
+                      {/* Sub-Metrics: Online vs Walk-in (Unboxed) */}
+                      <div
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: '1fr 1fr',
+                          gap: '1rem',
+                          paddingTop: '1.15rem',
+                          borderTop: '1px solid var(--border-color)',
+                          marginBottom: '1rem',
+                        }}
+                      >
+                        {/* Online Bookings */}
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: 'var(--text-muted)', marginBottom: '4px' }}>
+                            <Globe size={14} />
+                            <span style={{ fontSize: '0.85rem', fontWeight: 600, fontFamily: kmFont }}>
                               {t('pd_online_bookings')}
                             </span>
                           </div>
                           <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.35rem' }}>
-                            <span style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--text-main)', lineHeight: 1.1 }}>
+                            <span style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-main)', lineHeight: 1.1 }}>
                               {onlineTickets}
                             </span>
-                            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+                            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>
                               ({onlinePct}%)
                             </span>
                           </div>
                         </div>
 
-                        {/* Sub-Card 2B: Walk-In Arrivals */}
-                        <div
-                          style={{
-                            background: '#ffffff',
-                            border: '1px solid var(--border-color)',
-                            borderRadius: '6px',
-                            padding: '0.75rem 0.85rem',
-                            boxShadow: 'none',
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-muted)', marginBottom: '3px' }}>
-                            <Users size={13} />
-                            <span style={{ fontSize: '0.78rem', fontWeight: 600, fontFamily: kmFont }}>
+                        {/* Walk-in Arrivals */}
+                        <div style={{ paddingLeft: '1rem', borderLeft: '1px solid var(--border-color)' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: 'var(--text-muted)', marginBottom: '4px' }}>
+                            <Users size={14} />
+                            <span style={{ fontSize: '0.85rem', fontWeight: 600, fontFamily: kmFont }}>
                               {t('pd_walkin_arrivals')}
                             </span>
                           </div>
                           <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.35rem' }}>
-                            <span style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--text-main)', lineHeight: 1.1 }}>
+                            <span style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-main)', lineHeight: 1.1 }}>
                               {walkinTickets}
                             </span>
-                            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+                            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>
                               ({walkinPct}%)
                             </span>
                           </div>
@@ -369,7 +404,7 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateTo
                         style={{
                           display: 'flex',
                           height: '6px',
-                          borderRadius: '3px',
+                          borderRadius: '10px',
                           overflow: 'hidden',
                           background: '#f1f5f9',
                           border: '1px solid var(--border-color)',
@@ -390,9 +425,15 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateTo
                           <div style={{ width: '100%', background: '#e2e8f0' }} />
                         )}
                       </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px', fontFamily: kmFont }}>
-                        <span>• {isKm ? 'អនឡាញ' : 'Online'} ({onlinePct}%)</span>
-                        <span>• {isKm ? 'មកដល់ផ្ទាល់' : 'Walk-in'} ({walkinPct}%)</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem', marginTop: '6px', fontFamily: kmFont }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', color: 'var(--text-main)', fontWeight: 600 }}>
+                          <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: 'var(--text-main)', display: 'inline-block' }} />
+                          {isKm ? 'អនឡាញ' : 'Online'} ({onlinePct}%)
+                        </span>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', color: 'var(--accent-primary, #0284c7)', fontWeight: 600 }}>
+                          <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: 'var(--accent-primary, #0284c7)', display: 'inline-block' }} />
+                          {isKm ? 'មកដល់ផ្ទាល់' : 'Walk-in'} ({walkinPct}%)
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -402,8 +443,8 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateTo
                     style={{
                       background: '#ffffff',
                       border: '1px solid var(--border-color)',
-                      borderRadius: '6px',
-                      padding: '1.35rem 1.4rem',
+                      borderRadius: '16px',
+                      padding: '1.5rem 1.6rem',
                       display: 'flex',
                       flexDirection: 'column',
                       justifyContent: 'space-between',
@@ -412,63 +453,56 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateTo
                   >
                     <div>
                       {/* Card Header */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.85rem', color: 'var(--accent-emerald, #059669)' }}>
-                        <CheckCircle2 size={17} />
-                        <span style={{ fontSize: '0.85rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.02em', fontFamily: kmFont }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', color: 'var(--accent-emerald, #059669)' }}>
+                        <CheckCircle2 size={18} />
+                        <span style={{ fontSize: '0.88rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.02em', fontFamily: kmFont }}>
                           {t('pd_clearance_rate')}
                         </span>
                       </div>
 
                       {/* Hero Metric: Clearance Rate */}
-                      <div style={{ marginBottom: '1.15rem' }}>
-                        <div style={{ fontSize: '2.3rem', fontWeight: 700, color: 'var(--accent-emerald, #059669)', lineHeight: 1.15 }}>
+                      <div style={{ marginBottom: '1.25rem' }}>
+                        <div style={{ fontSize: '2.4rem', fontWeight: 800, color: 'var(--accent-emerald, #059669)', lineHeight: 1.1 }}>
                           {clearanceRate}%
                         </div>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px', fontFamily: kmFont }}>
+                        <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '4px', fontFamily: kmFont }}>
                           {completedCount} / {totalTickets} {t('pd_resolved')}
                         </div>
                       </div>
 
-                      {/* Sub-Cards: Completed vs Skipped */}
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
-                        {/* Sub-Card 3A: Completed */}
-                        <div
-                          style={{
-                            background: '#ffffff',
-                            border: '1px solid var(--border-color)',
-                            borderRadius: '6px',
-                            padding: '0.75rem 0.85rem',
-                            boxShadow: 'none',
-                          }}
-                        >
-                          <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '3px', fontFamily: kmFont }}>
+                      {/* Sub-Metrics: Completed vs Skipped (Unboxed) */}
+                      <div
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: '1fr 1fr',
+                          gap: '1rem',
+                          paddingTop: '1.15rem',
+                          borderTop: '1px solid var(--border-color)',
+                          marginBottom: '1rem',
+                        }}
+                      >
+                        {/* Completed */}
+                        <div>
+                          <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px', fontFamily: kmFont }}>
                             {t('pd_completed_consultations')}
                           </div>
-                          <div style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--accent-emerald, #059669)', lineHeight: 1.1 }}>
+                          <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--accent-emerald, #059669)', lineHeight: 1.1 }}>
                             {completedCount}
                           </div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px', fontFamily: kmFont }}>
+                          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '3px', fontFamily: kmFont }}>
                             {t('pd_resolved')}
                           </div>
                         </div>
 
-                        {/* Sub-Card 3B: Skipped / No-Shows */}
-                        <div
-                          style={{
-                            background: '#ffffff',
-                            border: '1px solid var(--border-color)',
-                            borderRadius: '6px',
-                            padding: '0.75rem 0.85rem',
-                            boxShadow: 'none',
-                          }}
-                        >
-                          <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '3px', fontFamily: kmFont }}>
+                        {/* Skipped / No-Shows */}
+                        <div style={{ paddingLeft: '1rem', borderLeft: '1px solid var(--border-color)' }}>
+                          <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px', fontFamily: kmFont }}>
                             {t('pd_skipped_no_shows')}
                           </div>
-                          <div style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--text-main)', lineHeight: 1.1 }}>
+                          <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-main)', lineHeight: 1.1 }}>
                             {skippedCount}
                           </div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px', fontFamily: kmFont }}>
+                          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '3px', fontFamily: kmFont }}>
                             {skippedCount > 0 ? `${Math.round((skippedCount / Math.max(1, totalTickets)) * 100)}%` : '0%'}
                           </div>
                         </div>
@@ -481,7 +515,7 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateTo
                         style={{
                           display: 'flex',
                           height: '6px',
-                          borderRadius: '3px',
+                          borderRadius: '10px',
                           overflow: 'hidden',
                           background: '#f1f5f9',
                           border: '1px solid var(--border-color)',
@@ -506,10 +540,19 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateTo
                           <div style={{ width: '100%', background: '#e2e8f0' }} />
                         )}
                       </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px', fontFamily: kmFont }}>
-                        <span>• {isKm ? 'បញ្ចប់' : 'Done'} ({completedCount})</span>
-                        <span>• {isKm ? 'កំពុងពិគ្រោះ' : 'Serving'} ({servingCount})</span>
-                        <span>• {isKm ? 'រំលង' : 'Skipped'} ({skippedCount})</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem', marginTop: '6px', fontFamily: kmFont }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', color: 'var(--accent-emerald, #059669)', fontWeight: 600 }}>
+                          <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: 'var(--accent-emerald, #059669)', display: 'inline-block' }} />
+                          {isKm ? 'បញ្ចប់' : 'Done'} ({completedCount})
+                        </span>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', color: 'var(--accent-primary, #0284c7)', fontWeight: 600 }}>
+                          <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: 'var(--accent-primary, #0284c7)', display: 'inline-block' }} />
+                          {isKm ? 'កំពុងពិគ្រោះ' : 'Serving'} ({servingCount})
+                        </span>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', color: '#64748b', fontWeight: 600 }}>
+                          <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#94a3b8', display: 'inline-block' }} />
+                          {isKm ? 'រំលង' : 'Skipped'} ({skippedCount})
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -520,16 +563,16 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateTo
 
           {/* Operational Section: Department Live Counter Status Grid */}
           <section style={{ marginTop: '0.5rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.15rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-              <h2 style={{ fontSize: '1.3rem', fontWeight: 700, margin: 0, color: 'var(--text-main)', fontFamily: kmFont }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <h2 style={{ fontSize: '1.35rem', fontWeight: 700, margin: 0, color: 'var(--text-main)', fontFamily: kmFont }}>
                 {t('pd_dept_status')}
               </h2>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontFamily: kmFont }}>
+                <span style={{ fontSize: '0.88rem', color: 'var(--text-muted)', fontFamily: kmFont }}>
                   {metrics?.departments?.length || 0} {t('pd_total_departments')}
                 </span>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>•</span>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontFamily: kmFont }}>
+                <span style={{ fontSize: '0.88rem', color: 'var(--text-muted)' }}>•</span>
+                <span style={{ fontSize: '0.88rem', color: 'var(--text-muted)', fontFamily: kmFont }}>
                   {metrics?.total_staff || 0} {t('pd_total_staff')}
                 </span>
               </div>
@@ -551,8 +594,8 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateTo
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-                  gap: '1rem',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))',
+                  gap: '1.15rem',
                 }}
               >
                 {metrics.departments.map((dept: any) => (
@@ -561,8 +604,8 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateTo
                     style={{
                       background: '#ffffff',
                       border: '1px solid var(--border-color)',
-                      borderRadius: '6px',
-                      padding: '1.25rem 1.4rem',
+                      borderRadius: '16px',
+                      padding: '1.35rem 1.45rem',
                       boxShadow: 'none',
                       display: 'flex',
                       flexDirection: 'column',
@@ -571,14 +614,9 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateTo
                   >
                     <div>
                       {/* Department Header */}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.85rem' }}>
-                        <div>
-                          <div style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: kmFont, lineHeight: 1.25 }}>
-                            {dept.department_name}
-                          </div>
-                          <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontFamily: 'monospace', marginTop: '2px' }}>
-                            {t('pd_code')}: {dept.code || 'DEPT'}
-                          </div>
+                      <div style={{ marginBottom: '0.85rem' }}>
+                        <div style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: kmFont, lineHeight: 1.25 }}>
+                          {dept.department_name}
                         </div>
                       </div>
 
@@ -588,31 +626,35 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateTo
                           display: 'grid',
                           gridTemplateColumns: '1fr 1fr',
                           gap: '0.85rem',
-                          paddingTop: '0.85rem',
+                          paddingTop: '0.95rem',
                           borderTop: '1px solid var(--border-color)',
                         }}
                       >
                         <div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, marginBottom: '2px', fontFamily: kmFont }}>
+                          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, marginBottom: '4px', fontFamily: kmFont }}>
                             {t('pd_serving_now')}
                           </div>
                           <div
                             style={{
-                              fontSize: '1.05rem',
-                              fontWeight: 700,
+                              fontSize: '1.25rem',
+                              fontWeight: 800,
                               color: dept.current_serving_number ? 'var(--accent-primary, #0284c7)' : 'var(--text-muted)',
                               fontFamily: 'monospace',
                             }}
                           >
-                            {dept.current_serving_number || '—'}
+                            {dept.current_serving_number
+                              ? (dept.current_serving_number.includes('-')
+                                ? dept.current_serving_number.split('-').pop()
+                                : dept.current_serving_number)
+                              : '—'}
                           </div>
                         </div>
 
-                        <div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, marginBottom: '2px', fontFamily: kmFont }}>
+                        <div style={{ paddingLeft: '0.85rem', borderLeft: '1px solid var(--border-color)' }}>
+                          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, marginBottom: '4px', fontFamily: kmFont }}>
                             {t('pd_in_line')}
                           </div>
-                          <div style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                          <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)' }}>
                             {dept.waiting_count}{' '}
                             <span style={{ fontSize: '0.82rem', fontWeight: 500, color: 'var(--text-muted)' }}>
                               {t('pd_patients')}
@@ -621,7 +663,7 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateTo
                         </div>
                       </div>
 
-                      <div style={{ marginTop: '0.55rem', fontSize: '0.8rem', color: 'var(--text-muted)', fontFamily: kmFont }}>
+                      <div style={{ marginTop: '0.75rem', fontSize: '0.85rem', color: 'var(--text-muted)', fontFamily: kmFont }}>
                         {t('pd_completed_today')}: <strong style={{ color: 'var(--text-main)' }}>{dept.completed_today || 0}</strong>
                       </div>
                     </div>

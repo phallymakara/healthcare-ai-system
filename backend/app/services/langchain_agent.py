@@ -45,12 +45,16 @@ RULES:
 - NEVER generate generic or useless actions like "Ask Another Question", "Ask a question", "None", or "Other".
 - If no natural follow-up action is appropriate, omit the SUGGESTED_ACTIONS section entirely.
 
-LANGUAGE RULES (STRICT):
+AUTOMATIC LANGUAGE DETECTION & MIRRORING:
+- You MUST automatically detect the language of the user's latest question and respond in that EXACT same language.
+- If the user communicates in Khmer (ភាសាខ្មែរ):
+  Display and respond in natural, polite, and fluent Khmer (ភាសាខ្មែរ). Use English ONLY for specific technical or medical terms where standard in healthcare practice (e.g. MRI, ECG, CT scan, Troponin, ICU, ticket numbers like CARDIO-008, room numbers like Room 201, credentials like MD or DVM). All clinical guidance, conversational explanations, and SUGGESTED_ACTIONS must be in Khmer.
 - If the user communicates in English:
   Display and respond in 100% pure English ONLY. Do NOT include any Khmer characters, Khmer scripts, or Khmer bracketed text. Present all hospital names, doctor names, departments, and explanations purely in English (e.g. use "Calmette Hospital", "Khmer-Soviet Friendship Hospital"). All SUGGESTED_ACTIONS must be purely in English.
-- If the user communicates in Khmer:
-  Display and respond in natural, polite, and fluent Khmer (ភាសាខ្មែរ). Use English ONLY for specific technical or medical terms where standard in healthcare practice (e.g. MRI, ECG, CT scan, Troponin, ICU, ticket numbers like CARDIO-008, room numbers like Room 201, credentials like MD or DVM). All clinical guidance, conversational explanations, and SUGGESTED_ACTIONS must be in Khmer.
-- When calling database tools, use English keywords (e.g. 'animal', 'cardio', 'pediatrics', 'dental', 'orthopedics', 'general') so the database queries match accurately, then format the final output strictly according to the active language!
+- If the user communicates in another language (e.g. French, Chinese, Spanish, etc.):
+  Respond completely and naturally in that detected language, including all guidance and SUGGESTED_ACTIONS.
+- Always determine language strictly from the user's current message. Never respond in Khmer if the user wrote in English, and never respond in English if the user wrote in Khmer.
+- When calling database tools, use English keywords (e.g. 'animal', 'cardio', 'pediatrics', 'dental', 'orthopedics', 'general') so the database queries match accurately, then format the final output strictly according to the detected language!
 """
 
 KHMER_TERM_MAP = {
@@ -70,7 +74,65 @@ KHMER_TERM_MAP = {
     "ត្រចៀក": "ent",
     "ច្រមុះ": "ent",
     "បំពង់ក": "ent",
+    "ក្បាល": "neurology",
+    "សរសៃប្រសាទ": "neurology",
+    "ក្រពះ": "gastro",
+    "ពោះវៀន": "gastro",
+    "សួត": "pulmonology",
+    "ផ្លូវដង្ហើម": "pulmonology",
+    "មហារីក": "oncology",
+    "ឈាម": "hematology",
+    "សម្ភព": "obgyn",
+    "រោគស្ត្រី": "obgyn",
+    "តម្រងនោម": "nephrology",
+    "សង្គ្រោះបន្ទាន់": "emergency",
+    "បន្ទាន់": "emergency",
+    "គ្រូពេទ្យ": "doctor",
+    "ពេទ្យ": "doctor",
+    "មន្ទីរពេទ្យ": "hospital",
+    "គ្លីនិក": "clinic",
 }
+
+def detect_query_language(text: str, fallback_lang: str = "en") -> str:
+    """
+    Auto-detect user language based strictly on the question/message text.
+    Prioritizes the actual script and words of the user's question over UI settings.
+    """
+    if not text or not text.strip():
+        return fallback_lang or "en"
+
+    # 1. Detect Khmer Unicode range (1780-17FF, 19E0-19FF)
+    khmer_matches = len(re.findall(r"[\u1780-\u17FF\u19E0-\u19FF]", text))
+    latin_matches = len(re.findall(r"[a-zA-Z]", text))
+    chinese_matches = len(re.findall(r"[\u4e00-\u9fff]", text))
+    japanese_matches = len(re.findall(r"[\u3040-\u30ff]", text))
+    cyrillic_matches = len(re.findall(r"[\u0400-\u04FF]", text))
+
+    if khmer_matches > 0:
+        return "km"
+
+    if chinese_matches >= 2:
+        return "zh"
+
+    if japanese_matches >= 2:
+        return "ja"
+
+    if cyrillic_matches >= 2:
+        return "ru"
+
+    # French common healthcare / conversational words
+    if re.search(r"\b(bonjour|salut|merci|docteur|medecin|médecin|hopital|hôpital|douleur|symptome|symptômes|aidez|urgence|santé|suis|malade|rendez-vous|clinique)\b", text, re.IGNORECASE):
+        return "fr"
+
+    # Spanish common healthcare / conversational words
+    if re.search(r"\b(hola|gracias|doctor|hospital|dolor|sintomas|síntomas|ayuda|urgencia|salud|estoy|enfermo|cita|clinica|clínica)\b", text, re.IGNORECASE):
+        return "es"
+
+    # If message contains Latin letters and no French/Spanish markers
+    if latin_matches > 0:
+        return "en"
+
+    return fallback_lang or "en"
 
 def normalize_khmer_query(text: str) -> str:
     t = text.strip().lower()
@@ -350,13 +412,40 @@ class HealthcareAgentService:
 
         # 3. Build message list
         system_text = SYSTEM_PROMPT
-        is_msg_khmer = bool(re.search(r"[\u1780-\u17FF]", message))
-        active_lang = "km" if (language == "km" or is_msg_khmer) else "en"
+        detected_lang = detect_query_language(message, fallback_lang=language or "en")
 
-        if active_lang == "km":
-            system_text += "\nActive language is KHMER (ភាសាខ្មែរ). You MUST respond in polite, natural Khmer. Use English ONLY for specific technical or medical terms (such as MRI, ECG, CT scan, Troponin, ICU, ticket numbers like CARDIO-008, room numbers like Room 201, credentials like MD or DVM). Never output English conversational sentences. All SUGGESTED_ACTIONS must be in Khmer."
+        if detected_lang == "km":
+            system_text += (
+                "\n[ACTIVE DETECTED LANGUAGE: KHMER (ភាសាខ្មែរ)]\n"
+                "The user's question is in Khmer. You MUST automatically respond in natural, polite Khmer (ភាសាខ្មែរ). "
+                "Use English ONLY for standard technical/medical terms (such as MRI, ECG, CT scan, Troponin, ICU, ticket numbers, room numbers). "
+                "Never output English conversational sentences. All SUGGESTED_ACTIONS must be in Khmer."
+            )
+        elif detected_lang == "fr":
+            system_text += (
+                "\n[ACTIVE DETECTED LANGUAGE: FRENCH]\n"
+                "The user's question is in French. You MUST automatically respond completely and fluently in French. "
+                "All explanations, clinical guidance, and SUGGESTED_ACTIONS must be in French."
+            )
+        elif detected_lang == "zh":
+            system_text += (
+                "\n[ACTIVE DETECTED LANGUAGE: CHINESE]\n"
+                "The user's question is in Chinese. You MUST automatically respond completely and naturally in Chinese. "
+                "All explanations, clinical guidance, and SUGGESTED_ACTIONS must be in Chinese."
+            )
+        elif detected_lang == "es":
+            system_text += (
+                "\n[ACTIVE DETECTED LANGUAGE: SPANISH]\n"
+                "The user's question is in Spanish. You MUST automatically respond completely and naturally in Spanish. "
+                "All explanations, clinical guidance, and SUGGESTED_ACTIONS must be in Spanish."
+            )
         else:
-            system_text += "\nActive language is ENGLISH. You MUST respond in 100% pure English ONLY. Do NOT include any Khmer characters, Khmer scripts, or Khmer bracketed text (e.g. write 'Calmette Hospital', never 'Calmette Hospital (មន្ទីរពេទ្យកាល់ម៉ែត)'). All SUGGESTED_ACTIONS must be purely in English."
+            system_text += (
+                "\n[ACTIVE DETECTED LANGUAGE: ENGLISH]\n"
+                "The user's question is in English. You MUST automatically respond in 100% pure English ONLY. "
+                "Do NOT include any Khmer characters, Khmer scripts, or Khmer bracketed text (e.g. write 'Calmette Hospital', never 'Calmette Hospital (មន្ទីរពេទ្យកាល់ម៉ែត)'). "
+                "All explanations, clinical guidance, and SUGGESTED_ACTIONS must be purely in English."
+            )
 
         if user_context and user_context.get("full_name"):
             system_text += f"\nCurrently logged-in patient: {user_context.get('full_name')} (Phone: {user_context.get('phone_number', 'None provided')}). You may use this information for booking if the patient does not specify different details."
@@ -420,18 +509,30 @@ class HealthcareAgentService:
         # Fallback contextual actions only if LLM did not provide specific ones
         suggested_actions: List[str] = extracted_actions
         if not suggested_actions:
-            if booked_ticket_data:
-                suggested_actions = ["View in Live Queue", "Book Another Ticket"]
-            elif any(tc.get("name") == "search_doctors" for msg in messages if hasattr(msg, "tool_calls") and msg.tool_calls for tc in msg.tool_calls):
-                suggested_actions = ["Check Live Waiting Times", "Book a Ticket"]
-            elif any(tc.get("name") == "search_hospitals_and_clinics" for msg in messages if hasattr(msg, "tool_calls") and msg.tool_calls for tc in msg.tool_calls):
-                suggested_actions = ["Check Live Waiting Times", "Book a Digital Ticket"]
-            elif any(tc.get("name") == "check_live_queue" for msg in messages if hasattr(msg, "tool_calls") and msg.tool_calls for tc in msg.tool_calls):
-                suggested_actions = ["Book a Ticket for this Queue"]
+            if detected_lang == "km":
+                if booked_ticket_data:
+                    suggested_actions = ["មើលជួររង់ចាំផ្ទាល់", "កក់សំបុត្រមួយទៀត"]
+                elif any(tc.get("name") == "search_doctors" for msg in messages if hasattr(msg, "tool_calls") and msg.tool_calls for tc in msg.tool_calls):
+                    suggested_actions = ["ពិនិត្យមើលជួររង់ចាំផ្ទាល់", "កក់សំបុត្រ"]
+                elif any(tc.get("name") == "search_hospitals_and_clinics" for msg in messages if hasattr(msg, "tool_calls") and msg.tool_calls for tc in msg.tool_calls):
+                    suggested_actions = ["ពិនិត្យមើលជួររង់ចាំផ្ទាល់", "កក់សំបុត្រឌីជីថល"]
+                elif any(tc.get("name") == "check_live_queue" for msg in messages if hasattr(msg, "tool_calls") and msg.tool_calls for tc in msg.tool_calls):
+                    suggested_actions = ["កក់សំបុត្រសម្រាប់ជួរនេះ"]
+            else:
+                if booked_ticket_data:
+                    suggested_actions = ["View in Live Queue", "Book Another Ticket"]
+                elif any(tc.get("name") == "search_doctors" for msg in messages if hasattr(msg, "tool_calls") and msg.tool_calls for tc in msg.tool_calls):
+                    suggested_actions = ["Check Live Waiting Times", "Book a Ticket"]
+                elif any(tc.get("name") == "search_hospitals_and_clinics" for msg in messages if hasattr(msg, "tool_calls") and msg.tool_calls for tc in msg.tool_calls):
+                    suggested_actions = ["Check Live Waiting Times", "Book a Digital Ticket"]
+                elif any(tc.get("name") == "check_live_queue" for msg in messages if hasattr(msg, "tool_calls") and msg.tool_calls for tc in msg.tool_calls):
+                    suggested_actions = ["Book a Ticket for this Queue"]
 
         # Ensure "View in Live Queue" is included if ticket was booked
-        if booked_ticket_data and "View in Live Queue" not in suggested_actions:
-            suggested_actions.insert(0, "View in Live Queue")
+        if booked_ticket_data:
+            view_label = "មើលជួររង់ចាំផ្ទាល់" if detected_lang == "km" else "View in Live Queue"
+            if view_label not in suggested_actions:
+                suggested_actions.insert(0, view_label)
 
         # Exclude any generic placeholder buttons
         suggested_actions = [
@@ -444,4 +545,5 @@ class HealthcareAgentService:
             "booked_ticket": booked_ticket_data,
             "matching_hospitals": matching_hospitals_data,
             "suggested_actions": suggested_actions,
+            "detected_language": detected_lang,
         }

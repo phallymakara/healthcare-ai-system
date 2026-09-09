@@ -206,24 +206,25 @@ export const AppointmentSlotPicker: React.FC<AppointmentSlotPickerProps> = ({
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'flex-start',
-                padding: '0.55rem 0.75rem',
-                borderRadius: '4px',
-                background: '#ffffff',
+                padding: '0.65rem 0.95rem',
+                borderRadius: '14px',
+                background: isSelected ? 'var(--accent-primary)' : '#ffffff',
                 border: isSelected
-                  ? '1.5px solid var(--text-main)'
+                  ? '1.5px solid var(--accent-primary)'
                   : '1px solid var(--border-color)',
                 cursor: isBooked ? 'not-allowed' : 'pointer',
                 opacity: isBooked ? 0.5 : 1,
                 boxShadow: 'none',
                 textAlign: 'left',
                 boxSizing: 'border-box',
+                transition: 'all 0.15s ease',
               }}
             >
               <div
                 style={{
                   fontSize: '0.85rem',
                   fontWeight: isSelected ? 700 : 500,
-                  color: isBooked ? 'var(--text-muted)' : 'var(--text-main)',
+                  color: isSelected ? '#ffffff' : (isBooked ? 'var(--text-muted)' : 'var(--text-main)'),
                   fontFamily: kmFont,
                   letterSpacing: '-0.01em',
                 }}
@@ -238,7 +239,7 @@ export const AppointmentSlotPicker: React.FC<AppointmentSlotPickerProps> = ({
                   fontWeight: isSelected ? 700 : 500,
                   fontFamily: kmFont,
                   color: isSelected
-                    ? 'var(--text-main)'
+                    ? 'rgba(255, 255, 255, 0.9)'
                     : isBooked
                     ? '#dc2626'
                     : '#059669',

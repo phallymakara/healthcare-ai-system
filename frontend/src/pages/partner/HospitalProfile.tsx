@@ -52,7 +52,7 @@ export const HospitalProfile: React.FC = () => {
     if (!rawError) return isKm ? 'មិនអាចរក្សាទុកការផ្លាស់ប្តូរបានទេ។ សូមពិនិត្យមើលព័ត៌មានម្តងទៀត។' : 'Unable to save changes. Please review your information.';
     const str = typeof rawError === 'string' ? rawError : (rawError?.detail || rawError?.message || '');
     const lower = String(str).toLowerCase();
-    
+
     if (lower.includes('network') || lower.includes('failed to fetch') || lower.includes('connection')) {
       return isKm ? 'បញ្ហាការតភ្ជាប់បណ្តាញ។ សូមព្យាយាមម្តងទៀត។' : 'Network connection issue. Please check your connection and try again.';
     }
@@ -314,9 +314,8 @@ export const HospitalProfile: React.FC = () => {
             color: 'var(--text-muted)',
             fontSize: '1.05rem',
             fontFamily: kmFont,
-            background: '#ffffff',
-            border: '1px solid var(--border-color)',
-            borderRadius: '6px',
+            background: 'transparent',
+            border: 'none',
             boxShadow: 'none',
           }}
         >
@@ -335,15 +334,24 @@ export const HospitalProfile: React.FC = () => {
         <form
           onSubmit={handleSave}
           style={{
-            background: '#ffffff',
-            border: '1px solid var(--border-color)',
-            borderRadius: '6px',
-            padding: '1.75rem',
+            background: 'transparent',
+            border: 'none',
+            borderRadius: 0,
+            padding: 0,
             boxShadow: 'none',
           }}
         >
           {/* SECTION 1: FACILITY IDENTITY */}
-          <div style={{ paddingBottom: '1.5rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)' }}>
+          <div
+            style={{
+              background: '#ffffff',
+              border: '1px solid var(--border-color)',
+              borderRadius: '16px',
+              padding: '1.75rem',
+              marginBottom: '1.75rem',
+              boxShadow: 'none',
+            }}
+          >
             <div style={{ marginBottom: '1.25rem' }}>
               <h2
                 style={{
@@ -449,13 +457,21 @@ export const HospitalProfile: React.FC = () => {
                         style={{
                           background: 'transparent',
                           border: 'none',
+                          outline: 'none',
                           color: '#dc2626',
-                          fontSize: '0.95rem',
+                          fontSize: '0.92rem',
+                          fontWeight: 500,
                           cursor: uploadingLogo ? 'not-allowed' : 'pointer',
-                          padding: '0.2rem 0',
+                          padding: '0.25rem 0',
                           fontFamily: kmFont,
-                          textDecoration: 'underline',
                           opacity: uploadingLogo ? 0.5 : 1,
+                          transition: 'opacity 0.15s ease',
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!uploadingLogo) (e.currentTarget as HTMLElement).style.opacity = '0.7';
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!uploadingLogo) (e.currentTarget as HTMLElement).style.opacity = '1';
                         }}
                       >
                         {isKm ? 'លុបរូបចេញ' : 'Remove'}
@@ -505,9 +521,9 @@ export const HospitalProfile: React.FC = () => {
                   placeholder="Fhddfggsdfdffgdthospiitgal Clinic"
                   style={{
                     width: '100%',
-                    padding: '0.72rem 0.95rem',
+                    padding: '0.72rem 1.25rem',
                     fontSize: '1.05rem',
-                    borderRadius: '4px',
+                    borderRadius: 'var(--radius-full)',
                     border: nameError ? '1px solid #dc2626' : '1px solid var(--border-color)',
                     background: '#ffffff',
                     color: 'var(--text-main)',
@@ -548,9 +564,9 @@ export const HospitalProfile: React.FC = () => {
                   placeholder={t('prof_city_placeholder') || 'ឧ. រាជធានីភ្នំពេញ'}
                   style={{
                     width: '100%',
-                    padding: '0.72rem 0.95rem',
+                    padding: '0.72rem 1.25rem',
                     fontSize: '1.05rem',
-                    borderRadius: '4px',
+                    borderRadius: 'var(--radius-full)',
                     border: cityError ? '1px solid #dc2626' : '1px solid var(--border-color)',
                     background: '#ffffff',
                     color: 'var(--text-main)',
@@ -589,9 +605,9 @@ export const HospitalProfile: React.FC = () => {
                     placeholder={t('prof_website_placeholder')}
                     style={{
                       width: '100%',
-                      padding: '0.72rem 0.95rem 0.72rem 2.6rem',
+                      padding: '0.72rem 1.25rem 0.72rem 2.85rem',
                       fontSize: '1.05rem',
-                      borderRadius: '4px',
+                      borderRadius: 'var(--radius-full)',
                       border: '1px solid var(--border-color)',
                       background: '#ffffff',
                       color: 'var(--text-main)',
@@ -606,7 +622,7 @@ export const HospitalProfile: React.FC = () => {
                     color="var(--text-muted)"
                     style={{
                       position: 'absolute',
-                      left: '12px',
+                      left: '14px',
                       top: '50%',
                       transform: 'translateY(-50%)',
                     }}
@@ -622,9 +638,9 @@ export const HospitalProfile: React.FC = () => {
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '0.6rem',
-                  padding: '0.65rem 0.95rem',
+                  padding: '0.65rem 1.25rem',
                   border: '1px solid var(--border-color)',
-                  borderRadius: '4px',
+                  borderRadius: 'var(--radius-full)',
                   background: '#ffffff',
                   cursor: 'pointer',
                   userSelect: 'none',
@@ -679,9 +695,9 @@ export const HospitalProfile: React.FC = () => {
                 }
                 style={{
                   width: '100%',
-                  padding: '0.72rem 0.95rem',
+                  padding: '0.85rem 1.25rem',
                   fontSize: '1.05rem',
-                  borderRadius: '4px',
+                  borderRadius: '12px',
                   border: '1px solid var(--border-color)',
                   background: '#ffffff',
                   color: 'var(--text-main)',
@@ -697,7 +713,16 @@ export const HospitalProfile: React.FC = () => {
           </div>
 
           {/* SECTION 2: COMMUNICATIONS & EMERGENCY */}
-          <div style={{ paddingBottom: '1.5rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)' }}>
+          <div
+            style={{
+              background: '#ffffff',
+              border: '1px solid var(--border-color)',
+              borderRadius: '16px',
+              padding: '1.75rem',
+              marginBottom: '1.75rem',
+              boxShadow: 'none',
+            }}
+          >
             <div style={{ marginBottom: '1.25rem' }}>
               <h2
                 style={{
@@ -744,9 +769,9 @@ export const HospitalProfile: React.FC = () => {
                     placeholder="023 888 999"
                     style={{
                       width: '100%',
-                      padding: '0.72rem 0.95rem 0.72rem 2.6rem',
+                      padding: '0.72rem 1.25rem 0.72rem 2.85rem',
                       fontSize: '1.05rem',
-                      borderRadius: '4px',
+                      borderRadius: 'var(--radius-full)',
                       border: phoneError ? '1px solid #dc2626' : '1px solid var(--border-color)',
                       background: '#ffffff',
                       color: 'var(--text-main)',
@@ -761,7 +786,7 @@ export const HospitalProfile: React.FC = () => {
                     color="var(--text-muted)"
                     style={{
                       position: 'absolute',
-                      left: '12px',
+                      left: '14px',
                       top: '50%',
                       transform: 'translateY(-50%)',
                     }}
@@ -799,9 +824,9 @@ export const HospitalProfile: React.FC = () => {
                     placeholder="info@hospital.kh"
                     style={{
                       width: '100%',
-                      padding: '0.72rem 0.95rem 0.72rem 2.6rem',
+                      padding: '0.72rem 1.25rem 0.72rem 2.85rem',
                       fontSize: '1.05rem',
-                      borderRadius: '4px',
+                      borderRadius: 'var(--radius-full)',
                       border: emailError ? '1px solid #dc2626' : '1px solid var(--border-color)',
                       background: '#ffffff',
                       color: 'var(--text-main)',
@@ -816,7 +841,7 @@ export const HospitalProfile: React.FC = () => {
                     color="var(--text-muted)"
                     style={{
                       position: 'absolute',
-                      left: '12px',
+                      left: '14px',
                       top: '50%',
                       transform: 'translateY(-50%)',
                     }}
@@ -854,9 +879,9 @@ export const HospitalProfile: React.FC = () => {
                     placeholder="119 / 012 999 119"
                     style={{
                       width: '100%',
-                      padding: '0.72rem 0.95rem 0.72rem 2.6rem',
+                      padding: '0.72rem 1.25rem 0.72rem 2.85rem',
                       fontSize: '1.05rem',
-                      borderRadius: '4px',
+                      borderRadius: 'var(--radius-full)',
                       border: emergencyPhoneError ? '1px solid #dc2626' : '1px solid var(--border-color)',
                       background: '#ffffff',
                       color: 'var(--text-main)',
@@ -871,7 +896,7 @@ export const HospitalProfile: React.FC = () => {
                     color="var(--text-muted)"
                     style={{
                       position: 'absolute',
-                      left: '12px',
+                      left: '14px',
                       top: '50%',
                       transform: 'translateY(-50%)',
                     }}
@@ -887,7 +912,16 @@ export const HospitalProfile: React.FC = () => {
           </div>
 
           {/* SECTION 3: PHYSICAL ADDRESS & GOOGLE MAPS */}
-          <div style={{ paddingBottom: '1.5rem', marginBottom: '1.5rem' }}>
+          <div
+            style={{
+              background: '#ffffff',
+              border: '1px solid var(--border-color)',
+              borderRadius: '16px',
+              padding: '1.75rem',
+              marginBottom: '1.75rem',
+              boxShadow: 'none',
+            }}
+          >
             <div style={{ marginBottom: '1.25rem' }}>
               <h2
                 style={{
@@ -926,9 +960,9 @@ export const HospitalProfile: React.FC = () => {
                 placeholder={t('prof_street_placeholder')}
                 style={{
                   width: '100%',
-                  padding: '0.72rem 0.95rem',
+                  padding: '0.72rem 1.25rem',
                   fontSize: '1.05rem',
-                  borderRadius: '4px',
+                  borderRadius: 'var(--radius-full)',
                   border: addressError ? '1px solid #dc2626' : '1px solid var(--border-color)',
                   background: '#ffffff',
                   color: 'var(--text-main)',
@@ -969,9 +1003,9 @@ export const HospitalProfile: React.FC = () => {
                 placeholder={t('prof_map_paste_placeholder')}
                 style={{
                   width: '100%',
-                  padding: '0.72rem 0.95rem',
+                  padding: '0.72rem 1.25rem',
                   fontSize: '1.05rem',
-                  borderRadius: '4px',
+                  borderRadius: 'var(--radius-full)',
                   border: mapError ? '1px solid #dc2626' : '1px solid var(--border-color)',
                   background: '#ffffff',
                   color: 'var(--text-main)',
@@ -1023,9 +1057,9 @@ export const HospitalProfile: React.FC = () => {
                   placeholder="11.5564"
                   style={{
                     width: '100%',
-                    padding: '0.72rem 0.95rem',
+                    padding: '0.72rem 1.25rem',
                     fontSize: '1.05rem',
-                    borderRadius: '4px',
+                    borderRadius: 'var(--radius-full)',
                     border: '1px solid var(--border-color)',
                     background: '#ffffff',
                     color: 'var(--text-main)',
@@ -1063,9 +1097,9 @@ export const HospitalProfile: React.FC = () => {
                   placeholder="104.9282"
                   style={{
                     width: '100%',
-                    padding: '0.72rem 0.95rem',
+                    padding: '0.72rem 1.25rem',
                     fontSize: '1.05rem',
-                    borderRadius: '4px',
+                    borderRadius: 'var(--radius-full)',
                     border: '1px solid var(--border-color)',
                     background: '#ffffff',
                     color: 'var(--text-main)',
@@ -1118,7 +1152,7 @@ export const HospitalProfile: React.FC = () => {
                 <div
                   style={{
                     border: '1px solid var(--border-color)',
-                    borderRadius: '4px',
+                    borderRadius: '12px',
                     overflow: 'hidden',
                     boxShadow: 'none',
                   }}
@@ -1143,8 +1177,7 @@ export const HospitalProfile: React.FC = () => {
               flexDirection: 'column',
               alignItems: 'flex-end',
               gap: '0.65rem',
-              paddingTop: '0.75rem',
-              borderTop: '1px solid var(--border-color)',
+              paddingTop: '0.25rem',
             }}
           >
             {submitError && (
@@ -1174,11 +1207,11 @@ export const HospitalProfile: React.FC = () => {
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '0.5rem',
-                  padding: '0.7rem 1.6rem',
+                  padding: '0.7rem 1.85rem',
                   background: 'transparent',
                   color: 'var(--text-main)',
                   border: '1px solid var(--text-main)',
-                  borderRadius: '4px',
+                  borderRadius: 'var(--radius-full)',
                   fontSize: '0.98rem',
                   fontWeight: 600,
                   cursor: saving || loading ? 'not-allowed' : 'pointer',

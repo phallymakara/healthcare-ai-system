@@ -76,6 +76,8 @@ class HospitalDiscoveryResponse(BaseModel):
     category: str = "General Hospital"
     address: Optional[str] = None
     city: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
     phone: Optional[str] = None
     logo_url: Optional[str] = None
     emergency_service_available: bool = True
@@ -246,6 +248,8 @@ async def search_hospitals(
                 category=cat,
                 address=h.address,
                 city=None,
+                latitude=h.latitude,
+                longitude=h.longitude,
                 phone=h.phone,
                 logo_url=h.logo_url,
                 emergency_service_available=h.emergency_service_available,

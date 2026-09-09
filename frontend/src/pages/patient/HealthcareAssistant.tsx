@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
+import { Send, RefreshCw } from 'lucide-react';
 import { AuthService } from '../../services/auth';
 import { useLanguage } from '../../context/LanguageContext';
 import { API_BASE } from '../../services/api';
@@ -128,7 +129,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
         body: JSON.stringify({
           message: query,
           history: historyPayload,
-          language: language,
+          language: isKhmer(query) ? 'km' : (/[a-zA-Z]/.test(query) ? 'en' : language),
         }),
       });
 
@@ -138,7 +139,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
         const assistantMsg: ChatMessage = {
           id: String(Date.now() + 1),
           role: 'assistant',
-          text: chatData.reply || 'I am here to assist with your healthcare inquiries.',
+          text: chatData.reply || (isKhmer(query) ? 'ខ្ញុំនៅទីនេះដើម្បីជួយសម្រួលការសាកសួរសុខភាពរបស់អ្នក។' : 'I am here to assist with your healthcare inquiries.'),
           triage: hasMatchingHospitals ? {
             urgency_level: chatData.urgency_level || 'STANDARD',
             recommended_specialty: chatData.recommended_specialty || 'General Care',
@@ -153,7 +154,9 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
         const fallbackMsg: ChatMessage = {
           id: String(Date.now() + 1),
           role: 'assistant',
-          text: 'I apologize, I am temporarily unable to reach the medical assistant. Please check your connection or try again in a moment.',
+          text: isKhmer(query)
+            ? 'សូមអភ័យទោស ខ្ញុំមិនអាចទាក់ទងជំនួយការវេជ្ជសាស្ត្របានជាបណ្តោះអាសន្នទេ។ សូមពិនិត្យមើលបណ្តាញរបស់អ្នក ឬព្យាយាមម្តងទៀតនៅបន្តិចក្រោយ។'
+            : 'I apologize, I am temporarily unable to reach the medical assistant. Please check your connection or try again in a moment.',
           timestamp: new Date(),
         };
         setMessages((prev) => [...prev, fallbackMsg]);
@@ -162,7 +165,9 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
       const errorMsg: ChatMessage = {
         id: String(Date.now() + 1),
         role: 'assistant',
-        text: 'Connection issue while processing your message. Please check your network and try again.',
+        text: isKhmer(query)
+          ? 'បញ្ហាតភ្ជាប់បណ្តាញពេលដំណើរការសាររបស់អ្នក។ សូមពិនិត្យមើលបណ្តាញរបស់អ្នក ហើយព្យាយាមម្តងទៀត។'
+          : 'Connection issue while processing your message. Please check your network and try again.',
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMsg]);
@@ -277,64 +282,60 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
   };
 
   return (
-    <div style={{ width: '100%', height: '100%', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-      {/* Single Unified Chat Container spanning to the bottom */}
+    <div style={{ width: '100%', height: '100%', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, maxWidth: '1060px', margin: '0 auto', fontFamily: kmFont }}>
+      {/* Messages Scroll Area */}
       <div style={{
-        background: '#ffffff',
-        border: '1px solid var(--border-color)',
-        borderRadius: '6px',
+        flex: 1,
+        overflowY: 'auto',
+        padding: '0.75rem 0',
         display: 'flex',
         flexDirection: 'column',
-        boxShadow: 'none',
-        flex: 1,
+        gap: '1rem',
         minHeight: 0,
-        overflow: 'hidden',
       }}>
-        {/* Messages Scroll Area */}
-        <div style={{
-          flex: 1,
-          overflowY: 'auto',
-          padding: '1.25rem',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '1rem',
-          minHeight: 0,
-        }}>
           {messages.map((msg) => {
             const isKm = isKhmer(msg.text);
+            const isUser = msg.role === 'user';
             return (
               <div
                 key={msg.id}
                 style={{
                   display: 'flex',
                   flexDirection: 'column',
-                  alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                  alignItems: isUser ? 'flex-end' : 'flex-start',
                   width: '100%',
                 }}
               >
                 <div style={{
                   fontSize: '0.75rem',
                   color: 'var(--text-muted)',
-                  marginBottom: '0.2rem',
+                  marginBottom: '0.25rem',
                   fontWeight: 500,
+                  fontFamily: isKm ? 'var(--font-khmer)' : 'inherit',
                 }}>
-                  {msg.role === 'user' ? 'You' : 'Healthcare Assistant'}
+                  {isUser ? (language === 'km' ? 'អ្នក' : 'You') : (language === 'km' ? 'ជំនួយការ AI វេជ្ជសាស្ត្រ' : 'Healthcare Assistant')}
                 </div>
 
                 <div style={{
-                  maxWidth: msg.role === 'user' ? '88%' : '96%',
-                  padding: '0.25rem 0',
-                  fontSize: isKm ? '1.08rem' : '1rem',
+                  maxWidth: isUser ? '85%' : '100%',
+                  padding: isUser ? '0.5rem 0.9rem' : '0.25rem 0',
+                  background: isUser ? '#ffffff' : 'transparent',
+                  border: isUser ? '1px solid var(--border-color)' : 'none',
+                  borderRadius: isUser ? '16px' : '0',
+                  boxShadow: 'none',
+                  fontSize: isKm ? '1.05rem' : '0.98rem',
                   fontWeight: 400,
                   fontFamily: isKm ? 'var(--font-khmer)' : 'inherit',
                   color: 'var(--text-main)',
                   lineHeight: isKm ? 1.75 : 1.6,
+                  wordBreak: 'break-word',
+                  boxSizing: 'border-box',
                 }}>
                   {/* Markdown Formatted Text */}
                   <div style={{ color: 'var(--text-main)', lineHeight: isKm ? 1.75 : 1.6, fontFamily: isKm ? 'var(--font-khmer)' : 'inherit' }}>
                     <ReactMarkdown
                       components={{
-                        p: ({ children }) => <p style={{ margin: '0.4rem 0', fontSize: 'inherit', lineHeight: isKm ? 1.75 : 1.6, fontFamily: isKm ? 'var(--font-khmer)' : 'inherit' }}>{children}</p>,
+                        p: ({ children }) => <p style={{ margin: isUser ? '0' : '0.4rem 0', fontSize: 'inherit', lineHeight: isKm ? 1.75 : 1.6, fontFamily: isKm ? 'var(--font-khmer)' : 'inherit' }}>{children}</p>,
                         h1: ({ children }) => <h3 style={{ fontSize: '1.25rem', fontWeight: 600, margin: '0.65rem 0 0.35rem 0', color: 'var(--text-main)', fontFamily: isKm ? 'var(--font-khmer)' : 'inherit' }}>{children}</h3>,
                         h2: ({ children }) => <h3 style={{ fontSize: '1.2rem', fontWeight: 600, margin: '0.6rem 0 0.35rem 0', color: 'var(--text-main)', fontFamily: isKm ? 'var(--font-khmer)' : 'inherit' }}>{children}</h3>,
                         h3: ({ children }) => <h4 style={{ fontSize: '1.1rem', fontWeight: 600, margin: '0.55rem 0 0.25rem 0', color: 'var(--text-main)', fontFamily: isKm ? 'var(--font-khmer)' : 'inherit' }}>{children}</h4>,
@@ -390,12 +391,12 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
                       <button
                         onClick={() => onTicketBooked(msg.bookedTicket)}
                         style={{
-                          padding: '0.5rem 1rem',
+                          padding: '0.45rem 1rem',
                           fontSize: '0.8rem',
                           fontWeight: 600,
                           background: 'transparent',
                           border: '1px solid var(--text-main)',
-                          borderRadius: '4px',
+                          borderRadius: 'var(--radius-full)',
                           color: 'var(--text-main)',
                           cursor: 'pointer',
                           boxShadow: 'none',
@@ -511,12 +512,12 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
                                   <button
                                     onClick={() => handleOpenBooking(m)}
                                     style={{
-                                      padding: '0.35rem 0.75rem',
+                                      padding: '0.35rem 0.85rem',
                                       fontSize: '0.75rem',
                                       fontWeight: 500,
                                       background: 'transparent',
                                       border: '1px solid var(--text-main)',
-                                      borderRadius: '3px',
+                                      borderRadius: 'var(--radius-full)',
                                       color: 'var(--text-main)',
                                       cursor: 'pointer',
                                       boxShadow: 'none',
@@ -556,7 +557,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
                               fontWeight: 500,
                               background: 'transparent',
                               border: '1px solid var(--border-color)',
-                              borderRadius: '4px',
+                              borderRadius: 'var(--radius-full)',
                               color: 'var(--text-main)',
                               cursor: loading ? 'not-allowed' : 'pointer',
                               boxShadow: 'none',
@@ -599,69 +600,85 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Bottom Chat Input Form Area */}
-        <div style={{
-          padding: '0.85rem 1.25rem',
-          background: '#ffffff',
-        }}>
-          <form onSubmit={handleSendMessage} style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-            <input
-              type="text"
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              placeholder={t('chat_placeholder')}
-              disabled={loading}
-              style={{
-                flex: 1,
-                padding: '0.68rem 1.15rem',
-                fontSize: (language === 'km' || isKhmer(inputText)) ? '1.05rem' : '1rem',
-                fontFamily: (language === 'km' || isKhmer(inputText)) ? 'var(--font-khmer)' : 'inherit',
-                border: '1px solid var(--border-color)',
-                borderRadius: '24px',
-                background: '#ffffff',
-                color: 'var(--text-main)',
-                outline: 'none',
-                boxShadow: 'none',
-              }}
-            />
-            <button
-              type="submit"
-              disabled={loading}
-              style={{
-                padding: '0.68rem 1.4rem',
-                fontSize: '0.92rem',
-                fontWeight: 600,
-                background: 'transparent',
-                border: '1px solid var(--text-main)',
-                borderRadius: '24px',
-                color: 'var(--text-main)',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                opacity: loading ? 0.6 : 1,
-                boxShadow: 'none',
-                fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
-              }}
-            >
-              {t('chat_send')}
-            </button>
-          </form>
+      {/* Bottom Chat Input Form Area */}
+      <div style={{
+        padding: '0.75rem 0 0.35rem 0',
+        background: 'transparent',
+      }}>
+        <form
+          onSubmit={handleSendMessage}
+          style={{
+            position: 'relative',
+            display: 'flex',
+            alignItems: 'center',
+            width: '100%',
+          }}
+        >
+          <input
+            type="text"
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+            placeholder={t('chat_placeholder')}
+            disabled={loading}
+            className="input-search-rounded"
+            style={{
+              width: '100%',
+              padding: '0.84rem 9.6rem 0.84rem 1.45rem',
+              fontSize: (language === 'km' || isKhmer(inputText)) ? '1.02rem' : '0.96rem',
+              fontFamily: (language === 'km' || isKhmer(inputText)) ? 'var(--font-khmer)' : 'inherit',
+              border: '1px solid var(--border-color)',
+              borderRadius: 'var(--radius-full)',
+              background: '#ffffff',
+              color: 'var(--text-main)',
+              outline: 'none',
+              boxShadow: 'none',
+              boxSizing: 'border-box',
+            }}
+          />
+          <button
+            type="submit"
+            disabled={loading || !inputText.trim()}
+            className="btn btn-primary"
+            style={{
+              position: 'absolute',
+              right: '6px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              padding: '0.6rem 1.65rem',
+              fontSize: '0.92rem',
+              fontWeight: 600,
+              cursor: (loading || !inputText.trim()) ? 'not-allowed' : 'pointer',
+              opacity: (loading || !inputText.trim()) ? 0.6 : 1,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '7px',
+              whiteSpace: 'nowrap',
+              borderRadius: 'var(--radius-full)',
+              boxShadow: 'none',
+              fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
+            }}
+          >
+            {loading ? <RefreshCw size={16} className="spin" /> : <Send size={16} />}
+            <span>{t('chat_send')}</span>
+          </button>
+        </form>
 
-          {inputError && (
-            <div style={{ color: '#dc2626', fontSize: '0.8rem', marginTop: '0.4rem', textAlign: 'center' }}>
-              {inputError}
-            </div>
-          )}
-
-          {/* AI Medical Disclaimer */}
-          <div style={{
-            fontSize: '0.78rem',
-            color: 'var(--text-muted)',
-            textAlign: 'center',
-            marginTop: '0.55rem',
-            lineHeight: 1.4,
-            fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
-          }}>
-            {t('ai_disclaimer')}
+        {inputError && (
+          <div style={{ color: '#dc2626', fontSize: '0.8rem', marginTop: '0.4rem', textAlign: 'center' }}>
+            {inputError}
           </div>
+        )}
+
+        {/* AI Medical Disclaimer */}
+        <div style={{
+          fontSize: '0.78rem',
+          color: 'var(--text-muted)',
+          textAlign: 'center',
+          marginTop: '0.55rem',
+          lineHeight: 1.4,
+          fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
+        }}>
+          {t('ai_disclaimer')}
         </div>
       </div>
 
@@ -812,12 +829,12 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
                   onClick={() => setBookingModalOpen(false)}
                   disabled={bookingLoading}
                   style={{
-                    padding: '0.75rem 1.25rem',
-                    fontSize: '0.98rem',
+                    padding: '0.65rem 1.25rem',
+                    fontSize: '0.94rem',
                     fontWeight: 500,
                     background: 'transparent',
                     border: '1px solid var(--border-color)',
-                    borderRadius: '4px',
+                    borderRadius: 'var(--radius-full)',
                     color: 'var(--text-muted)',
                     cursor: 'pointer',
                     boxShadow: 'none',
@@ -829,14 +846,12 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
                 <button
                   type="submit"
                   disabled={bookingLoading}
+                  className="btn btn-primary"
                   style={{
-                    padding: '0.75rem 1.45rem',
-                    fontSize: '0.98rem',
+                    padding: '0.65rem 1.45rem',
+                    fontSize: '0.94rem',
                     fontWeight: 600,
-                    background: 'transparent',
-                    border: '1px solid var(--text-main)',
-                    borderRadius: '4px',
-                    color: 'var(--text-main)',
+                    borderRadius: 'var(--radius-full)',
                     cursor: bookingLoading ? 'not-allowed' : 'pointer',
                     boxShadow: 'none',
                     fontFamily: kmFont,

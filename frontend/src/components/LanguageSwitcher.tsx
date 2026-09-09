@@ -82,23 +82,22 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
         </span>
       </button>
 
-      {/* Floating Dropdown: Clean Flat Border, No Shadow, No Filled Background */}
+      {/* Language Options List: Container removed (no border, no divider, seamless) */}
       {isOpen && (
         <div
           style={{
             position: 'absolute',
             [dropUp ? 'bottom' : 'top']: 'calc(100% + 4px)',
             [isSidebar ? 'left' : 'right']: 0,
-            minWidth: '160px',
-            backgroundColor: '#ffffff',
-            border: '1px solid var(--border-color)',
-            borderRadius: '4px',
-            padding: 0,
+            minWidth: isSidebar ? '100%' : '140px',
+            backgroundColor: 'var(--bg-primary, #ffffff)',
+            border: 'none',
+            borderRadius: 0,
+            padding: '2px 0',
             boxShadow: 'none',
             zIndex: 1000,
             display: 'flex',
             flexDirection: 'column',
-            overflow: 'hidden',
           }}
         >
           {/* Khmer Button */}
@@ -108,16 +107,15 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
               setLanguage('km');
               setIsOpen(false);
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-secondary)')}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+            onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
+            onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
             style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
               width: '100%',
-              padding: '0.65rem 0.95rem',
+              padding: '0.5rem 0.75rem',
               border: 'none',
-              borderBottom: '1px solid var(--border-color)',
               background: 'transparent',
               color: isKm ? 'var(--accent-primary)' : 'var(--text-main)',
               fontSize: '0.92rem',
@@ -126,7 +124,7 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
               cursor: 'pointer',
               textAlign: 'left',
               boxShadow: 'none',
-              transition: 'background-color 0.12s ease',
+              transition: 'opacity 0.15s ease',
             }}
           >
             <span>ខ្មែរ (Khmer)</span>
@@ -140,14 +138,14 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
               setLanguage('en');
               setIsOpen(false);
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-secondary)')}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+            onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
+            onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
             style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
               width: '100%',
-              padding: '0.65rem 0.95rem',
+              padding: '0.5rem 0.75rem',
               border: 'none',
               background: 'transparent',
               color: !isKm ? 'var(--accent-primary)' : 'var(--text-main)',
@@ -157,7 +155,7 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
               cursor: 'pointer',
               textAlign: 'left',
               boxShadow: 'none',
-              transition: 'background-color 0.12s ease',
+              transition: 'opacity 0.15s ease',
             }}
           >
             <span>English (EN)</span>

@@ -359,13 +359,13 @@ export const LiveTicketTracker: React.FC<LiveTicketTrackerProps> = ({
 
 
   return (
-    <div style={{ maxWidth: '1080px', margin: '0 auto', width: '100%', fontFamily: kmFont }}>
+    <div style={{ maxWidth: '1060px', margin: '0 auto', width: '100%', fontFamily: kmFont }}>
       {!activeTicket ? (
         /* ================= LIST VIEW: ALL APPOINTMENT ROWS ================= */
         <div>
           {/* Top Header & Guest Ticket Lookup Bar */}
-          <div style={{ marginBottom: '1.75rem' }}>
-            <div style={{ marginBottom: '1rem' }}>
+          <div style={{ marginBottom: '1.6rem' }}>
+            <div style={{ marginBottom: '1.15rem' }}>
               <h2
                 style={{
                   fontSize: '1.45rem',
@@ -390,19 +390,20 @@ export const LiveTicketTracker: React.FC<LiveTicketTrackerProps> = ({
               </p>
             </div>
 
-            {/* Guest Ticket Lookup Form under header text with extended width */}
+            {/* Guest Ticket Lookup Form under header text with balanced width */}
             <form
               onSubmit={handleLookupSubmit}
               style={{
+                position: 'relative',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px',
                 width: '100%',
-                maxWidth: '680px',
+                maxWidth: '620px',
               }}
             >
               <input
                 type="text"
+                className="input-search-rounded"
                 placeholder={t('appt_lookup_placeholder')}
                 value={lookupQuery}
                 onChange={(e) => {
@@ -410,39 +411,41 @@ export const LiveTicketTracker: React.FC<LiveTicketTrackerProps> = ({
                   setLookupError(null);
                 }}
                 style={{
-                  flex: 1,
-                  padding: '0.52rem 0.95rem',
-                  fontSize: '0.9rem',
+                  width: '100%',
+                  padding: '0.74rem 7.5rem 0.74rem 1.35rem',
+                  fontSize: '0.94rem',
                   border: lookupError ? '1px solid #dc2626' : '1px solid var(--border-color)',
-                  borderRadius: '4px',
+                  borderRadius: 'var(--radius-full)',
                   outline: 'none',
                   fontFamily: kmFont,
                   background: '#ffffff',
+                  boxSizing: 'border-box',
                 }}
               />
               <button
                 type="submit"
                 disabled={lookupLoading}
+                className="btn btn-primary"
                 style={{
-                  padding: '0.52rem 1.1rem',
+                  position: 'absolute',
+                  right: '5px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  padding: '0.52rem 1.15rem',
                   fontSize: '0.9rem',
                   fontWeight: 600,
-                  background: 'transparent',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: '4px',
-                  color: 'var(--text-main)',
                   cursor: lookupLoading ? 'not-allowed' : 'pointer',
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '6px',
                   whiteSpace: 'nowrap',
-                  flexShrink: 0,
+                  borderRadius: 'var(--radius-full)',
                   boxShadow: 'none',
                   fontFamily: kmFont,
                 }}
               >
-                {lookupLoading ? <RefreshCw size={14} className="spin" /> : <Search size={14} />}
-                <span>{t('appt_lookup_btn')}</span>
+                {lookupLoading ? <RefreshCw size={15} className="spin" /> : <Search size={15} />}
+                <span>{isKm ? 'ស្វែងរក' : 'Search'}</span>
               </button>
             </form>
           </div>
@@ -451,7 +454,7 @@ export const LiveTicketTracker: React.FC<LiveTicketTrackerProps> = ({
             <span
               style={{
                 display: 'block',
-                fontSize: '0.85rem',
+                fontSize: '0.9rem',
                 color: '#dc2626',
                 marginBottom: '1rem',
                 fontFamily: kmFont,
@@ -463,8 +466,8 @@ export const LiveTicketTracker: React.FC<LiveTicketTrackerProps> = ({
 
           {/* Loading State */}
           {loading ? (
-            <div style={{ textAlign: 'center', padding: '4rem 1rem', color: 'var(--text-muted)', fontSize: '1rem' }}>
-              <RefreshCw size={24} className="spin" color="var(--accent-primary)" style={{ margin: '0 auto 0.75rem auto' }} />
+            <div style={{ textAlign: 'center', padding: '4.5rem 1rem', color: 'var(--text-muted)', fontSize: '1.05rem' }}>
+              <RefreshCw size={26} className="spin" color="var(--accent-primary)" style={{ margin: '0 auto 0.85rem auto' }} />
               <div>{isKm ? 'កំពុងទាញយកព័ត៌មានការណាត់ជួប...' : 'Loading appointment details...'}</div>
             </div>
           ) : myTickets.length === 0 ? (
@@ -473,19 +476,19 @@ export const LiveTicketTracker: React.FC<LiveTicketTrackerProps> = ({
               style={{
                 background: '#ffffff',
                 border: '1px solid var(--border-color)',
-                borderRadius: '6px',
-                padding: '3rem 2rem',
+                borderRadius: '16px',
+                padding: '3.5rem 2rem',
                 textAlign: 'center',
                 boxShadow: 'none',
               }}
             >
-              <Calendar size={42} color="var(--text-muted)" style={{ margin: '0 auto 1rem auto' }} />
+              <Calendar size={48} color="var(--text-muted)" style={{ margin: '0 auto 1.25rem auto' }} />
               <h3
                 style={{
-                  fontSize: '1.25rem',
+                  fontSize: '1.35rem',
                   fontWeight: 700,
                   color: 'var(--text-main)',
-                  margin: '0 0 0.5rem 0',
+                  margin: '0 0 0.6rem 0',
                   fontFamily: kmFont,
                 }}
               >
@@ -493,11 +496,11 @@ export const LiveTicketTracker: React.FC<LiveTicketTrackerProps> = ({
               </h3>
               <p
                 style={{
-                  fontSize: '0.95rem',
+                  fontSize: '1.02rem',
                   color: 'var(--text-muted)',
-                  maxWidth: '520px',
-                  margin: '0 auto 1.75rem auto',
-                  lineHeight: 1.6,
+                  maxWidth: '560px',
+                  margin: '0 auto 2rem auto',
+                  lineHeight: 1.65,
                   fontFamily: kmFont,
                 }}
               >
@@ -509,11 +512,11 @@ export const LiveTicketTracker: React.FC<LiveTicketTrackerProps> = ({
                   <button
                     onClick={onExploreHospitals}
                     style={{
-                      padding: '0.55rem 1.25rem',
-                      fontSize: '0.95rem',
+                      padding: '0.65rem 1.45rem',
+                      fontSize: '1rem',
                       fontWeight: 600,
                       border: '1px solid var(--border-color)',
-                      borderRadius: '4px',
+                      borderRadius: 'var(--radius-full)',
                       background: 'transparent',
                       color: 'var(--text-main)',
                       cursor: 'pointer',
@@ -528,11 +531,11 @@ export const LiveTicketTracker: React.FC<LiveTicketTrackerProps> = ({
                   <button
                     onClick={onConsultAi}
                     style={{
-                      padding: '0.55rem 1.25rem',
-                      fontSize: '0.95rem',
+                      padding: '0.65rem 1.45rem',
+                      fontSize: '1rem',
                       fontWeight: 600,
                       border: '1px solid var(--border-color)',
-                      borderRadius: '4px',
+                      borderRadius: 'var(--radius-full)',
                       background: 'transparent',
                       color: 'var(--text-main)',
                       cursor: 'pointer',
@@ -553,10 +556,11 @@ export const LiveTicketTracker: React.FC<LiveTicketTrackerProps> = ({
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
-                  fontSize: '0.88rem',
-                  color: 'var(--text-muted)',
-                  marginBottom: '0.25rem',
+                  fontSize: '0.94rem',
+                  color: 'var(--text-main)',
+                  marginBottom: '0.35rem',
                   fontWeight: 600,
+                  fontFamily: kmFont,
                 }}
               >
                 <span>
@@ -584,8 +588,8 @@ export const LiveTicketTracker: React.FC<LiveTicketTrackerProps> = ({
                     style={{
                       background: '#ffffff',
                       border: '1px solid var(--border-color)',
-                      borderRadius: '6px',
-                      padding: '1.2rem 1.35rem',
+                      borderRadius: '16px',
+                      padding: '1.15rem 1.45rem',
                       cursor: 'pointer',
                       boxShadow: 'none',
                       transition: 'border-color 0.15s ease',
@@ -597,15 +601,15 @@ export const LiveTicketTracker: React.FC<LiveTicketTrackerProps> = ({
                     }}
                   >
                     {/* Left: Hospital Logo + Appointment Info */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.1rem', flex: 1, minWidth: '260px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.1rem', flex: 1, minWidth: '280px' }}>
                       {tk.hospital_logo_url ? (
                         <img
                           src={tk.hospital_logo_url}
                           alt={tk.hospital_name || 'Hospital'}
                           style={{
-                            width: '56px',
-                            height: '56px',
-                            minWidth: '56px',
+                            width: '54px',
+                            height: '54px',
+                            minWidth: '54px',
                             borderRadius: '50%',
                             border: '1px solid var(--border-color)',
                             objectFit: 'cover',
@@ -619,9 +623,9 @@ export const LiveTicketTracker: React.FC<LiveTicketTrackerProps> = ({
                       ) : (
                         <div
                           style={{
-                            width: '56px',
-                            height: '56px',
-                            minWidth: '56px',
+                            width: '54px',
+                            height: '54px',
+                            minWidth: '54px',
                             borderRadius: '50%',
                             border: '1px solid var(--border-color)',
                             display: 'flex',
@@ -629,7 +633,7 @@ export const LiveTicketTracker: React.FC<LiveTicketTrackerProps> = ({
                             justifyContent: 'center',
                             background: '#ffffff',
                             fontWeight: 700,
-                            fontSize: '1rem',
+                            fontSize: '1.05rem',
                             color: 'var(--text-main)',
                             flexShrink: 0,
                           }}
@@ -645,16 +649,16 @@ export const LiveTicketTracker: React.FC<LiveTicketTrackerProps> = ({
                         </div>
                       )}
 
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
                         {/* Hospital Name + Ticket Number + Timing */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                          <span style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-main)', fontFamily: kmFont }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                          <span style={{ fontWeight: 700, fontSize: '1.06rem', color: 'var(--text-main)', fontFamily: kmFont }}>
                             {formatFacilityName(tk.hospital_name || (isKm ? 'មន្ទីរពេទ្យ' : 'Hospital'), language)}
                           </span>
                           {timing && (
                             <span
                               style={{
-                                fontSize: '0.78rem',
+                                fontSize: '0.84rem',
                                 fontWeight: 600,
                                 color: timing.isToday ? '#16a34a' : 'var(--text-muted)',
                                 fontFamily: kmFont,
@@ -666,7 +670,7 @@ export const LiveTicketTracker: React.FC<LiveTicketTrackerProps> = ({
                         </div>
 
                         {/* Department • Doctor • Room */}
-                        <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)', fontFamily: kmFont }}>
+                        <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontFamily: kmFont, lineHeight: 1.5 }}>
                           <span style={{ fontWeight: 500, color: 'var(--text-main)' }}>
                             {formatDepartmentName(tk.department_name || '', language) || (isKm ? 'ផ្នែកពិគ្រោះទូទៅ' : 'General Department')}
                           </span>
@@ -689,18 +693,18 @@ export const LiveTicketTracker: React.FC<LiveTicketTrackerProps> = ({
                           style={{
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '12px',
-                            fontSize: '0.84rem',
+                            gap: '16px',
+                            fontSize: '0.86rem',
                             color: 'var(--text-muted)',
-                            marginTop: '0.1rem',
+                            marginTop: '0.15rem',
                           }}
                         >
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                            <Calendar size={13} color="var(--text-muted)" />
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                            <Calendar size={14} color="var(--text-muted)" />
                             <span>{tk.appointment_date || '-'}</span>
                           </span>
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                            <Clock size={13} color="var(--text-muted)" />
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                            <Clock size={14} color="var(--text-muted)" />
                             <span>{tk.appointment_time || '09:00 AM - 10:00 AM'}</span>
                           </span>
                         </div>
@@ -733,12 +737,11 @@ export const LiveTicketTracker: React.FC<LiveTicketTrackerProps> = ({
                 setActionError(null);
               }}
               style={{
-                padding: '0.45rem 0.95rem',
-                fontSize: '0.9rem',
+                padding: '0.2rem 0',
+                fontSize: '0.925rem',
                 fontWeight: 600,
-                background: 'transparent',
-                border: '1px solid var(--border-color)',
-                borderRadius: '4px',
+                background: 'none',
+                border: 'none',
                 color: 'var(--text-main)',
                 cursor: 'pointer',
                 display: 'inline-flex',
@@ -750,6 +753,7 @@ export const LiveTicketTracker: React.FC<LiveTicketTrackerProps> = ({
             >
               <span>{t('appt_back_to_list')}</span>
             </button>
+
           </div>
 
           {/* Active Scheduled Appointment Pass Card */}
@@ -757,7 +761,7 @@ export const LiveTicketTracker: React.FC<LiveTicketTrackerProps> = ({
             style={{
               background: '#ffffff',
               border: '1px solid var(--border-color)',
-              borderRadius: '6px',
+              borderRadius: '16px',
               overflow: 'hidden',
               boxShadow: 'none',
             }}

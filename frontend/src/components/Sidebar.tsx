@@ -57,6 +57,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showNotifMenu, setShowNotifMenu] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 900);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 900);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     const handleNotifClickOutside = (e: MouseEvent) => {
@@ -172,7 +181,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
           ) : (
             <button
-              onClick={() => handleNavClick('landing')}
+              onClick={() => handleNavClick('patient_triage')}
               className="brand-logo"
               style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: '0.65rem' }}
             >
@@ -220,7 +229,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Left Sidebar (Desktop Fixed / Mobile Drawer) */}
       <aside className={`sidebar-container ${mobileOpen ? 'open' : ''}`}>
         {/* Top Brand / Hospital Header */}
-        <div className="sidebar-header" style={{ padding: '1rem 1.15rem', borderBottom: '1px solid var(--border-color)' }}>
+        <div
+          className="sidebar-header"
+          style={{
+            padding: '1rem 1.15rem',
+            borderBottom: '1px solid var(--border-color)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '0.5rem',
+          }}
+        >
+          <div style={{ flex: 1, minWidth: 0 }}>
           {isPartner ? (
             <button
               onClick={() => handleNavClick('partner_dashboard')}
@@ -292,7 +312,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
           ) : (
             <button
-              onClick={() => handleNavClick('landing')}
+              onClick={() => handleNavClick('patient_triage')}
               className="brand-logo"
               style={{
                 background: 'none',
@@ -327,6 +347,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </div>
             </button>
           )}
+          </div>
+
+          {/* Mobile Close Button (Visible only in mobile drawer) */}
+          <button
+            onClick={() => setMobileOpen(false)}
+            className="mobile-drawer-close"
+            style={{
+              display: 'none',
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'var(--text-muted)',
+              padding: '6px',
+              borderRadius: '6px',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+            aria-label="Close menu"
+          >
+            <X size={20} />
+          </button>
         </div>
 
         {/* Navigation Items */}
@@ -482,7 +523,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <div
                   style={{
                     position: 'absolute',
-                    bottom: 'calc(100% + 8px)',
+                    bottom: isMobile ? 'auto' : 'calc(100% + 8px)',
+                    top: isMobile ? 'calc(100% + 8px)' : 'auto',
                     left: 0,
                     right: 0,
                     width: '100%',
@@ -540,7 +582,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           {/* Language Switcher in Sidebar Footer - Under Notification button, left aligned, no container fill */}
           <div style={{ width: '100%', marginBottom: '0.65rem' }}>
-            <LanguageSwitcher dropUp variant="sidebar" style={{ width: '100%' }} />
+            <LanguageSwitcher dropUp={!isMobile} variant="sidebar" style={{ width: '100%' }} />
           </div>
 
           {/* User Profile or Sign In Button - Displays clean user profile without Patient badge */}

@@ -240,16 +240,17 @@ export const StaffManagement: React.FC = () => {
         <button
           onClick={handleOpenInvite}
           style={{
-            padding: '0.55rem 1rem',
+            padding: '0.55rem 1.15rem',
             background: 'transparent',
             border: '1px solid var(--text-main)',
-            borderRadius: '4px',
+            borderRadius: 'var(--radius-full)',
             color: 'var(--text-main)',
             fontSize: '0.875rem',
             fontWeight: 600,
             cursor: 'pointer',
             boxShadow: 'none',
             fontFamily: kmFont,
+            transition: 'all 0.15s ease',
           }}
         >
           {t('staff_invite_btn')}
@@ -269,16 +270,15 @@ export const StaffManagement: React.FC = () => {
             </h2>
           </div>
 
-          {/* Staff Table Container */}
+          {/* Staff Table (Containerless) */}
           <div
             style={{
-              background: '#ffffff',
-              border: '1px solid var(--border-color)',
-              borderRadius: '6px',
+              background: 'transparent',
+              border: 'none',
+              borderRadius: 0,
               overflowX: 'auto',
               boxShadow: 'none',
               flex: 1,
-              minHeight: '380px',
             }}
           >
             {staffList.length === 0 ? (
@@ -309,17 +309,17 @@ export const StaffManagement: React.FC = () => {
                   <tr
                     style={{
                       borderBottom: '1px solid var(--border-color)',
-                      background: '#f8fafc',
+                      background: 'transparent',
                     }}
                   >
                     <th
                       style={{
                         padding: '0.85rem 1.25rem',
-                        fontSize: '0.84rem',
+                        fontSize: '0.98rem',
                         fontWeight: 700,
-                        color: 'var(--text-muted)',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.04em',
+                        color: 'var(--text-main)',
+                        letterSpacing: '0.02em',
+                        fontFamily: kmFont,
                       }}
                     >
                       {t('staff_col_name')}
@@ -327,11 +327,11 @@ export const StaffManagement: React.FC = () => {
                     <th
                       style={{
                         padding: '0.85rem 1.25rem',
-                        fontSize: '0.84rem',
+                        fontSize: '0.98rem',
                         fontWeight: 700,
-                        color: 'var(--text-muted)',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.04em',
+                        color: 'var(--text-main)',
+                        letterSpacing: '0.02em',
+                        fontFamily: kmFont,
                       }}
                     >
                       {t('staff_col_role')}
@@ -339,11 +339,11 @@ export const StaffManagement: React.FC = () => {
                     <th
                       style={{
                         padding: '0.85rem 1.25rem',
-                        fontSize: '0.84rem',
+                        fontSize: '0.98rem',
                         fontWeight: 700,
-                        color: 'var(--text-muted)',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.04em',
+                        color: 'var(--text-main)',
+                        letterSpacing: '0.02em',
+                        fontFamily: kmFont,
                       }}
                     >
                       {t('staff_col_status')}
@@ -351,12 +351,12 @@ export const StaffManagement: React.FC = () => {
                     <th
                       style={{
                         padding: '0.85rem 1.25rem',
-                        fontSize: '0.84rem',
+                        fontSize: '0.98rem',
                         fontWeight: 700,
-                        color: 'var(--text-muted)',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.04em',
+                        color: 'var(--text-main)',
+                        letterSpacing: '0.02em',
                         textAlign: 'right',
+                        fontFamily: kmFont,
                       }}
                     >
                       {t('staff_col_actions')}
@@ -364,12 +364,12 @@ export const StaffManagement: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {staffList.map((staff, idx) => (
+                  {staffList.map((staff) => (
                     <tr
                       key={staff.id}
                       style={{
-                        borderBottom: idx === staffList.length - 1 ? 'none' : '1px solid var(--border-color)',
-                        background: '#ffffff',
+                        borderBottom: '1px solid var(--border-color)',
+                        background: 'transparent',
                         transition: 'background 0.15s ease',
                       }}
                     >
@@ -460,32 +460,33 @@ export const StaffManagement: React.FC = () => {
                                   position: 'absolute',
                                   right: 0,
                                   top: 'calc(100% + 4px)',
-                                  background: '#ffffff',
-                                  border: '1px solid var(--border-color)',
-                                  borderRadius: '4px',
+                                  background: 'var(--bg-primary, #ffffff)',
+                                  border: 'none',
+                                  borderRadius: 0,
                                   display: 'flex',
                                   flexDirection: 'column',
-                                  minWidth: '130px',
+                                  minWidth: '120px',
                                   zIndex: 100,
-                                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
-                                  overflow: 'hidden',
+                                  boxShadow: 'none',
                                   textAlign: 'left',
                                 }}
                               >
                                 <button
                                   onClick={() => handleToggleActive(staff)}
+                                  onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
+                                  onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
                                   style={{
-                                    padding: '0.6rem 0.95rem',
-                                    fontSize: '0.88rem',
+                                    padding: '0.5rem 0.8rem',
+                                    fontSize: '0.92rem',
                                     fontWeight: 500,
                                     textAlign: 'left',
                                     background: 'transparent',
                                     border: 'none',
-                                    borderBottom: '1px solid var(--border-color)',
                                     color: staff.is_active ? '#059669' : 'var(--text-muted)',
                                     cursor: 'pointer',
                                     boxShadow: 'none',
                                     fontFamily: kmFont,
+                                    transition: 'opacity 0.15s ease',
                                   }}
                                 >
                                   {staff.is_active ? t('doc_inactive') : t('doc_active')}
@@ -495,27 +496,31 @@ export const StaffManagement: React.FC = () => {
                                     setActiveDropdownId(null);
                                     handleOpenEdit(staff);
                                   }}
+                                  onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
+                                  onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
                                   style={{
-                                    padding: '0.6rem 0.95rem',
-                                    fontSize: '0.88rem',
+                                    padding: '0.5rem 0.8rem',
+                                    fontSize: '0.92rem',
                                     fontWeight: 500,
                                     textAlign: 'left',
                                     background: 'transparent',
                                     border: 'none',
-                                    borderBottom: '1px solid var(--border-color)',
                                     color: 'var(--text-main)',
                                     cursor: 'pointer',
                                     boxShadow: 'none',
                                     fontFamily: kmFont,
+                                    transition: 'opacity 0.15s ease',
                                   }}
                                 >
                                   {t('doc_edit')}
                                 </button>
                                 <button
                                   onClick={() => handleDeleteStaff(staff.id)}
+                                  onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
+                                  onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
                                   style={{
-                                    padding: '0.6rem 0.95rem',
-                                    fontSize: '0.88rem',
+                                    padding: '0.5rem 0.8rem',
+                                    fontSize: '0.92rem',
                                     fontWeight: 500,
                                     textAlign: 'left',
                                     background: 'transparent',
@@ -524,6 +529,7 @@ export const StaffManagement: React.FC = () => {
                                     cursor: 'pointer',
                                     boxShadow: 'none',
                                     fontFamily: kmFont,
+                                    transition: 'opacity 0.15s ease',
                                   }}
                                 >
                                   {t('doc_delete')}
