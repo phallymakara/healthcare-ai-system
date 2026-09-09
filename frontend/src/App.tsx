@@ -120,10 +120,6 @@ export const App: React.FC = () => {
     loadNotifications();
   };
 
-  const handleSelectHistoryTicket = (ticketId: string) => {
-    setSelectedTicketId(ticketId);
-    setActiveTab('patient_live_ticket');
-  };
 
   const handleSelectTab = (tab: NavTab) => {
     if (!currentUser && tab !== 'landing') {
@@ -221,12 +217,12 @@ export const App: React.FC = () => {
                 <LiveTicketTracker
                   initialTicketId={selectedTicketId}
                   onExploreHospitals={() => setActiveTab('patient_discovery')}
+                  onConsultAi={() => setActiveTab('patient_triage')}
                 />
               )}
 
               {activeTab === 'patient_history' && (
                 <PatientHistory
-                  onSelectTicket={handleSelectHistoryTicket}
                   onExploreHospitals={() => setActiveTab('patient_discovery')}
                 />
               )}

@@ -77,6 +77,7 @@ class HospitalDiscoveryResponse(BaseModel):
     address: Optional[str] = None
     city: Optional[str] = None
     phone: Optional[str] = None
+    logo_url: Optional[str] = None
     emergency_service_available: bool = True
     departments: List[DepartmentDiscoveryItem] = []
     services: List[ServiceDiscoveryItem] = []
@@ -93,6 +94,7 @@ class DoctorDiscoveryResponse(BaseModel):
     room_number: Optional[str] = None
     avg_consultation_minutes: int
     is_available: bool
+    photo_url: Optional[str] = None
 
     model_config = {"from_attributes": True}
 
@@ -245,6 +247,7 @@ async def search_hospitals(
                 address=h.address,
                 city=None,
                 phone=h.phone,
+                logo_url=h.logo_url,
                 emergency_service_available=h.emergency_service_available,
                 departments=dept_items,
                 services=service_items,
@@ -287,6 +290,7 @@ async def search_doctors(
             room_number=d.room_number,
             avg_consultation_minutes=d.avg_consultation_minutes,
             is_available=d.is_available,
+            photo_url=d.photo_url,
         )
         for d in doctors
     ]
@@ -308,11 +312,39 @@ async def get_my_tickets(
                 Ticket.patient_phone == current_user.phone_number,
             )
         )
-        .options(selectinload(Ticket.logs))
+        .options(
+            selectinload(Ticket.logs),
+            selectinload(Ticket.hospital),
+            selectinload(Ticket.department),
+            selectinload(Ticket.doctor),
+            selectinload(Ticket.service),
+        )
         .order_by(Ticket.created_at.desc())
     )
     res = await db.execute(query)
-    return res.scalars().all()
+    tickets = res.scalars().all()
+    results = []
+    for t in tickets:
+        resp = TicketDetailResponse.model_validate(t)
+        if t.hospital:
+            resp.hospital_name = t.hospital.name
+            resp.hospital_logo_url = t.hospital.logo_url
+            resp.hospital_address = t.hospital.address
+            resp.hospital_phone = t.hospital.phone
+            resp.hospital_latitude = t.hospital.latitude
+            resp.hospital_longitude = t.hospital.longitude
+        if t.department:
+            resp.department_name = t.department.name
+            resp.department_floor_room = t.department.floor_room
+        if t.doctor:
+            resp.doctor_name = t.doctor.full_name
+            resp.doctor_specialty = t.doctor.specialty
+            resp.doctor_photo_url = t.doctor.photo_url
+            resp.room_number = t.doctor.room_number
+        if t.service:
+            resp.service_name = t.service.name
+        results.append(resp)
+    return results
 
 
 @router.get("/my-profile", response_model=PatientProfileResponse)

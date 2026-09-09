@@ -42,10 +42,13 @@ const SimulatedHospitalLogo: React.FC<{ name: string; logoUrl?: string; size?: n
         style={{
           width: `${size}px`,
           height: `${size}px`,
+          minWidth: `${size}px`,
           borderRadius: '50%',
           objectFit: 'cover',
           border: '1px solid var(--border-color)',
           flexShrink: 0,
+          backgroundColor: '#ffffff',
+          boxSizing: 'border-box',
         }}
       />
     );

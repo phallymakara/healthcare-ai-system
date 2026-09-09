@@ -423,8 +423,13 @@ export const StaffManagement: React.FC = () => {
                           <button
                             onClick={() => setActiveDropdownId(activeDropdownId === staff.id ? null : staff.id)}
                             style={{
-                              padding: '0.35rem 0.75rem',
-                              fontSize: '1.1rem',
+                              width: '32px',
+                              height: '32px',
+                              padding: 0,
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '1.2rem',
                               fontWeight: 700,
                               letterSpacing: '1px',
                               background: '#ffffff',

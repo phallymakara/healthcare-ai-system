@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   Calendar,
   Clock,
@@ -407,6 +407,14 @@ export const QueueManagement: React.FC = () => {
       return;
     }
 
+    if (walkInSlotTime) {
+      const slotData = slotGroups.find((g) => g.slot.key === walkInSlotTime);
+      if (slotData && slotData.isBooked) {
+        setWalkInError(t('slot_already_booked_err'));
+        return;
+      }
+    }
+
     setActionLoading(true);
     try {
       const targetDeptId = walkInDeptId || (departments.length > 0 ? departments[0].id : '');
@@ -632,20 +640,85 @@ export const QueueManagement: React.FC = () => {
   // Format Elapsed consultation time helper
   const formatElapsedTimer = (startedAt?: string) => {
     if (!startedAt) return '00:00';
-    const startMs = new Date(startedAt).getTime();
+    const cleanStr = startedAt.endsWith('Z') || startedAt.includes('+') ? startedAt : `${startedAt}Z`;
+    const startMs = new Date(cleanStr).getTime();
     const diffSec = Math.max(0, Math.floor((nowTimestamp - startMs) / 1000));
     const mins = Math.floor(diffSec / 60);
     const secs = diffSec % 60;
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   };
 
+  // Format Local Time helper with consistent AM/PM
+  const formatLocalTimeAmPm = (iso?: string): string => {
+    if (!iso) return '';
+    const clean = iso.endsWith('Z') || iso.includes('+') ? iso : `${iso}Z`;
+    const d = new Date(clean);
+    if (isNaN(d.getTime())) return '';
+    let hours = d.getHours();
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+    return `${String(hours).padStart(2, '0')}:${minutes} ${ampm}`;
+  };
+
+  // Convert time strings like "10:49 AM", "09:30 AM", "14:00" to minutes from midnight
+  const parseTimeToMinutes = (tStr?: string): number | null => {
+    if (!tStr) return null;
+    const cleaned = tStr.replace(/\u202F|\u00A0/g, ' ').trim();
+    const match = cleaned.match(/^(\d{1,2}):(\d{2})(?:\s*([AP]M))?$/i);
+    if (!match) return null;
+    let hours = parseInt(match[1], 10);
+    const minutes = parseInt(match[2], 10);
+    const ampm = match[3] ? match[3].toUpperCase() : null;
+
+    if (ampm === 'PM' && hours < 12) hours += 12;
+    if (ampm === 'AM' && hours === 12) hours = 0;
+    return hours * 60 + minutes;
+  };
+
+  // Effective bookings strictly matching department selection (both client-side and server-side guaranteed)
+  const effectiveBookings = useMemo(() => {
+    if (!selectedDeptId) return bookings;
+    return bookings.filter((b) => b.department_id === selectedDeptId);
+  }, [bookings, selectedDeptId]);
+
+  // Dynamic Summary calculations strictly respecting selected department filter
+  const effectiveSummary = useMemo(() => {
+    if (!selectedDeptId) return summary;
+    const total = effectiveBookings.length;
+    const online = effectiveBookings.filter((b) => b.ticket_source === 'ONLINE').length;
+    const walkin = effectiveBookings.filter((b) => b.ticket_source === 'WALK_IN').length;
+    const waiting = effectiveBookings.filter((b) => b.status === 'WAITING' || b.status === 'CALLED').length;
+    const serving = effectiveBookings.filter((b) => b.status === 'SERVING').length;
+    const completed = effectiveBookings.filter((b) => b.status === 'COMPLETED').length;
+    return {
+      total_bookings: total,
+      online_bookings: online,
+      walkin_bookings: walkin,
+      waiting_count: waiting,
+      serving_count: serving,
+      completed_count: completed,
+    };
+  }, [summary, effectiveBookings, selectedDeptId]);
+
   // Live Slot Schedule Calculations for selected date
   const slotGroups = STANDARD_TIME_SLOTS.map((slot) => {
-    const matched = bookings.filter((b) => {
-      if (b.appointment_time) {
-        const apt = b.appointment_time.trim().toLowerCase();
-        const sKey = slot.key.trim().toLowerCase();
-        if (apt === sKey || apt.startsWith(sKey.slice(0, 5)) || sKey.startsWith(apt.slice(0, 5))) {
+    const sKey = slot.key.trim().toUpperCase();
+    const [slotStart, slotEnd] = sKey.split(' - ');
+    const slotStartMin = parseTimeToMinutes(slotStart);
+    const slotEndMin = parseTimeToMinutes(slotEnd);
+
+    const matched = effectiveBookings.filter((b) => {
+      const aptRaw = b.appointment_time || (b.created_at ? formatLocalTimeAmPm(b.created_at) : '');
+      if (!aptRaw) return false;
+      const apt = aptRaw.trim().toUpperCase();
+
+      if (apt === sKey) return true;
+
+      const aptMin = parseTimeToMinutes(apt);
+      if (aptMin !== null && slotStartMin !== null && slotEndMin !== null) {
+        if (aptMin >= slotStartMin && aptMin < slotEndMin) {
           return true;
         }
       }
@@ -658,7 +731,7 @@ export const QueueManagement: React.FC = () => {
     };
   });
 
-  const generalBookings = bookings.filter((b) => {
+  const generalBookings = effectiveBookings.filter((b) => {
     return !slotGroups.some((g) => g.bookings.some((item) => item.id === b.id));
   });
 
@@ -680,16 +753,28 @@ export const QueueManagement: React.FC = () => {
     const isSkipped = item.status === 'SKIPPED' || item.status === 'NO_SHOW';
     const isCompleted = item.status === 'COMPLETED';
 
+    const parseLocalTime = (iso?: string) => {
+      if (!iso) return '';
+      const clean = iso.endsWith('Z') || iso.includes('+') ? iso : `${iso}Z`;
+      return new Date(clean).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    };
+
+    const parseLocalDate = (iso?: string) => {
+      if (!iso) return '';
+      const clean = iso.endsWith('Z') || iso.includes('+') ? iso : `${iso}Z`;
+      const d = new Date(clean);
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
     return (
       <div
         key={item.id}
         style={{
           background: '#ffffff',
-          border: isServing
-            ? '1px solid #059669'
-            : isCalled
-            ? '1px solid #0284c7'
-            : '1px solid var(--border-color)',
+          border: '1px solid var(--border-color)',
           borderRadius: '6px',
           padding: '1.15rem 1.3rem',
           display: 'flex',
@@ -706,32 +791,24 @@ export const QueueManagement: React.FC = () => {
             justifyContent: 'space-between',
             flexWrap: 'wrap',
             gap: '0.75rem',
-            borderBottom: '1px solid var(--border-color)',
-            paddingBottom: '0.75rem',
+            paddingBottom: '0.25rem',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-            {/* Time Slot Badge */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', flexWrap: 'wrap' }}>
+            {/* Time Slot (No container) */}
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.35rem',
                 fontSize: '0.9rem',
-                fontWeight: 700,
+                fontWeight: 600,
                 color: 'var(--text-main)',
                 fontFamily: kmFont,
-                background: '#f8fafc',
-                border: '1px solid var(--border-color)',
-                padding: '0.25rem 0.6rem',
-                borderRadius: '4px',
               }}
             >
               <Clock size={14} style={{ color: 'var(--text-muted)' }} />
-              <span>
-                {item.appointment_time ||
-                  new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </span>
+              <span>{item.appointment_time || parseLocalTime(item.created_at)}</span>
             </div>
 
             {/* Date Badge */}
@@ -745,7 +822,7 @@ export const QueueManagement: React.FC = () => {
               }}
             >
               <Calendar size={14} />
-              <span>{item.appointment_date || new Date(item.created_at).toISOString().split('T')[0]}</span>
+              <span>{item.appointment_date || parseLocalDate(item.created_at)}</span>
             </div>
 
             {/* Ticket Number */}
@@ -761,23 +838,20 @@ export const QueueManagement: React.FC = () => {
               #{item.ticket_number}
             </div>
 
-            {/* Ticket Source Indicator */}
+            {/* Ticket Source Indicator (No container) */}
             {isOnline ? (
               <span
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '0.3rem',
-                  padding: '0.2rem 0.55rem',
-                  borderRadius: '4px',
-                  fontSize: '0.78rem',
+                  fontSize: '0.8rem',
                   fontWeight: 500,
-                  border: '1px solid var(--border-color)',
                   color: 'var(--text-muted)',
                   fontFamily: kmFont,
                 }}
               >
-                <Smartphone size={12} />
+                <Smartphone size={13} />
                 {t('cbs_source_online')}
               </span>
             ) : (
@@ -786,16 +860,13 @@ export const QueueManagement: React.FC = () => {
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '0.3rem',
-                  padding: '0.2rem 0.55rem',
-                  borderRadius: '4px',
-                  fontSize: '0.78rem',
+                  fontSize: '0.8rem',
                   fontWeight: 500,
-                  border: '1px solid var(--border-color)',
                   color: 'var(--text-muted)',
                   fontFamily: kmFont,
                 }}
               >
-                <User size={12} />
+                <User size={13} />
                 {t('cbs_source_walkin')}
               </span>
             )}
@@ -958,8 +1029,7 @@ export const QueueManagement: React.FC = () => {
             justifyContent: 'flex-end',
             flexWrap: 'wrap',
             gap: '0.55rem',
-            borderTop: '1px solid var(--border-color)',
-            paddingTop: '0.75rem',
+            paddingTop: '0.35rem',
           }}
         >
           {/* Actions for WAITING */}
@@ -1385,7 +1455,7 @@ export const QueueManagement: React.FC = () => {
               lineHeight: 1.2,
             }}
           >
-            {summary.total_bookings}
+            {effectiveSummary.total_bookings}
           </div>
         </div>
 
@@ -1421,7 +1491,7 @@ export const QueueManagement: React.FC = () => {
               lineHeight: 1.2,
             }}
           >
-            {summary.online_bookings}
+            {effectiveSummary.online_bookings}
           </div>
         </div>
 
@@ -1457,7 +1527,7 @@ export const QueueManagement: React.FC = () => {
               lineHeight: 1.2,
             }}
           >
-            {summary.walkin_bookings}
+            {effectiveSummary.walkin_bookings}
           </div>
         </div>
 
@@ -1482,7 +1552,7 @@ export const QueueManagement: React.FC = () => {
               lineHeight: 1.2,
             }}
           >
-            {summary.waiting_count}
+            {effectiveSummary.waiting_count}
           </div>
         </div>
 
@@ -1507,7 +1577,7 @@ export const QueueManagement: React.FC = () => {
               lineHeight: 1.2,
             }}
           >
-            {summary.serving_count}
+            {effectiveSummary.serving_count}
           </div>
         </div>
 
@@ -1532,7 +1602,7 @@ export const QueueManagement: React.FC = () => {
               lineHeight: 1.2,
             }}
           >
-            {summary.completed_count}
+            {effectiveSummary.completed_count}
           </div>
         </div>
       </div>
@@ -1654,8 +1724,8 @@ export const QueueManagement: React.FC = () => {
         >
           {t('qm_loading')}
         </div>
-      ) : selectedDate ? (
-        /* Live Available / Unavailable Slots View based on Date */
+      ) : selectedDate && selectedDeptId ? (
+        /* Live Available / Unavailable Slots View for Filtered Department */
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
           {/* Live Slots Availability Header Bar */}
           <div
@@ -1768,75 +1838,70 @@ export const QueueManagement: React.FC = () => {
                 const isBooked = group.isBooked;
 
                 if (isBooked) {
-                  // Booked / Unavailable Slot Container (Full width across all 3 columns to display patient tickets)
+                  // Booked Slot Button: Turns into Unavailable in the grid
                   return (
                     <div
                       key={group.slot.key}
                       className="slot-card-unavailable"
+                      title={
+                        isKm
+                          ? `ម៉ោង ${group.slot.labelKm} ត្រូវបានកក់ពេញ (${group.bookings.length} នាក់)`
+                          : `${group.slot.key} is fully booked (${group.bookings.length} patients)`
+                      }
                       style={{
-                        gridColumn: '1 / -1',
-                        width: '100%',
-                        background: '#ffffff',
-                        border: '1px solid var(--border-color)',
                         borderRadius: '6px',
-                        padding: '0.85rem 1.15rem',
+                        padding: '0.75rem 1rem',
                         display: 'flex',
-                        flexDirection: 'column',
-                        gap: '0.75rem',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '0.65rem',
                         boxShadow: 'none',
                         fontFamily: kmFont,
+                        minHeight: '48px',
+                        background: '#ffffff',
+                        border: '1px solid var(--border-color)',
                         cursor: 'not-allowed',
                       }}
                     >
-                      {/* Slot Header */}
                       <div
                         style={{
                           display: 'flex',
                           alignItems: 'center',
-                          justifyContent: 'space-between',
-                          flexWrap: 'wrap',
-                          gap: '0.65rem',
-                          borderBottom: '1px solid var(--border-color)',
-                          paddingBottom: '0.55rem',
+                          gap: '0.45rem',
+                          fontSize: '0.88rem',
+                          fontWeight: 700,
+                          color: 'var(--text-muted)',
+                          fontFamily: kmFont,
                         }}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                          <div
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '0.4rem',
-                              fontSize: '0.92rem',
-                              fontWeight: 700,
-                              color: 'var(--text-main)',
-                              fontFamily: kmFont,
-                            }}
-                          >
-                            <Clock size={15} style={{ color: 'var(--text-muted)' }} />
-                            <span>{isKm ? group.slot.labelKm : group.slot.key}</span>
-                          </div>
-
-                          <span
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '0.35rem',
-                              fontSize: '0.82rem',
-                              fontWeight: 600,
-                              color: '#dc2626',
-                              fontFamily: kmFont,
-                            }}
-                          >
-                            <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#dc2626', display: 'inline-block' }} />
-                            {t('cbs_slot_unavailable')} ({group.bookings.length})
-                          </span>
-                        </div>
+                        <Clock size={15} style={{ color: 'var(--text-muted)' }} />
+                        <span>{isKm ? group.slot.labelKm : group.slot.key}</span>
                       </div>
 
-                      {/* Booked Patient Tickets */}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                        {group.bookings.map((item) => renderBookingCard(item))}
-                      </div>
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.35rem',
+                          fontSize: '0.82rem',
+                          fontWeight: 600,
+                          color: '#dc2626',
+                          fontFamily: kmFont,
+                          whiteSpace: 'nowrap',
+                          flexShrink: 0,
+                        }}
+                      >
+                        <span
+                          style={{
+                            width: '6px',
+                            height: '6px',
+                            borderRadius: '50%',
+                            backgroundColor: '#dc2626',
+                            display: 'inline-block',
+                          }}
+                        />
+                        {t('cbs_slot_unavailable')} ({group.bookings.length})
+                      </span>
                     </div>
                   );
                 }
@@ -1912,22 +1977,79 @@ export const QueueManagement: React.FC = () => {
             </div>
           )}
 
-          {/* General Tickets for Date that didn't match slot strings */}
+          {/* Booked Patient Tickets Grouped by Time Slot */}
+          {slotGroups.some((g) => g.isBooked) && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginTop: '0.75rem' }}>
+              {slotGroups
+                .filter((g) => g.isBooked)
+                .map((group) => (
+                  <div
+                    key={group.slot.key}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.65rem',
+                      fontFamily: kmFont,
+                    }}
+                  >
+                    {/* Slot Header */}
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        fontSize: '0.92rem',
+                        fontWeight: 700,
+                        color: 'var(--text-main)',
+                        fontFamily: kmFont,
+                      }}
+                    >
+                      <span>•</span>
+                      <span>{isKm ? group.slot.labelKm : group.slot.key}</span>
+                      <span
+                        style={{
+                          fontSize: '0.8rem',
+                          fontWeight: 600,
+                          color: '#dc2626',
+                          marginLeft: '4px',
+                        }}
+                      >
+                        ({t('cbs_slot_unavailable')} • {group.bookings.length})
+                      </span>
+                    </div>
+
+                    {/* Booked Patient Tickets */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                      {group.bookings.map((item) => renderBookingCard(item))}
+                    </div>
+                  </div>
+                ))}
+            </div>
+          )}
+
+          {/* General Tickets for Date if any didn't match standard slots */}
           {generalBookings.length > 0 && (
             <div
               style={{
-                background: '#ffffff',
-                border: '1px solid var(--border-color)',
-                borderRadius: '6px',
-                padding: '1rem 1.25rem',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '0.85rem',
-                marginTop: '0.35rem',
+                gap: '0.75rem',
+                marginTop: '0.65rem',
               }}
             >
-              <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: kmFont }}>
-                {t('cbs_general_walkins')} ({generalBookings.length})
+              <div
+                style={{
+                  fontSize: '0.95rem',
+                  fontWeight: 700,
+                  color: 'var(--text-main)',
+                  fontFamily: kmFont,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+              >
+                <span>•</span>
+                <span>{t('cbs_general_walkins')} ({generalBookings.length})</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 {generalBookings.map((item) => renderBookingCard(item))}
@@ -1936,16 +2058,18 @@ export const QueueManagement: React.FC = () => {
           )}
         </div>
       ) : (
-        /* View when 'All Dates' is chosen */
-        bookings.length === 0 ? (
+        /* View when 'All Departments' or 'All Dates' is chosen: Show all matching bookings */
+        effectiveBookings.length === 0 ? (
           <div
             style={{
               textAlign: 'center',
-              paddingTop: '9.5rem',
-              paddingBottom: '6rem',
+              padding: '4rem 1rem',
               fontFamily: kmFont,
               color: 'var(--text-muted)',
-              fontSize: '0.98rem',
+              fontSize: '0.95rem',
+              background: '#ffffff',
+              borderRadius: '6px',
+              border: '1px solid var(--border-color)',
             }}
           >
             {t('cbs_no_bookings')}
@@ -1958,7 +2082,7 @@ export const QueueManagement: React.FC = () => {
               gap: '0.85rem',
             }}
           >
-            {bookings.map((item) => renderBookingCard(item))}
+            {effectiveBookings.map((item) => renderBookingCard(item))}
           </div>
         )
       )}

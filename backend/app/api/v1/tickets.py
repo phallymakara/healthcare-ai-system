@@ -2,14 +2,14 @@ import uuid
 from datetime import datetime, date
 from typing import Optional, List
 from fastapi import APIRouter, Depends, status, HTTPException
-from sqlalchemy import select
+from sqlalchemy import select, or_, func
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import get_current_user, get_optional_current_user, require_hospital_staff
 from app.models.user import User
-from app.models.queue import Ticket
+from app.models.queue import Ticket, TicketLog
 from app.models.enums import TicketSource, TicketStatus
 from app.schemas.queue import (
     BookTicketRequest,
@@ -179,6 +179,58 @@ async def issue_walk_in_ticket(
     )
 
 
+def _enrich_ticket_detail(ticket: Ticket) -> TicketDetailResponse:
+    resp = TicketDetailResponse.model_validate(ticket)
+    if ticket.hospital:
+        resp.hospital_name = ticket.hospital.name
+        resp.hospital_logo_url = ticket.hospital.logo_url
+        resp.hospital_address = ticket.hospital.address
+        resp.hospital_phone = ticket.hospital.phone
+        resp.hospital_latitude = ticket.hospital.latitude
+        resp.hospital_longitude = ticket.hospital.longitude
+    if ticket.department:
+        resp.department_name = ticket.department.name
+        resp.department_floor_room = ticket.department.floor_room
+    if ticket.doctor:
+        resp.doctor_name = ticket.doctor.full_name
+        resp.doctor_specialty = ticket.doctor.specialty
+        resp.doctor_photo_url = ticket.doctor.photo_url
+        resp.room_number = ticket.doctor.room_number
+    if ticket.service:
+        resp.service_name = ticket.service.name
+    return resp
+
+
+@router.get("/lookup/{identifier}", response_model=TicketDetailResponse)
+async def lookup_ticket(
+    identifier: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """Lookup appointment ticket by ticket number (e.g. CARD-001 or TK-123) or UUID"""
+    clean_id = identifier.strip()
+    query = (
+        select(Ticket)
+        .options(
+            selectinload(Ticket.logs),
+            selectinload(Ticket.hospital),
+            selectinload(Ticket.department),
+            selectinload(Ticket.doctor),
+            selectinload(Ticket.service),
+        )
+    )
+    try:
+        val_uuid = uuid.UUID(clean_id)
+        query = query.where(or_(Ticket.id == val_uuid, func.lower(Ticket.ticket_number) == clean_id.lower()))
+    except ValueError:
+        query = query.where(func.lower(Ticket.ticket_number) == clean_id.lower())
+
+    res = await db.execute(query)
+    ticket = res.scalars().first()
+    if not ticket:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Appointment ticket not found")
+    return _enrich_ticket_detail(ticket)
+
+
 @router.get("/{ticket_id}", response_model=TicketDetailResponse)
 async def get_ticket_detail(
     ticket_id: uuid.UUID,
@@ -188,13 +240,92 @@ async def get_ticket_detail(
     query = (
         select(Ticket)
         .where(Ticket.id == ticket_id)
-        .options(selectinload(Ticket.logs))
+        .options(
+            selectinload(Ticket.logs),
+            selectinload(Ticket.hospital),
+            selectinload(Ticket.department),
+            selectinload(Ticket.doctor),
+            selectinload(Ticket.service),
+        )
     )
     res = await db.execute(query)
     ticket = res.scalar_one_or_none()
     if not ticket:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket not found")
-    return TicketDetailResponse.model_validate(ticket)
+    return _enrich_ticket_detail(ticket)
+
+
+@router.post("/{ticket_id}/check-in", response_model=TicketDetailResponse)
+async def patient_check_in(
+    ticket_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    """Patient on-site arrival check-in"""
+    query = (
+        select(Ticket)
+        .where(Ticket.id == ticket_id)
+        .options(
+            selectinload(Ticket.logs),
+            selectinload(Ticket.hospital),
+            selectinload(Ticket.department),
+            selectinload(Ticket.doctor),
+            selectinload(Ticket.service),
+        )
+    )
+    res = await db.execute(query)
+    ticket = res.scalar_one_or_none()
+    if not ticket:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket not found")
+
+    log = TicketLog(
+        ticket_id=ticket.id,
+        from_status=ticket.status,
+        to_status=ticket.status,
+        note="Patient confirmed on-site arrival",
+    )
+    db.add(log)
+    ticket.updated_at = datetime.utcnow()
+    await db.commit()
+    await db.refresh(ticket)
+    return _enrich_ticket_detail(ticket)
+
+
+@router.post("/{ticket_id}/cancel-booking", response_model=TicketDetailResponse)
+async def cancel_scheduled_booking(
+    ticket_id: uuid.UUID,
+    reason: Optional[str] = None,
+    db: AsyncSession = Depends(get_db),
+):
+    """Patient self-cancellation for scheduled booking with immediate slot release"""
+    query = (
+        select(Ticket)
+        .where(Ticket.id == ticket_id)
+        .options(
+            selectinload(Ticket.logs),
+            selectinload(Ticket.hospital),
+            selectinload(Ticket.department),
+            selectinload(Ticket.doctor),
+            selectinload(Ticket.service),
+        )
+    )
+    res = await db.execute(query)
+    ticket = res.scalar_one_or_none()
+    if not ticket:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket not found")
+
+    old_status = ticket.status
+    ticket.status = TicketStatus.CANCELLED
+    ticket.updated_at = datetime.utcnow()
+    log = TicketLog(
+        ticket_id=ticket.id,
+        from_status=old_status,
+        to_status=TicketStatus.CANCELLED,
+        note=f"Cancelled by patient: {reason or 'Schedule conflict'}",
+    )
+    db.add(log)
+    await db.commit()
+    await db.refresh(ticket)
+    return _enrich_ticket_detail(ticket)
 
 
 @router.post("/{ticket_id}/call", response_model=TicketResponse)

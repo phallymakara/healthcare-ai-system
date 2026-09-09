@@ -1223,7 +1223,7 @@ async def get_partner_bookings(
                 department_name=t.department.name if t.department else None,
                 department_code=t.department.code if t.department else None,
                 doctor_id=t.doctor_id,
-                doctor_name=t.doctor.name if t.doctor else None,
+                doctor_name=t.doctor.full_name if t.doctor else None,
                 doctor_specialty=t.doctor.specialty if t.doctor else None,
                 service_id=t.service_id,
                 service_name=t.service.name if t.service else None,

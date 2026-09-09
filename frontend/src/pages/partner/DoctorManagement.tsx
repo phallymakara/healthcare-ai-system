@@ -49,6 +49,14 @@ export const DoctorManagement: React.FC = () => {
   const [docLoading, setDocLoading] = useState(false);
   const [activeDropdownDocId, setActiveDropdownDocId] = useState<string | null>(null);
 
+  // Inline Row Doctor Photo Upload
+  const rowPhotoInputRef = useRef<HTMLInputElement>(null);
+  const activeUploadDocIdRef = useRef<string | null>(null);
+  const [rowUploadDocId, setRowUploadDocId] = useState<string | null>(null);
+  const [rowUploadingDocId, setRowUploadingDocId] = useState<string | null>(null);
+  const [rowUploadError, setRowUploadError] = useState<{ docId: string; message: string } | null>(null);
+  const [hoveredAvatarDocId, setHoveredAvatarDocId] = useState<string | null>(null);
+
   // Manage Shifts Modal State
   const [shiftModalOpen, setShiftModalOpen] = useState(false);
   const [activeShiftDoc, setActiveShiftDoc] = useState<any | null>(null);
@@ -193,6 +201,66 @@ export const DoctorManagement: React.FC = () => {
     } else {
       setDocPhotoUrl('');
       setDocPhotoFile(null);
+    }
+  };
+
+  // Trigger file picker for row avatar
+  const handleTriggerRowPhotoUpload = (docId: string) => {
+    if (rowUploadingDocId) return;
+    setRowUploadError(null);
+    activeUploadDocIdRef.current = docId;
+    setRowUploadDocId(docId);
+    if (rowPhotoInputRef.current) {
+      rowPhotoInputRef.current.value = '';
+      rowPhotoInputRef.current.click();
+    }
+  };
+
+  // Handle file chosen from row avatar
+  const handleRowPhotoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    const targetDocId = activeUploadDocIdRef.current || rowUploadDocId;
+    if (!file || !targetDocId) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      setRowUploadError({
+        docId: targetDocId,
+        message: isKm ? 'ទំហំរូបភាពត្រូវតែតូចជាង 5MB' : 'Image size must be under 5MB',
+      });
+      return;
+    }
+
+    setRowUploadError(null);
+    setRowUploadingDocId(targetDocId);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch(`${API_BASE}/partners/doctors/${targetDocId}/photo`, {
+        method: 'POST',
+        headers: AuthService.getAuthHeaders(),
+        body: formData,
+      });
+
+      if (!res.ok) {
+        throw new Error('Upload failed');
+      }
+
+      const data = await res.json();
+      setDoctors(prev => prev.map(d => d.id === targetDocId ? { ...d, photo_url: data.url } : d));
+      if (editingDocId === targetDocId) {
+        setDocPhotoUrl(data.url);
+      }
+    } catch (err: any) {
+      console.error('Failed to upload doctor photo from row:', err);
+      setRowUploadError({
+        docId: targetDocId,
+        message: isKm ? 'មិនអាចផ្ទុករូបថតបានទេ។' : 'Failed to upload photo.',
+      });
+    } finally {
+      setRowUploadingDocId(null);
+      activeUploadDocIdRef.current = null;
+      setRowUploadDocId(null);
     }
   };
 
@@ -430,71 +498,116 @@ export const DoctorManagement: React.FC = () => {
             </div>
           </div>
         ) : (
-          <div style={{
-            background: '#ffffff',
-            border: '1px solid var(--border-color)',
-            borderRadius: '6px',
-            overflow: 'visible',
-            boxShadow: 'none',
-          }}>
-            {doctors.map((doc, idx) => {
-              const deptObj = departments.find((d) => d.id === doc.department_id);
-              const scheduleDays = (doc.schedules || []).map((s: any) => s.day_of_week);
+          <>
+            {/* Hidden file input for table row avatar clicks */}
+            <input
+              type="file"
+              ref={rowPhotoInputRef}
+              accept="image/*"
+              onChange={handleRowPhotoFileChange}
+              style={{ display: 'none' }}
+            />
+            <div style={{
+              background: '#ffffff',
+              border: '1px solid var(--border-color)',
+              borderRadius: '6px',
+              overflow: 'visible',
+              boxShadow: 'none',
+            }}>
+              {doctors.map((doc, idx) => {
+                const deptObj = departments.find((d) => d.id === doc.department_id);
+                const scheduleDays = (doc.schedules || []).map((s: any) => s.day_of_week);
 
-              return (
-                <div
-                  key={doc.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    flexWrap: 'wrap',
-                    gap: '1rem',
-                    padding: '0.65rem 1.25rem',
-                    borderBottom: idx === doctors.length - 1 ? 'none' : '1px solid var(--border-color)',
-                    background: '#ffffff',
-                    position: 'relative',
-                    zIndex: activeDropdownDocId === doc.id ? 50 : 1,
-                    borderTopLeftRadius: idx === 0 ? '6px' : 0,
-                    borderTopRightRadius: idx === 0 ? '6px' : 0,
-                    borderBottomLeftRadius: idx === doctors.length - 1 ? '6px' : 0,
-                    borderBottomRightRadius: idx === doctors.length - 1 ? '6px' : 0,
-                  }}
-                >
-                  {/* Doctor Info Column with Avatar */}
-                  <div style={{ minWidth: '260px', flex: '1.5', display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-                    <div style={{
-                      width: '42px',
-                      height: '42px',
-                      borderRadius: '50%',
-                      border: '1px solid var(--border-color)',
-                      overflow: 'hidden',
+                return (
+                  <div
+                    key={doc.id}
+                    style={{
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                      background: '#f8fafc',
-                    }}>
-                      {doc.photo_url ? (
-                        <img
-                          src={doc.photo_url}
-                          alt={doc.full_name}
-                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                          onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }}
-                        />
-                      ) : (
-                        <UserCheck size={20} color="var(--accent-primary)" />
-                      )}
-                    </div>
-                    <div>
-                      <div style={{ fontSize: '1.28rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: kmFont, lineHeight: 1.25 }}>
-                        {doc.full_name}
+                      justifyContent: 'space-between',
+                      flexWrap: 'wrap',
+                      gap: '1rem',
+                      padding: '0.65rem 1.25rem',
+                      borderBottom: idx === doctors.length - 1 ? 'none' : '1px solid var(--border-color)',
+                      background: '#ffffff',
+                      position: 'relative',
+                      zIndex: activeDropdownDocId === doc.id ? 50 : 1,
+                      borderTopLeftRadius: idx === 0 ? '6px' : 0,
+                      borderTopRightRadius: idx === 0 ? '6px' : 0,
+                      borderBottomLeftRadius: idx === doctors.length - 1 ? '6px' : 0,
+                      borderBottomRightRadius: idx === doctors.length - 1 ? '6px' : 0,
+                    }}
+                  >
+                    {/* Doctor Info Column with Avatar */}
+                    <div style={{ minWidth: '260px', flex: '1.5', display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                      <div
+                        onClick={() => handleTriggerRowPhotoUpload(doc.id)}
+                        onMouseEnter={() => setHoveredAvatarDocId(doc.id)}
+                        onMouseLeave={() => setHoveredAvatarDocId(null)}
+                        title={isKm ? 'ចុចដើម្បីប្តូររូបថត' : 'Click to change photo'}
+                        style={{
+                          width: '42px',
+                          height: '42px',
+                          borderRadius: '50%',
+                          border: hoveredAvatarDocId === doc.id ? '1px solid var(--accent-primary)' : '1px solid var(--border-color)',
+                          overflow: 'hidden',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                          background: '#f8fafc',
+                          cursor: rowUploadingDocId === doc.id ? 'wait' : 'pointer',
+                          position: 'relative',
+                          transition: 'border-color 0.15s ease',
+                        }}
+                      >
+                        {rowUploadingDocId === doc.id ? (
+                          <RefreshCw size={18} className="spin" color="var(--accent-primary)" />
+                        ) : doc.photo_url ? (
+                          <>
+                            <img
+                              src={doc.photo_url}
+                              alt={doc.full_name}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }}
+                            />
+                            {hoveredAvatarDocId === doc.id && (
+                              <div style={{
+                                position: 'absolute',
+                                inset: 0,
+                                background: 'rgba(0, 0, 0, 0.4)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                              }}>
+                                <Camera size={16} color="#ffffff" />
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            {hoveredAvatarDocId === doc.id ? (
+                              <Camera size={18} color="var(--accent-primary)" />
+                            ) : (
+                              <UserCheck size={20} color="var(--accent-primary)" />
+                            )}
+                          </>
+                        )}
                       </div>
-                      <div style={{ fontSize: '1.02rem', color: 'var(--text-muted)', marginTop: '2px', fontFamily: kmFont }}>
-                        {deptObj ? deptObj.name : t('doc_general')} • {doc.specialty}
+                      <div>
+                        <div style={{ fontSize: '1.28rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: kmFont, lineHeight: 1.25 }}>
+                          {doc.full_name}
+                        </div>
+                        <div style={{ fontSize: '1.02rem', color: 'var(--text-muted)', marginTop: '2px', fontFamily: kmFont }}>
+                          {deptObj ? deptObj.name : t('doc_general')} • {doc.specialty}
+                        </div>
+                        {rowUploadError && rowUploadError.docId === doc.id && (
+                          <span style={{ fontSize: '0.82rem', color: '#dc2626', fontFamily: kmFont, display: 'block', marginTop: '2px' }}>
+                            {rowUploadError.message}
+                          </span>
+                        )}
                       </div>
                     </div>
-                  </div>
 
                   {/* Station Column */}
                   <div style={{ minWidth: '180px', flex: '1' }}>
@@ -537,7 +650,12 @@ export const DoctorManagement: React.FC = () => {
                     <button
                       onClick={() => setActiveDropdownDocId(activeDropdownDocId === doc.id ? null : doc.id)}
                       style={{
-                        padding: '0.2rem 0.75rem',
+                        width: '32px',
+                        height: '32px',
+                        padding: 0,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
                         fontSize: '1.2rem',
                         fontWeight: 700,
                         letterSpacing: '1px',
@@ -663,6 +781,7 @@ export const DoctorManagement: React.FC = () => {
               );
             })}
           </div>
+        </>
         )
       )}
 
@@ -688,8 +807,8 @@ export const DoctorManagement: React.FC = () => {
                 <div
                   onClick={() => !docUploadingPhoto && docPhotoInputRef.current?.click()}
                   style={{
-                    width: '74px',
-                    height: '74px',
+                    width: '100px',
+                    height: '100px',
                     borderRadius: '50%',
                     border: '1px dashed var(--border-color)',
                     backgroundColor: '#ffffff',
@@ -706,7 +825,7 @@ export const DoctorManagement: React.FC = () => {
                   title={isKm ? 'ចុចដើម្បីប្តូររូបថត' : 'Click to change photo'}
                 >
                   {docUploadingPhoto ? (
-                    <RefreshCw size={20} className="spin" color="var(--accent-primary)" />
+                    <RefreshCw size={24} className="spin" color="var(--accent-primary)" />
                   ) : docPhotoUrl ? (
                     <img
                       src={docPhotoUrl}
@@ -715,9 +834,9 @@ export const DoctorManagement: React.FC = () => {
                       onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }}
                     />
                   ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', color: 'var(--text-muted)' }}>
-                      <Camera size={22} color="var(--accent-primary)" />
-                      <span style={{ fontSize: '0.75rem', fontFamily: kmFont }}>{isKm ? 'រូបថត' : 'Photo'}</span>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', color: 'var(--text-muted)' }}>
+                      <Camera size={26} color="var(--accent-primary)" />
+                      <span style={{ fontSize: '0.85rem', fontFamily: kmFont }}>{isKm ? 'រូបថត' : 'Photo'}</span>
                     </div>
                   )}
                 </div>

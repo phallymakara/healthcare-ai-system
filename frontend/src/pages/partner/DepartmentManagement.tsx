@@ -484,8 +484,13 @@ export const DepartmentManagement: React.FC = () => {
                       <button
                         onClick={() => setActiveDropdownDeptId(activeDropdownDeptId === dept.id ? null : dept.id)}
                         style={{
-                          padding: '0.3rem 0.75rem',
-                          fontSize: '1.1rem',
+                          width: '32px',
+                          height: '32px',
+                          padding: 0,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '1.2rem',
                           fontWeight: 700,
                           letterSpacing: '1px',
                           background: 'transparent',
@@ -494,6 +499,7 @@ export const DepartmentManagement: React.FC = () => {
                           color: 'var(--text-main)',
                           cursor: 'pointer',
                           boxShadow: 'none',
+                          lineHeight: 1,
                         }}
                       >
                         ···
@@ -690,8 +696,13 @@ export const DepartmentManagement: React.FC = () => {
                         <button
                           onClick={() => setActiveDropdownSrvId(activeDropdownSrvId === srv.id ? null : srv.id)}
                           style={{
-                            padding: '0.3rem 0.75rem',
-                            fontSize: '1.1rem',
+                            width: '32px',
+                            height: '32px',
+                            padding: 0,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '1.2rem',
                             fontWeight: 700,
                             letterSpacing: '1px',
                             background: 'transparent',
@@ -700,6 +711,7 @@ export const DepartmentManagement: React.FC = () => {
                             color: 'var(--text-main)',
                             cursor: 'pointer',
                             boxShadow: 'none',
+                            lineHeight: 1,
                           }}
                         >
                           ···

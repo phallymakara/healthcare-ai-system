@@ -84,6 +84,21 @@ class TicketResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
+    # Enriched Facility, Doctor & Service Context
+    hospital_name: Optional[str] = None
+    hospital_logo_url: Optional[str] = None
+    hospital_address: Optional[str] = None
+    hospital_phone: Optional[str] = None
+    hospital_latitude: Optional[float] = None
+    hospital_longitude: Optional[float] = None
+    department_name: Optional[str] = None
+    department_floor_room: Optional[str] = None
+    doctor_name: Optional[str] = None
+    doctor_specialty: Optional[str] = None
+    doctor_photo_url: Optional[str] = None
+    room_number: Optional[str] = None
+    service_name: Optional[str] = None
+
     model_config = {"from_attributes": True}
 
 
