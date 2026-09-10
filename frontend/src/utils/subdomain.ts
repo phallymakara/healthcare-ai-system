@@ -35,8 +35,8 @@ export function getPortalSwitchUrl(target: 'partner' | 'patient'): string {
   const protocol = window.location.protocol;
   const port = window.location.port ? `:${window.location.port}` : '';
 
-  // Local development fallback
-  if (host === 'localhost' || host.endsWith('.localhost') || host === '127.0.0.1') {
+  // Local development or direct IP access fallback (e.g. localhost, 127.0.0.1, or VM IP like 192.168.1.50)
+  if (host === 'localhost' || host.endsWith('.localhost') || host === '127.0.0.1' || /^\d+\.\d+\.\d+\.\d+$/.test(host)) {
     if (target === 'partner') {
       return `${protocol}//${window.location.host}/?portal=partner`;
     } else {

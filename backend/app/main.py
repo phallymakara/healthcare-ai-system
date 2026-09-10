@@ -18,12 +18,29 @@ logger = logging.getLogger("healthcare_ai")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Proper engineering startup configuration & security audit
+    audit = settings.get_security_audit_summary()
+    logger.info("==================================================")
+    logger.info("  %s — Startup Initialization", settings.PROJECT_NAME)
+    logger.info("==================================================")
+    logger.info("  • Environment:     %s", audit["environment"])
+    logger.info("  • Database Target: %s", audit["database_target"])
+    logger.info("  • Redis Target:    %s", audit["redis_target"])
+    logger.info("  • JWT Auth Key:    %s (%s, %dm expiry)", audit["jwt_secret"], settings.ALGORITHM, settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    logger.info("  • AI Foundry:      %s", audit["ai_foundry"])
+    logger.info("  • Azure Storage:   %s", audit["azure_storage"])
+    logger.info("==================================================")
+
+    # Security check for production secret key
+    if settings.is_production and (not settings.SECRET_KEY or "CHANGE-THIS" in settings.SECRET_KEY):
+        logger.warning("⚠️  SECURITY WARNING: Using default development SECRET_KEY in production! Please define a strong SECRET_KEY in .env before public release.")
+
     # Startup: Initialize Redis connection
     try:
         await get_redis_client()
-        logger.info("Redis client connected successfully.")
+        logger.info("✅ Redis client connected successfully.")
     except Exception as e:
-        logger.warning(f"Redis connection warning: {e}")
+        logger.warning("⚠️  Redis connection warning: %s", e)
 
     yield
 

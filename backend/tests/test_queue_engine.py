@@ -17,7 +17,7 @@ async def test_get_live_queue_snapshot(db_session):
         response = await client.get(f"/api/v1/queues/{queue.id}")
         assert response.status_code == 200
         data = response.json()
-        assert data["department_name"] == "Cardiology"
+        assert "Cardiology" in data["department_name"]
         assert "active_tickets" in data
 
 

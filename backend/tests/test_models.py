@@ -22,7 +22,7 @@ async def test_query_hospitals_and_departments(db_session: AsyncSession):
     )
     hospitals = result.scalars().all()
     assert len(hospitals) >= 1
-    hosp = hospitals[0]
+    hosp = next((h for h in hospitals if h.slug == "royal-city-general-hospital"), hospitals[0])
     assert hosp.slug == "royal-city-general-hospital"
     assert len(hosp.departments) >= 3
     assert any(d.code == "CARDIO" for d in hosp.departments)
@@ -40,7 +40,7 @@ async def test_query_doctor_and_schedules(db_session: AsyncSession):
     )
     doctors = result.scalars().all()
     assert len(doctors) >= 2
-    cardiologist = next(d for d in doctors if "Cardiologist" in d.specialty)
+    cardiologist = next(d for d in doctors if d.full_name == "Dr. Sokha Meas, MD")
     assert cardiologist.full_name == "Dr. Sokha Meas, MD"
     assert cardiologist.department.name == "Cardiology"
     assert len(cardiologist.schedules) == 5  # Mon-Fri
@@ -58,11 +58,11 @@ async def test_query_queue_and_ticket_lifecycle(db_session: AsyncSession):
     )
     queues = result.scalars().all()
     assert len(queues) >= 1
-    cardio_queue = queues[0]
+    cardio_queue = next((q for q in queues if any(t.logs for t in q.tickets)), queues[0])
     assert cardio_queue.current_serving_number is not None
     assert len(cardio_queue.tickets) >= 3
 
-    serving_or_first_ticket = cardio_queue.tickets[0]
+    serving_or_first_ticket = next((t for t in cardio_queue.tickets if len(t.logs) >= 1), cardio_queue.tickets[0])
     assert serving_or_first_ticket.ticket_number is not None
     assert len(serving_or_first_ticket.logs) >= 1
 

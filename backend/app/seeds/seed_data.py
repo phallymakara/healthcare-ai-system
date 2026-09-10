@@ -155,7 +155,7 @@ async def seed_database():
         admin_user = User(
             id=uuid.uuid4(),
             email="admin@carequeue.ai",
-            phone_number="+85512000001",
+            phone_number="+85512999011",
             hashed_password=get_password_hash("admin123!"),
             full_name="Super Platform Admin",
             role=UserRole.SUPER_ADMIN,
@@ -165,7 +165,7 @@ async def seed_database():
         doc1_user = User(
             id=uuid.uuid4(),
             email="dr.sokha@royalcityhospital.com",
-            phone_number="+85512000002",
+            phone_number="+85512999012",
             hashed_password=get_password_hash("doctor123!"),
             full_name="Dr. Sokha Meas",
             role=UserRole.DOCTOR,
@@ -177,7 +177,7 @@ async def seed_database():
         doc2_user = User(
             id=uuid.uuid4(),
             email="dr.chann@royalcityhospital.com",
-            phone_number="+85512000003",
+            phone_number="+85512999013",
             hashed_password=get_password_hash("doctor123!"),
             full_name="Dr. Chann Vatey",
             role=UserRole.DOCTOR,

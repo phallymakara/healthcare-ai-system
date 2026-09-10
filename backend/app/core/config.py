@@ -103,6 +103,45 @@ class Settings(BaseSettings):
             
         return self
 
+    @property
+    def is_foundry_configured(self) -> bool:
+        """Check if Microsoft Foundry / Azure OpenAI API key is properly set."""
+        key = (self.MICROSOFT_FOUNDRY_API_KEY or "").strip()
+        return bool(key and key != "your-api-key-here" and len(key) >= 10)
+
+    @property
+    def is_azure_storage_configured(self) -> bool:
+        """Check if Azure Blob Storage connection string is properly set."""
+        conn = (self.AZURE_STORAGE_CONNECTION_STRING or "").strip()
+        return bool(conn and "DefaultEndpointsProtocol" in conn and len(conn) >= 20)
+
+    @property
+    def is_production(self) -> bool:
+        return (self.ENVIRONMENT or "").lower() == "production"
+
+    def get_security_audit_summary(self) -> dict:
+        """Returns masked summary of security keys and connection targets for audit logging."""
+        masked_secret = f"***{self.SECRET_KEY[-4:]}" if len(self.SECRET_KEY) > 6 else "[NOT CONFIGURED]"
+        foundry_status = (
+            f"Active (Model: {self.MICROSOFT_FOUNDRY_MODEL}, Key: ***{self.MICROSOFT_FOUNDRY_API_KEY[-4:]})"
+            if self.is_foundry_configured
+            else "Not Configured (Rule-based fallback active)"
+        )
+        storage_status = (
+            f"Active (Container: {self.AZURE_STORAGE_CONTAINER_NAME})"
+            if self.is_azure_storage_configured
+            else "Not Configured (Mock upload fallback)"
+        )
+
+        return {
+            "environment": self.ENVIRONMENT,
+            "database_target": f"{self.POSTGRES_USER}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}",
+            "redis_target": f"{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}",
+            "jwt_secret": masked_secret,
+            "ai_foundry": foundry_status,
+            "azure_storage": storage_status,
+        }
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

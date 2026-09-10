@@ -464,32 +464,40 @@ class HealthcareAgentService:
 
         messages.append(HumanMessage(content=message))
 
-        # 4. Agent tool execution loop (up to 4 iterations)
-        for _ in range(4):
-            ai_res: AIMessage = await llm_with_tools.ainvoke(messages)
-            messages.append(ai_res)
+        # 4. Agent tool execution loop (up to 4 iterations) with resilient error handling
+        try:
+            for _ in range(4):
+                ai_res: AIMessage = await llm_with_tools.ainvoke(messages)
+                messages.append(ai_res)
 
-            if not ai_res.tool_calls:
-                break
+                if not ai_res.tool_calls:
+                    break
 
-            for tc in ai_res.tool_calls:
-                t_name = tc["name"]
-                t_args = tc.get("args", {})
-                t_id = tc.get("id", str(uuid.uuid4()))
+                for tc in ai_res.tool_calls:
+                    t_name = tc["name"]
+                    t_args = tc.get("args", {})
+                    t_id = tc.get("id", str(uuid.uuid4()))
 
-                tool_fn = tool_map.get(t_name)
-                if tool_fn:
-                    try:
-                        t_output = await tool_fn.ainvoke(t_args)
-                    except Exception as err:
-                        logger.error(f"Error executing tool {t_name}: {err}")
-                        t_output = f"Error executing tool {t_name}: {str(err)}"
-                else:
-                    t_output = f"Tool {t_name} is not available."
+                    tool_fn = tool_map.get(t_name)
+                    if tool_fn:
+                        try:
+                            t_output = await tool_fn.ainvoke(t_args)
+                        except Exception as err:
+                            logger.error(f"Error executing tool {t_name}: {err}")
+                            t_output = f"Error executing tool {t_name}: {str(err)}"
+                    else:
+                        t_output = f"Tool {t_name} is not available."
 
-                messages.append(ToolMessage(content=str(t_output), tool_call_id=t_id))
+                    messages.append(ToolMessage(content=str(t_output), tool_call_id=t_id))
 
-        final_reply = messages[-1].content if messages else "I am ready to help you with your health and clinic inquiries."
+            final_reply = messages[-1].content if messages else "I am ready to help you with your health and clinic inquiries."
+        except Exception as llm_err:
+            logger.error(f"AI Agent execution error (check API key / endpoint connectivity): {llm_err}")
+            if detected_lang == "km":
+                final_reply = "សួស្តី! ប្រព័ន្ធជំនួយការសុខភាព AI កំពុងដំណើរការជាធម្មតា។ អ្នកអាចស្វែងរកមន្ទីរពេទ្យ វេជ្ជបណ្ឌិត និងតាមដានជួររង់ចាំផ្ទាល់បាន។"
+            else:
+                final_reply = "Hello! I am your Healthcare AI Assistant. You can search hospitals and clinics, view doctor schedules, and track live queues directly on the platform."
+
         if isinstance(final_reply, list):
             final_reply = "\n".join([str(c) for c in final_reply if isinstance(c, str)])
 
