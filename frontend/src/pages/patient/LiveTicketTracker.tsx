@@ -615,11 +615,11 @@ export const LiveTicketTracker: React.FC<LiveTicketTrackerProps> = ({
                         >
                           {tk.hospital_name
                             ? tk.hospital_name
-                                .split(' ')
-                                .map((w) => w[0])
-                                .join('')
-                                .substring(0, 2)
-                                .toUpperCase()
+                              .split(' ')
+                              .map((w) => w[0])
+                              .join('')
+                              .substring(0, 2)
+                              .toUpperCase()
                             : <Building2 size={24} color="var(--text-muted)" />}
                         </div>
                       )}
@@ -741,343 +741,292 @@ export const LiveTicketTracker: React.FC<LiveTicketTrackerProps> = ({
               boxShadow: 'none',
             }}
           >
-          {/* Action Success / Error Notifications */}
-          {actionNotice && (
-            <div
-              style={{
-                padding: '0.75rem 1.5rem',
-                color: '#16a34a',
-                fontSize: '0.9rem',
-                fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                fontFamily: kmFont,
-              }}
-            >
-              <CheckCircle2 size={18} />
-              <span>{actionNotice}</span>
-            </div>
-          )}
-
-          {actionError && (
-            <div
-              style={{
-                padding: '0.75rem 1.5rem',
-                color: '#dc2626',
-                fontSize: '0.9rem',
-                fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                fontFamily: kmFont,
-              }}
-            >
-              <AlertCircle size={18} />
-              <span>{actionError}</span>
-            </div>
-          )}
-
-          {/* Card Top: Facility Identity & Ticket Status Header */}
-          <div
-            style={{
-              padding: '1.5rem 1.75rem 0.85rem 1.75rem',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: '1rem',
-            }}
-          >
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', minWidth: '240px' }}>
-              <h3
-                style={{
-                  margin: '0 0 0.2rem 0',
-                  fontSize: '1.25rem',
-                  fontWeight: 700,
-                  color: 'var(--text-main)',
-                  fontFamily: kmFont,
-                }}
-              >
-                {formatFacilityName(activeTicket.hospital_name || 'Medical Facility', language)}
-              </h3>
+            {/* Action Success / Error Notifications */}
+            {actionNotice && (
               <div
                 style={{
-                  fontSize: '0.88rem',
-                  color: 'var(--text-muted)',
-                  fontFamily: kmFont,
-                }}
-              >
-                <span style={{ fontWeight: 500, color: 'var(--text-main)' }}>
-                  {formatDepartmentName(activeTicket.department_name || '', language) || t('doc_general')}
-                </span>
-                {activeTicket.doctor_name && (
-                  <>
-                    {' • '}
-                    <span>{formatDoctorName(activeTicket.doctor_name, language)}</span>
-                  </>
-                )}
-                {activeTicket.room_number && (
-                  <>
-                    {' • '}
-                    <span>{formatRoom(activeTicket.room_number)}</span>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Ticket Code */}
-            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-              <div
-                style={{
-                  fontSize: '1.35rem',
-                  fontWeight: 800,
-                  color: 'var(--text-main)',
-                  letterSpacing: '0.04em',
-                }}
-              >
-                #{activeTicket.ticket_number}
-              </div>
-            </div>
-          </div>
-
-          {/* Card Middle: Time Slot, Recommended Arrival & Countdown */}
-          <div
-            style={{
-              padding: '0.85rem 1.75rem 1rem 1.75rem',
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-              gap: '1.5rem',
-            }}
-          >
-            {/* Slot & Date */}
-            <div>
-              <div
-                style={{
-                  fontSize: '0.85rem',
+                  padding: '0.75rem 1.5rem',
+                  color: '#16a34a',
+                  fontSize: '0.9rem',
                   fontWeight: 600,
-                  color: 'var(--text-muted)',
-                  textTransform: 'uppercase',
-                  marginBottom: '0.4rem',
-                  fontFamily: kmFont,
-                }}
-              >
-                <span>{t('appt_date_slot')}</span>
-              </div>
-              <div style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: kmFont }}>
-                {activeTicket.appointment_date || '2026-09-15'}
-              </div>
-              <div
-                style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '6px',
-                  fontSize: '0.95rem',
-                  color: 'var(--text-muted)',
-                  marginTop: '3px',
+                  gap: '8px',
                   fontFamily: kmFont,
                 }}
               >
-                <Clock size={14} />
-                <span>{activeTicket.appointment_time || '09:00 AM - 10:00 AM'}</span>
+                <CheckCircle2 size={18} />
+                <span>{actionNotice}</span>
+              </div>
+            )}
+
+            {actionError && (
+              <div
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  color: '#dc2626',
+                  fontSize: '0.9rem',
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  fontFamily: kmFont,
+                }}
+              >
+                <AlertCircle size={18} />
+                <span>{actionError}</span>
+              </div>
+            )}
+
+            {/* Card Top: Facility Identity & Ticket Status Header */}
+            <div
+              style={{
+                padding: '1.5rem 1.75rem 0.85rem 1.75rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '1rem',
+              }}
+            >
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', minWidth: '240px' }}>
+                <h3
+                  style={{
+                    margin: '0 0 0.2rem 0',
+                    fontSize: '1.25rem',
+                    fontWeight: 700,
+                    color: 'var(--text-main)',
+                    fontFamily: kmFont,
+                  }}
+                >
+                  {formatFacilityName(activeTicket.hospital_name || 'Medical Facility', language)}
+                </h3>
+                <div
+                  style={{
+                    fontSize: '0.88rem',
+                    color: 'var(--text-muted)',
+                    fontFamily: kmFont,
+                  }}
+                >
+                  <span style={{ fontWeight: 500, color: 'var(--text-main)' }}>
+                    {formatDepartmentName(activeTicket.department_name || '', language) || t('doc_general')}
+                  </span>
+                  {activeTicket.doctor_name && (
+                    <>
+                      {' • '}
+                      <span>{formatDoctorName(activeTicket.doctor_name, language)}</span>
+                    </>
+                  )}
+                  {activeTicket.room_number && (
+                    <>
+                      {' • '}
+                      <span>{formatRoom(activeTicket.room_number)}</span>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Ticket Code */}
+              <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                <div
+                  style={{
+                    fontSize: '1.35rem',
+                    fontWeight: 800,
+                    color: 'var(--text-main)',
+                    letterSpacing: '0.04em',
+                  }}
+                >
+                  #{activeTicket.ticket_number}
+                </div>
               </div>
             </div>
 
-            {/* Recommended Arrival Window */}
-            <div>
-              <div
-                style={{
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  color: 'var(--text-muted)',
-                  textTransform: 'uppercase',
-                  marginBottom: '0.4rem',
-                  fontFamily: kmFont,
-                }}
-              >
-                <span>{t('appt_recommended_arrival')}</span>
+            {/* Card Middle: Time Slot, Recommended Arrival & Countdown */}
+            <div
+              style={{
+                padding: '0.85rem 1.75rem 1rem 1.75rem',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                gap: '1.5rem',
+              }}
+            >
+              {/* Slot & Date */}
+              <div>
+                <div
+                  style={{
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    color: 'var(--text-muted)',
+                    textTransform: 'uppercase',
+                    marginBottom: '0.4rem',
+                    fontFamily: kmFont,
+                  }}
+                >
+                  <span>{t('appt_date_slot')}</span>
+                </div>
+                <div style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: kmFont }}>
+                  {activeTicket.appointment_date || '2026-09-15'}
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    fontSize: '0.95rem',
+                    color: 'var(--text-muted)',
+                    marginTop: '3px',
+                    fontFamily: kmFont,
+                  }}
+                >
+                  <Clock size={14} />
+                  <span>{activeTicket.appointment_time || '09:00 AM - 10:00 AM'}</span>
+                </div>
               </div>
-              <div style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: kmFont }}>
-                {timingInfo.recommendedArrival}
+
+              {/* Recommended Arrival Window */}
+              <div>
+                <div
+                  style={{
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    color: 'var(--text-muted)',
+                    textTransform: 'uppercase',
+                    marginBottom: '0.4rem',
+                    fontFamily: kmFont,
+                  }}
+                >
+                  <span>{t('appt_recommended_arrival')}</span>
+                </div>
+                <div style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: kmFont }}>
+                  {timingInfo.recommendedArrival}
+                </div>
+                <div
+                  style={{
+                    fontSize: '0.85rem',
+                    color: 'var(--text-muted)',
+                    marginTop: '3px',
+                    fontFamily: kmFont,
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {t('appt_arrival_tip')}
+                </div>
               </div>
-              <div
-                style={{
-                  fontSize: '0.85rem',
-                  color: 'var(--text-muted)',
-                  marginTop: '3px',
-                  fontFamily: kmFont,
-                  lineHeight: 1.4,
-                }}
-              >
-                {t('appt_arrival_tip')}
+
+              {/* Attending Doctor Info */}
+              <div>
+                <div
+                  style={{
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    color: 'var(--text-muted)',
+                    textTransform: 'uppercase',
+                    marginBottom: '0.4rem',
+                    fontFamily: kmFont,
+                  }}
+                >
+                  <span>{t('appt_assigned_doctor')}</span>
+                </div>
+                <div style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: kmFont }}>
+                  {activeTicket.doctor_name
+                    ? formatDoctorName(activeTicket.doctor_name, language)
+                    : (isKm ? 'វេជ្ជបណ្ឌិតជំនាញប្រចាំការ' : 'Assigned Physician')}
+                </div>
+                <div
+                  style={{
+                    fontSize: '0.88rem',
+                    color: 'var(--text-muted)',
+                    marginTop: '3px',
+                    fontFamily: kmFont,
+                  }}
+                >
+                  {formatSpecialty(activeTicket.doctor_specialty || '', language) ||
+                    formatDepartmentName(activeTicket.department_name || '', language) ||
+                    t('doc_general')}
+                </div>
               </div>
             </div>
 
-            {/* Attending Doctor Info */}
-            <div>
-              <div
-                style={{
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  color: 'var(--text-muted)',
-                  textTransform: 'uppercase',
-                  marginBottom: '0.4rem',
-                  fontFamily: kmFont,
-                }}
-              >
-                <span>{t('appt_assigned_doctor')}</span>
-              </div>
-              <div style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: kmFont }}>
-                {activeTicket.doctor_name
-                  ? formatDoctorName(activeTicket.doctor_name, language)
-                  : (isKm ? 'វេជ្ជបណ្ឌិតជំនាញប្រចាំការ' : 'Assigned Physician')}
-              </div>
+            {/* Pre-Visit Preparation Checklist */}
+            <div style={{ padding: '0.85rem 1.75rem 1rem 1.75rem' }}>
               <div
                 style={{
                   fontSize: '0.88rem',
-                  color: 'var(--text-muted)',
-                  marginTop: '3px',
+                  fontWeight: 700,
+                  color: 'var(--text-main)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.03em',
+                  marginBottom: '0.75rem',
                   fontFamily: kmFont,
                 }}
               >
-                {formatSpecialty(activeTicket.doctor_specialty || '', language) ||
-                  formatDepartmentName(activeTicket.department_name || '', language) ||
-                  t('doc_general')}
+                {t('appt_previsit_checklist')}
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.92rem', color: 'var(--text-main)', fontFamily: kmFont }}>
+                  <Check size={16} color="var(--accent-primary)" />
+                  <span>{t('appt_prep_id_card')}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.92rem', color: 'var(--text-main)', fontFamily: kmFont }}>
+                  <Check size={16} color="var(--accent-primary)" />
+                  <span>{t('appt_prep_records')}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.92rem', color: 'var(--text-main)', fontFamily: kmFont }}>
+                  <Check size={16} color="var(--accent-primary)" />
+                  <span>{t('appt_prep_checkin')}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.92rem', color: 'var(--text-main)', fontFamily: kmFont }}>
+                  <Check size={16} color="var(--accent-primary)" />
+                  <span>{t('appt_prep_symptoms')}</span>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Pre-Visit Preparation Checklist */}
-          <div style={{ padding: '0.85rem 1.75rem 1rem 1.75rem' }}>
+            {/* Patient Details & Clinic Location */}
             <div
               style={{
-                fontSize: '0.88rem',
-                fontWeight: 700,
-                color: 'var(--text-main)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.03em',
-                marginBottom: '0.75rem',
+                padding: '0.85rem 1.75rem 1rem 1.75rem',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '1rem',
+                fontSize: '0.92rem',
+                color: 'var(--text-muted)',
                 fontFamily: kmFont,
               }}
             >
-              {t('appt_previsit_checklist')}
+              <div>
+                <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>{t('patient')}: </span>
+                <span>{activeTicket.patient_name}</span>
+                {activeTicket.patient_phone && <span> • {activeTicket.patient_phone}</span>}
+              </div>
+
+              {activeTicket.hospital_address && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <MapPin size={15} color="var(--accent-primary)" />
+                  <span>{activeTicket.hospital_address}</span>
+                </div>
+              )}
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.92rem', color: 'var(--text-main)', fontFamily: kmFont }}>
-                <Check size={16} color="var(--accent-primary)" />
-                <span>{t('appt_prep_id_card')}</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.92rem', color: 'var(--text-main)', fontFamily: kmFont }}>
-                <Check size={16} color="var(--accent-primary)" />
-                <span>{t('appt_prep_records')}</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.92rem', color: 'var(--text-main)', fontFamily: kmFont }}>
-                <Check size={16} color="var(--accent-primary)" />
-                <span>{t('appt_prep_checkin')}</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.92rem', color: 'var(--text-main)', fontFamily: kmFont }}>
-                <Check size={16} color="var(--accent-primary)" />
-                <span>{t('appt_prep_symptoms')}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Patient Details & Clinic Location */}
-          <div
-            style={{
-              padding: '0.85rem 1.75rem 1rem 1.75rem',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: '1rem',
-              fontSize: '0.92rem',
-              color: 'var(--text-muted)',
-              fontFamily: kmFont,
-            }}
-          >
-            <div>
-              <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>{t('patient')}: </span>
-              <span>{activeTicket.patient_name}</span>
-              {activeTicket.patient_phone && <span> • {activeTicket.patient_phone}</span>}
-            </div>
-
-            {activeTicket.hospital_address && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                <MapPin size={15} color="var(--accent-primary)" />
-                <span>{activeTicket.hospital_address}</span>
-              </div>
-            )}
-          </div>
-
-          {/* Card Bottom: Practical Patient Action Buttons */}
-          <div
-            style={{
-              padding: '0.85rem 1.75rem 1.75rem 1.75rem',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: '0.85rem',
-            }}
-          >
-            {/* Left Actions: Calendar Sync & Maps Directions */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              <button
-                type="button"
-                onClick={handleAddToCalendar}
-                style={{
-                  padding: '0.45rem 0.95rem',
-                  fontSize: '0.88rem',
-                  fontWeight: 600,
-                  background: 'transparent',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: '4px',
-                  color: 'var(--text-main)',
-                  cursor: 'pointer',
-                  boxShadow: 'none',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  fontFamily: kmFont,
-                }}
-              >
-                <CalendarPlus size={15} color="var(--accent-primary)" />
-                <span>{t('appt_add_to_calendar')}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleOpenDirections}
-                style={{
-                  padding: '0.45rem 0.95rem',
-                  fontSize: '0.88rem',
-                  fontWeight: 600,
-                  background: 'transparent',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: '4px',
-                  color: 'var(--text-main)',
-                  cursor: 'pointer',
-                  boxShadow: 'none',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  fontFamily: kmFont,
-                }}
-              >
-                <MapPin size={15} color="var(--accent-primary)" />
-                <span>{t('appt_get_directions')}</span>
-              </button>
-            </div>
-
-            {/* Right Actions: Cancel Booking */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              {activeTicket.status !== 'CANCELLED' && activeTicket.status !== 'COMPLETED' && (
+            {/* Card Bottom: Practical Patient Action Buttons */}
+            <div
+              style={{
+                padding: '0.85rem 1.75rem 1.75rem 1.75rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '0.85rem',
+              }}
+            >
+              {/* Left Actions: Calendar Sync & Maps Directions */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                 <button
                   type="button"
-                  onClick={() => setShowCancelModal(true)}
-                  disabled={actionLoading}
+                  onClick={handleAddToCalendar}
                   style={{
                     padding: '0.45rem 0.95rem',
                     fontSize: '0.88rem',
@@ -1085,19 +1034,70 @@ export const LiveTicketTracker: React.FC<LiveTicketTrackerProps> = ({
                     background: 'transparent',
                     border: '1px solid var(--border-color)',
                     borderRadius: '4px',
-                    color: '#dc2626',
+                    color: 'var(--text-main)',
                     cursor: 'pointer',
                     boxShadow: 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
                     fontFamily: kmFont,
                   }}
                 >
-                  {t('appt_cancel_btn')}
+                  <CalendarPlus size={15} color="var(--accent-primary)" />
+                  <span>{t('appt_add_to_calendar')}</span>
                 </button>
-              )}
+
+                <button
+                  type="button"
+                  onClick={handleOpenDirections}
+                  style={{
+                    padding: '0.45rem 0.95rem',
+                    fontSize: '0.88rem',
+                    fontWeight: 600,
+                    background: 'transparent',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '4px',
+                    color: 'var(--text-main)',
+                    cursor: 'pointer',
+                    boxShadow: 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    fontFamily: kmFont,
+                  }}
+                >
+                  <MapPin size={15} color="var(--accent-primary)" />
+                  <span>{t('appt_get_directions')}</span>
+                </button>
+              </div>
+
+              {/* Right Actions: Cancel Booking */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                {activeTicket.status !== 'CANCELLED' && activeTicket.status !== 'COMPLETED' && (
+                  <button
+                    type="button"
+                    onClick={() => setShowCancelModal(true)}
+                    disabled={actionLoading}
+                    style={{
+                      padding: '0.45rem 0.95rem',
+                      fontSize: '0.88rem',
+                      fontWeight: 600,
+                      background: 'transparent',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: '4px',
+                      color: '#dc2626',
+                      cursor: 'pointer',
+                      boxShadow: 'none',
+                      fontFamily: kmFont,
+                    }}
+                  >
+                    {t('appt_cancel_btn')}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
       )}
 
       {/* Cancellation Confirmation Dialog */}
