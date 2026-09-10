@@ -54,9 +54,11 @@ class AzureBlobStorageService:
         parsed = urlparse(blob_url)
         path = unquote(parsed.path).lstrip("/")
         
-        # If fallback mock URL: assets/mock-uploads/{blob_name}
+        # If local upload URL: /assets/uploads/{blob_name} or legacy /assets/mock-uploads/{blob_name}
         if "mock-uploads/" in path:
             return path.split("mock-uploads/", 1)[1]
+        if "assets/uploads/" in path:
+            return path.split("assets/uploads/", 1)[1]
 
         # Standard Azure path format: .../{container_name}/{blob_name}
         if f"{self.container_name}/" in path:
@@ -129,10 +131,25 @@ class AzureBlobStorageService:
             blob_name = f"{clean_prefix}/{filename}"
 
         if not self.is_configured:
-            logger.warning("Azure Storage not configured. Falling back to local/placeholder asset.")
-            mock_url = f"/assets/mock-uploads/{blob_name}"
+            # Azure Storage not configured — save to local volume served by Nginx.
+            # The /app/uploads directory is a Docker volume mounted into both
+            # the backend container (write) and the frontend/Nginx container (read).
+            local_path = f"/app/uploads/{blob_name}"
+            try:
+                import os
+                os.makedirs(os.path.dirname(local_path), exist_ok=True)
+                with open(local_path, "wb") as f:
+                    f.write(file_bytes)
+                logger.info(f"Saved local upload to {local_path}")
+            except Exception as e:
+                logger.error(f"Failed to save local upload to {local_path}: {e}")
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Failed to save uploaded file. Please try again.",
+                )
+            local_url = f"/assets/uploads/{blob_name}"
             return {
-                "url": mock_url,
+                "url": local_url,
                 "blob_name": blob_name,
                 "content_type": content_type,
                 "size": len(file_bytes),
@@ -288,7 +305,15 @@ class AzureBlobStorageService:
             )
 
         if not self.is_configured:
-            logger.info(f"Azure Storage not configured. Mock deleted blob: {blob_name}")
+            # Attempt to delete from local volume if it exists
+            local_path = f"/app/uploads/{blob_name}"
+            try:
+                import os
+                if os.path.exists(local_path):
+                    os.remove(local_path)
+                    logger.info(f"Deleted local upload: {local_path}")
+            except Exception as e:
+                logger.warning(f"Could not delete local upload {local_path}: {e}")
             return True
 
         container_client = self._get_container_client()

@@ -101,6 +101,8 @@ services:
       LOG_LEVEL: ${LOG_LEVEL:-info}
     ports:
       - "${BACKEND_PORT:-9000}:8000"
+    volumes:
+      - uploads_data:/app/uploads
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8000/api/v1/health || exit 1"]
       interval: 10s
@@ -129,6 +131,8 @@ services:
     restart: unless-stopped
     ports:
       - "${FRONTEND_PORT:-9080}:80"
+    volumes:
+      - uploads_data:/app/uploads:ro
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1/ > /dev/null || exit 1"]
       interval: 10s
@@ -148,6 +152,8 @@ volumes:
   postgres_data:
     driver: local
   redis_data:
+    driver: local
+  uploads_data:
     driver: local
 
 networks:
