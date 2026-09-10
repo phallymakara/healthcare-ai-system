@@ -4,7 +4,7 @@ import string
 from datetime import date
 from typing import List, Optional
 from fastapi import APIRouter, Depends, status, HTTPException, UploadFile, File
-from sqlalchemy import select, and_, or_, func, delete
+from sqlalchemy import select, and_, or_, func, delete, nullslast, nullsfirst
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -77,7 +77,9 @@ async def get_partner_dashboard(
         hospital_id = hosp.id
 
     hosp_res = await db.execute(select(Hospital).where(Hospital.id == hospital_id))
-    hospital = hosp_res.scalar_one()
+    hospital = hosp_res.scalar_one_or_none()
+    if not hospital:
+        raise HTTPException(status_code=404, detail="Hospital not found")
 
     # 2. Get real-time queue counts across all active tickets for this hospital
     waiting_res = await db.execute(
@@ -226,7 +228,12 @@ async def get_partner_dashboard(
     hourly_flow: List[HourlyFlowItem] = []
     for h in range(8, 19):
         hour_label = f"{h:02d}:00"
-        h_count = len([t for t in today_tickets if t.created_at.hour == h])
+        # Normalize timezone-aware datetimes to naive before reading .hour
+        h_count = len([
+            t for t in today_tickets
+            if t.created_at is not None
+            and t.created_at.replace(tzinfo=None).hour == h
+        ])
         hourly_flow.append(HourlyFlowItem(hour=hour_label, count=h_count))
 
     return PartnerDashboardMetricsResponse(
@@ -1178,9 +1185,10 @@ async def get_partner_bookings(
         )
 
     # Order by appointment_date, appointment_time, position, created_at
+    # Use standalone nullslast()/nullsfirst() functions — method chaining is unreliable across SQLAlchemy versions
     query = query.order_by(
-        Ticket.appointment_date.desc().nullslast(),
-        Ticket.appointment_time.asc().nullslast(),
+        nullslast(Ticket.appointment_date.desc()),
+        nullslast(Ticket.appointment_time.asc()),
         Ticket.created_at.desc(),
     )
 
