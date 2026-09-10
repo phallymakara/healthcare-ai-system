@@ -365,31 +365,6 @@ export const LiveTicketTracker: React.FC<LiveTicketTrackerProps> = ({
         <div>
           {/* Top Header & Guest Ticket Lookup Bar */}
           <div style={{ marginBottom: '1.6rem' }}>
-            <div style={{ marginBottom: '1.15rem' }}>
-              <h2
-                style={{
-                  fontSize: '1.45rem',
-                  fontWeight: 700,
-                  color: 'var(--text-main)',
-                  margin: '0 0 0.35rem 0',
-                  fontFamily: kmFont,
-                }}
-              >
-                {t('appt_list_title')}
-              </h2>
-              <p
-                style={{
-                  fontSize: '0.92rem',
-                  color: 'var(--text-muted)',
-                  margin: 0,
-                  lineHeight: 1.5,
-                  fontFamily: kmFont,
-                }}
-              >
-                {t('appt_list_desc')}
-              </p>
-            </div>
-
             {/* Guest Ticket Lookup Form under header text with balanced width */}
             <form
               onSubmit={handleLookupSubmit}

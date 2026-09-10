@@ -20,7 +20,7 @@ import { UserProfile, AuthService } from '../services/auth';
 import { useLanguage } from '../context/LanguageContext';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { API_BASE } from '../services/api';
-import prosethLogo from '../assets/ProsethBot.svg';
+import prosethLogo from '../assets/ProsethBot.png';
 
 export type NavTab = 
   | 'landing'

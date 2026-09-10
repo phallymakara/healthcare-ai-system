@@ -17,6 +17,11 @@ const LANGUAGE_STORAGE_KEY = 'health_ai_language';
 
 export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<Language>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const urlLang = params.get('lang')?.toLowerCase();
+      if (urlLang === 'km' || urlLang === 'en') return urlLang;
+    }
     const saved = localStorage.getItem(LANGUAGE_STORAGE_KEY);
     return (saved === 'km' || saved === 'en') ? saved : 'en';
   });

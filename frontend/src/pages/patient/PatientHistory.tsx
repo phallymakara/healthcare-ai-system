@@ -401,31 +401,6 @@ export const PatientHistory: React.FC<PatientHistoryProps> = ({
         <div>
           {/* Header & Search Bar Placed Directly Underneath */}
           <div style={{ marginBottom: '1.6rem' }}>
-            <div style={{ marginBottom: '1.15rem' }}>
-              <h2
-                style={{
-                  fontSize: '1.45rem',
-                  fontWeight: 700,
-                  color: 'var(--text-main)',
-                  margin: '0 0 0.35rem 0',
-                  fontFamily: kmFont,
-                }}
-              >
-                {t('history_tab_title')}
-              </h2>
-              <p
-                style={{
-                  fontSize: '0.92rem',
-                  color: 'var(--text-muted)',
-                  margin: 0,
-                  lineHeight: 1.5,
-                  fontFamily: kmFont,
-                }}
-              >
-                {t('history_tab_desc')}
-              </p>
-            </div>
-
             {/* Search Input Underneath Text */}
             <form
               onSubmit={handleSearchSubmit}

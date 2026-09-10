@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { LogIn, LogOut, User, Bell, X, Menu } from 'lucide-react';
+import { LogIn, LogOut, User, Bell, X, Menu, ArrowRight } from 'lucide-react';
 import { UserProfile } from '../services/auth';
 import { useLanguage } from '../context/LanguageContext';
 import { LanguageSwitcher } from './LanguageSwitcher';
-import prosethLogo from '../assets/ProsethBot.svg';
+import prosethLogo from '../assets/ProsethBot.png';
 
 export type NavTab = 
   | 'landing'
@@ -52,35 +52,170 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Brand Logo - Navigates to Landing page (Left) */}
         <div className="header-brand">
           <button 
-            onClick={() => onSelectTab('patient_triage')} 
+            onClick={() => onSelectTab('landing')} 
             className="brand-logo"
-            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+            style={{ 
+              background: 'none', 
+              border: 'none', 
+              cursor: 'pointer', 
+              padding: '2px 4px', 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '10px',
+              borderRadius: '10px',
+              transition: 'transform 0.18s ease',
+            }}
           >
             <img 
               src={prosethLogo} 
-              alt="Proseth Logo" 
-              style={{ height: '40px', width: 'auto', objectFit: 'contain' }} 
+              alt="Proseth Healthcare AI" 
+              style={{ 
+                height: '38px', 
+                width: 'auto', 
+                maxHeight: '38px',
+                objectFit: 'contain', 
+                flexShrink: 0,
+                filter: 'drop-shadow(0 2px 5px rgba(24, 83, 57, 0.15))',
+                display: 'block',
+              }} 
             />
-            <div style={{ display: 'flex', alignItems: 'baseline' }}>
-              <span style={{ fontSize: '1.22rem', fontWeight: 800 }}>{t('app_title')}</span>
-              <span style={{ fontSize: '0.85rem', color: 'var(--accent-primary)', marginLeft: '6px', fontWeight: 700 }}>{t('app_subtitle')}</span>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <span style={{ 
+                fontSize: '1.22rem', 
+                fontWeight: 800, 
+                color: 'var(--text-main)', 
+                letterSpacing: '-0.01em',
+                lineHeight: 1.2,
+                fontFamily: 'var(--font-khmer), sans-serif',
+              }}>
+                {t('app_title')}
+              </span>
             </div>
           </button>
         </div>
 
         {/* Navigation Links shown on Desktop (Center) */}
-        <nav className="header-nav">
-          {/* Patient / Public Navigation */}
-          {(!currentUser || isPatient) && (
+        <nav className="header-nav" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          {/* Public Landing Navigation matching mockup */}
+          {!currentUser && (
             <>
               <button
                 onClick={() => {
-                  if (activeTab === 'landing' || !currentUser) {
-                    document.getElementById('patient-features')?.scrollIntoView({ behavior: 'smooth' });
-                  } else {
-                    onSelectTab('patient_triage');
-                  }
+                  const el = document.getElementById('hospital-features');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                  else onSelectTab('patient_discovery');
                 }}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  borderRadius: 'var(--radius-full)',
+                  color: 'var(--text-main)',
+                  fontWeight: 700,
+                  padding: '0.35rem 0.95rem',
+                  fontSize: '1.05rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = '#185339';
+                  e.currentTarget.style.backgroundColor = 'rgba(24, 83, 57, 0.08)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = 'var(--text-main)';
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }}
+              >
+                {t('nav_clinics_dept')}
+              </button>
+
+              <button
+                onClick={() => {
+                  const el = document.getElementById('patient-features');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  borderRadius: 'var(--radius-full)',
+                  color: 'var(--text-main)',
+                  fontWeight: 700,
+                  padding: '0.35rem 0.95rem',
+                  fontSize: '1.05rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = '#185339';
+                  e.currentTarget.style.backgroundColor = 'rgba(24, 83, 57, 0.08)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = 'var(--text-main)';
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }}
+              >
+                {t('nav_features_why')}
+              </button>
+
+              <button
+                onClick={() => {
+                  const el = document.getElementById('how-it-works');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  borderRadius: 'var(--radius-full)',
+                  color: 'var(--text-main)',
+                  fontWeight: 700,
+                  padding: '0.35rem 0.95rem',
+                  fontSize: '1.05rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = '#185339';
+                  e.currentTarget.style.backgroundColor = 'rgba(24, 83, 57, 0.08)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = 'var(--text-main)';
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }}
+              >
+                {t('nav_case_studies')}
+              </button>
+
+              <button
+                onClick={() => onSelectTab('patient_triage')}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  borderRadius: 'var(--radius-full)',
+                  color: 'var(--text-main)',
+                  fontWeight: 700,
+                  padding: '0.35rem 0.95rem',
+                  fontSize: '1.05rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = '#185339';
+                  e.currentTarget.style.backgroundColor = 'rgba(24, 83, 57, 0.08)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = 'var(--text-main)';
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }}
+              >
+                {t('nav_ai_assistant')}
+              </button>
+            </>
+          )}
+
+          {/* Logged in Patient Navigation */}
+          {isPatient && (
+            <>
+              <button
+                onClick={() => onSelectTab('patient_triage')}
                 style={{
                   background: activeTab === 'patient_triage' ? 'var(--accent-primary)' : 'transparent',
                   border: 'none',
@@ -97,13 +232,7 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
 
               <button
-                onClick={() => {
-                  if (activeTab === 'landing' || !currentUser) {
-                    document.getElementById('hospital-features')?.scrollIntoView({ behavior: 'smooth' });
-                  } else {
-                    onSelectTab('patient_discovery');
-                  }
-                }}
+                onClick={() => onSelectTab('patient_discovery')}
                 style={{
                   background: activeTab === 'patient_discovery' ? 'var(--accent-primary)' : 'transparent',
                   border: 'none',
@@ -119,43 +248,39 @@ export const Header: React.FC<HeaderProps> = ({
                 {t('nav_hospitals')}
               </button>
 
-              {isPatient && (
-                <>
-                  <button
-                    onClick={() => onSelectTab('patient_live_ticket')}
-                    style={{
-                      background: activeTab === 'patient_live_ticket' ? 'var(--accent-primary)' : 'transparent',
-                      border: 'none',
-                      borderRadius: 'var(--radius-full)',
-                      color: activeTab === 'patient_live_ticket' ? '#ffffff' : 'var(--text-muted)',
-                      fontWeight: activeTab === 'patient_live_ticket' ? 700 : 500,
-                      padding: '0.45rem 1.05rem',
-                      fontSize: '0.96rem',
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease',
-                    }}
-                  >
-                    {t('nav_live_queue')}
-                  </button>
+              <button
+                onClick={() => onSelectTab('patient_live_ticket')}
+                style={{
+                  background: activeTab === 'patient_live_ticket' ? 'var(--accent-primary)' : 'transparent',
+                  border: 'none',
+                  borderRadius: 'var(--radius-full)',
+                  color: activeTab === 'patient_live_ticket' ? '#ffffff' : 'var(--text-muted)',
+                  fontWeight: activeTab === 'patient_live_ticket' ? 700 : 500,
+                  padding: '0.45rem 1.05rem',
+                  fontSize: '0.96rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                {t('nav_live_queue')}
+              </button>
 
-                  <button
-                    onClick={() => onSelectTab('patient_history')}
-                    style={{
-                      background: activeTab === 'patient_history' ? 'var(--accent-primary)' : 'transparent',
-                      border: 'none',
-                      borderRadius: 'var(--radius-full)',
-                      color: activeTab === 'patient_history' ? '#ffffff' : 'var(--text-muted)',
-                      fontWeight: activeTab === 'patient_history' ? 700 : 500,
-                      padding: '0.45rem 1.05rem',
-                      fontSize: '0.96rem',
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease',
-                    }}
-                  >
-                    {t('nav_history')}
-                  </button>
-                </>
-              )}
+              <button
+                onClick={() => onSelectTab('patient_history')}
+                style={{
+                  background: activeTab === 'patient_history' ? 'var(--accent-primary)' : 'transparent',
+                  border: 'none',
+                  borderRadius: 'var(--radius-full)',
+                  color: activeTab === 'patient_history' ? '#ffffff' : 'var(--text-muted)',
+                  fontWeight: activeTab === 'patient_history' ? 700 : 500,
+                  padding: '0.45rem 1.05rem',
+                  fontSize: '0.96rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                {t('nav_history')}
+              </button>
             </>
           )}
 
@@ -424,8 +549,26 @@ export const Header: React.FC<HeaderProps> = ({
               )}
             </div>
           ) : (
-            <button onClick={onOpenAuth} className="btn btn-primary" style={{ padding: '0.55rem 1.25rem', fontSize: '0.98rem' }}>
-              <LogIn size={17} /> {t('sign_in')}
+            <button 
+              onClick={onOpenAuth} 
+              style={{
+                background: 'linear-gradient(135deg, #0c2f27 0%, #185339 50%, #227349 100%)',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: 'var(--radius-full)',
+                padding: '0.45rem 1.25rem',
+                fontSize: '0.94rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: '0 4px 14px rgba(12, 47, 39, 0.2)',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <span>{t('nav_register_signin')}</span>
+              <ArrowRight size={16} />
             </button>
           )}
 

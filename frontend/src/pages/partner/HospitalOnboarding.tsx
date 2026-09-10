@@ -12,7 +12,7 @@ import {
 import { AuthService, UserProfile } from '../../services/auth';
 import { API_BASE } from '../../services/api';
 import { useLanguage } from '../../context/LanguageContext';
-import prosethLogo from '../../assets/ProsethBot.svg';
+import prosethLogo from '../../assets/ProsethBot.png';
 
 interface HospitalOnboardingProps {
   currentUser: UserProfile;
