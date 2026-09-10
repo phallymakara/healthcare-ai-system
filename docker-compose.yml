@@ -122,6 +122,9 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        VITE_PATIENT_URL: ${VITE_PATIENT_URL}
+        VITE_PARTNER_URL: ${VITE_PARTNER_URL}
     container_name: healthcare_frontend
     restart: unless-stopped
     ports:
