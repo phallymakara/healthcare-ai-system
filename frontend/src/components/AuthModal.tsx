@@ -515,7 +515,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
               if (onOpenHospitalPortal) {
                 onOpenHospitalPortal();
               } else {
-                window.location.search = '?portal=partner';
+                // Redirect to the partner portal domain
+                const partnerUrl = import.meta.env.VITE_PARTNER_URL || '';
+                if (partnerUrl) {
+                  window.location.href = partnerUrl;
+                } else {
+                  // Fallback for local dev without env var set
+                  window.location.search = '?portal=partner';
+                }
               }
             }}
             style={{

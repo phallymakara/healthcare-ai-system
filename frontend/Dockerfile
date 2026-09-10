@@ -11,11 +11,16 @@ COPY package.json package-lock.json ./
 # Install dependencies
 RUN npm ci --silent
 
-# Optional build arguments for custom API/WebSocket URLs if needed
-ARG VITE_API_BASE_URL=""
-ARG VITE_WS_BASE_URL=""
+# Build arguments — pass these explicitly at docker build time via --build-arg.
+# No defaults are hardcoded here; values must be supplied per environment.
+ARG VITE_API_BASE_URL
+ARG VITE_WS_BASE_URL
+ARG VITE_PARTNER_URL
+ARG VITE_PATIENT_URL
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 ENV VITE_WS_BASE_URL=$VITE_WS_BASE_URL
+ENV VITE_PARTNER_URL=$VITE_PARTNER_URL
+ENV VITE_PATIENT_URL=$VITE_PATIENT_URL
 
 # Copy source code
 COPY . .
