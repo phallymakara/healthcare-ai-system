@@ -158,7 +158,6 @@ jobs:
 
     environment:
       name: production
-      url: ${{ secrets.PRODUCTION_URL }}
 
     steps:
       - name: Deploy via SSH
