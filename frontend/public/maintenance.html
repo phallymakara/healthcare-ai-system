@@ -1,27 +1,20 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="km">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>System Maintenance — Healthcare AI System</title>
+  <title>Server Under Maintenance — ម៉ាស៊ីនមេកំពុងស្ថិតក្រោមការថែទាំ</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
     :root {
       --font-main: 'Kantumruy Pro', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       --bg-primary: #ffffff;
-      --bg-secondary: #f8fafc;
-      --border-color: #e2e8f0;
       --text-main: #0f172a;
       --text-muted: #475569;
       --text-dim: #64748b;
       --accent-primary: #185339;
-      --accent-primary-hover: #0c2f27;
-      --accent-amber: #d97706;
-      --radius-sm: 6px;
-      --radius-md: 8px;
-      --radius-full: 9999px;
     }
 
     *, *::before, *::after {
@@ -39,259 +32,126 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 24px 16px;
-      line-height: 1.5;
+      text-align: center;
+      padding: 2rem 1.5rem;
+      line-height: 1.6;
     }
 
-    .maintenance-wrapper {
+    .maintenance-content {
+      max-width: 580px;
       width: 100%;
-      max-width: 560px;
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-md);
-      background-color: var(--bg-primary);
-      padding: 36px 32px;
-    }
-
-    .brand-header {
       display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: 12px;
-      margin-bottom: 24px;
     }
 
     .brand-logo {
-      height: 38px;
+      height: 64px;
       width: auto;
       object-fit: contain;
+      margin-bottom: 2rem;
     }
 
-    .brand-title {
-      font-size: 1.15rem;
+    /* Big Text: Server Under Maintenance (Khmer on top, English below) */
+    .title-km {
+      font-size: 1.85rem;
       font-weight: 700;
       color: var(--text-main);
-      line-height: 1.2;
+      line-height: 1.35;
+      margin-bottom: 0.35rem;
     }
 
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 3px 10px;
-      border-radius: var(--radius-full);
-      border: 1px solid var(--border-color);
-      background-color: var(--bg-secondary);
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--accent-amber);
-      margin-bottom: 16px;
-    }
-
-    .badge-dot {
-      width: 6px;
-      height: 6px;
-      background-color: var(--accent-amber);
-      border-radius: var(--radius-full);
-    }
-
-    h1 {
-      font-size: 1.5rem;
+    .title-en {
+      font-size: 1.45rem;
       font-weight: 700;
       color: var(--text-main);
-      margin-bottom: 8px;
-      letter-spacing: -0.01em;
+      line-height: 1.3;
+      margin-bottom: 1.5rem;
     }
 
-    p.description {
-      font-size: 0.95rem;
+    /* Normal Text: We will be back soon (Khmer on top, English below) */
+    .subtitle-km {
+      font-size: 1.1rem;
+      font-weight: 500;
       color: var(--text-muted);
-      line-height: 1.6;
-      margin-bottom: 24px;
+      line-height: 1.5;
+      margin-bottom: 0.25rem;
     }
 
-    .status-rows {
-      border-top: 1px solid var(--border-color);
-      border-bottom: 1px solid var(--border-color);
-      padding: 16px 0;
-      margin-bottom: 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
+    .subtitle-en {
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin-bottom: 2rem;
     }
 
-    .status-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 0.88rem;
+    /* Countdown timer */
+    .countdown-km {
+      font-size: 0.95rem;
+      color: var(--text-dim);
+      font-weight: 500;
+      margin-bottom: 0.25rem;
     }
 
-    .status-label {
+    .countdown-en {
+      font-size: 0.9rem;
       color: var(--text-dim);
       font-weight: 500;
     }
 
-    .status-value {
-      color: var(--text-main);
-      font-weight: 600;
-    }
-
-    .action-row {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      margin-bottom: 24px;
-      flex-wrap: wrap;
-    }
-
-    .btn-action {
-      background-color: var(--accent-primary);
-      color: #ffffff;
-      font-family: inherit;
-      font-size: 0.9rem;
-      font-weight: 600;
-      padding: 8px 18px;
-      border-radius: var(--radius-sm);
-      border: none;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      transition: background-color 0.15s ease;
-    }
-
-    .btn-action:hover {
-      background-color: var(--accent-primary-hover);
-    }
-
-    .btn-action:disabled {
-      opacity: 0.65;
-      cursor: not-allowed;
-    }
-
-    .countdown {
-      font-size: 0.85rem;
-      color: var(--text-dim);
-    }
-
-    .emergency-box {
-      border-top: 1px solid var(--border-color);
-      padding-top: 18px;
-      font-size: 0.82rem;
-      color: var(--text-dim);
-      line-height: 1.5;
-    }
-
-    .emergency-title {
-      font-weight: 600;
-      color: var(--text-main);
-      margin-bottom: 4px;
-    }
-
-    .footer-note {
-      margin-top: 20px;
-      font-size: 0.75rem;
-      color: var(--text-dim);
-      text-align: center;
+    .countdown-number {
+      font-weight: 700;
+      color: var(--accent-primary);
     }
   </style>
 </head>
 <body>
-  <div class="maintenance-wrapper">
-    <div class="brand-header">
-      <img src="/assets/ProsethBot.png" alt="Proseth Healthcare AI" class="brand-logo" onerror="this.style.display='none'" />
-      <div class="brand-title">Healthcare AI System</div>
+  <div class="maintenance-content">
+    <img src="/assets/ProsethBot.png" alt="Proseth Healthcare AI" class="brand-logo" onerror="this.style.display='none'" />
+
+    <!-- Big Text: Server Under Maintenance -->
+    <h1 class="title-km">ម៉ាស៊ីនមេកំពុងស្ថិតក្រោមការថែទាំ</h1>
+    <div class="title-en">Server Under Maintenance</div>
+
+    <!-- Normal Text: We will be back soon -->
+    <p class="subtitle-km">យើងនឹងត្រឡប់មកវិញក្នុងពេលឆាប់ៗនេះ</p>
+    <p class="subtitle-en">We will be back soon</p>
+
+    <!-- Countdown Timer -->
+    <div class="countdown-km">
+      ពិនិត្យឡើងវិញដោយស្វ័យប្រវត្តិក្នុ​ងរយៈពេល <span class="countdown-number" id="timerKm">10</span> វិនាទី
     </div>
-
-    <div class="badge">
-      <span class="badge-dot"></span>
-      System Maintenance & Upgrades
+    <div class="countdown-en">
+      Auto-refreshing in <span class="countdown-number" id="timerEn">10</span> seconds
     </div>
-
-    <h1>We'll be right back</h1>
-    <p class="description">
-      Our healthcare system is currently undergoing scheduled maintenance or system updates to improve patient services and security. All patient data remains safe and preserved.
-    </p>
-
-    <div class="status-rows">
-      <div class="status-row">
-        <span class="status-label">Current Status</span>
-        <span class="status-value" id="statusValue">Upgrading Services...</span>
-      </div>
-      <div class="status-row">
-        <span class="status-label">Expected Resolution</span>
-        <span class="status-value">A few minutes</span>
-      </div>
-    </div>
-
-    <div class="action-row">
-      <button class="btn-action" id="checkBtn" onclick="checkStatusNow()">
-        Check Server Status
-      </button>
-      <span class="countdown">
-        Auto-checking in <strong id="timerText" style="color: var(--text-main);">10</strong> seconds
-      </span>
-    </div>
-
-    <div class="emergency-box">
-      <div class="emergency-title">Immediate Medical Emergency?</div>
-      <div>
-        If you require urgent medical assistance, please dial <strong>119</strong> (Cambodia National Emergency) or visit your nearest hospital emergency department immediately.
-      </div>
-    </div>
-  </div>
-
-  <div class="footer-note">
-    Healthcare AI System &bull; National Hospital & Clinic Network
   </div>
 
   <script>
-    var countdownSeconds = 10;
-    var timerElement = document.getElementById('timerText');
-    var statusElement = document.getElementById('statusValue');
-    var checkBtn = document.getElementById('checkBtn');
+    var seconds = 10;
+    var timerKm = document.getElementById('timerKm');
+    var timerEn = document.getElementById('timerEn');
 
-    function checkStatusNow() {
-      if (checkBtn) {
-        checkBtn.disabled = true;
-        checkBtn.textContent = 'Checking...';
-      }
+    function checkServer() {
       fetch('/api/v1/health', { cache: 'no-store' })
         .then(function(res) {
           if (res.ok) {
-            if (statusElement) {
-              statusElement.textContent = 'Online — Refreshing...';
-              statusElement.style.color = '#059669';
-            }
-            setTimeout(function() {
-              window.location.reload();
-            }, 600);
-            return;
+            window.location.reload();
+          } else {
+            seconds = 10;
           }
-          resetButton();
         })
         .catch(function() {
-          resetButton();
+          seconds = 10;
         });
     }
 
-    function resetButton() {
-      if (checkBtn) {
-        checkBtn.disabled = false;
-        checkBtn.textContent = 'Check Server Status';
-      }
-      countdownSeconds = 10;
-      if (timerElement) {
-        timerElement.textContent = countdownSeconds;
-      }
-    }
-
     setInterval(function() {
-      countdownSeconds--;
-      if (timerElement) {
-        timerElement.textContent = countdownSeconds;
-      }
-      if (countdownSeconds <= 0) {
-        checkStatusNow();
+      seconds--;
+      if (timerKm) timerKm.textContent = seconds;
+      if (timerEn) timerEn.textContent = seconds;
+      if (seconds <= 0) {
+        checkServer();
       }
     }, 1000);
   </script>

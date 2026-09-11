@@ -83,13 +83,15 @@ export const MaintenanceBanner: React.FC<MaintenanceBannerProps> = ({ checkInter
         color: 'var(--text-main)',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 }}>
-        <AlertTriangle size={15} style={{ color: 'var(--accent-amber)', flexShrink: 0 }} />
-        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.25rem 0.5rem' }}>
-          <strong style={{ color: 'var(--text-main)', fontWeight: 600 }}>System Notice:</strong>
-          <span style={{ color: 'var(--text-muted)' }}>
-            The server is currently undergoing maintenance or updates. Reconnecting automatically...
-          </span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0 }}>
+        <AlertTriangle size={16} style={{ color: 'var(--accent-amber)', flexShrink: 0 }} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+          <div style={{ color: 'var(--text-main)', fontSize: '0.88rem', fontWeight: 600, lineHeight: 1.3 }}>
+            ម៉ាស៊ីនមេកំពុងស្ថិតក្រោមការថែទាំ — យើងនឹងត្រឡប់មកវិញក្នុងពេលឆាប់ៗនេះ
+          </div>
+          <div style={{ color: 'var(--text-muted)', fontSize: '0.78rem', lineHeight: 1.3 }}>
+            Server Under Maintenance — We will be back soon
+          </div>
         </div>
       </div>
 
