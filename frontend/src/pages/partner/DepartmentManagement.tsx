@@ -2,7 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { AuthService } from '../../services/auth';
 import { useLanguage } from '../../context/LanguageContext';
 import { API_BASE } from '../../services/api';
-import { useModalClose } from '../../hooks/useModalClose';
+import { DepartmentModal } from './departments/DepartmentModal';
+import { ServiceModal } from './departments/ServiceModal';
+import { DepartmentList } from './departments/DepartmentList';
+import { ServiceList } from './departments/ServiceList';
 
 export const DepartmentManagement: React.FC = () => {
   const { language, t } = useLanguage();
@@ -15,7 +18,6 @@ export const DepartmentManagement: React.FC = () => {
 
   // Department Modal State
   const [deptModalOpen, setDeptModalOpen] = useState(false);
-  const deptModal = useModalClose(deptModalOpen, setDeptModalOpen);
   const [editingDeptId, setEditingDeptId] = useState<string | null>(null);
   const [deptName, setDeptName] = useState('');
   const [deptCode, setDeptCode] = useState('');
@@ -31,7 +33,6 @@ export const DepartmentManagement: React.FC = () => {
 
   // Service Modal State
   const [srvModalOpen, setSrvModalOpen] = useState(false);
-  const srvModal = useModalClose(srvModalOpen, setSrvModalOpen);
   const [editingSrvId, setEditingSrvId] = useState<string | null>(null);
   const [srvDeptId, setSrvDeptId] = useState('');
   const [srvName, setSrvName] = useState('');
@@ -66,7 +67,7 @@ export const DepartmentManagement: React.FC = () => {
     loadData();
   }, []);
 
-  // Open Department Modal for New
+  // Department Handlers
   const handleOpenNewDept = () => {
     setEditingDeptId(null);
     setDeptName('');
@@ -81,7 +82,6 @@ export const DepartmentManagement: React.FC = () => {
     setDeptModalOpen(true);
   };
 
-  // Open Department Modal for Edit
   const handleOpenEditDept = (dept: any) => {
     setEditingDeptId(dept.id);
     setDeptName(dept.name);
@@ -96,7 +96,6 @@ export const DepartmentManagement: React.FC = () => {
     setDeptModalOpen(true);
   };
 
-  // Save Department (Create or Update)
   const handleSaveDepartment = async (e: React.FormEvent) => {
     e.preventDefault();
     setDeptNameError(null);
@@ -140,7 +139,7 @@ export const DepartmentManagement: React.FC = () => {
         return;
       }
 
-      deptModal.close();
+      setDeptModalOpen(false);
       await loadData();
     } catch {
       setDeptSubmitError(t('dept_err_conn'));
@@ -149,7 +148,6 @@ export const DepartmentManagement: React.FC = () => {
     }
   };
 
-  // Toggle Active Status
   const handleToggleActive = async (dept: any) => {
     setActiveDropdownDeptId(null);
     try {
@@ -164,7 +162,6 @@ export const DepartmentManagement: React.FC = () => {
     }
   };
 
-  // Delete Department
   const handleDeleteDept = async (deptId: string) => {
     setActiveDropdownDeptId(null);
     try {
@@ -178,7 +175,7 @@ export const DepartmentManagement: React.FC = () => {
     }
   };
 
-  // Open Service Modal for New
+  // Service Handlers
   const handleOpenNewService = () => {
     setEditingSrvId(null);
     setSrvDeptId(departments.length > 0 ? departments[0].id : '');
@@ -193,7 +190,6 @@ export const DepartmentManagement: React.FC = () => {
     setSrvModalOpen(true);
   };
 
-  // Open Service Modal for Edit
   const handleOpenEditService = (srv: any) => {
     setEditingSrvId(srv.id);
     setSrvDeptId(srv.department_id);
@@ -208,7 +204,6 @@ export const DepartmentManagement: React.FC = () => {
     setSrvModalOpen(true);
   };
 
-  // Save Service (Create or Update)
   const handleSaveService = async (e: React.FormEvent) => {
     e.preventDefault();
     setSrvNameError(null);
@@ -252,7 +247,7 @@ export const DepartmentManagement: React.FC = () => {
         return;
       }
 
-      srvModal.close();
+      setSrvModalOpen(false);
       await loadData();
     } catch {
       setSrvSubmitError(t('dept_srv_err_conn'));
@@ -261,7 +256,6 @@ export const DepartmentManagement: React.FC = () => {
     }
   };
 
-  // Toggle Service Active Status
   const handleToggleActiveService = async (srv: any) => {
     setActiveDropdownSrvId(null);
     try {
@@ -276,7 +270,6 @@ export const DepartmentManagement: React.FC = () => {
     }
   };
 
-  // Delete Service
   const handleDeleteService = async (srvId: string) => {
     setActiveDropdownSrvId(null);
     try {
@@ -399,806 +392,74 @@ export const DepartmentManagement: React.FC = () => {
           {t('dept_loading')}
         </div>
       ) : activeTab === 'departments' ? (
-        /* Tab 1: Clinical Departments */
-        departments.length === 0 ? (
-          <div
-            style={{
-              minHeight: '55vh',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '2rem',
-              textAlign: 'center',
-              color: 'var(--text-muted)',
-              fontSize: '1rem',
-              fontFamily: kmFont,
-            }}
-          >
-            {t('dept_no_depts')}
-          </div>
-        ) : (
-          <div style={{
-            background: 'transparent',
-            border: 'none',
-            borderRadius: 0,
-            boxShadow: 'none',
-            overflow: 'visible',
-          }}>
-                {departments.map((dept) => (
-                  <div
-                    key={dept.id}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      flexWrap: 'wrap',
-                      gap: '1rem',
-                      padding: '1.1rem 0',
-                      borderBottom: '1px solid var(--border-color)',
-                      background: 'transparent',
-                      position: 'relative',
-                      zIndex: activeDropdownDeptId === dept.id ? 50 : 1,
-                    }}
-                  >
-                    {/* Department Name & Code */}
-                    <div style={{ minWidth: '220px', flex: '1.5' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                        <div style={{ fontSize: '1.18rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: kmFont }}>
-                          {dept.name}
-                        </div>
-                        <span style={{
-                          fontSize: '0.9rem',
-                          fontFamily: 'monospace',
-                          fontWeight: 600,
-                          color: 'var(--text-muted)',
-                        }}>
-                          {dept.code || 'DEPT'}
-                        </span>
-                      </div>
-                      {dept.description && (
-                        <div style={{ fontSize: '0.95rem', color: 'var(--text-muted)', marginTop: '3px', fontFamily: kmFont }}>
-                          {dept.description}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Location */}
-                    <div style={{ minWidth: '180px', flex: '1' }}>
-                      <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, fontFamily: kmFont }}>
-                        {t('dept_th_location')}
-                      </div>
-                      <div style={{ fontSize: '1.02rem', color: 'var(--text-main)', marginTop: '2px', fontFamily: kmFont }}>
-                        {dept.floor_room || t('dept_main_building')}
-                      </div>
-                    </div>
-
-                    {/* Consultation Duration */}
-                    <div style={{ minWidth: '140px', flex: '0.8' }}>
-                      <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, fontFamily: kmFont }}>
-                        {t('dept_th_duration')}
-                      </div>
-                      <div style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-main)', marginTop: '2px', fontFamily: kmFont }}>
-                        {t('dept_mins').replace('{mins}', String(dept.avg_consultation_minutes || 15))}
-                      </div>
-                    </div>
-
-                    {/* Actions: Three-dot dropdown menu */}
-                    <div style={{ position: 'relative', zIndex: activeDropdownDeptId === dept.id ? 60 : 'auto' }}>
-                      <button
-                        onClick={() => setActiveDropdownDeptId(activeDropdownDeptId === dept.id ? null : dept.id)}
-                        style={{
-                          width: '32px',
-                          height: '32px',
-                          padding: 0,
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '1.2rem',
-                          fontWeight: 700,
-                          letterSpacing: '1px',
-                          background: 'transparent',
-                          border: '1px solid var(--border-color)',
-                          borderRadius: '4px',
-                          color: 'var(--text-main)',
-                          cursor: 'pointer',
-                          boxShadow: 'none',
-                          lineHeight: 1,
-                        }}
-                      >
-                        ···
-                      </button>
-
-                      {activeDropdownDeptId === dept.id && (
-                        <>
-                          <div
-                            onClick={() => setActiveDropdownDeptId(null)}
-                            style={{
-                              position: 'fixed',
-                              inset: 0,
-                              zIndex: 99,
-                              background: 'transparent',
-                            }}
-                          />
-                          <div style={{
-                            position: 'absolute',
-                            right: 0,
-                            top: 'calc(100% + 4px)',
-                            background: 'var(--bg-primary, #ffffff)',
-                            border: 'none',
-                            borderRadius: 0,
-                            display: 'flex',
-                            flexDirection: 'column',
-                            minWidth: '110px',
-                            zIndex: 100,
-                            boxShadow: 'none',
-                          }}>
-                            <button
-                              onClick={() => handleToggleActive(dept)}
-                              onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
-                              onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
-                              style={{
-                                padding: '0.45rem 0.75rem',
-                                fontSize: '0.92rem',
-                                fontWeight: 500,
-                                textAlign: 'left',
-                                background: 'transparent',
-                                border: 'none',
-                                color: dept.is_active ? '#059669' : 'var(--text-muted)',
-                                cursor: 'pointer',
-                                boxShadow: 'none',
-                                fontFamily: kmFont,
-                                transition: 'opacity 0.15s ease',
-                              }}
-                            >
-                              {dept.is_active ? t('doc_active') : t('doc_inactive')}
-                            </button>
-                            <button
-                              onClick={() => {
-                                setActiveDropdownDeptId(null);
-                                handleOpenEditDept(dept);
-                              }}
-                              onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
-                              onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
-                              style={{
-                                padding: '0.45rem 0.75rem',
-                                fontSize: '0.92rem',
-                                fontWeight: 500,
-                                textAlign: 'left',
-                                background: 'transparent',
-                                border: 'none',
-                                color: 'var(--text-main)',
-                                cursor: 'pointer',
-                                boxShadow: 'none',
-                                fontFamily: kmFont,
-                                transition: 'opacity 0.15s ease',
-                              }}
-                            >
-                              {t('doc_edit')}
-                            </button>
-                            <button
-                              onClick={() => handleDeleteDept(dept.id)}
-                              onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
-                              onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
-                              style={{
-                                padding: '0.45rem 0.75rem',
-                                fontSize: '0.92rem',
-                                fontWeight: 500,
-                                textAlign: 'left',
-                                background: 'transparent',
-                                border: 'none',
-                                color: '#dc2626',
-                                cursor: 'pointer',
-                                boxShadow: 'none',
-                                fontFamily: kmFont,
-                                transition: 'opacity 0.15s ease',
-                              }}
-                            >
-                              {t('doc_delete')}
-                            </button>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )
+        <DepartmentList
+          departments={departments}
+          activeDropdownDeptId={activeDropdownDeptId}
+          setActiveDropdownDeptId={setActiveDropdownDeptId}
+          onToggleActive={handleToggleActive}
+          onEdit={handleOpenEditDept}
+          onDelete={handleDeleteDept}
+        />
       ) : (
-        /* Tab 2: Services & Pricing */
-        services.length === 0 ? (
-          <div
-            style={{
-              minHeight: '55vh',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '2rem',
-              textAlign: 'center',
-              color: 'var(--text-muted)',
-              fontSize: '1rem',
-              fontFamily: kmFont,
-            }}
-          >
-            {t('dept_no_services')}
-          </div>
-        ) : (
-          <div style={{
-            background: 'transparent',
-            border: 'none',
-            borderRadius: 0,
-            boxShadow: 'none',
-            overflow: 'visible',
-          }}>
-                {services.map((srv) => {
-                  const parentDept = departments.find((d) => d.id === srv.department_id);
-                  return (
-                    <div
-                      key={srv.id}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        flexWrap: 'wrap',
-                        gap: '1rem',
-                        padding: '1.1rem 0',
-                        borderBottom: '1px solid var(--border-color)',
-                        background: 'transparent',
-                        position: 'relative',
-                        zIndex: activeDropdownSrvId === srv.id ? 50 : 1,
-                      }}
-                    >
-                      {/* Service Name & Description */}
-                      <div style={{ minWidth: '220px', flex: '1.5' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                          <div style={{ fontSize: '1.18rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: kmFont }}>
-                            {srv.name}
-                          </div>
-                          {!srv.is_active && (
-                            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', border: '1px solid var(--border-color)', borderRadius: '3px', padding: '1px 5px', fontWeight: 500 }}>
-                              {t('doc_inactive')}
-                            </span>
-                          )}
-                        </div>
-                        {srv.description && (
-                          <div style={{ fontSize: '0.95rem', color: 'var(--text-muted)', marginTop: '3px', fontFamily: kmFont }}>
-                            {srv.description}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Department */}
-                      <div style={{ minWidth: '180px', flex: '1' }}>
-                        <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, fontFamily: kmFont }}>
-                          {t('dept_srv_th_dept')}
-                        </div>
-                        <div style={{ fontSize: '1.02rem', color: 'var(--text-main)', marginTop: '2px', fontFamily: kmFont }}>
-                          {parentDept ? parentDept.name : t('doc_general')}
-                        </div>
-                      </div>
-
-                      {/* Duration */}
-                      <div style={{ minWidth: '120px', flex: '0.7' }}>
-                        <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, fontFamily: kmFont }}>
-                          {t('dept_srv_th_duration')}
-                        </div>
-                        <div style={{ fontSize: '1.05rem', color: 'var(--text-main)', marginTop: '2px', fontFamily: kmFont }}>
-                          {t('dept_mins').replace('{mins}', String(srv.duration_minutes || 20))}
-                        </div>
-                      </div>
-
-                      {/* Price */}
-                      <div style={{ minWidth: '100px', flex: '0.6' }}>
-                        <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, fontFamily: kmFont }}>
-                          {t('dept_srv_th_price')}
-                        </div>
-                        <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-main)', marginTop: '2px' }}>
-                          ${srv.price.toFixed(2)}
-                        </div>
-                      </div>
-
-                      {/* Actions: Three-dot dropdown menu */}
-                      <div style={{ position: 'relative', zIndex: activeDropdownSrvId === srv.id ? 60 : 'auto' }}>
-                        <button
-                          onClick={() => setActiveDropdownSrvId(activeDropdownSrvId === srv.id ? null : srv.id)}
-                          style={{
-                            width: '32px',
-                            height: '32px',
-                            padding: 0,
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '1.2rem',
-                            fontWeight: 700,
-                            letterSpacing: '1px',
-                            background: 'transparent',
-                            border: '1px solid var(--border-color)',
-                            borderRadius: '4px',
-                            color: 'var(--text-main)',
-                            cursor: 'pointer',
-                            boxShadow: 'none',
-                            lineHeight: 1,
-                          }}
-                        >
-                          ···
-                        </button>
-
-                        {activeDropdownSrvId === srv.id && (
-                          <>
-                            <div
-                              onClick={() => setActiveDropdownSrvId(null)}
-                              style={{
-                                position: 'fixed',
-                                inset: 0,
-                                zIndex: 99,
-                                background: 'transparent',
-                              }}
-                            />
-                            <div style={{
-                              position: 'absolute',
-                              right: 0,
-                              top: 'calc(100% + 4px)',
-                              background: 'var(--bg-primary, #ffffff)',
-                              border: 'none',
-                              borderRadius: 0,
-                              display: 'flex',
-                              flexDirection: 'column',
-                              minWidth: '110px',
-                              zIndex: 100,
-                              boxShadow: 'none',
-                            }}>
-                              <button
-                                onClick={() => handleToggleActiveService(srv)}
-                                onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
-                                onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
-                                style={{
-                                  padding: '0.45rem 0.75rem',
-                                  fontSize: '0.92rem',
-                                  fontWeight: 500,
-                                  textAlign: 'left',
-                                  background: 'transparent',
-                                  border: 'none',
-                                  color: srv.is_active ? '#059669' : 'var(--text-muted)',
-                                  cursor: 'pointer',
-                                  boxShadow: 'none',
-                                  fontFamily: kmFont,
-                                  transition: 'opacity 0.15s ease',
-                                }}
-                              >
-                                {srv.is_active ? t('doc_active') : t('doc_inactive')}
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setActiveDropdownSrvId(null);
-                                  handleOpenEditService(srv);
-                                }}
-                                onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
-                                onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
-                                style={{
-                                  padding: '0.45rem 0.75rem',
-                                  fontSize: '0.92rem',
-                                  fontWeight: 500,
-                                  textAlign: 'left',
-                                  background: 'transparent',
-                                  border: 'none',
-                                  color: 'var(--text-main)',
-                                  cursor: 'pointer',
-                                  boxShadow: 'none',
-                                  fontFamily: kmFont,
-                                  transition: 'opacity 0.15s ease',
-                                }}
-                              >
-                                {t('doc_edit')}
-                              </button>
-                              <button
-                                onClick={() => handleDeleteService(srv.id)}
-                                onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
-                                onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
-                                style={{
-                                  padding: '0.45rem 0.75rem',
-                                  fontSize: '0.92rem',
-                                  fontWeight: 500,
-                                  textAlign: 'left',
-                                  background: 'transparent',
-                                  border: 'none',
-                                  color: '#dc2626',
-                                  cursor: 'pointer',
-                                  boxShadow: 'none',
-                                  fontFamily: kmFont,
-                                  transition: 'opacity 0.15s ease',
-                                }}
-                              >
-                                {t('doc_delete')}
-                              </button>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )
+        <ServiceList
+          services={services}
+          departments={departments}
+          activeDropdownSrvId={activeDropdownSrvId}
+          setActiveDropdownSrvId={setActiveDropdownSrvId}
+          onToggleActive={handleToggleActiveService}
+          onEdit={handleOpenEditService}
+          onDelete={handleDeleteService}
+        />
       )}
 
       {/* Add / Edit Department Modal */}
-      {deptModal.shouldRender && (
-        <div className={deptModal.overlayClass} onClick={(e) => { if (e.target === e.currentTarget) deptModal.close(); }}>
-          <div className={deptModal.cardClass} style={{ maxWidth: '520px', fontFamily: kmFont }}>
-            <div className="responsive-modal-body" style={{ padding: '1.6rem 1.75rem' }}>
-              <h3 style={{ fontSize: '1.35rem', fontWeight: 700, margin: '0 0 1.4rem 0', color: 'var(--text-main)', fontFamily: kmFont }}>
-                {editingDeptId ? t('dept_modal_edit_dept') : t('dept_modal_add_dept')}
-              </h3>
-
-            <form onSubmit={handleSaveDepartment} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px', fontFamily: kmFont }}>
-                  {t('dept_name_label')}
-                </label>
-                <input
-                  type="text"
-                  placeholder={t('dept_name_placeholder')}
-                  value={deptName}
-                  onChange={(e) => {
-                    setDeptName(e.target.value);
-                    if (deptNameError) setDeptNameError(null);
-                  }}
-                  style={{
-                    width: '100%',
-                    padding: '0.65rem 1.15rem',
-                    fontSize: '0.98rem',
-                    borderRadius: 'var(--radius-full)',
-                    border: deptNameError ? '1px solid #dc2626' : '1px solid var(--border-color)',
-                    boxShadow: 'none',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                    fontFamily: kmFont,
-                  }}
-                />
-                {deptNameError && (
-                  <div style={{ color: '#dc2626', fontSize: '0.85rem', marginTop: '5px', fontFamily: kmFont }}>
-                    {deptNameError}
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px', fontFamily: kmFont }}>
-                  {t('dept_code_label')}
-                </label>
-                <input
-                  type="text"
-                  placeholder={t('dept_code_placeholder')}
-                  value={deptCode}
-                  onChange={(e) => {
-                    setDeptCode(e.target.value);
-                    if (deptCodeError) setDeptCodeError(null);
-                  }}
-                  style={{
-                    width: '100%',
-                    padding: '0.65rem 1.15rem',
-                    fontSize: '0.98rem',
-                    borderRadius: 'var(--radius-full)',
-                    border: deptCodeError ? '1px solid #dc2626' : '1px solid var(--border-color)',
-                    boxShadow: 'none',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                    fontFamily: kmFont,
-                  }}
-                />
-                {deptCodeError && (
-                  <div style={{ color: '#dc2626', fontSize: '0.85rem', marginTop: '5px', fontFamily: kmFont }}>
-                    {deptCodeError}
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px', fontFamily: kmFont }}>
-                  {t('dept_duration_label')}
-                </label>
-                <input
-                  type="number"
-                  min="5"
-                  max="120"
-                  value={deptMinutes}
-                  onChange={(e) => setDeptMinutes(Number(e.target.value))}
-                  style={{
-                    width: '100%',
-                    padding: '0.65rem 1.15rem',
-                    fontSize: '0.98rem',
-                    borderRadius: 'var(--radius-full)',
-                    border: '1px solid var(--border-color)',
-                    boxShadow: 'none',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                    fontFamily: kmFont,
-                  }}
-                />
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px', fontFamily: kmFont }}>
-                  {t('dept_duration_hint')}
-                </div>
-              </div>
-
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem' }}>
-                <input
-                  type="checkbox"
-                  id="deptActiveCheck"
-                  checked={deptIsActive}
-                  onChange={(e) => setDeptIsActive(e.target.checked)}
-                />
-                <label htmlFor="deptActiveCheck" style={{ fontSize: '0.9rem', color: 'var(--text-main)', cursor: 'pointer', fontFamily: kmFont }}>
-                  {t('dept_active_check')}
-                </label>
-              </div>
-
-              {deptSubmitError && (
-                <div style={{ color: '#dc2626', fontSize: '0.85rem', fontFamily: kmFont }}>
-                  {deptSubmitError}
-                </div>
-              )}
-
-              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.75rem' }}>
-                <button
-                  type="button"
-                  onClick={deptModal.close}
-                  style={{
-                    flex: 1,
-                    padding: '0.7rem 1.25rem',
-                    fontSize: '0.98rem',
-                    fontWeight: 500,
-                    background: 'transparent',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: 'var(--radius-full)',
-                    color: 'var(--text-muted)',
-                    cursor: 'pointer',
-                    boxShadow: 'none',
-                    fontFamily: kmFont,
-                  }}
-                >
-                  {t('cancel')}
-                </button>
-                <button
-                  type="submit"
-                  disabled={deptLoading}
-                  style={{
-                    flex: 1,
-                    padding: '0.7rem 1.25rem',
-                    fontSize: '0.98rem',
-                    fontWeight: 600,
-                    background: 'transparent',
-                    border: '1px solid var(--text-main)',
-                    borderRadius: 'var(--radius-full)',
-                    color: 'var(--text-main)',
-                    cursor: 'pointer',
-                    boxShadow: 'none',
-                    fontFamily: kmFont,
-                  }}
-                >
-                  {editingDeptId ? t('dept_save_btn') : t('dept_create_btn')}
-                </button>
-              </div>
-            </form>
-            </div>
-          </div>
-        </div>
-      )}
+      <DepartmentModal
+        isOpen={deptModalOpen}
+        onClose={() => setDeptModalOpen(false)}
+        editingDeptId={editingDeptId}
+        deptName={deptName}
+        setDeptName={setDeptName}
+        deptCode={deptCode}
+        setDeptCode={setDeptCode}
+        deptMinutes={deptMinutes}
+        setDeptMinutes={setDeptMinutes}
+        deptFloorRoom={deptFloorRoom}
+        setDeptFloorRoom={setDeptFloorRoom}
+        deptDescription={deptDescription}
+        setDeptDescription={setDeptDescription}
+        deptIsActive={deptIsActive}
+        setDeptIsActive={setDeptIsActive}
+        deptNameError={deptNameError}
+        deptCodeError={deptCodeError}
+        deptSubmitError={deptSubmitError}
+        deptLoading={deptLoading}
+        onSave={handleSaveDepartment}
+      />
 
       {/* Add / Edit Service Modal */}
-      {srvModal.shouldRender && (
-        <div className={srvModal.overlayClass} onClick={(e) => { if (e.target === e.currentTarget) srvModal.close(); }}>
-          <div className={srvModal.cardClass} style={{ maxWidth: '520px', fontFamily: kmFont }}>
-            <div className="responsive-modal-body" style={{ padding: '1.6rem 1.75rem' }}>
-              <h3 style={{ fontSize: '1.35rem', fontWeight: 700, margin: '0 0 1.4rem 0', color: 'var(--text-main)', fontFamily: kmFont }}>
-                {editingSrvId ? t('dept_modal_edit_srv') : t('dept_modal_add_srv')}
-              </h3>
-
-            <form onSubmit={handleSaveService} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px', fontFamily: kmFont }}>
-                  {t('dept_srv_th_dept')}
-                </label>
-                <select
-                  value={srvDeptId}
-                  onChange={(e) => {
-                    setSrvDeptId(e.target.value);
-                    if (srvDeptError) setSrvDeptError(null);
-                  }}
-                  style={{
-                    width: '100%',
-                    padding: '0.65rem 1.15rem',
-                    fontSize: '0.98rem',
-                    borderRadius: 'var(--radius-full)',
-                    border: srvDeptError ? '1px solid #dc2626' : '1px solid var(--border-color)',
-                    boxShadow: 'none',
-                    outline: 'none',
-                    background: '#ffffff',
-                    color: 'var(--text-main)',
-                    boxSizing: 'border-box',
-                    fontFamily: kmFont,
-                  }}
-                >
-                  {departments.map((dept) => (
-                    <option key={dept.id} value={dept.id}>
-                      {dept.name} ({dept.code || 'DEPT'})
-                    </option>
-                  ))}
-                </select>
-                {srvDeptError && (
-                  <div style={{ color: '#dc2626', fontSize: '0.85rem', marginTop: '5px', fontFamily: kmFont }}>
-                    {srvDeptError}
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px', fontFamily: kmFont }}>
-                  {t('dept_srv_name_label')}
-                </label>
-                <input
-                  type="text"
-                  placeholder={t('dept_srv_name_placeholder')}
-                  value={srvName}
-                  onChange={(e) => {
-                    setSrvName(e.target.value);
-                    if (srvNameError) setSrvNameError(null);
-                  }}
-                  style={{
-                    width: '100%',
-                    padding: '0.65rem 1.15rem',
-                    fontSize: '0.98rem',
-                    borderRadius: 'var(--radius-full)',
-                    border: srvNameError ? '1px solid #dc2626' : '1px solid var(--border-color)',
-                    boxShadow: 'none',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                    fontFamily: kmFont,
-                  }}
-                />
-                {srvNameError && (
-                  <div style={{ color: '#dc2626', fontSize: '0.85rem', marginTop: '5px', fontFamily: kmFont }}>
-                    {srvNameError}
-                  </div>
-                )}
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px', fontFamily: kmFont }}>
-                    {t('dept_srv_duration_label')}
-                  </label>
-                  <input
-                    type="number"
-                    min="5"
-                    max="180"
-                    value={srvDuration}
-                    onChange={(e) => setSrvDuration(Number(e.target.value))}
-                    style={{
-                      width: '100%',
-                      padding: '0.65rem 1.15rem',
-                      fontSize: '0.98rem',
-                      borderRadius: 'var(--radius-full)',
-                      border: '1px solid var(--border-color)',
-                      boxShadow: 'none',
-                      outline: 'none',
-                      boxSizing: 'border-box',
-                      fontFamily: kmFont,
-                    }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px', fontFamily: kmFont }}>
-                    {t('dept_srv_price_label')}
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.5"
-                    value={srvPrice}
-                    onChange={(e) => setSrvPrice(Number(e.target.value))}
-                    style={{
-                      width: '100%',
-                      padding: '0.65rem 1.15rem',
-                      fontSize: '0.98rem',
-                      borderRadius: 'var(--radius-full)',
-                      border: '1px solid var(--border-color)',
-                      boxShadow: 'none',
-                      outline: 'none',
-                      boxSizing: 'border-box',
-                      fontFamily: kmFont,
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px', fontFamily: kmFont }}>
-                  {t('dept_srv_desc_label')}
-                </label>
-                <textarea
-                  placeholder={t('dept_srv_desc_placeholder')}
-                  value={srvDescription}
-                  onChange={(e) => setSrvDescription(e.target.value)}
-                  rows={2}
-                  style={{
-                    width: '100%',
-                    padding: '0.65rem 1.15rem',
-                    fontSize: '0.98rem',
-                    borderRadius: '12px',
-                    border: '1px solid var(--border-color)',
-                    boxShadow: 'none',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                    resize: 'none',
-                    fontFamily: kmFont,
-                  }}
-                />
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem' }}>
-                <input
-                  type="checkbox"
-                  id="srvActiveCheck"
-                  checked={srvIsActive}
-                  onChange={(e) => setSrvIsActive(e.target.checked)}
-                />
-                <label htmlFor="srvActiveCheck" style={{ fontSize: '0.9rem', color: 'var(--text-main)', cursor: 'pointer', fontFamily: kmFont }}>
-                  {t('dept_srv_active_check')}
-                </label>
-              </div>
-
-              {srvSubmitError && (
-                <div style={{ color: '#dc2626', fontSize: '0.85rem', fontFamily: kmFont }}>
-                  {srvSubmitError}
-                </div>
-              )}
-
-              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.75rem' }}>
-                <button
-                  type="button"
-                  onClick={srvModal.close}
-                  style={{
-                    flex: 1,
-                    padding: '0.7rem 1.25rem',
-                    fontSize: '0.98rem',
-                    fontWeight: 500,
-                    background: 'transparent',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: 'var(--radius-full)',
-                    color: 'var(--text-muted)',
-                    cursor: 'pointer',
-                    boxShadow: 'none',
-                    fontFamily: kmFont,
-                  }}
-                >
-                  {t('cancel')}
-                </button>
-                <button
-                  type="submit"
-                  disabled={srvLoading}
-                  style={{
-                    flex: 1,
-                    padding: '0.7rem 1.25rem',
-                    fontSize: '0.98rem',
-                    fontWeight: 600,
-                    background: 'transparent',
-                    border: '1px solid var(--text-main)',
-                    borderRadius: 'var(--radius-full)',
-                    color: 'var(--text-main)',
-                    cursor: 'pointer',
-                    boxShadow: 'none',
-                    fontFamily: kmFont,
-                  }}
-                >
-                  {editingSrvId ? t('dept_save_btn') : t('dept_create_btn')}
-                </button>
-              </div>
-            </form>
-            </div>
-          </div>
-        </div>
-      )}
+      <ServiceModal
+        isOpen={srvModalOpen}
+        onClose={() => setSrvModalOpen(false)}
+        editingSrvId={editingSrvId}
+        departments={departments}
+        srvDeptId={srvDeptId}
+        setSrvDeptId={setSrvDeptId}
+        srvName={srvName}
+        setSrvName={setSrvName}
+        srvDuration={srvDuration}
+        setSrvDuration={setSrvDuration}
+        srvPrice={srvPrice}
+        setSrvPrice={setSrvPrice}
+        srvDescription={srvDescription}
+        setSrvDescription={setSrvDescription}
+        srvIsActive={srvIsActive}
+        setSrvIsActive={setSrvIsActive}
+        srvNameError={srvNameError}
+        srvDeptError={srvDeptError}
+        srvSubmitError={srvSubmitError}
+        srvLoading={srvLoading}
+        onSave={handleSaveService}
+      />
     </div>
   );
 };

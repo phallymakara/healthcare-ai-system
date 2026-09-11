@@ -1,15 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import {
-  Camera,
-  Phone,
-  Mail,
-  Globe,
-  ExternalLink,
-  RefreshCw,
-} from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { AuthService } from '../../services/auth';
 import { API_BASE } from '../../services/api';
 import { useLanguage } from '../../context/LanguageContext';
+import { HospitalIdentitySection } from './profile/HospitalIdentitySection';
+import { HospitalContactSection } from './profile/HospitalContactSection';
+import { HospitalLocationSection } from './profile/HospitalLocationSection';
 
 export const HospitalProfile: React.FC = () => {
   const { language, t } = useLanguage();
@@ -35,7 +31,7 @@ export const HospitalProfile: React.FC = () => {
   const [latitude, setLatitude] = useState('');
   const [longitude, setLongitude] = useState('');
 
-  // Inline Field Errors (Plain text, no container, zero shadow)
+  // Inline Field Errors
   const [nameError, setNameError] = useState<string | null>(null);
   const [cityError, setCityError] = useState<string | null>(null);
   const [phoneError, setPhoneError] = useState<string | null>(null);
@@ -67,7 +63,6 @@ export const HospitalProfile: React.FC = () => {
     const trimmed = input.trim();
     if (!trimmed) return;
 
-    // Direct coordinates: "11.5564, 104.9282"
     const coordMatch = trimmed.match(/^([-+]?\d{1,2}(?:\.\d+)?)\s*,\s*([-+]?\d{1,3}(?:\.\d+)?)$/);
     if (coordMatch) {
       setLatitude(coordMatch[1]);
@@ -75,7 +70,6 @@ export const HospitalProfile: React.FC = () => {
       return;
     }
 
-    // Google Maps @lat,lng e.g. /@11.5564,104.9282,17z
     const atMatch = trimmed.match(/@([-+]?\d{1,2}\.\d+),([-+]?\d{1,3}\.\d+)/);
     if (atMatch) {
       setLatitude(atMatch[1]);
@@ -83,7 +77,6 @@ export const HospitalProfile: React.FC = () => {
       return;
     }
 
-    // Google Maps query param ?q=lat,lng or &ll=lat,lng
     const queryMatch = trimmed.match(/[?&](?:q|ll)=([-+]?\d{1,2}\.\d+),([-+]?\d{1,3}\.\d+)/);
     if (queryMatch) {
       setLatitude(queryMatch[1]);
@@ -104,24 +97,21 @@ export const HospitalProfile: React.FC = () => {
         setDescription(data.description || '');
         setLogoUrl(data.logo_url || '');
         setWebsite(data.website || '');
-        setEmergencyAvailable(Boolean(data.emergency_service_available));
+        setEmergencyAvailable(data.emergency_service_available ?? false);
         setAddress(data.address || '');
         setCity(data.city || '');
         setContactPhone(data.contact_phone || '');
         setContactEmail(data.contact_email || '');
         setEmergencyPhone(data.emergency_phone || '');
-        if (data.latitude !== null && data.latitude !== undefined) {
-          const latStr = String(data.latitude);
-          setLatitude(latStr);
-          if (data.longitude !== null && data.longitude !== undefined) {
-            const lngStr = String(data.longitude);
-            setLongitude(lngStr);
-            setGoogleMapsUrl(`https://maps.google.com/?q=${latStr},${lngStr}`);
-          }
+
+        if (data.latitude != null) setLatitude(String(data.latitude));
+        if (data.longitude != null) setLongitude(String(data.longitude));
+        if (data.latitude != null && data.longitude != null) {
+          setGoogleMapsUrl(`https://maps.google.com/?q=${data.latitude},${data.longitude}`);
         }
       }
     } catch (err) {
-      console.error('[HospitalProfile Load Error]:', err);
+      console.error('Failed to load partner profile:', err);
     } finally {
       setLoading(false);
     }
@@ -142,31 +132,28 @@ export const HospitalProfile: React.FC = () => {
 
     setLogoError(null);
     setUploadingLogo(true);
+
     try {
       const formData = new FormData();
       formData.append('file', file);
 
       const res = await fetch(`${API_BASE}/partners/profile/logo`, {
         method: 'POST',
-        headers: {
-          ...AuthService.getAuthHeaders(),
-        },
+        headers: AuthService.getAuthHeaders(),
         body: formData,
       });
 
       if (!res.ok) {
         const errData = await res.json().catch(() => null);
-        throw new Error(errData?.detail || 'Failed to upload hospital logo');
+        throw new Error(errData?.detail || 'Failed to upload logo');
       }
 
       const data = await res.json();
-      if (data.url) {
-        setLogoUrl(data.url);
-        window.dispatchEvent(new CustomEvent('hospital-profile-updated'));
-      }
+      setLogoUrl(data.url);
+      window.dispatchEvent(new CustomEvent('hospital-profile-updated'));
     } catch (err: any) {
       console.error('[Logo Upload Error]:', err);
-      setLogoError(isKm ? 'មិនអាចផ្ទុករូបសញ្ញាឡើងបានទេ។ សូមព្យាយាមម្តងទៀត។' : (err.message || 'Failed to upload logo.'));
+      setLogoError(isKm ? 'មិនអាចផ្ទុករូបសញ្ញាបានទេ។ សូមព្យាយាមម្តងទៀត។' : (err.message || 'Failed to upload logo.'));
     } finally {
       setUploadingLogo(false);
       if (fileInputRef.current) {
@@ -176,14 +163,14 @@ export const HospitalProfile: React.FC = () => {
   };
 
   const handleDeleteLogo = async () => {
-    if (!logoUrl) return;
-    setUploadingLogo(true);
     setLogoError(null);
+    setUploadingLogo(true);
     try {
       const res = await fetch(`${API_BASE}/partners/profile/logo`, {
         method: 'DELETE',
         headers: AuthService.getAuthHeaders(),
       });
+
       if (res.ok) {
         setLogoUrl('');
         window.dispatchEvent(new CustomEvent('hospital-profile-updated'));
@@ -305,7 +292,6 @@ export const HospitalProfile: React.FC = () => {
         paddingBottom: '3rem',
       }}
     >
-
       {loading ? (
         <div
           style={{
@@ -341,836 +327,61 @@ export const HospitalProfile: React.FC = () => {
             boxShadow: 'none',
           }}
         >
-          {/* SECTION 1: FACILITY IDENTITY */}
-          <div
-            style={{
-              background: '#ffffff',
-              border: '1px solid var(--border-color)',
-              borderRadius: '16px',
-              padding: '1.75rem',
-              marginBottom: '1.75rem',
-              boxShadow: 'none',
-            }}
-          >
-            <div style={{ marginBottom: '1.25rem' }}>
-              <h2
-                style={{
-                  fontSize: '1.25rem',
-                  fontWeight: 700,
-                  color: 'var(--text-main)',
-                  margin: 0,
-                  fontFamily: kmFont,
-                }}
-              >
-                {t('prof_facility_identity')}
-              </h2>
-            </div>
+          <HospitalIdentitySection
+            name={name}
+            setName={setName}
+            nameError={nameError}
+            setNameError={setNameError}
+            city={city}
+            setCity={setCity}
+            cityError={cityError}
+            setCityError={setCityError}
+            website={website}
+            setWebsite={setWebsite}
+            emergencyAvailable={emergencyAvailable}
+            setEmergencyAvailable={setEmergencyAvailable}
+            description={description}
+            setDescription={setDescription}
+            logoUrl={logoUrl}
+            uploadingLogo={uploadingLogo}
+            logoError={logoError}
+            fileInputRef={fileInputRef}
+            onLogoFileChange={handleLogoFileChange}
+            onDeleteLogo={handleDeleteLogo}
+          />
 
-            {/* Circular Logo Uploader (Centered) */}
-            <div style={{ marginBottom: '1.75rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.6rem' }}>
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  accept="image/*"
-                  onChange={handleLogoFileChange}
-                  style={{ display: 'none' }}
-                />
+          <HospitalContactSection
+            contactPhone={contactPhone}
+            setContactPhone={setContactPhone}
+            phoneError={phoneError}
+            setPhoneError={setPhoneError}
+            contactEmail={contactEmail}
+            setContactEmail={setContactEmail}
+            emailError={emailError}
+            setEmailError={setEmailError}
+            emergencyPhone={emergencyPhone}
+            setEmergencyPhone={setEmergencyPhone}
+            emergencyPhoneError={emergencyPhoneError}
+            setEmergencyPhoneError={setEmergencyPhoneError}
+          />
 
-                <div
-                  onClick={() => !uploadingLogo && fileInputRef.current?.click()}
-                  style={{
-                    width: '124px',
-                    height: '124px',
-                    borderRadius: '50%',
-                    border: '1px dashed var(--border-color)',
-                    backgroundColor: '#ffffff',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: uploadingLogo ? 'not-allowed' : 'pointer',
-                    position: 'relative',
-                    overflow: 'hidden',
-                    boxShadow: 'none',
-                    flexShrink: 0,
-                    opacity: uploadingLogo ? 0.6 : 1,
-                  }}
-                  title={isKm ? 'ចុចដើម្បីផ្លាស់ប្តូររូបសញ្ញា' : 'Click to change logo'}
-                >
-                  {uploadingLogo ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-                      <RefreshCw size={26} className="spin" color="var(--accent-primary)" />
-                      <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                        {isKm ? 'កំពុងផ្ទុក...' : 'Uploading...'}
-                      </span>
-                    </div>
-                  ) : logoUrl.trim() ? (
-                    <>
-                      <img
-                        src={logoUrl.trim()}
-                        alt="Hospital Logo"
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover',
-                          borderRadius: '50%',
-                        }}
-                        onError={(e) => {
-                          (e.currentTarget as HTMLElement).style.display = 'none';
-                        }}
-                      />
-                      <div
-                        style={{
-                          position: 'absolute',
-                          bottom: 0,
-                          left: 0,
-                          right: 0,
-                          height: '30px',
-                          backgroundColor: 'rgba(0, 0, 0, 0.45)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          color: '#ffffff',
-                        }}
-                      >
-                        <Camera size={18} strokeWidth={2} />
-                      </div>
-                    </>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.35rem', color: 'var(--text-muted)' }}>
-                      <Camera size={32} color="var(--accent-primary)" />
-                      <span style={{ fontSize: '0.92rem', fontWeight: 500, fontFamily: kmFont }}>
-                        {isKm ? 'រូបសញ្ញា' : 'Logo'}
-                      </span>
-                    </div>
-                  )}
-                </div>
+          <HospitalLocationSection
+            address={address}
+            setAddress={setAddress}
+            addressError={addressError}
+            setAddressError={setAddressError}
+            googleMapsUrl={googleMapsUrl}
+            setGoogleMapsUrl={setGoogleMapsUrl}
+            mapError={mapError}
+            setMapError={setMapError}
+            latitude={latitude}
+            setLatitude={setLatitude}
+            longitude={longitude}
+            setLongitude={setLongitude}
+            onParseGoogleMapsInput={parseGoogleMapsInput}
+          />
 
-                {(logoUrl.trim() || logoError) && (
-                  <div style={{ textAlign: 'center' }}>
-                    {logoUrl.trim() && (
-                      <button
-                        type="button"
-                        onClick={handleDeleteLogo}
-                        disabled={uploadingLogo}
-                        style={{
-                          background: 'transparent',
-                          border: 'none',
-                          outline: 'none',
-                          color: '#dc2626',
-                          fontSize: '0.92rem',
-                          fontWeight: 500,
-                          cursor: uploadingLogo ? 'not-allowed' : 'pointer',
-                          padding: '0.25rem 0',
-                          fontFamily: kmFont,
-                          opacity: uploadingLogo ? 0.5 : 1,
-                          transition: 'opacity 0.15s ease',
-                        }}
-                        onMouseEnter={(e) => {
-                          if (!uploadingLogo) (e.currentTarget as HTMLElement).style.opacity = '0.7';
-                        }}
-                        onMouseLeave={(e) => {
-                          if (!uploadingLogo) (e.currentTarget as HTMLElement).style.opacity = '1';
-                        }}
-                      >
-                        {isKm ? 'លុបរូបចេញ' : 'Remove'}
-                      </button>
-                    )}
-
-                    {logoError && (
-                      <div style={{ color: '#dc2626', fontSize: '0.88rem', marginTop: '4px', fontFamily: kmFont }}>
-                        {logoError}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Inputs in 3 Rows: Name, City/Province, Website */}
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '1.15rem',
-                marginBottom: '1.25rem',
-              }}
-            >
-              {/* Hospital Name */}
-              <div>
-                <label
-                  style={{
-                    display: 'block',
-                    fontSize: '1.02rem',
-                    fontWeight: 600,
-                    color: 'var(--text-muted)',
-                    marginBottom: '6px',
-                    fontFamily: kmFont,
-                  }}
-                >
-                  {t('prof_facility_name')} *
-                </label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => {
-                    setName(e.target.value);
-                    if (nameError) setNameError(null);
-                  }}
-                  placeholder="Fhddfggsdfdffgdthospiitgal Clinic"
-                  style={{
-                    width: '100%',
-                    padding: '0.72rem 1.25rem',
-                    fontSize: '1.05rem',
-                    borderRadius: 'var(--radius-full)',
-                    border: nameError ? '1px solid #dc2626' : '1px solid var(--border-color)',
-                    background: '#ffffff',
-                    color: 'var(--text-main)',
-                    boxSizing: 'border-box',
-                    outline: 'none',
-                    boxShadow: 'none',
-                    fontFamily: kmFont,
-                  }}
-                />
-                {nameError && (
-                  <div style={{ color: '#dc2626', fontSize: '0.88rem', marginTop: '4px', fontFamily: kmFont }}>
-                    {nameError}
-                  </div>
-                )}
-              </div>
-
-              {/* City / Province */}
-              <div>
-                <label
-                  style={{
-                    display: 'block',
-                    fontSize: '1.02rem',
-                    fontWeight: 600,
-                    color: 'var(--text-muted)',
-                    marginBottom: '6px',
-                    fontFamily: kmFont,
-                  }}
-                >
-                  {t('prof_city_region')} <span style={{ color: '#dc2626' }}>*</span>
-                </label>
-                <input
-                  type="text"
-                  value={city}
-                  onChange={(e) => {
-                    setCity(e.target.value);
-                    if (cityError) setCityError(null);
-                  }}
-                  placeholder={t('prof_city_placeholder') || 'ឧ. រាជធានីភ្នំពេញ'}
-                  style={{
-                    width: '100%',
-                    padding: '0.72rem 1.25rem',
-                    fontSize: '1.05rem',
-                    borderRadius: 'var(--radius-full)',
-                    border: cityError ? '1px solid #dc2626' : '1px solid var(--border-color)',
-                    background: '#ffffff',
-                    color: 'var(--text-main)',
-                    boxSizing: 'border-box',
-                    outline: 'none',
-                    boxShadow: 'none',
-                    fontFamily: kmFont,
-                  }}
-                />
-                {cityError && (
-                  <div style={{ color: '#dc2626', fontSize: '0.88rem', marginTop: '4px', fontFamily: kmFont }}>
-                    {cityError}
-                  </div>
-                )}
-              </div>
-
-              {/* Website */}
-              <div>
-                <label
-                  style={{
-                    display: 'block',
-                    fontSize: '1.02rem',
-                    fontWeight: 600,
-                    color: 'var(--text-muted)',
-                    marginBottom: '6px',
-                    fontFamily: kmFont,
-                  }}
-                >
-                  {t('prof_website_label')}
-                </label>
-                <div style={{ position: 'relative' }}>
-                  <input
-                    type="url"
-                    value={website}
-                    onChange={(e) => setWebsite(e.target.value)}
-                    placeholder={t('prof_website_placeholder')}
-                    style={{
-                      width: '100%',
-                      padding: '0.72rem 1.25rem 0.72rem 2.85rem',
-                      fontSize: '1.05rem',
-                      borderRadius: 'var(--radius-full)',
-                      border: '1px solid var(--border-color)',
-                      background: '#ffffff',
-                      color: 'var(--text-main)',
-                      boxSizing: 'border-box',
-                      outline: 'none',
-                      boxShadow: 'none',
-                      fontFamily: kmFont,
-                    }}
-                  />
-                  <Globe
-                    size={18}
-                    color="var(--text-muted)"
-                    style={{
-                      position: 'absolute',
-                      left: '14px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Emergency Service Available Toggle */}
-            <div style={{ marginBottom: '1.25rem' }}>
-              <label
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.6rem',
-                  padding: '0.65rem 1.25rem',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: 'var(--radius-full)',
-                  background: '#ffffff',
-                  cursor: 'pointer',
-                  userSelect: 'none',
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={emergencyAvailable}
-                  onChange={(e) => setEmergencyAvailable(e.target.checked)}
-                  style={{
-                    width: '18px',
-                    height: '18px',
-                    accentColor: 'var(--accent-primary)',
-                    cursor: 'pointer',
-                  }}
-                />
-                <span
-                  style={{
-                    fontSize: '1.02rem',
-                    fontWeight: 500,
-                    color: 'var(--text-main)',
-                    fontFamily: kmFont,
-                  }}
-                >
-                  {t('prof_emergency_toggle')}
-                </span>
-              </label>
-            </div>
-
-            {/* Description / Mission */}
-            <div>
-              <label
-                style={{
-                  display: 'block',
-                  fontSize: '1.02rem',
-                  fontWeight: 600,
-                  color: 'var(--text-muted)',
-                  marginBottom: '6px',
-                  fontFamily: kmFont,
-                }}
-              >
-                {t('prof_about_mission')}
-              </label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={3}
-                placeholder={
-                  isKm
-                    ? 'ការពិពណ៌នាសង្ខេបអំពីសេវាកម្ម ឯកទេសវេជ្ជសាស្ត្រ និងការថែទាំអ្នកជំងឺ...'
-                    : 'Overview of facility services, specialties, and patient care standards...'
-                }
-                style={{
-                  width: '100%',
-                  padding: '0.85rem 1.25rem',
-                  fontSize: '1.05rem',
-                  borderRadius: '12px',
-                  border: '1px solid var(--border-color)',
-                  background: '#ffffff',
-                  color: 'var(--text-main)',
-                  boxSizing: 'border-box',
-                  outline: 'none',
-                  boxShadow: 'none',
-                  resize: 'vertical',
-                  lineHeight: 1.5,
-                  fontFamily: kmFont,
-                }}
-              />
-            </div>
-          </div>
-
-          {/* SECTION 2: COMMUNICATIONS & EMERGENCY */}
-          <div
-            style={{
-              background: '#ffffff',
-              border: '1px solid var(--border-color)',
-              borderRadius: '16px',
-              padding: '1.75rem',
-              marginBottom: '1.75rem',
-              boxShadow: 'none',
-            }}
-          >
-            <div style={{ marginBottom: '1.25rem' }}>
-              <h2
-                style={{
-                  fontSize: '1.25rem',
-                  fontWeight: 700,
-                  color: 'var(--text-main)',
-                  margin: 0,
-                  fontFamily: kmFont,
-                }}
-              >
-                {t('prof_contact_emergency')}
-              </h2>
-            </div>
-
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-                gap: '1.15rem',
-              }}
-            >
-              {/* Reception Phone */}
-              <div>
-                <label
-                  style={{
-                    display: 'block',
-                    fontSize: '1.02rem',
-                    fontWeight: 600,
-                    color: 'var(--text-muted)',
-                    marginBottom: '6px',
-                    fontFamily: kmFont,
-                  }}
-                >
-                  {t('prof_reception_phone')} <span style={{ color: '#dc2626' }}>*</span>
-                </label>
-                <div style={{ position: 'relative' }}>
-                  <input
-                    type="text"
-                    value={contactPhone}
-                    onChange={(e) => {
-                      setContactPhone(e.target.value);
-                      if (phoneError) setPhoneError(null);
-                    }}
-                    placeholder="023 888 999"
-                    style={{
-                      width: '100%',
-                      padding: '0.72rem 1.25rem 0.72rem 2.85rem',
-                      fontSize: '1.05rem',
-                      borderRadius: 'var(--radius-full)',
-                      border: phoneError ? '1px solid #dc2626' : '1px solid var(--border-color)',
-                      background: '#ffffff',
-                      color: 'var(--text-main)',
-                      boxSizing: 'border-box',
-                      outline: 'none',
-                      boxShadow: 'none',
-                      fontFamily: kmFont,
-                    }}
-                  />
-                  <Phone
-                    size={18}
-                    color="var(--text-muted)"
-                    style={{
-                      position: 'absolute',
-                      left: '14px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                    }}
-                  />
-                </div>
-                {phoneError && (
-                  <div style={{ color: '#dc2626', fontSize: '0.88rem', marginTop: '4px', fontFamily: kmFont }}>
-                    {phoneError}
-                  </div>
-                )}
-              </div>
-
-              {/* Official Email */}
-              <div>
-                <label
-                  style={{
-                    display: 'block',
-                    fontSize: '1.02rem',
-                    fontWeight: 600,
-                    color: 'var(--text-muted)',
-                    marginBottom: '6px',
-                    fontFamily: kmFont,
-                  }}
-                >
-                  {t('prof_official_email')} <span style={{ color: '#dc2626' }}>*</span>
-                </label>
-                <div style={{ position: 'relative' }}>
-                  <input
-                    type="email"
-                    value={contactEmail}
-                    onChange={(e) => {
-                      setContactEmail(e.target.value);
-                      if (emailError) setEmailError(null);
-                    }}
-                    placeholder="info@hospital.kh"
-                    style={{
-                      width: '100%',
-                      padding: '0.72rem 1.25rem 0.72rem 2.85rem',
-                      fontSize: '1.05rem',
-                      borderRadius: 'var(--radius-full)',
-                      border: emailError ? '1px solid #dc2626' : '1px solid var(--border-color)',
-                      background: '#ffffff',
-                      color: 'var(--text-main)',
-                      boxSizing: 'border-box',
-                      outline: 'none',
-                      boxShadow: 'none',
-                      fontFamily: kmFont,
-                    }}
-                  />
-                  <Mail
-                    size={18}
-                    color="var(--text-muted)"
-                    style={{
-                      position: 'absolute',
-                      left: '14px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                    }}
-                  />
-                </div>
-                {emailError && (
-                  <div style={{ color: '#dc2626', fontSize: '0.88rem', marginTop: '4px', fontFamily: kmFont }}>
-                    {emailError}
-                  </div>
-                )}
-              </div>
-
-              {/* 24/7 Emergency Hotline */}
-              <div>
-                <label
-                  style={{
-                    display: 'block',
-                    fontSize: '1.02rem',
-                    fontWeight: 600,
-                    color: 'var(--text-muted)',
-                    marginBottom: '6px',
-                    fontFamily: kmFont,
-                  }}
-                >
-                  {t('prof_emergency_hotline')} <span style={{ color: '#dc2626' }}>*</span>
-                </label>
-                <div style={{ position: 'relative' }}>
-                  <input
-                    type="text"
-                    value={emergencyPhone}
-                    onChange={(e) => {
-                      setEmergencyPhone(e.target.value);
-                      if (emergencyPhoneError) setEmergencyPhoneError(null);
-                    }}
-                    placeholder="119 / 012 999 119"
-                    style={{
-                      width: '100%',
-                      padding: '0.72rem 1.25rem 0.72rem 2.85rem',
-                      fontSize: '1.05rem',
-                      borderRadius: 'var(--radius-full)',
-                      border: emergencyPhoneError ? '1px solid #dc2626' : '1px solid var(--border-color)',
-                      background: '#ffffff',
-                      color: 'var(--text-main)',
-                      boxSizing: 'border-box',
-                      outline: 'none',
-                      boxShadow: 'none',
-                      fontFamily: kmFont,
-                    }}
-                  />
-                  <Phone
-                    size={18}
-                    color="var(--text-muted)"
-                    style={{
-                      position: 'absolute',
-                      left: '14px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                    }}
-                  />
-                </div>
-                {emergencyPhoneError && (
-                  <div style={{ color: '#dc2626', fontSize: '0.88rem', marginTop: '4px', fontFamily: kmFont }}>
-                    {emergencyPhoneError}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* SECTION 3: PHYSICAL ADDRESS & GOOGLE MAPS */}
-          <div
-            style={{
-              background: '#ffffff',
-              border: '1px solid var(--border-color)',
-              borderRadius: '16px',
-              padding: '1.75rem',
-              marginBottom: '1.75rem',
-              boxShadow: 'none',
-            }}
-          >
-            <div style={{ marginBottom: '1.25rem' }}>
-              <h2
-                style={{
-                  fontSize: '1.25rem',
-                  fontWeight: 700,
-                  color: 'var(--text-main)',
-                  margin: 0,
-                  fontFamily: kmFont,
-                }}
-              >
-                {t('prof_address_coords')}
-              </h2>
-            </div>
-
-            {/* Street Address */}
-            <div style={{ marginBottom: '1.15rem' }}>
-              <label
-                style={{
-                  display: 'block',
-                  fontSize: '1.02rem',
-                  fontWeight: 600,
-                  color: 'var(--text-muted)',
-                  marginBottom: '6px',
-                  fontFamily: kmFont,
-                }}
-              >
-                {t('prof_street_address')} <span style={{ color: '#dc2626' }}>*</span>
-              </label>
-              <input
-                type="text"
-                value={address}
-                onChange={(e) => {
-                  setAddress(e.target.value);
-                  if (addressError) setAddressError(null);
-                }}
-                placeholder={t('prof_street_placeholder')}
-                style={{
-                  width: '100%',
-                  padding: '0.72rem 1.25rem',
-                  fontSize: '1.05rem',
-                  borderRadius: 'var(--radius-full)',
-                  border: addressError ? '1px solid #dc2626' : '1px solid var(--border-color)',
-                  background: '#ffffff',
-                  color: 'var(--text-main)',
-                  boxSizing: 'border-box',
-                  outline: 'none',
-                  boxShadow: 'none',
-                  fontFamily: kmFont,
-                }}
-              />
-              {addressError && (
-                <div style={{ color: '#dc2626', fontSize: '0.88rem', marginTop: '4px', fontFamily: kmFont }}>
-                  {addressError}
-                </div>
-              )}
-            </div>
-
-            {/* Google Maps Auto-Fill Input */}
-            <div style={{ marginBottom: '1.15rem' }}>
-              <label
-                style={{
-                  display: 'block',
-                  fontSize: '1.02rem',
-                  fontWeight: 600,
-                  color: 'var(--text-muted)',
-                  marginBottom: '6px',
-                  fontFamily: kmFont,
-                }}
-              >
-                {t('prof_map_paste_label')} <span style={{ color: '#dc2626' }}>*</span>
-              </label>
-              <input
-                type="text"
-                value={googleMapsUrl}
-                onChange={(e) => {
-                  parseGoogleMapsInput(e.target.value);
-                  if (mapError) setMapError(null);
-                }}
-                placeholder={t('prof_map_paste_placeholder')}
-                style={{
-                  width: '100%',
-                  padding: '0.72rem 1.25rem',
-                  fontSize: '1.05rem',
-                  borderRadius: 'var(--radius-full)',
-                  border: mapError ? '1px solid #dc2626' : '1px solid var(--border-color)',
-                  background: '#ffffff',
-                  color: 'var(--text-main)',
-                  boxSizing: 'border-box',
-                  outline: 'none',
-                  boxShadow: 'none',
-                  fontFamily: kmFont,
-                }}
-              />
-              {mapError && (
-                <div style={{ color: '#dc2626', fontSize: '0.88rem', marginTop: '4px', fontFamily: kmFont }}>
-                  {mapError}
-                </div>
-              )}
-            </div>
-
-            {/* Lat / Lng inputs */}
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-                gap: '1.15rem',
-                marginBottom: '1.15rem',
-              }}
-            >
-              <div>
-                <label
-                  style={{
-                    display: 'block',
-                    fontSize: '1.02rem',
-                    fontWeight: 600,
-                    color: 'var(--text-muted)',
-                    marginBottom: '6px',
-                    fontFamily: kmFont,
-                  }}
-                >
-                  {t('prof_gps_lat')}
-                </label>
-                <input
-                  type="number"
-                  step="any"
-                  value={latitude}
-                  onChange={(e) => {
-                    setLatitude(e.target.value);
-                    if (longitude) {
-                      setGoogleMapsUrl(`https://maps.google.com/?q=${e.target.value},${longitude}`);
-                    }
-                  }}
-                  placeholder="11.5564"
-                  style={{
-                    width: '100%',
-                    padding: '0.72rem 1.25rem',
-                    fontSize: '1.05rem',
-                    borderRadius: 'var(--radius-full)',
-                    border: '1px solid var(--border-color)',
-                    background: '#ffffff',
-                    color: 'var(--text-main)',
-                    boxSizing: 'border-box',
-                    outline: 'none',
-                    boxShadow: 'none',
-                    fontFamily: kmFont,
-                  }}
-                />
-              </div>
-
-              <div>
-                <label
-                  style={{
-                    display: 'block',
-                    fontSize: '1.02rem',
-                    fontWeight: 600,
-                    color: 'var(--text-muted)',
-                    marginBottom: '6px',
-                    fontFamily: kmFont,
-                  }}
-                >
-                  {t('prof_gps_lng')}
-                </label>
-                <input
-                  type="number"
-                  step="any"
-                  value={longitude}
-                  onChange={(e) => {
-                    setLongitude(e.target.value);
-                    if (latitude) {
-                      setGoogleMapsUrl(`https://maps.google.com/?q=${latitude},${e.target.value}`);
-                    }
-                  }}
-                  placeholder="104.9282"
-                  style={{
-                    width: '100%',
-                    padding: '0.72rem 1.25rem',
-                    fontSize: '1.05rem',
-                    borderRadius: 'var(--radius-full)',
-                    border: '1px solid var(--border-color)',
-                    background: '#ffffff',
-                    color: 'var(--text-main)',
-                    boxSizing: 'border-box',
-                    outline: 'none',
-                    boxShadow: 'none',
-                    fontFamily: kmFont,
-                  }}
-                />
-              </div>
-            </div>
-
-            {/* Coordinates info & Google Map Preview */}
-            {latitude && longitude && (
-              <div style={{ marginTop: '0.85rem' }}>
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    flexWrap: 'wrap',
-                    gap: '0.5rem',
-                    marginBottom: '0.65rem',
-                  }}
-                >
-                  <span style={{ fontSize: '0.95rem', color: 'var(--text-muted)', fontFamily: kmFont }}>
-                    {latitude}, {longitude}
-                  </span>
-
-                  <a
-                    href={`https://maps.google.com/?q=${latitude},${longitude}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '0.35rem',
-                      color: 'var(--accent-primary)',
-                      fontSize: '0.98rem',
-                      fontWeight: 600,
-                      textDecoration: 'none',
-                      fontFamily: kmFont,
-                    }}
-                  >
-                    <span>{t('btn_open_google_maps')}</span>
-                    <ExternalLink size={15} />
-                  </a>
-                </div>
-
-                <div
-                  style={{
-                    border: '1px solid var(--border-color)',
-                    borderRadius: '12px',
-                    overflow: 'hidden',
-                    boxShadow: 'none',
-                  }}
-                >
-                  <iframe
-                    title="Hospital Location Map"
-                    width="100%"
-                    height="240"
-                    style={{ border: 'none', display: 'block' }}
-                    loading="lazy"
-                    src={`https://maps.google.com/maps?q=${latitude},${longitude}&hl=${isKm ? 'km' : 'en'}&z=15&output=embed`}
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Action Area & Error Display (Directly at place of action, no container box, plain text) */}
+          {/* Action Area & Error Display */}
           <div
             style={{
               display: 'flex',

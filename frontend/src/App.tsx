@@ -7,7 +7,7 @@ import { MaintenanceBanner } from './components/MaintenanceBanner';
 import { AuthService, UserProfile } from './services/auth';
 import { API_BASE } from './services/api';
 import { RealTimeQueueClient } from './services/websocket';
-import { LandingPage } from './pages/LandingPage';
+import { LandingPage } from './pages/landing/LandingPage';
 import { HospitalDiscovery } from './pages/patient/HospitalDiscovery';
 import { LiveTicketTracker } from './pages/patient/LiveTicketTracker';
 import { PatientHistory } from './pages/patient/PatientHistory';

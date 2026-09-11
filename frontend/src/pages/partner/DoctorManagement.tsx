@@ -2,18 +2,9 @@ import React, { useEffect, useState, useRef } from 'react';
 import { AuthService } from '../../services/auth';
 import { useLanguage } from '../../context/LanguageContext';
 import { API_BASE } from '../../services/api';
-import { Camera, RefreshCw, UserCheck } from 'lucide-react';
-import { useModalClose } from '../../hooks/useModalClose';
-
-const DAY_DEFS = [
-  { dayIndex: 0, labelKey: 'day_mon', fullKey: 'day_mon_full' },
-  { dayIndex: 1, labelKey: 'day_tue', fullKey: 'day_tue_full' },
-  { dayIndex: 2, labelKey: 'day_wed', fullKey: 'day_wed_full' },
-  { dayIndex: 3, labelKey: 'day_thu', fullKey: 'day_thu_full' },
-  { dayIndex: 4, labelKey: 'day_fri', fullKey: 'day_fri_full' },
-  { dayIndex: 5, labelKey: 'day_sat', fullKey: 'day_sat_full' },
-  { dayIndex: 6, labelKey: 'day_sun', fullKey: 'day_sun_full' },
-];
+import { DoctorModal } from './doctors/DoctorModal';
+import { DoctorScheduleModal } from './doctors/DoctorScheduleModal';
+import { DoctorList } from './doctors/DoctorList';
 
 export const DoctorManagement: React.FC = () => {
   const { language, t } = useLanguage();
@@ -26,7 +17,6 @@ export const DoctorManagement: React.FC = () => {
 
   // Add / Edit Doctor Modal State
   const [docModalOpen, setDocModalOpen] = useState(false);
-  const docModal = useModalClose(docModalOpen, setDocModalOpen);
   const [editingDocId, setEditingDocId] = useState<string | null>(null);
   const [docDeptId, setDocDeptId] = useState('');
   const [docFullName, setDocFullName] = useState('');
@@ -42,12 +32,11 @@ export const DoctorManagement: React.FC = () => {
   const [docDeptError, setDocDeptError] = useState<string | null>(null);
   const [docSubmitError, setDocSubmitError] = useState<string | null>(null);
 
-  // Doctor Photo State (Azure Blob Storage)
+  // Doctor Photo State
   const [docPhotoUrl, setDocPhotoUrl] = useState<string>('');
   const [docPhotoFile, setDocPhotoFile] = useState<File | null>(null);
   const [docUploadingPhoto, setDocUploadingPhoto] = useState(false);
   const [docPhotoError, setDocPhotoError] = useState<string | null>(null);
-  const docPhotoInputRef = useRef<HTMLInputElement>(null);
   const [docLoading, setDocLoading] = useState(false);
   const [activeDropdownDocId, setActiveDropdownDocId] = useState<string | null>(null);
 
@@ -61,7 +50,6 @@ export const DoctorManagement: React.FC = () => {
 
   // Manage Shifts Modal State
   const [shiftModalOpen, setShiftModalOpen] = useState(false);
-  const shiftModal = useModalClose(shiftModalOpen, setShiftModalOpen);
   const [activeShiftDoc, setActiveShiftDoc] = useState<any | null>(null);
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [shiftStartTime, setShiftStartTime] = useState('08:00');
@@ -90,7 +78,6 @@ export const DoctorManagement: React.FC = () => {
     loadData();
   }, []);
 
-  // Open New Doctor Modal
   const handleOpenNewDoc = () => {
     setEditingDocId(null);
     setDocDeptId(departments.length > 0 ? departments[0].id : '');
@@ -112,7 +99,6 @@ export const DoctorManagement: React.FC = () => {
     setDocModalOpen(true);
   };
 
-  // Open Edit Doctor Modal
   const handleOpenEditDoc = (doc: any) => {
     setEditingDocId(doc.id);
     setDocDeptId(doc.department_id);
@@ -134,7 +120,6 @@ export const DoctorManagement: React.FC = () => {
     setDocModalOpen(true);
   };
 
-  // Photo Upload & Deletion Handlers
   const handlePhotoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -207,7 +192,6 @@ export const DoctorManagement: React.FC = () => {
     }
   };
 
-  // Trigger file picker for row avatar
   const handleTriggerRowPhotoUpload = (docId: string) => {
     if (rowUploadingDocId) return;
     setRowUploadError(null);
@@ -219,7 +203,6 @@ export const DoctorManagement: React.FC = () => {
     }
   };
 
-  // Handle file chosen from row avatar
   const handleRowPhotoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     const targetDocId = activeUploadDocIdRef.current || rowUploadDocId;
@@ -267,7 +250,6 @@ export const DoctorManagement: React.FC = () => {
     }
   };
 
-  // Save Doctor Profile (Create or Update)
   const handleSaveDoctor = async (e: React.FormEvent) => {
     e.preventDefault();
     setDocNameError(null);
@@ -316,7 +298,6 @@ export const DoctorManagement: React.FC = () => {
 
       if (!res.ok) {
         const errData = await res.json().catch(() => null);
-        console.error('Doctor save error:', res.status, errData);
         let msg = t('doc_err_save');
         if (errData?.detail) {
           if (Array.isArray(errData.detail)) {
@@ -332,7 +313,6 @@ export const DoctorManagement: React.FC = () => {
       const savedDoc = await res.json();
       const targetDocId = editingDocId || savedDoc.id;
 
-      // If pending photo was selected for new doctor, upload it now
       if (docPhotoFile && targetDocId) {
         const formData = new FormData();
         formData.append('file', docPhotoFile);
@@ -343,7 +323,7 @@ export const DoctorManagement: React.FC = () => {
         }).catch((e) => console.error('Failed to upload doctor photo:', e));
       }
 
-      docModal.close();
+      setDocModalOpen(false);
       await loadData();
     } catch {
       setDocSubmitError(t('doc_err_conn'));
@@ -352,7 +332,6 @@ export const DoctorManagement: React.FC = () => {
     }
   };
 
-  // Toggle Doctor Active / Available Status
   const handleToggleAvailable = async (doc: any) => {
     setActiveDropdownDocId(null);
     try {
@@ -367,7 +346,6 @@ export const DoctorManagement: React.FC = () => {
     }
   };
 
-  // Delete Doctor
   const handleDeleteDoctor = async (docId: string) => {
     setActiveDropdownDocId(null);
     try {
@@ -381,7 +359,6 @@ export const DoctorManagement: React.FC = () => {
     }
   };
 
-  // Open Manage Shifts Modal
   const handleOpenShifts = (doc: any) => {
     setActiveShiftDoc(doc);
     const existingDays = (doc.schedules || []).map((s: any) => s.day_of_week);
@@ -402,7 +379,6 @@ export const DoctorManagement: React.FC = () => {
     setShiftModalOpen(true);
   };
 
-  // Toggle Day selection
   const handleToggleDay = (dayIndex: number) => {
     if (selectedDays.includes(dayIndex)) {
       setSelectedDays(selectedDays.filter((d) => d !== dayIndex));
@@ -411,7 +387,6 @@ export const DoctorManagement: React.FC = () => {
     }
   };
 
-  // Save Shifts
   const handleSaveShifts = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeShiftDoc) return;
@@ -440,7 +415,7 @@ export const DoctorManagement: React.FC = () => {
         return;
       }
 
-      shiftModal.close();
+      setShiftModalOpen(false);
       await loadData();
     } catch {
       setShiftSubmitError(t('doc_shift_err_conn'));
@@ -451,7 +426,6 @@ export const DoctorManagement: React.FC = () => {
 
   return (
     <div style={{ width: '100%', fontFamily: kmFont }}>
-      {/* Top Controls: + Add Doctor aligned to the left */}
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1.5rem' }}>
         <button
           type="button"
@@ -481,722 +455,69 @@ export const DoctorManagement: React.FC = () => {
           {t('doc_loading')}
         </div>
       ) : (
-        /* Doctor Rows Layout */
-        doctors.length === 0 ? (
-          <div style={{
-            minHeight: '60vh',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '3rem 2rem',
-            textAlign: 'center',
-            color: 'var(--text-muted)',
-            fontSize: '1.1rem',
-            lineHeight: 1.7,
-            fontFamily: kmFont,
-            background: 'transparent',
-            border: 'none',
-          }}>
-            <div style={{ maxWidth: '520px' }}>
-              {t('doc_no_doctors')}
-            </div>
-          </div>
-        ) : (
-          <>
-            {/* Hidden file input for table row avatar clicks */}
-            <input
-              type="file"
-              ref={rowPhotoInputRef}
-              accept="image/*"
-              onChange={handleRowPhotoFileChange}
-              style={{ display: 'none' }}
-            />
-            <div style={{
-              background: 'transparent',
-              border: 'none',
-              borderRadius: 0,
-              overflow: 'visible',
-              boxShadow: 'none',
-            }}>
-              {doctors.map((doc) => {
-                const deptObj = departments.find((d) => d.id === doc.department_id);
-                const scheduleDays = (doc.schedules || []).map((s: any) => s.day_of_week);
-
-                return (
-                  <div
-                    key={doc.id}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      flexWrap: 'wrap',
-                      gap: '1rem',
-                      padding: '0.85rem 0',
-                      borderBottom: '1px solid var(--border-color)',
-                      background: 'transparent',
-                      position: 'relative',
-                      zIndex: activeDropdownDocId === doc.id ? 50 : 1,
-                    }}
-                  >
-                    {/* Doctor Info Column with Avatar */}
-                    <div style={{ minWidth: '260px', flex: '1.5', display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-                      <div
-                        onClick={() => handleTriggerRowPhotoUpload(doc.id)}
-                        onMouseEnter={() => setHoveredAvatarDocId(doc.id)}
-                        onMouseLeave={() => setHoveredAvatarDocId(null)}
-                        title={isKm ? 'ចុចដើម្បីប្តូររូបថត' : 'Click to change photo'}
-                        style={{
-                          width: '42px',
-                          height: '42px',
-                          borderRadius: '50%',
-                          border: hoveredAvatarDocId === doc.id ? '1px solid var(--accent-primary)' : '1px solid var(--border-color)',
-                          overflow: 'hidden',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0,
-                          background: '#f8fafc',
-                          cursor: rowUploadingDocId === doc.id ? 'wait' : 'pointer',
-                          position: 'relative',
-                          transition: 'border-color 0.15s ease',
-                        }}
-                      >
-                        {rowUploadingDocId === doc.id ? (
-                          <RefreshCw size={18} className="spin" color="var(--accent-primary)" />
-                        ) : doc.photo_url ? (
-                          <>
-                            <img
-                              src={doc.photo_url}
-                              alt={doc.full_name}
-                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                              onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }}
-                            />
-                            {hoveredAvatarDocId === doc.id && (
-                              <div style={{
-                                position: 'absolute',
-                                inset: 0,
-                                background: 'rgba(0, 0, 0, 0.4)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                              }}>
-                                <Camera size={16} color="#ffffff" />
-                              </div>
-                            )}
-                          </>
-                        ) : (
-                          <>
-                            {hoveredAvatarDocId === doc.id ? (
-                              <Camera size={18} color="var(--accent-primary)" />
-                            ) : (
-                              <UserCheck size={20} color="var(--accent-primary)" />
-                            )}
-                          </>
-                        )}
-                      </div>
-                      <div>
-                        <div style={{ fontSize: '1.28rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: kmFont, lineHeight: 1.25 }}>
-                          {doc.full_name}
-                        </div>
-                        <div style={{ fontSize: '1.02rem', color: 'var(--text-muted)', marginTop: '2px', fontFamily: kmFont }}>
-                          {deptObj ? deptObj.name : t('doc_general')} • {doc.specialty}
-                        </div>
-                        {rowUploadError && rowUploadError.docId === doc.id && (
-                          <span style={{ fontSize: '0.82rem', color: '#dc2626', fontFamily: kmFont, display: 'block', marginTop: '2px' }}>
-                            {rowUploadError.message}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                  {/* Station Column */}
-                  <div style={{ minWidth: '180px', flex: '1' }}>
-                    <div style={{ fontSize: '1.12rem', color: 'var(--text-main)', fontWeight: 600, fontFamily: kmFont, lineHeight: 1.25 }}>
-                      {doc.room_number || t('doc_general_outpatient')}
-                    </div>
-                  </div>
-
-                  {/* Weekly Working Days Column */}
-                  <div style={{ minWidth: '240px', flex: '1.2' }}>
-                    <div style={{ fontSize: '0.92rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, marginBottom: '4px', fontFamily: kmFont }}>
-                      {t('doc_weekly_working_days')}
-                    </div>
-                    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                      {DAY_DEFS.map((day) => {
-                        const isScheduled = scheduleDays.includes(day.dayIndex);
-                        return (
-                          <span
-                            key={day.dayIndex}
-                            style={{
-                              padding: '0.15rem 0.45rem',
-                              border: isScheduled ? '1px solid var(--text-main)' : '1px solid var(--border-color)',
-                              borderRadius: '4px',
-                              fontSize: '0.85rem',
-                              fontWeight: isScheduled ? 600 : 400,
-                              color: isScheduled ? 'var(--text-main)' : 'var(--text-muted)',
-                              background: 'transparent',
-                              fontFamily: kmFont,
-                            }}
-                          >
-                            {t(day.labelKey)}
-                          </span>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Actions Column: Three-dot dropdown menu */}
-                  <div style={{ position: 'relative', zIndex: activeDropdownDocId === doc.id ? 60 : 'auto' }}>
-                    <button
-                      onClick={() => setActiveDropdownDocId(activeDropdownDocId === doc.id ? null : doc.id)}
-                      style={{
-                        width: '32px',
-                        height: '32px',
-                        padding: 0,
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '1.2rem',
-                        fontWeight: 700,
-                        letterSpacing: '1px',
-                        background: 'transparent',
-                        border: '1px solid var(--border-color)',
-                        borderRadius: '4px',
-                        color: 'var(--text-main)',
-                        cursor: 'pointer',
-                        boxShadow: 'none',
-                        lineHeight: 1,
-                      }}
-                    >
-                      ···
-                    </button>
-
-                    {activeDropdownDocId === doc.id && (
-                      <>
-                        <div
-                          onClick={() => setActiveDropdownDocId(null)}
-                          style={{
-                            position: 'fixed',
-                            inset: 0,
-                            zIndex: 99,
-                            background: 'transparent',
-                          }}
-                        />
-                        <div style={{
-                          position: 'absolute',
-                          right: 0,
-                          top: 'calc(100% + 4px)',
-                          background: 'var(--bg-primary, #ffffff)',
-                          border: 'none',
-                          borderRadius: 0,
-                          display: 'flex',
-                          flexDirection: 'column',
-                          minWidth: '140px',
-                          zIndex: 100,
-                          boxShadow: 'none',
-                        }}>
-                        <button
-                          onClick={() => handleToggleAvailable(doc)}
-                          onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
-                          onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
-                          style={{
-                            padding: '0.5rem 0.8rem',
-                            fontSize: '0.92rem',
-                            fontWeight: 500,
-                            textAlign: 'left',
-                            background: 'transparent',
-                            border: 'none',
-                            color: doc.is_available ? '#059669' : 'var(--text-muted)',
-                            cursor: 'pointer',
-                            boxShadow: 'none',
-                            fontFamily: kmFont,
-                            transition: 'opacity 0.15s ease',
-                          }}
-                        >
-                          {doc.is_available ? t('doc_active') : t('doc_inactive')}
-                        </button>
-                        <button
-                          onClick={() => {
-                            setActiveDropdownDocId(null);
-                            handleOpenEditDoc(doc);
-                          }}
-                          onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
-                          onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
-                          style={{
-                            padding: '0.5rem 0.8rem',
-                            fontSize: '0.92rem',
-                            fontWeight: 500,
-                            textAlign: 'left',
-                            background: 'transparent',
-                            border: 'none',
-                            color: 'var(--text-main)',
-                            cursor: 'pointer',
-                            boxShadow: 'none',
-                            fontFamily: kmFont,
-                            transition: 'opacity 0.15s ease',
-                          }}
-                        >
-                          {t('doc_edit')}
-                        </button>
-                        <button
-                          onClick={() => {
-                            setActiveDropdownDocId(null);
-                            handleOpenShifts(doc);
-                          }}
-                          onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
-                          onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
-                          style={{
-                            padding: '0.5rem 0.8rem',
-                            fontSize: '0.92rem',
-                            fontWeight: 500,
-                            textAlign: 'left',
-                            background: 'transparent',
-                            border: 'none',
-                            color: 'var(--text-main)',
-                            cursor: 'pointer',
-                            boxShadow: 'none',
-                            fontFamily: kmFont,
-                            transition: 'opacity 0.15s ease',
-                          }}
-                        >
-                          {t('doc_manage_shifts')}
-                        </button>
-                        <button
-                          onClick={() => handleDeleteDoctor(doc.id)}
-                          onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
-                          onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
-                          style={{
-                            padding: '0.5rem 0.8rem',
-                            fontSize: '0.92rem',
-                            fontWeight: 500,
-                            textAlign: 'left',
-                            background: 'transparent',
-                            border: 'none',
-                            color: '#dc2626',
-                            cursor: 'pointer',
-                            boxShadow: 'none',
-                            fontFamily: kmFont,
-                            transition: 'opacity 0.15s ease',
-                          }}
-                        >
-                          {t('doc_delete')}
-                        </button>
-                      </div>
-                    </>
-                  )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </>
-        )
+        <DoctorList
+          doctors={doctors}
+          departments={departments}
+          activeDropdownDocId={activeDropdownDocId}
+          setActiveDropdownDocId={setActiveDropdownDocId}
+          hoveredAvatarDocId={hoveredAvatarDocId}
+          setHoveredAvatarDocId={setHoveredAvatarDocId}
+          rowUploadingDocId={rowUploadingDocId}
+          rowUploadError={rowUploadError}
+          onTriggerRowPhotoUpload={handleTriggerRowPhotoUpload}
+          onRowPhotoFileChange={handleRowPhotoFileChange}
+          rowPhotoInputRef={rowPhotoInputRef}
+          onToggleAvailable={handleToggleAvailable}
+          onEdit={handleOpenEditDoc}
+          onOpenShifts={handleOpenShifts}
+          onDelete={handleDeleteDoctor}
+        />
       )}
 
-      {/* Add / Edit Doctor Modal */}
-      {docModal.shouldRender && (
-        <div className={docModal.overlayClass} onClick={(e) => { if (e.target === e.currentTarget) docModal.close(); }}>
-          <div className={docModal.cardClass} style={{ maxWidth: '520px', fontFamily: kmFont }}>
-            <div className="responsive-modal-body" style={{ padding: '1.6rem 1.75rem' }}>
-              <h3 style={{ fontSize: '1.35rem', fontWeight: 700, margin: '0 0 1.35rem 0', color: 'var(--text-main)', fontFamily: kmFont }}>
-                {editingDocId ? t('doc_modal_edit_title') : t('doc_modal_add_title')}
-              </h3>
+      <DoctorModal
+        isOpen={docModalOpen}
+        onClose={() => setDocModalOpen(false)}
+        editingDocId={editingDocId}
+        departments={departments}
+        docDeptId={docDeptId}
+        setDocDeptId={setDocDeptId}
+        docFullName={docFullName}
+        setDocFullName={setDocFullName}
+        docSpecialty={docSpecialty}
+        setDocSpecialty={setDocSpecialty}
+        docRoom={docRoom}
+        setDocRoom={setDocRoom}
+        docLicense={docLicense}
+        setDocLicense={setDocLicense}
+        docMinutes={docMinutes}
+        setDocMinutes={setDocMinutes}
+        docPhotoUrl={docPhotoUrl}
+        docUploadingPhoto={docUploadingPhoto}
+        docPhotoError={docPhotoError}
+        docNameError={docNameError}
+        docSpecialtyError={docSpecialtyError}
+        docDeptError={docDeptError}
+        docSubmitError={docSubmitError}
+        docLoading={docLoading}
+        onPhotoFileChange={handlePhotoFileChange}
+        onDeletePhoto={handleDeleteDocPhoto}
+        onSave={handleSaveDoctor}
+      />
 
-            <form onSubmit={handleSaveDoctor} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              {/* Doctor Avatar Picker (Azure Blob Storage) */}
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '0.5rem' }}>
-                <input
-                  type="file"
-                  ref={docPhotoInputRef}
-                  accept="image/*"
-                  onChange={handlePhotoFileChange}
-                  style={{ display: 'none' }}
-                />
-                <div
-                  onClick={() => !docUploadingPhoto && docPhotoInputRef.current?.click()}
-                  style={{
-                    width: '100px',
-                    height: '100px',
-                    borderRadius: '50%',
-                    border: '1px dashed var(--border-color)',
-                    backgroundColor: '#ffffff',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: docUploadingPhoto ? 'not-allowed' : 'pointer',
-                    position: 'relative',
-                    overflow: 'hidden',
-                    boxShadow: 'none',
-                    opacity: docUploadingPhoto ? 0.6 : 1,
-                  }}
-                  title={isKm ? 'ចុចដើម្បីប្តូររូបថត' : 'Click to change photo'}
-                >
-                  {docUploadingPhoto ? (
-                    <RefreshCw size={24} className="spin" color="var(--accent-primary)" />
-                  ) : docPhotoUrl ? (
-                    <img
-                      src={docPhotoUrl}
-                      alt="Doctor Preview"
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }}
-                    />
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', color: 'var(--text-muted)' }}>
-                      <Camera size={26} color="var(--accent-primary)" />
-                      <span style={{ fontSize: '0.85rem', fontFamily: kmFont }}>{isKm ? 'រូបថត' : 'Photo'}</span>
-                    </div>
-                  )}
-                </div>
-
-                {docPhotoUrl && (
-                  <button
-                    type="button"
-                    onClick={handleDeleteDocPhoto}
-                    disabled={docUploadingPhoto}
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      color: '#dc2626',
-                      fontSize: '0.88rem',
-                      cursor: docUploadingPhoto ? 'not-allowed' : 'pointer',
-                      marginTop: '4px',
-                      fontFamily: kmFont,
-                      textDecoration: 'underline',
-                    }}
-                  >
-                    {isKm ? 'លុបរូបចេញ' : 'Remove Photo'}
-                  </button>
-                )}
-
-                {docPhotoError && (
-                  <div style={{ color: '#dc2626', fontSize: '0.85rem', marginTop: '4px', fontFamily: kmFont }}>
-                    {docPhotoError}
-                  </div>
-                )}
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px', fontFamily: kmFont }}>
-                  {t('doc_dept_label')}
-                </label>
-                <select
-                  value={docDeptId}
-                  onChange={(e) => {
-                    setDocDeptId(e.target.value);
-                    if (docDeptError) setDocDeptError(null);
-                  }}
-                  style={{
-                    width: '100%',
-                    padding: '0.65rem 1.15rem',
-                    fontSize: '0.98rem',
-                    borderRadius: 'var(--radius-full)',
-                    border: docDeptError ? '1px solid #dc2626' : '1px solid var(--border-color)',
-                    boxShadow: 'none',
-                    outline: 'none',
-                    background: '#ffffff',
-                    color: 'var(--text-main)',
-                    boxSizing: 'border-box',
-                    fontFamily: kmFont,
-                  }}
-                >
-                  {departments.map((dept) => (
-                    <option key={dept.id} value={dept.id}>
-                      {dept.name} ({dept.code || 'DEPT'})
-                    </option>
-                  ))}
-                </select>
-                {docDeptError && (
-                  <div style={{ color: '#dc2626', fontSize: '0.88rem', marginTop: '4px', fontFamily: kmFont }}>
-                    {docDeptError}
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px', fontFamily: kmFont }}>
-                  {t('doc_name_label')}
-                </label>
-                <input
-                  type="text"
-                  placeholder={t('doc_name_placeholder')}
-                  value={docFullName}
-                  onChange={(e) => {
-                    setDocFullName(e.target.value);
-                    if (docNameError) setDocNameError(null);
-                  }}
-                  style={{
-                    width: '100%',
-                    padding: '0.65rem 1.15rem',
-                    fontSize: '0.98rem',
-                    borderRadius: 'var(--radius-full)',
-                    border: docNameError ? '1px solid #dc2626' : '1px solid var(--border-color)',
-                    boxShadow: 'none',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                    fontFamily: kmFont,
-                  }}
-                />
-                {docNameError && (
-                  <div style={{ color: '#dc2626', fontSize: '0.88rem', marginTop: '4px', fontFamily: kmFont }}>
-                    {docNameError}
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px', fontFamily: kmFont }}>
-                  {t('doc_specialty_label')}
-                </label>
-                <input
-                  type="text"
-                  placeholder={t('doc_specialty_placeholder')}
-                  value={docSpecialty}
-                  onChange={(e) => {
-                    setDocSpecialty(e.target.value);
-                    if (docSpecialtyError) setDocSpecialtyError(null);
-                  }}
-                  style={{
-                    width: '100%',
-                    padding: '0.65rem 1.15rem',
-                    fontSize: '0.98rem',
-                    borderRadius: 'var(--radius-full)',
-                    border: docSpecialtyError ? '1px solid #dc2626' : '1px solid var(--border-color)',
-                    boxShadow: 'none',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                    fontFamily: kmFont,
-                  }}
-                />
-                {docSpecialtyError && (
-                  <div style={{ color: '#dc2626', fontSize: '0.88rem', marginTop: '4px', fontFamily: kmFont }}>
-                    {docSpecialtyError}
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px', fontFamily: kmFont }}>
-                  {t('doc_license_label')}
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. MED-CAM-8890"
-                  value={docLicense}
-                  onChange={(e) => setDocLicense(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '0.65rem 1.15rem',
-                    fontSize: '0.98rem',
-                    borderRadius: 'var(--radius-full)',
-                    border: '1px solid var(--border-color)',
-                    boxShadow: 'none',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                    fontFamily: kmFont,
-                  }}
-                />
-              </div>
-
-              {docSubmitError && (
-                <div style={{ color: '#dc2626', fontSize: '0.88rem', fontFamily: kmFont }}>
-                  {docSubmitError}
-                </div>
-              )}
-
-              <div style={{ display: 'flex', gap: '0.85rem', marginTop: '0.65rem' }}>
-                <button
-                  type="button"
-                  onClick={docModal.close}
-                  style={{
-                    flex: 1,
-                    padding: '0.7rem 1.25rem',
-                    fontSize: '1rem',
-                    fontWeight: 500,
-                    background: 'transparent',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: 'var(--radius-full)',
-                    color: 'var(--text-muted)',
-                    cursor: 'pointer',
-                    boxShadow: 'none',
-                    fontFamily: kmFont,
-                    transition: 'all 0.15s ease',
-                  }}
-                >
-                  {t('cancel')}
-                </button>
-                <button
-                  type="submit"
-                  disabled={docLoading}
-                  style={{
-                    flex: 1,
-                    padding: '0.7rem 1.25rem',
-                    fontSize: '1rem',
-                    fontWeight: 600,
-                    background: 'transparent',
-                    border: '1px solid var(--text-main)',
-                    borderRadius: 'var(--radius-full)',
-                    color: 'var(--text-main)',
-                    cursor: 'pointer',
-                    boxShadow: 'none',
-                    fontFamily: kmFont,
-                    transition: 'all 0.15s ease',
-                  }}
-                >
-                  {editingDocId ? t('doc_btn_save') : t('doc_btn_create')}
-                </button>
-              </div>
-            </form>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Manage Shifts Modal */}
-      {shiftModal.shouldRender && activeShiftDoc && (
-        <div className={shiftModal.overlayClass} onClick={(e) => { if (e.target === e.currentTarget) shiftModal.close(); }}>
-          <div className={shiftModal.cardClass} style={{ maxWidth: '520px', fontFamily: kmFont }}>
-            <div className="responsive-modal-body" style={{ padding: '1.6rem 1.75rem' }}>
-              <h3 style={{ fontSize: '1.35rem', fontWeight: 700, margin: '0 0 0.35rem 0', color: 'var(--text-main)', fontFamily: kmFont }}>
-                {t('doc_shifts_modal_title')}
-              </h3>
-            <div style={{ fontSize: '1rem', color: 'var(--text-muted)', marginBottom: '1.35rem', fontFamily: kmFont }}>
-              {activeShiftDoc.full_name} ({activeShiftDoc.specialty})
-            </div>
-
-            <form onSubmit={handleSaveShifts} style={{ display: 'flex', flexDirection: 'column', gap: '1.15rem' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '8px', fontFamily: kmFont }}>
-                  {t('doc_shift_days_label')}
-                </label>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.55rem' }}>
-                  {DAY_DEFS.map((day) => {
-                    const checked = selectedDays.includes(day.dayIndex);
-                    return (
-                      <button
-                        type="button"
-                        key={day.dayIndex}
-                        onClick={() => handleToggleDay(day.dayIndex)}
-                        style={{
-                          padding: '0.6rem 0.4rem',
-                          fontSize: '0.92rem',
-                          fontWeight: checked ? 700 : 500,
-                          background: checked ? 'var(--accent-primary)' : 'transparent',
-                          border: checked ? '1px solid var(--accent-primary)' : '1px solid var(--border-color)',
-                          borderRadius: 'var(--radius-full)',
-                          color: checked ? '#ffffff' : 'var(--text-muted)',
-                          cursor: 'pointer',
-                          boxShadow: 'none',
-                          fontFamily: kmFont,
-                          transition: 'all 0.15s ease',
-                        }}
-                      >
-                        {t(day.fullKey)}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px', fontFamily: kmFont }}>
-                    {t('doc_shift_start')}
-                  </label>
-                  <input
-                    type="time"
-                    value={shiftStartTime}
-                    onChange={(e) => setShiftStartTime(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '0.65rem 1.15rem',
-                      fontSize: '0.98rem',
-                      borderRadius: 'var(--radius-full)',
-                      border: '1px solid var(--border-color)',
-                      boxShadow: 'none',
-                      outline: 'none',
-                      boxSizing: 'border-box',
-                      fontFamily: kmFont,
-                    }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px', fontFamily: kmFont }}>
-                    {t('doc_shift_end')}
-                  </label>
-                  <input
-                    type="time"
-                    value={shiftEndTime}
-                    onChange={(e) => setShiftEndTime(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '0.65rem 1.15rem',
-                      fontSize: '0.98rem',
-                      borderRadius: 'var(--radius-full)',
-                      border: '1px solid var(--border-color)',
-                      boxShadow: 'none',
-                      outline: 'none',
-                      boxSizing: 'border-box',
-                      fontFamily: kmFont,
-                    }}
-                  />
-                </div>
-              </div>
-
-              {shiftSubmitError && (
-                <div style={{ color: '#dc2626', fontSize: '0.88rem', fontFamily: kmFont }}>
-                  {shiftSubmitError}
-                </div>
-              )}
-
-              <div style={{ display: 'flex', gap: '0.85rem', marginTop: '0.65rem' }}>
-                <button
-                  type="button"
-                  onClick={shiftModal.close}
-                  style={{
-                    flex: 1,
-                    padding: '0.7rem 1.25rem',
-                    fontSize: '1rem',
-                    fontWeight: 500,
-                    background: 'transparent',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: 'var(--radius-full)',
-                    color: 'var(--text-muted)',
-                    cursor: 'pointer',
-                    boxShadow: 'none',
-                    fontFamily: kmFont,
-                    transition: 'all 0.15s ease',
-                  }}
-                >
-                  {t('cancel')}
-                </button>
-                <button
-                  type="submit"
-                  disabled={shiftLoading}
-                  style={{
-                    flex: 1,
-                    padding: '0.7rem 1.25rem',
-                    fontSize: '1rem',
-                    fontWeight: 600,
-                    background: 'transparent',
-                    border: '1px solid var(--text-main)',
-                    borderRadius: 'var(--radius-full)',
-                    color: 'var(--text-main)',
-                    cursor: 'pointer',
-                    boxShadow: 'none',
-                    fontFamily: kmFont,
-                    transition: 'all 0.15s ease',
-                  }}
-                >
-                  {t('doc_save_shifts')}
-                </button>
-              </div>
-            </form>
-            </div>
-          </div>
-        </div>
-      )}
+      <DoctorScheduleModal
+        isOpen={shiftModalOpen}
+        onClose={() => setShiftModalOpen(false)}
+        activeShiftDoc={activeShiftDoc}
+        selectedDays={selectedDays}
+        onToggleDay={handleToggleDay}
+        shiftStartTime={shiftStartTime}
+        setShiftStartTime={setShiftStartTime}
+        shiftEndTime={shiftEndTime}
+        setShiftEndTime={setShiftEndTime}
+        shiftSubmitError={shiftSubmitError}
+        shiftLoading={shiftLoading}
+        onSave={handleSaveShifts}
+      />
     </div>
   );
 };
