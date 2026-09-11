@@ -18,7 +18,7 @@ export const PatientFeatures: React.FC = () => {
         position: 'relative',
         background: 'linear-gradient(180deg, #11402e 0%, #134734 7%, #1c664b 16%, #358869 26%, #64b290 38%, #a8dec6 50%, #def3e9 62%, #ffffff 72%, #ffffff 100%)',
         color: '#ffffff',
-        padding: '4.5rem 1.5rem 7rem 1.5rem',
+        padding: '4.5rem 1.5rem 3rem 1.5rem',
         overflow: 'hidden',
       }}
     >
@@ -98,7 +98,7 @@ export const PatientFeatures: React.FC = () => {
               position: 'relative',
               borderRadius: '20px',
               overflow: 'hidden',
-              height: '240px',
+              minHeight: '255px',
               border: '1px solid rgba(255, 255, 255, 0.2)',
               boxShadow: '0 12px 32px rgba(0, 0, 0, 0.2)',
               display: 'flex',
@@ -135,7 +135,7 @@ export const PatientFeatures: React.FC = () => {
               style={{
                 position: 'absolute',
                 inset: 0,
-                background: 'linear-gradient(to right, #0d382c 0%, #0d382c 36%, rgba(13, 56, 44, 0.88) 50%, rgba(13, 56, 44, 0.35) 66%, rgba(13, 56, 44, 0) 84%)',
+                background: 'linear-gradient(to right, #0d382c 0%, #0d382c 42%, rgba(13, 56, 44, 0.92) 56%, rgba(13, 56, 44, 0.4) 74%, rgba(13, 56, 44, 0) 90%)',
                 zIndex: 1,
                 pointerEvents: 'none',
               }}
@@ -147,34 +147,34 @@ export const PatientFeatures: React.FC = () => {
               style={{
                 position: 'relative',
                 zIndex: 2,
-                width: '52%',
-                maxWidth: '310px',
-                padding: '2rem 1.75rem',
+                width: '56%',
+                maxWidth: '340px',
+                padding: '1.75rem 1.65rem',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'center',
               }}
             >
-              {/* White rounded badge matching reference */}
+              {/* Outline icon badge with no filled background */}
               <div
                 style={{
                   width: '38px',
                   height: '38px',
                   borderRadius: '10px',
-                  background: '#ffffff',
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+                  background: 'transparent',
+                  border: '1.5px solid rgba(255, 255, 255, 0.5)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   marginBottom: '0.85rem',
                 }}
               >
-                <Smartphone size={20} color="#0c2f27" />
+                <Smartphone size={20} color="#ffffff" />
               </div>
 
               <h3
                 style={{
-                  fontSize: '1.25rem',
+                  fontSize: language === 'km' ? '1.32rem' : '1.25rem',
                   fontWeight: 700,
                   color: '#ffffff',
                   marginBottom: '0.45rem',
@@ -186,9 +186,9 @@ export const PatientFeatures: React.FC = () => {
               </h3>
               <p
                 style={{
-                  fontSize: '0.86rem',
-                  color: 'rgba(255, 255, 255, 0.88)',
-                  lineHeight: 1.55,
+                  fontSize: language === 'km' ? '0.98rem' : '0.92rem',
+                  color: 'rgba(255, 255, 255, 0.92)',
+                  lineHeight: language === 'km' ? 1.65 : 1.55,
                   margin: 0,
                 }}
               >
@@ -204,7 +204,7 @@ export const PatientFeatures: React.FC = () => {
               position: 'relative',
               borderRadius: '20px',
               overflow: 'hidden',
-              height: '240px',
+              minHeight: '255px',
               border: '1px solid rgba(255, 255, 255, 0.2)',
               boxShadow: '0 12px 32px rgba(0, 0, 0, 0.2)',
               display: 'flex',
@@ -241,7 +241,7 @@ export const PatientFeatures: React.FC = () => {
               style={{
                 position: 'absolute',
                 inset: 0,
-                background: 'linear-gradient(to left, #124e40 0%, #124e40 38%, rgba(18, 78, 64, 0.9) 52%, rgba(18, 78, 64, 0.35) 68%, rgba(18, 78, 64, 0) 84%)',
+                background: 'linear-gradient(to left, #124e40 0%, #124e40 42%, rgba(18, 78, 64, 0.92) 56%, rgba(18, 78, 64, 0.4) 74%, rgba(18, 78, 64, 0) 90%)',
                 zIndex: 1,
                 pointerEvents: 'none',
               }}
@@ -253,35 +253,35 @@ export const PatientFeatures: React.FC = () => {
               style={{
                 position: 'relative',
                 zIndex: 2,
-                width: '52%',
-                maxWidth: '310px',
+                width: '56%',
+                maxWidth: '340px',
                 marginLeft: 'auto',
-                padding: '2rem 1.75rem',
+                padding: '1.75rem 1.65rem',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'center',
               }}
             >
-              {/* White rounded badge matching reference */}
+              {/* Outline icon badge with no filled background */}
               <div
                 style={{
                   width: '38px',
                   height: '38px',
                   borderRadius: '10px',
-                  background: '#ffffff',
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+                  background: 'transparent',
+                  border: '1.5px solid rgba(255, 255, 255, 0.5)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   marginBottom: '0.85rem',
                 }}
               >
-                <Clock size={20} color="#0c2f27" />
+                <Clock size={20} color="#ffffff" />
               </div>
 
               <h3
                 style={{
-                  fontSize: '1.25rem',
+                  fontSize: language === 'km' ? '1.32rem' : '1.25rem',
                   fontWeight: 700,
                   color: '#ffffff',
                   marginBottom: '0.45rem',
@@ -293,9 +293,9 @@ export const PatientFeatures: React.FC = () => {
               </h3>
               <p
                 style={{
-                  fontSize: '0.86rem',
-                  color: 'rgba(255, 255, 255, 0.88)',
-                  lineHeight: 1.55,
+                  fontSize: language === 'km' ? '0.98rem' : '0.92rem',
+                  color: 'rgba(255, 255, 255, 0.92)',
+                  lineHeight: language === 'km' ? 1.65 : 1.55,
                   margin: 0,
                 }}
               >
@@ -311,7 +311,7 @@ export const PatientFeatures: React.FC = () => {
               position: 'relative',
               borderRadius: '20px',
               overflow: 'hidden',
-              height: '240px',
+              minHeight: '255px',
               border: '1px solid rgba(255, 255, 255, 0.2)',
               boxShadow: '0 12px 32px rgba(0, 0, 0, 0.2)',
               display: 'flex',
@@ -348,7 +348,7 @@ export const PatientFeatures: React.FC = () => {
               style={{
                 position: 'absolute',
                 inset: 0,
-                background: 'linear-gradient(to right, #0e4436 0%, #0e4436 36%, rgba(14, 68, 54, 0.88) 50%, rgba(14, 68, 54, 0.35) 66%, rgba(14, 68, 54, 0) 84%)',
+                background: 'linear-gradient(to right, #0e4436 0%, #0e4436 42%, rgba(14, 68, 54, 0.92) 56%, rgba(14, 68, 54, 0.4) 74%, rgba(14, 68, 54, 0) 90%)',
                 zIndex: 1,
                 pointerEvents: 'none',
               }}
@@ -360,34 +360,34 @@ export const PatientFeatures: React.FC = () => {
               style={{
                 position: 'relative',
                 zIndex: 2,
-                width: '52%',
-                maxWidth: '310px',
-                padding: '2rem 1.75rem',
+                width: '56%',
+                maxWidth: '340px',
+                padding: '1.75rem 1.65rem',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'center',
               }}
             >
-              {/* White rounded badge matching reference */}
+              {/* Outline icon badge with no filled background */}
               <div
                 style={{
                   width: '38px',
                   height: '38px',
                   borderRadius: '10px',
-                  background: '#ffffff',
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+                  background: 'transparent',
+                  border: '1.5px solid rgba(255, 255, 255, 0.5)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   marginBottom: '0.85rem',
                 }}
               >
-                <Users size={20} color="#0c2f27" />
+                <Users size={20} color="#ffffff" />
               </div>
 
               <h3
                 style={{
-                  fontSize: '1.25rem',
+                  fontSize: language === 'km' ? '1.32rem' : '1.25rem',
                   fontWeight: 700,
                   color: '#ffffff',
                   marginBottom: '0.45rem',
@@ -399,9 +399,9 @@ export const PatientFeatures: React.FC = () => {
               </h3>
               <p
                 style={{
-                  fontSize: '0.86rem',
-                  color: 'rgba(255, 255, 255, 0.88)',
-                  lineHeight: 1.55,
+                  fontSize: language === 'km' ? '0.98rem' : '0.92rem',
+                  color: 'rgba(255, 255, 255, 0.92)',
+                  lineHeight: language === 'km' ? 1.65 : 1.55,
                   margin: 0,
                 }}
               >
@@ -410,10 +410,10 @@ export const PatientFeatures: React.FC = () => {
               {language === 'km' && (
                 <span
                   style={{
-                    fontSize: '0.82rem',
-                    color: 'rgba(255, 255, 255, 0.78)',
-                    fontWeight: 500,
-                    marginTop: '0.35rem',
+                    fontSize: '0.92rem',
+                    color: 'rgba(255, 255, 255, 0.85)',
+                    fontWeight: 600,
+                    marginTop: '0.45rem',
                     display: 'block',
                   }}
                 >
@@ -430,7 +430,7 @@ export const PatientFeatures: React.FC = () => {
               position: 'relative',
               borderRadius: '20px',
               overflow: 'hidden',
-              height: '240px',
+              minHeight: '255px',
               border: '1px solid rgba(255, 255, 255, 0.2)',
               boxShadow: '0 12px 32px rgba(0, 0, 0, 0.2)',
               display: 'flex',
@@ -467,7 +467,7 @@ export const PatientFeatures: React.FC = () => {
               style={{
                 position: 'absolute',
                 inset: 0,
-                background: 'linear-gradient(to right, #0d2634 0%, #0d2634 38%, rgba(13, 38, 52, 0.9) 52%, rgba(13, 38, 52, 0.35) 68%, rgba(13, 38, 52, 0) 84%)',
+                background: 'linear-gradient(to right, #0d2634 0%, #0d2634 42%, rgba(13, 38, 52, 0.92) 56%, rgba(13, 38, 52, 0.4) 74%, rgba(13, 38, 52, 0) 90%)',
                 zIndex: 1,
                 pointerEvents: 'none',
               }}
@@ -479,34 +479,34 @@ export const PatientFeatures: React.FC = () => {
               style={{
                 position: 'relative',
                 zIndex: 2,
-                width: '52%',
-                maxWidth: '310px',
-                padding: '2rem 1.75rem',
+                width: '56%',
+                maxWidth: '340px',
+                padding: '1.75rem 1.65rem',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'center',
               }}
             >
-              {/* White rounded badge with green checkmark matching reference */}
+              {/* Outline icon badge with no filled background */}
               <div
                 style={{
                   width: '38px',
                   height: '38px',
                   borderRadius: '10px',
-                  background: '#ffffff',
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+                  background: 'transparent',
+                  border: '1.5px solid rgba(255, 255, 255, 0.5)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   marginBottom: '0.85rem',
                 }}
               >
-                <CheckCircle2 size={20} color="#16a34a" />
+                <CheckCircle2 size={20} color="#ffffff" />
               </div>
 
               <h3
                 style={{
-                  fontSize: '1.25rem',
+                  fontSize: language === 'km' ? '1.32rem' : '1.25rem',
                   fontWeight: 700,
                   color: '#ffffff',
                   marginBottom: '0.45rem',
@@ -518,9 +518,9 @@ export const PatientFeatures: React.FC = () => {
               </h3>
               <p
                 style={{
-                  fontSize: '0.86rem',
-                  color: 'rgba(255, 255, 255, 0.88)',
-                  lineHeight: 1.55,
+                  fontSize: language === 'km' ? '0.98rem' : '0.92rem',
+                  color: 'rgba(255, 255, 255, 0.92)',
+                  lineHeight: language === 'km' ? 1.65 : 1.55,
                   margin: 0,
                 }}
               >
@@ -529,10 +529,10 @@ export const PatientFeatures: React.FC = () => {
               {language === 'km' && (
                 <span
                   style={{
-                    fontSize: '0.82rem',
-                    color: 'rgba(255, 255, 255, 0.78)',
-                    fontWeight: 500,
-                    marginTop: '0.35rem',
+                    fontSize: '0.92rem',
+                    color: 'rgba(255, 255, 255, 0.85)',
+                    fontWeight: 600,
+                    marginTop: '0.45rem',
                     display: 'block',
                   }}
                 >

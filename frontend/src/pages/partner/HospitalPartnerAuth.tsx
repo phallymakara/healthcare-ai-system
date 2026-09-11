@@ -73,9 +73,9 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
         AuthService.clearSession();
         setLoginErrors({
           general: isKm
-            ? 'គណនីនេះមិនទាន់មានមន្ទីរពេទ្យ ឬគ្លីនិកក្នុងប្រព័ន្ធនៅឡើយទេ។ សូមចុះឈ្មោះមន្ទីរពេទ្យរបស់អ្នកខាងក្រោម។'
-            : 'No hospital or clinic is registered under this account yet. Please register your facility below.',
-          suggestRegister: true,
+            ? 'គណនីនេះជាគណនីអ្នកជំងឺ មិនមែនបុគ្គលិកមន្ទីរពេទ្យ ឬគ្លីនិកទេ។ សូមចុច "ត្រឡប់ក្រោយ" ដើម្បីចូលប្រើប្រាស់ជាអ្នកជំងឺ។'
+            : 'This is a patient account, not hospital or clinic staff. Please click "Back" to access the patient portal.',
+          suggestRegister: false,
         });
         setLoading(false);
         return;
@@ -180,58 +180,60 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
         fontFamily: kmFont,
       }}
     >
-      {/* Top Header Bar */}
-      <header
-        style={{
-          width: '100%',
-          height: '64px',
-          backgroundColor: 'var(--bg-primary, #ffffff)',
-          borderBottom: '1px solid var(--border-color)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '0 2rem',
-          boxSizing: 'border-box',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <img
-            src={prosethLogo}
-            alt="Proseth Healthcare AI"
-            style={{
-              height: '36px',
-              width: 'auto',
-              objectFit: 'contain',
-              display: 'block',
-            }}
-          />
-          <div>
-            <div
+      {/* Top Header Bar - only shown during onboarding */}
+      {view === 'onboarding' && (
+        <header
+          style={{
+            width: '100%',
+            height: '64px',
+            backgroundColor: 'var(--bg-primary, #ffffff)',
+            borderBottom: '1px solid var(--border-color)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '0 2rem',
+            boxSizing: 'border-box',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <img
+              src={prosethLogo}
+              alt="Proseth Healthcare AI"
               style={{
-                fontSize: '1rem',
-                fontWeight: 700,
-                color: 'var(--text-main)',
-                lineHeight: 1.2,
+                height: '36px',
+                width: 'auto',
+                objectFit: 'contain',
+                display: 'block',
               }}
-            >
-              {t('app_title')}
-            </div>
-            <div
-              style={{
-                fontSize: '0.75rem',
-                color: 'var(--accent-primary)',
-                fontWeight: 600,
-              }}
-            >
-              {t('nav_partner_console')}
+            />
+            <div>
+              <div
+                style={{
+                  fontSize: '1rem',
+                  fontWeight: 700,
+                  color: 'var(--text-main)',
+                  lineHeight: 1.2,
+                }}
+              >
+                {t('app_title')}
+              </div>
+              <div
+                style={{
+                  fontSize: '0.75rem',
+                  color: 'var(--accent-primary)',
+                  fontWeight: 600,
+                }}
+              >
+                {t('nav_partner_console')}
+              </div>
             </div>
           </div>
-        </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <LanguageSwitcher />
-        </div>
-      </header>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <LanguageSwitcher />
+          </div>
+        </header>
+      )}
 
       {/* Main Content Area */}
       <main
@@ -240,8 +242,10 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '2.5rem 1rem',
+          padding: '1.5rem 1rem',
           boxSizing: 'border-box',
+          overflow: 'hidden',
+          minHeight: 0,
         }}
       >
         {view === 'onboarding' && (registeredUser || AuthService.getStoredUser()) ? (
@@ -258,18 +262,21 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
           <div
             style={{
               width: '100%',
-              maxWidth: '490px',
+              maxWidth: 'min(440px, 92vw)',
+              maxHeight: 'min(640px, calc(100vh - 3rem))',
               backgroundColor: 'var(--bg-primary, #ffffff)',
-              border: '1px solid var(--border-color)',
-              borderRadius: 'var(--radius-lg, 10px)',
-              padding: '1.75rem 2rem 2.1rem',
-              boxShadow: 'none',
+              border: '1px solid rgba(24, 83, 57, 0.2)',
+              borderRadius: '24px',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '0 24px 60px rgba(12, 47, 39, 0.25)',
+              overflow: 'hidden',
               boxSizing: 'border-box',
               transition: 'max-width 0.2s ease',
             }}
           >
-            {/* Top Navigation: Back Button */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', marginBottom: '0.85rem' }}>
+            {/* Top Navigation: Back Button and Language Switcher in same row */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.25rem 1.65rem 0.5rem 1.65rem', flexShrink: 0 }}>
               <button
                 type="button"
                 onClick={handleBack}
@@ -280,10 +287,10 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                   background: 'transparent',
                   border: 'none',
                   color: 'var(--text-muted)',
-                  fontSize: '0.94rem',
+                  fontSize: '0.9rem',
                   fontWeight: 600,
                   cursor: 'pointer',
-                  padding: '4px 0',
+                  padding: '2px 0',
                   fontFamily: kmFont,
                   transition: 'all 0.15s ease',
                 }}
@@ -296,19 +303,30 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                   e.currentTarget.style.transform = 'none';
                 }}
               >
-                <ArrowLeft size={18} />
+                <ArrowLeft size={17} />
                 <span>{isKm ? 'ត្រឡប់ក្រោយ' : 'Back'}</span>
               </button>
+
+              <LanguageSwitcher />
             </div>
 
+            {/* Scrollable Form Body inside Modal */}
+            <div
+              style={{
+                flex: 1,
+                overflowY: 'auto',
+                padding: '0.25rem 1.65rem 1.65rem 1.65rem',
+              }}
+            >
+
             {/* Header Title with Proseth Mascot */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: '1.75rem' }}>
-              <div style={{ marginBottom: '0.85rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: '1.35rem' }}>
+              <div style={{ marginBottom: '0.65rem' }}>
                 <img 
                   src={prosethLogo} 
                   alt="Proseth Healthcare AI" 
                   style={{ 
-                    height: '64px', 
+                    height: '52px', 
                     width: 'auto', 
                     objectFit: 'contain',
                     filter: 'drop-shadow(0 3px 8px rgba(24, 83, 57, 0.16))',
@@ -320,45 +338,30 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
 
               <h1
                 style={{
-                  fontSize: '1.55rem',
+                  fontSize: '1.35rem',
                   fontWeight: 700,
                   color: 'var(--text-main)',
-                  marginBottom: '0.45rem',
+                  margin: 0,
                   lineHeight: 1.3,
                   fontFamily: kmFont,
                 }}
               >
                 {view === 'login' ? t('partner_portal_title') : t('partner_tab_register')}
               </h1>
-              <p
-                style={{
-                  fontSize: '0.96rem',
-                  color: 'var(--text-muted)',
-                  lineHeight: 1.55,
-                  margin: 0,
-                  fontFamily: kmFont,
-                }}
-              >
-                {view === 'login'
-                  ? t('partner_portal_subtitle')
-                  : isKm
-                  ? 'បង្កើតគណនីអ្នកគ្រប់គ្រងមន្ទីរពេទ្យ / គ្លីនិករបស់អ្នក'
-                  : 'Create your primary facility administrator account'}
-              </p>
             </div>
 
             {/* VIEW 1: HOSPITAL SIGN IN */}
             {view === 'login' && (
               <form onSubmit={handleLoginSubmit}>
                 {/* Account Input */}
-                <div style={{ marginBottom: '1.25rem' }}>
+                <div style={{ marginBottom: '1rem' }}>
                   <label
                     style={{
                       display: 'block',
-                      fontSize: '0.94rem',
+                      fontSize: '0.88rem',
                       fontWeight: 600,
                       color: 'var(--text-main)',
-                      marginBottom: '0.45rem',
+                      marginBottom: '5px',
                     }}
                   >
                     {t('partner_login_account_label')}
@@ -375,12 +378,12 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                     placeholder={t('partner_login_account_placeholder')}
                     style={{
                       width: '100%',
-                      padding: '0.8rem 1.25rem',
+                      padding: '0.75rem 1.15rem',
                       border: `1px solid ${
                         loginErrors.account ? '#dc2626' : 'var(--border-color)'
                       }`,
                       borderRadius: 'var(--radius-full)',
-                      fontSize: '0.98rem',
+                      fontSize: '0.95rem',
                       color: 'var(--text-main)',
                       background: 'var(--bg-primary, #ffffff)',
                       boxSizing: 'border-box',
@@ -392,7 +395,7 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                     <span
                       style={{
                         color: '#dc2626',
-                        fontSize: '0.85rem',
+                        fontSize: '0.82rem',
                         marginTop: '4px',
                         display: 'block',
                       }}
@@ -403,14 +406,14 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                 </div>
 
                 {/* Password Input */}
-                <div style={{ marginBottom: '1.4rem' }}>
+                <div style={{ marginBottom: '1rem' }}>
                   <label
                     style={{
                       display: 'block',
-                      fontSize: '0.94rem',
+                      fontSize: '0.88rem',
                       fontWeight: 600,
                       color: 'var(--text-main)',
-                      marginBottom: '0.45rem',
+                      marginBottom: '5px',
                     }}
                   >
                     {t('partner_login_password_label')}
@@ -428,25 +431,24 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                       placeholder="••••••••"
                       style={{
                         width: '100%',
-                        padding: '0.8rem 2.85rem 0.8rem 1.25rem',
+                        padding: '0.75rem 2.85rem 0.75rem 1.15rem',
                         border: `1px solid ${
                           loginErrors.password ? '#dc2626' : 'var(--border-color)'
                         }`,
                         borderRadius: 'var(--radius-full)',
-                        fontSize: '0.98rem',
+                        fontSize: '0.95rem',
                         color: 'var(--text-main)',
                         background: 'var(--bg-primary, #ffffff)',
                         boxSizing: 'border-box',
                         outline: 'none',
-                        boxShadow: 'none',
                       }}
                     />
                     <button
                       type="button"
-                      onClick={() => setShowLoginPassword((prev: boolean) => !prev)}
+                      onClick={() => setShowLoginPassword((prev) => !prev)}
                       style={{
                         position: 'absolute',
-                        right: '14px',
+                        right: '12px',
                         top: '50%',
                         transform: 'translateY(-50%)',
                         background: 'transparent',
@@ -461,15 +463,15 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                       tabIndex={-1}
                       aria-label={showLoginPassword ? 'Hide password' : 'Show password'}
                     >
-                      {showLoginPassword ? <EyeOff size={19} /> : <Eye size={19} />}
+                      {showLoginPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
                   {loginErrors.password && (
                     <span
                       style={{
                         color: '#dc2626',
-                        fontSize: '0.88rem',
-                        marginTop: '6px',
+                        fontSize: '0.82rem',
+                        marginTop: '4px',
                         display: 'block',
                       }}
                     >
@@ -483,8 +485,8 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                   <div
                     style={{
                       color: '#dc2626',
-                      fontSize: '0.92rem',
-                      marginBottom: '1.35rem',
+                      fontSize: '0.88rem',
+                      marginBottom: '1rem',
                     }}
                   >
                     {loginErrors.general}
@@ -493,7 +495,7 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
 
                 {/* Suggest Register Button */}
                 {loginErrors.suggestRegister && (
-                  <div style={{ marginBottom: '1.5rem' }}>
+                  <div style={{ marginBottom: '1rem' }}>
                     <button
                       type="button"
                       onClick={() => {
@@ -504,12 +506,12 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                       }}
                       style={{
                         width: '100%',
-                        padding: '0.85rem 1.25rem',
+                        padding: '0.75rem 1.15rem',
                         background: 'linear-gradient(135deg, #185339 0%, #1e6d4c 45%, #2a8150 100%)',
                         border: '1px solid rgba(255, 255, 255, 0.25)',
                         color: '#ffffff',
                         borderRadius: 'var(--radius-full)',
-                        fontSize: '1rem',
+                        fontSize: '0.94rem',
                         fontWeight: 700,
                         cursor: 'pointer',
                         boxShadow: '0 4px 16px rgba(24, 83, 57, 0.24)',
@@ -529,12 +531,12 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                   disabled={loading}
                   style={{
                     width: '100%',
-                    padding: '0.85rem 1.25rem',
+                    padding: '0.78rem 1.15rem',
                     background: 'linear-gradient(135deg, #0c2f27 0%, #185339 50%, #227349 100%)',
                     color: '#ffffff',
                     border: 'none',
                     borderRadius: 'var(--radius-full)',
-                    fontSize: '1.02rem',
+                    fontSize: '0.98rem',
                     fontWeight: 700,
                     cursor: loading ? 'not-allowed' : 'pointer',
                     display: 'flex',
@@ -567,17 +569,17 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                 {/* Secondary Action: Switch to Register */}
                 <div
                   style={{
-                    marginTop: '1.4rem',
-                    paddingTop: '1.25rem',
+                    marginTop: '1rem',
+                    paddingTop: '1rem',
                     borderTop: '1px solid var(--border-color)',
                     textAlign: 'center',
                   }}
                 >
                   <div
                     style={{
-                      fontSize: '0.95rem',
+                      fontSize: '0.84rem',
                       color: 'var(--text-muted)',
-                      marginBottom: '0.65rem',
+                      marginBottom: '0.5rem',
                     }}
                   >
                     {isKm
@@ -593,27 +595,25 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                     }}
                     style={{
                       width: '100%',
-                      padding: '0.85rem 1.25rem',
-                      background: 'linear-gradient(135deg, #185339 0%, #1e6d4c 45%, #2a8150 100%)',
-                      border: '1px solid rgba(255, 255, 255, 0.25)',
+                      padding: '0.75rem 1.15rem',
+                      background: 'transparent',
+                      border: '1.5px solid #185339',
                       borderRadius: 'var(--radius-full)',
-                      color: '#ffffff',
-                      fontSize: '1rem',
+                      color: '#185339',
+                      fontSize: '0.94rem',
                       fontWeight: 700,
                       cursor: 'pointer',
-                      boxShadow: '0 4px 16px rgba(24, 83, 57, 0.24)',
+                      boxShadow: 'none',
                       transition: 'all 0.2s ease',
                       fontFamily: kmFont,
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.background = 'linear-gradient(135deg, #12432e 0%, #17573d 45%, #226f44 100%)';
-                      e.currentTarget.style.transform = 'translateY(-1.5px)';
-                      e.currentTarget.style.boxShadow = '0 6px 20px rgba(24, 83, 57, 0.32)';
+                      e.currentTarget.style.background = 'rgba(24, 83, 57, 0.08)';
+                      e.currentTarget.style.transform = 'translateY(-1px)';
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'linear-gradient(135deg, #185339 0%, #1e6d4c 45%, #2a8150 100%)';
+                      e.currentTarget.style.background = 'transparent';
                       e.currentTarget.style.transform = 'none';
-                      e.currentTarget.style.boxShadow = '0 4px 16px rgba(24, 83, 57, 0.24)';
                     }}
                   >
                     {t('partner_tab_register')}
@@ -626,14 +626,14 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
             {view === 'register' && (
               <form onSubmit={handleRegisterSubmit}>
                 {/* Admin Full Name */}
-                <div style={{ marginBottom: '1.15rem' }}>
+                <div style={{ marginBottom: '0.95rem' }}>
                   <label
                     style={{
                       display: 'block',
-                      fontSize: '0.94rem',
+                      fontSize: '0.88rem',
                       fontWeight: 600,
                       color: 'var(--text-main)',
-                      marginBottom: '0.45rem',
+                      marginBottom: '5px',
                     }}
                   >
                     {t('admin_name_label')}
@@ -650,12 +650,12 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                     placeholder="e.g. Dr. Dararith"
                     style={{
                       width: '100%',
-                      padding: '0.8rem 1.25rem',
+                      padding: '0.75rem 1.15rem',
                       border: `1px solid ${
                         registerErrors.adminFullName ? '#dc2626' : 'var(--border-color)'
                       }`,
                       borderRadius: 'var(--radius-full)',
-                      fontSize: '0.98rem',
+                      fontSize: '0.95rem',
                       color: 'var(--text-main)',
                       background: 'var(--bg-primary, #ffffff)',
                       boxSizing: 'border-box',
@@ -667,7 +667,7 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                     <span
                       style={{
                         color: '#dc2626',
-                        fontSize: '0.85rem',
+                        fontSize: '0.82rem',
                         marginTop: '4px',
                         display: 'block',
                       }}
@@ -678,14 +678,14 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                 </div>
 
                 {/* Official Email or Phone */}
-                <div style={{ marginBottom: '1.15rem' }}>
+                <div style={{ marginBottom: '0.95rem' }}>
                   <label
                     style={{
                       display: 'block',
-                      fontSize: '0.94rem',
+                      fontSize: '0.88rem',
                       fontWeight: 600,
                       color: 'var(--text-main)',
-                      marginBottom: '0.45rem',
+                      marginBottom: '5px',
                     }}
                   >
                     {t('facility_contact_label')}
@@ -702,12 +702,12 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                     placeholder={t('facility_contact_placeholder')}
                     style={{
                       width: '100%',
-                      padding: '0.8rem 1.25rem',
+                      padding: '0.75rem 1.15rem',
                       border: `1px solid ${
                         registerErrors.officialContact ? '#dc2626' : 'var(--border-color)'
                       }`,
                       borderRadius: 'var(--radius-full)',
-                      fontSize: '0.98rem',
+                      fontSize: '0.95rem',
                       color: 'var(--text-main)',
                       background: 'var(--bg-primary, #ffffff)',
                       boxSizing: 'border-box',
@@ -719,7 +719,7 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                     <span
                       style={{
                         color: '#dc2626',
-                        fontSize: '0.85rem',
+                        fontSize: '0.82rem',
                         marginTop: '4px',
                         display: 'block',
                       }}
@@ -730,14 +730,14 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                 </div>
 
                 {/* Password */}
-                <div style={{ marginBottom: '1.15rem' }}>
+                <div style={{ marginBottom: '0.95rem' }}>
                   <label
                     style={{
                       display: 'block',
-                      fontSize: '0.94rem',
+                      fontSize: '0.88rem',
                       fontWeight: 600,
                       color: 'var(--text-main)',
-                      marginBottom: '0.45rem',
+                      marginBottom: '5px',
                     }}
                   >
                     {t('partner_login_password_label')}
@@ -755,12 +755,12 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                       placeholder="••••••••"
                       style={{
                         width: '100%',
-                        padding: '0.8rem 2.85rem 0.8rem 1.25rem',
+                        padding: '0.75rem 2.85rem 0.75rem 1.15rem',
                         border: `1px solid ${
                           registerErrors.password ? '#dc2626' : 'var(--border-color)'
                         }`,
                         borderRadius: 'var(--radius-full)',
-                        fontSize: '0.98rem',
+                        fontSize: '0.95rem',
                         color: 'var(--text-main)',
                         background: 'var(--bg-primary, #ffffff)',
                         boxSizing: 'border-box',
@@ -773,7 +773,7 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                       onClick={() => setShowRegisterPassword((prev: boolean) => !prev)}
                       style={{
                         position: 'absolute',
-                        right: '14px',
+                        right: '12px',
                         top: '50%',
                         transform: 'translateY(-50%)',
                         background: 'transparent',
@@ -795,7 +795,7 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                     <span
                       style={{
                         color: '#dc2626',
-                        fontSize: '0.85rem',
+                        fontSize: '0.82rem',
                         marginTop: '4px',
                         display: 'block',
                       }}
@@ -806,14 +806,14 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                 </div>
 
                 {/* Retype Password */}
-                <div style={{ marginBottom: '1.4rem' }}>
+                <div style={{ marginBottom: '1rem' }}>
                   <label
                     style={{
                       display: 'block',
-                      fontSize: '0.94rem',
+                      fontSize: '0.88rem',
                       fontWeight: 600,
                       color: 'var(--text-main)',
-                      marginBottom: '0.45rem',
+                      marginBottom: '5px',
                     }}
                   >
                     {t('partner_retype_password_label')}
@@ -831,12 +831,12 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                       placeholder="••••••••"
                       style={{
                         width: '100%',
-                        padding: '0.8rem 2.85rem 0.8rem 1.25rem',
+                        padding: '0.75rem 2.85rem 0.75rem 1.15rem',
                         border: `1px solid ${
                           registerErrors.confirmPassword ? '#dc2626' : 'var(--border-color)'
                         }`,
                         borderRadius: 'var(--radius-full)',
-                        fontSize: '0.98rem',
+                        fontSize: '0.95rem',
                         color: 'var(--text-main)',
                         background: 'var(--bg-primary, #ffffff)',
                         boxSizing: 'border-box',
@@ -849,7 +849,7 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                       onClick={() => setShowConfirmPassword((prev: boolean) => !prev)}
                       style={{
                         position: 'absolute',
-                        right: '14px',
+                        right: '12px',
                         top: '50%',
                         transform: 'translateY(-50%)',
                         background: 'transparent',
@@ -871,7 +871,7 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                     <span
                       style={{
                         color: '#dc2626',
-                        fontSize: '0.85rem',
+                        fontSize: '0.82rem',
                         marginTop: '4px',
                         display: 'block',
                       }}
@@ -886,8 +886,8 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                   <div
                     style={{
                       color: '#dc2626',
-                      fontSize: '0.92rem',
-                      marginBottom: '1.35rem',
+                      fontSize: '0.88rem',
+                      marginBottom: '1rem',
                     }}
                   >
                     {registerErrors.general}
@@ -900,12 +900,12 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                   disabled={loading}
                   style={{
                     width: '100%',
-                    padding: '0.85rem 1.25rem',
+                    padding: '0.78rem 1.15rem',
                     background: 'linear-gradient(135deg, #185339 0%, #1e6d4c 45%, #2a8150 100%)',
                     color: '#ffffff',
                     border: '1px solid rgba(255, 255, 255, 0.25)',
                     borderRadius: 'var(--radius-full)',
-                    fontSize: '1.02rem',
+                    fontSize: '0.98rem',
                     fontWeight: 700,
                     cursor: loading ? 'not-allowed' : 'pointer',
                     display: 'flex',
@@ -938,17 +938,17 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                 {/* Secondary Action: Back to Sign In */}
                 <div
                   style={{
-                    marginTop: '1.4rem',
-                    paddingTop: '1.25rem',
+                    marginTop: '1rem',
+                    paddingTop: '1rem',
                     borderTop: '1px solid var(--border-color)',
                     textAlign: 'center',
                   }}
                 >
                   <div
                     style={{
-                      fontSize: '0.95rem',
+                      fontSize: '0.84rem',
                       color: 'var(--text-muted)',
-                      marginBottom: '0.65rem',
+                      marginBottom: '0.5rem',
                     }}
                   >
                     {isKm
@@ -964,27 +964,25 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                     }}
                     style={{
                       width: '100%',
-                      padding: '0.85rem 1.25rem',
-                      background: 'linear-gradient(135deg, #0c2f27 0%, #185339 50%, #227349 100%)',
-                      border: 'none',
+                      padding: '0.75rem 1.15rem',
+                      background: 'transparent',
+                      border: '1.5px solid #185339',
                       borderRadius: 'var(--radius-full)',
-                      color: '#ffffff',
-                      fontSize: '0.98rem',
+                      color: '#185339',
+                      fontSize: '0.94rem',
                       fontWeight: 700,
                       cursor: 'pointer',
-                      boxShadow: '0 4px 14px rgba(12, 47, 39, 0.22)',
+                      boxShadow: 'none',
                       transition: 'all 0.2s ease',
                       fontFamily: kmFont,
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.background = 'linear-gradient(135deg, #08221b 0%, #13452f 50%, #1d643f 100%)';
-                      e.currentTarget.style.transform = 'translateY(-1.5px)';
-                      e.currentTarget.style.boxShadow = '0 6px 20px rgba(12, 47, 39, 0.3)';
+                      e.currentTarget.style.background = 'rgba(24, 83, 57, 0.08)';
+                      e.currentTarget.style.transform = 'translateY(-1px)';
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'linear-gradient(135deg, #0c2f27 0%, #185339 50%, #227349 100%)';
+                      e.currentTarget.style.background = 'transparent';
                       e.currentTarget.style.transform = 'none';
-                      e.currentTarget.style.boxShadow = '0 4px 14px rgba(12, 47, 39, 0.22)';
                     }}
                   >
                     {t('sign_in')}
@@ -992,6 +990,7 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                 </div>
               </form>
             )}
+            </div>
           </div>
         )}
       </main>

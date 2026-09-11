@@ -181,7 +181,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
           ) : (
             <button
-              onClick={() => handleNavClick('patient_triage')}
+              onClick={() => handleNavClick('landing')}
               className="brand-logo"
               style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: '0.65rem' }}
             >
@@ -312,7 +312,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
           ) : (
             <button
-              onClick={() => handleNavClick('patient_triage')}
+              onClick={() => handleNavClick('landing')}
               className="brand-logo"
               style={{
                 background: 'none',

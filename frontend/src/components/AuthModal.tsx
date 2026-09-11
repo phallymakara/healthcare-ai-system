@@ -3,6 +3,7 @@ import { AuthService, UserProfile } from '../services/auth';
 import { X, Eye, EyeOff } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import prosethLogo from '../assets/ProsethBot.png';
+import { getPortalSwitchUrl } from '../utils/subdomain';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -112,32 +113,46 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
 
   return (
     <div className="responsive-modal-overlay" style={{ zIndex: 99999 }} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="responsive-modal-card" style={{ maxWidth: '540px' }}>
-        <div className="responsive-modal-body" style={{ position: 'relative', padding: '2.25rem 2.25rem' }}>
+      <div 
+        className="responsive-modal-card" 
+        style={{ 
+          maxWidth: 'min(440px, 92vw)', 
+          borderRadius: '24px', 
+          overflow: 'hidden',
+          boxShadow: '0 24px 60px rgba(12, 47, 39, 0.25)',
+          border: '1px solid rgba(24, 83, 57, 0.2)'
+        }}
+      >
+        <div className="responsive-modal-body" style={{ position: 'relative', padding: '1.75rem 1.65rem' }}>
         {/* Close Button */}
         <button
           onClick={onClose}
           style={{
             position: 'absolute',
-            top: '1.5rem',
-            right: '1.5rem',
+            top: '1.15rem',
+            right: '1.15rem',
             background: 'transparent',
             border: 'none',
             color: 'var(--text-muted)',
             cursor: 'pointer',
+            padding: '4px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: '50%',
           }}
         >
-          <X size={22} />
+          <X size={20} />
         </button>
 
         {/* Modal Brand Header with Proseth Mascot & Welcome Text */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: '1.75rem' }}>
-          <div style={{ marginBottom: '0.85rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: '1.35rem' }}>
+          <div style={{ marginBottom: '0.65rem' }}>
             <img 
               src={prosethLogo} 
               alt="Proseth Healthcare AI" 
               style={{ 
-                height: '64px', 
+                height: '52px', 
                 width: 'auto', 
                 objectFit: 'contain',
                 filter: 'drop-shadow(0 3px 8px rgba(24, 83, 57, 0.16))',
@@ -148,8 +163,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
           </div>
 
           <h3 style={{ 
-            margin: '0 0 0.35rem 0', 
-            fontSize: '1.5rem', 
+            margin: 0, 
+            fontSize: '1.3rem', 
             fontWeight: 800, 
             color: 'var(--text-main)', 
             letterSpacing: '-0.01em',
@@ -159,29 +174,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
               ? (language === 'km' ? 'សូមស្វាគមន៍មកកាន់ប្រព័ន្ធសុខភាព AI' : 'Welcome to Healthcare AI')
               : (language === 'km' ? 'សូមស្វាគមន៍! បង្កើតគណនីថ្មី' : 'Welcome! Create Your Account')}
           </h3>
-
-          <p style={{
-            margin: 0,
-            fontSize: '0.92rem',
-            color: 'var(--text-muted)',
-            lineHeight: 1.45,
-            fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit'
-          }}>
-            {tab === 'login'
-              ? (language === 'km' 
-                  ? 'សូមបញ្ចូលព័ត៌មានគណនីរបស់អ្នកដើម្បីចូលប្រើប្រាស់ និងតាមដានវេនរង់ចាំ' 
-                  : 'Sign in to access your appointments and live queue status')
-              : (language === 'km' 
-                  ? 'ចុះឈ្មោះដើម្បីកក់លេខរង់ចាំ និងពិគ្រោះជាមួយវេជ្ជបណ្ឌិត' 
-                  : 'Sign up to reserve queue numbers and track your visits')}
-          </p>
         </div>
 
         {/* Login Form */}
         {tab === 'login' ? (
-          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '6px' }}>
+              <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '5px' }}>
                 {language === 'km' ? 'អ៊ីមែល ឬ លេខទូរស័ព្ទ' : 'Email or Phone Number'}
               </label>
               <input
@@ -193,19 +192,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
                 className={error ? 'input-error' : ''}
                 style={{
                   width: '100%',
-                  padding: '0.85rem 1.25rem',
+                  padding: '0.75rem 1.15rem',
                   background: 'transparent',
                   border: '1px solid var(--border-color)',
                   borderRadius: 'var(--radius-full)',
                   color: 'var(--text-main)',
-                  fontSize: '0.98rem',
+                  fontSize: '0.95rem',
                   boxSizing: 'border-box',
                 }}
               />
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '6px' }}>
+              <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '5px' }}>
                 {language === 'km' ? 'ពាក្យសម្ងាត់' : 'Password'}
               </label>
               <div style={{ position: 'relative' }}>
@@ -218,12 +217,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
                   className={error ? 'input-error' : ''}
                   style={{
                     width: '100%',
-                    padding: '0.85rem 3rem 0.85rem 1.25rem',
+                    padding: '0.75rem 2.85rem 0.75rem 1.15rem',
                     background: 'transparent',
                     border: '1px solid var(--border-color)',
                     borderRadius: 'var(--radius-full)',
                     color: 'var(--text-main)',
-                    fontSize: '0.98rem',
+                    fontSize: '0.95rem',
                     boxSizing: 'border-box',
                   }}
                 />
@@ -232,7 +231,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
                   onClick={() => setShowPassword((p) => !p)}
                   style={{
                     position: 'absolute',
-                    right: '14px',
+                    right: '12px',
                     top: '50%',
                     transform: 'translateY(-50%)',
                     background: 'transparent',
@@ -251,7 +250,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
                 </button>
               </div>
               {/* Inline Error at field location */}
-              {error && <span className="error-text" style={{ fontSize: '0.85rem', marginTop: '6px', display: 'block' }}>{error}</span>}
+              {error && <span className="error-text" style={{ fontSize: '0.82rem', marginTop: '5px', display: 'block' }}>{error}</span>}
             </div>
 
             <button
@@ -259,10 +258,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
               disabled={loading}
               style={{
                 width: '100%',
-                padding: '0.88rem 1.25rem',
-                fontSize: '1rem',
+                padding: '0.78rem 1.15rem',
+                fontSize: '0.96rem',
                 fontWeight: 700,
-                marginTop: '0.5rem',
+                marginTop: '0.35rem',
                 color: '#ffffff',
                 background: 'linear-gradient(135deg, #0c2f27 0%, #185339 50%, #227349 100%)',
                 border: 'none',
@@ -294,8 +293,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
             </button>
 
             {/* Register Patient Action at Bottom with Rich Gradient */}
-            <div style={{ marginTop: '1.25rem', paddingTop: '1.25rem', borderTop: '1px solid var(--border-color)', textAlign: 'center' }}>
-              <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)', marginBottom: '0.65rem', fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit' }}>
+            <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color)', textAlign: 'center' }}>
+              <div style={{ fontSize: '0.84rem', color: 'var(--text-muted)', marginBottom: '0.5rem', fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit' }}>
                 {language === 'km' ? 'មិនទាន់មានគណនីនៅឡើយទេ?' : "Don't have an account yet?"}
               </div>
               <button
@@ -303,27 +302,25 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
                 onClick={() => { setTab('register'); setError(null); }}
                 style={{
                   width: '100%',
-                  padding: '0.85rem 1.25rem',
-                  fontSize: '0.98rem',
+                  padding: '0.75rem 1.15rem',
+                  fontSize: '0.92rem',
                   fontWeight: 700,
                   cursor: 'pointer',
                   borderRadius: 'var(--radius-full)',
-                  color: '#ffffff',
-                  background: 'linear-gradient(135deg, #185339 0%, #1e6d4c 45%, #2a8150 100%)',
-                  border: '1px solid rgba(255, 255, 255, 0.25)',
-                  boxShadow: '0 4px 16px rgba(24, 83, 57, 0.24)',
+                  color: '#185339',
+                  background: 'transparent',
+                  border: '1.5px solid #185339',
+                  boxShadow: 'none',
                   transition: 'all 0.2s ease',
                   fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'linear-gradient(135deg, #12432e 0%, #17573d 45%, #226f44 100%)';
-                  e.currentTarget.style.transform = 'translateY(-1.5px)';
-                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(24, 83, 57, 0.32)';
+                  e.currentTarget.style.background = 'rgba(24, 83, 57, 0.08)';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'linear-gradient(135deg, #185339 0%, #1e6d4c 45%, #2a8150 100%)';
+                  e.currentTarget.style.background = 'transparent';
                   e.currentTarget.style.transform = 'none';
-                  e.currentTarget.style.boxShadow = '0 4px 16px rgba(24, 83, 57, 0.24)';
                 }}
               >
                 {language === 'km' ? 'បង្កើតគណនី' : 'Register Account'}
@@ -332,9 +329,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
           </form>
         ) : (
           /* Register Form */
-          <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '1.15rem' }}>
+          <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '0.95rem' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '6px' }}>
+              <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '5px' }}>
                 {language === 'km' ? 'ឈ្មោះពេញ' : 'Full Name'}
               </label>
               <input
@@ -345,19 +342,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
                 required
                 style={{
                   width: '100%',
-                  padding: '0.85rem 1.25rem',
+                  padding: '0.75rem 1.15rem',
                   background: 'transparent',
                   border: '1px solid var(--border-color)',
                   borderRadius: 'var(--radius-full)',
                   color: 'var(--text-main)',
-                  fontSize: '0.98rem',
+                  fontSize: '0.95rem',
                   boxSizing: 'border-box',
                 }}
               />
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '6px' }}>
+              <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '5px' }}>
                 {language === 'km' ? 'លេខទូរស័ព្ទ ឬ អ៊ីមែល' : 'Phone or Email'}
               </label>
               <input
@@ -368,19 +365,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
                 required
                 style={{
                   width: '100%',
-                  padding: '0.85rem 1.25rem',
+                  padding: '0.75rem 1.15rem',
                   background: 'transparent',
                   border: '1px solid var(--border-color)',
                   borderRadius: 'var(--radius-full)',
                   color: 'var(--text-main)',
-                  fontSize: '0.98rem',
+                  fontSize: '0.95rem',
                   boxSizing: 'border-box',
                 }}
               />
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '6px' }}>
+              <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '5px' }}>
                 {language === 'km' ? 'ពាក្យសម្ងាត់' : 'Password'}
               </label>
               <div style={{ position: 'relative' }}>
@@ -393,12 +390,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
                   minLength={6}
                   style={{
                     width: '100%',
-                    padding: '0.85rem 3rem 0.85rem 1.25rem',
+                    padding: '0.75rem 2.85rem 0.75rem 1.15rem',
                     background: 'transparent',
                     border: '1px solid var(--border-color)',
                     borderRadius: 'var(--radius-full)',
                     color: 'var(--text-main)',
-                    fontSize: '0.98rem',
+                    fontSize: '0.95rem',
                     boxSizing: 'border-box',
                   }}
                 />
@@ -407,7 +404,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
                   onClick={() => setShowRegPassword((p) => !p)}
                   style={{
                     position: 'absolute',
-                    right: '14px',
+                    right: '12px',
                     top: '50%',
                     transform: 'translateY(-50%)',
                     background: 'transparent',
@@ -428,17 +425,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
             </div>
 
             {/* Inline Error at form location */}
-            {error && <span className="error-text" style={{ fontSize: '0.85rem', marginTop: '6px', display: 'block' }}>{error}</span>}
+            {error && <span className="error-text" style={{ fontSize: '0.82rem', marginTop: '5px', display: 'block' }}>{error}</span>}
 
             <button
               type="submit"
               disabled={loading}
               style={{
                 width: '100%',
-                padding: '0.88rem 1.25rem',
-                fontSize: '1rem',
+                padding: '0.78rem 1.15rem',
+                fontSize: '0.96rem',
                 fontWeight: 700,
-                marginTop: '0.5rem',
+                marginTop: '0.35rem',
                 color: '#ffffff',
                 background: 'linear-gradient(135deg, #0c2f27 0%, #185339 45%, #2a8150 100%)',
                 border: '1px solid rgba(255, 255, 255, 0.2)',
@@ -470,8 +467,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
             </button>
 
             {/* Back to Sign In at Bottom */}
-            <div style={{ marginTop: '1.25rem', paddingTop: '1.25rem', borderTop: '1px solid var(--border-color)', textAlign: 'center' }}>
-              <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)', marginBottom: '0.65rem', fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit' }}>
+            <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color)', textAlign: 'center' }}>
+              <div style={{ fontSize: '0.84rem', color: 'var(--text-muted)', marginBottom: '0.5rem', fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit' }}>
                 {language === 'km' ? 'មានគណនីរួចហើយ?' : 'Already have an account?'}
               </div>
               <button
@@ -479,24 +476,24 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
                 onClick={() => { setTab('login'); setError(null); }}
                 style={{
                   width: '100%',
-                  padding: '0.8rem 1.15rem',
-                  fontSize: '0.96rem',
+                  padding: '0.72rem 1.15rem',
+                  fontSize: '0.92rem',
                   fontWeight: 700,
                   cursor: 'pointer',
                   borderRadius: 'var(--radius-full)',
                   color: '#185339',
-                  background: 'linear-gradient(135deg, rgba(24, 83, 57, 0.06) 0%, rgba(34, 115, 73, 0.12) 100%)',
-                  border: '1.5px solid rgba(24, 83, 57, 0.25)',
+                  background: 'transparent',
+                  border: '1.5px solid #185339',
                   boxShadow: 'none',
                   transition: 'all 0.2s ease',
                   fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'linear-gradient(135deg, rgba(24, 83, 57, 0.12) 0%, rgba(34, 115, 73, 0.18) 100%)';
+                  e.currentTarget.style.background = 'rgba(24, 83, 57, 0.08)';
                   e.currentTarget.style.transform = 'translateY(-1px)';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'linear-gradient(135deg, rgba(24, 83, 57, 0.06) 0%, rgba(34, 115, 73, 0.12) 100%)';
+                  e.currentTarget.style.background = 'transparent';
                   e.currentTarget.style.transform = 'none';
                 }}
               >
@@ -507,7 +504,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
         )}
 
         {/* Healthcare Provider Switcher Link */}
-        <div style={{ marginTop: '1.25rem', textAlign: 'center', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
+        <div style={{ marginTop: '1rem', textAlign: 'center', borderTop: '1px solid var(--border-color)', paddingTop: '0.85rem' }}>
           <button
             type="button"
             onClick={() => {
@@ -515,24 +512,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
               if (onOpenHospitalPortal) {
                 onOpenHospitalPortal();
               } else {
-                // Redirect to the partner portal domain
-                const partnerUrl = import.meta.env.VITE_PARTNER_URL || '';
-                if (partnerUrl) {
-                  window.location.href = partnerUrl;
-                } else {
-                  // Fallback for local dev without env var set
-                  window.location.search = '?portal=partner';
-                }
+                window.location.href = getPortalSwitchUrl('partner');
               }
             }}
             style={{
               background: 'transparent',
               border: 'none',
               color: 'var(--text-muted)',
-              fontSize: '0.9rem',
+              fontSize: '0.84rem',
               cursor: 'pointer',
               textDecoration: 'underline',
-              padding: '4px 8px',
+              padding: '2px 6px',
               fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
             }}
           >

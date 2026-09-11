@@ -13,12 +13,16 @@ interface HeroSectionProps {
   onSelectTab?: (tab: any) => void;
 }
 
-export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenAuth, currentUser: _currentUser, onSelectTab }) => {
+export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenAuth, currentUser, onSelectTab }) => {
   const { t, language } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!currentUser) {
+      if (onOpenAuth) onOpenAuth();
+      return;
+    }
     if (onSelectTab) {
       onSelectTab('patient_discovery');
     }
@@ -127,10 +131,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenAuth, currentUse
         {/* Subtitle */}
         <p
           style={{
-            fontSize: 'clamp(1rem, 2vw, 1.12rem)',
+            fontSize: language === 'km' ? 'clamp(1.15rem, 2.3vw, 1.35rem)' : 'clamp(1.08rem, 2.1vw, 1.25rem)',
             color: '#1e3a2f',
-            lineHeight: 1.7,
-            maxWidth: '720px',
+            lineHeight: language === 'km' ? 1.85 : 1.7,
+            maxWidth: '820px',
             margin: '0 auto',
             fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
             fontWeight: 500,
@@ -163,7 +167,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenAuth, currentUse
               <div
                 style={{
                   fontWeight: 700,
-                  fontSize: '1.05rem',
+                  fontSize: language === 'km' ? '1.12rem' : '1.05rem',
                   color: '#0c2f27',
                   fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
                 }}
@@ -173,9 +177,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenAuth, currentUse
             </div>
             <div
               style={{
-                fontSize: '0.86rem',
+                fontSize: language === 'km' ? '0.98rem' : '0.92rem',
                 color: '#2d4a3e',
-                lineHeight: 1.5,
+                lineHeight: language === 'km' ? 1.6 : 1.5,
                 fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
               }}
             >
@@ -204,7 +208,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenAuth, currentUse
               <div
                 style={{
                   fontWeight: 700,
-                  fontSize: '1.05rem',
+                  fontSize: language === 'km' ? '1.12rem' : '1.05rem',
                   color: '#0c2f27',
                   fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
                 }}
@@ -214,9 +218,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenAuth, currentUse
             </div>
             <div
               style={{
-                fontSize: '0.86rem',
+                fontSize: language === 'km' ? '0.98rem' : '0.92rem',
                 color: '#2d4a3e',
-                lineHeight: 1.5,
+                lineHeight: language === 'km' ? 1.6 : 1.5,
                 fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
               }}
             >
@@ -245,7 +249,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenAuth, currentUse
               <div
                 style={{
                   fontWeight: 700,
-                  fontSize: '1.05rem',
+                  fontSize: language === 'km' ? '1.12rem' : '1.05rem',
                   color: '#0c2f27',
                   fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
                 }}
@@ -255,9 +259,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenAuth, currentUse
             </div>
             <div
               style={{
-                fontSize: '0.86rem',
+                fontSize: language === 'km' ? '0.98rem' : '0.92rem',
                 color: '#2d4a3e',
-                lineHeight: 1.5,
+                lineHeight: language === 'km' ? 1.6 : 1.5,
                 fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
               }}
             >
@@ -270,13 +274,16 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenAuth, currentUse
         <form
           onSubmit={handleSearchSubmit}
           className="hero-search-container"
-          style={{ marginTop: '5.5rem', marginBottom: '0.25rem' }}
+          style={{ marginTop: '7.5rem', marginBottom: '1.25rem' }}
         >
           <button
             type="button"
             onClick={() => {
-              if (onSelectTab) onSelectTab('patient_discovery');
-              else if (onOpenAuth) onOpenAuth();
+              if (!currentUser) {
+                if (onOpenAuth) onOpenAuth();
+              } else if (onSelectTab) {
+                onSelectTab('patient_discovery');
+              }
             }}
             style={{
               background: '#0c2f27',

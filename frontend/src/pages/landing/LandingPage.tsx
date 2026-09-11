@@ -25,7 +25,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth, currentUse
       <PatientFeatures />
 
       {/* Structured Content Sections in Responsive Centered Container */}
-      <div className="landing-inner-container" style={{ display: 'flex', flexDirection: 'column', gap: '3.5rem', marginTop: '1.5rem', paddingBottom: '2.5rem' }}>
+      <div className="landing-inner-container" style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem', marginTop: '0', paddingBottom: '0.75rem' }}>
         <HospitalFeatures />
         <TestimonialsSection />
         <HowItWorks />

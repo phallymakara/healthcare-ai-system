@@ -144,7 +144,13 @@ export const App: React.FC = () => {
         <HospitalPartnerAuth
           onSuccess={handleUserLoginSuccess}
           onSwitchToPatient={() => {
-            window.location.href = getPortalSwitchUrl('patient');
+            const url = new URL(window.location.href);
+            if (url.searchParams.has('portal')) {
+              url.searchParams.delete('portal');
+              window.location.href = url.pathname + (url.search ? url.search : '') + url.hash;
+            } else {
+              window.location.href = getPortalSwitchUrl('patient');
+            }
           }}
         />
       </>

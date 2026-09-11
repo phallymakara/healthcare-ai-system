@@ -7,7 +7,7 @@ import step3Img from '../../assets/how_step_3.png';
 import step4Img from '../../assets/how_step_4.png';
 
 export const HowItWorks: React.FC = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   const steps = [
     {
@@ -41,7 +41,7 @@ export const HowItWorks: React.FC = () => {
   ];
 
   return (
-    <section id="how-it-works" style={{ width: '100%', padding: '2.5rem 0 3.5rem 0' }}>
+    <section id="how-it-works" style={{ width: '100%', padding: '0.75rem 0 1.5rem 0' }}>
       {/* Section Header */}
       <div style={{ maxWidth: '820px', marginBottom: '2.5rem' }}>
         <h2
@@ -198,20 +198,20 @@ export const HowItWorks: React.FC = () => {
             <div style={{ padding: '0 0.25rem' }}>
               <h3
                 style={{
-                  fontSize: '1.14rem',
+                  fontSize: language === 'km' ? '1.26rem' : '1.18rem',
                   fontWeight: 700,
                   color: '#0c2f27',
-                  marginBottom: '0.4rem',
-                  lineHeight: 1.35,
+                  marginBottom: '0.45rem',
+                  lineHeight: language === 'km' ? 1.45 : 1.35,
                 }}
               >
                 {step.title}
               </h3>
               <p
                 style={{
-                  fontSize: '0.92rem',
+                  fontSize: language === 'km' ? '1.02rem' : '0.95rem',
                   color: '#475569',
-                  lineHeight: 1.55,
+                  lineHeight: language === 'km' ? 1.65 : 1.55,
                 }}
               >
                 {step.description}

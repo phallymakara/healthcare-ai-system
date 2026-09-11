@@ -90,7 +90,7 @@ export const TestimonialsSection: React.FC = () => {
       id="user-testimonials"
       style={{
         width: '100%',
-        padding: '1.5rem 0 2.5rem 0',
+        padding: '0.75rem 0 1.25rem 0',
       }}
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}

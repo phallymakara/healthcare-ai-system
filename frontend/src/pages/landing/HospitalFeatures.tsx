@@ -54,7 +54,7 @@ export const HospitalFeatures: React.FC = () => {
   ];
 
   return (
-    <section id="hospital-features" style={{ width: '100%', padding: '2.5rem 0 3.5rem 0' }}>
+    <section id="hospital-features" style={{ width: '100%', padding: '0.5rem 0 1.25rem 0' }}>
       {/* Section Header matching reference */}
       <div style={{ maxWidth: '860px', marginBottom: '2.85rem' }}>
         <h2
@@ -106,11 +106,14 @@ export const HospitalFeatures: React.FC = () => {
             <div
               style={{
                 width: '100%',
-                height: '200px',
+                height: '220px',
                 overflow: 'hidden',
                 position: 'relative',
-                background: '#f1f5f9',
+                background: '#f8fafc',
                 borderBottom: '1px solid #edf2f7',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
               }}
             >
               <img
@@ -119,8 +122,8 @@ export const HospitalFeatures: React.FC = () => {
                 style={{
                   width: '100%',
                   height: '100%',
-                  objectFit: 'cover',
-                  objectPosition: 'top center',
+                  objectFit: 'contain',
+                  objectPosition: 'center',
                   display: 'block',
                   transition: 'transform 0.35s ease',
                 }}
