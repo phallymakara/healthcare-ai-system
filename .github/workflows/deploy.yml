@@ -100,7 +100,7 @@ jobs:
           AZURE_STORAGE_CONNECTION_STRING: ""
           MICROSOFT_FOUNDRY_API_KEY: ""
           MICROSOFT_FOUNDRY_BASE_URL: ""
-        run: python -m scripts.seed_cambodia_data
+        run: python -m scripts.seed_test_data
 
       - name: Run pytest
         working-directory: backend
