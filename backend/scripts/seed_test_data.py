@@ -51,10 +51,15 @@ async def seed():
         # 2. Hospital
         hospital = await _get_or_create_hospital(session)
 
-        # 3. Doctor user (HOSPITAL_ADMIN — accesses partner API)
+        # 3. Doctor users (HOSPITAL_ADMIN & DOCTOR)
         doc_user = await _get_or_create_user(
             session, "dr.sokha@royalcityhospital.com", "+85512100001",
             "Dr. Sokha Meas, MD", UserRole.HOSPITAL_ADMIN, "doctor123!",
+            hospital_id=hospital.id,
+        )
+        doc2_user = await _get_or_create_user(
+            session, "dr.vanna@royalcityhospital.com", "+85512100002",
+            "Dr. Vanna Sok, MD", UserRole.DOCTOR, "doctor123!",
             hospital_id=hospital.id,
         )
 
@@ -79,12 +84,29 @@ async def seed():
 
         # 5. Departments (need >= 3; Cardiology must have code CARDIO)
         cardio = await _get_or_create_dept(session, hospital.id, "Cardiology",      "CARDIO",    20)
-        await _get_or_create_dept(session, hospital.id, "General Medicine", "GENERAL",   15)
+        general = await _get_or_create_dept(session, hospital.id, "General Medicine", "GENERAL",   15)
         await _get_or_create_dept(session, hospital.id, "Emergency",        "EMERGENCY", 10)
         await session.flush()
 
-        # 6. Doctor model — Dr. Sokha Meas, MD with 5 Mon-Fri schedules
-        doctor = await _get_or_create_doctor(session, doc_user.id, hospital.id, cardio.id)
+        # 6. Doctor models — Dr. Sokha Meas, MD (Cardiology) + Dr. Vanna Sok, MD (General)
+        doctor = await _get_or_create_doctor(
+            session, doc_user.id, hospital.id, cardio.id,
+            full_name="Dr. Sokha Meas, MD",
+            specialty="Senior Cardiologist",
+            license_number="MD-KH-2019-0042",
+            room_number="Room 201",
+            avg_consultation_minutes=20,
+            schedule_days=5,
+        )
+        await _get_or_create_doctor(
+            session, doc2_user.id, hospital.id, general.id,
+            full_name="Dr. Vanna Sok, MD",
+            specialty="General Practitioner",
+            license_number="MD-KH-2020-0055",
+            room_number="Room 105",
+            avg_consultation_minutes=15,
+            schedule_days=5,
+        )
         await session.flush()
 
         # 7. Queue Session with 3 tickets (1 SERVING + TicketLog, 2 WAITING)
@@ -218,7 +240,15 @@ async def _get_or_create_dept(session, hospital_id, name, code, avg_minutes):
     return d
 
 
-async def _get_or_create_doctor(session, user_id, hospital_id, department_id):
+async def _get_or_create_doctor(
+    session, user_id, hospital_id, department_id,
+    full_name="Dr. Sokha Meas, MD",
+    specialty="Senior Cardiologist",
+    license_number="MD-KH-2019-0042",
+    room_number="Room 201",
+    avg_consultation_minutes=20,
+    schedule_days=5,
+):
     doc = (await session.execute(
         select(Doctor).where(Doctor.user_id == user_id)
     )).scalar_one_or_none()
@@ -226,25 +256,25 @@ async def _get_or_create_doctor(session, user_id, hospital_id, department_id):
         doc = Doctor(
             id=uuid.uuid4(), user_id=user_id,
             hospital_id=hospital_id, department_id=department_id,
-            full_name="Dr. Sokha Meas, MD",
-            specialty="Senior Cardiologist",
-            license_number="MD-KH-2019-0042",
-            room_number="Room 201",
-            avg_consultation_minutes=20,
+            full_name=full_name,
+            specialty=specialty,
+            license_number=license_number,
+            room_number=room_number,
+            avg_consultation_minutes=avg_consultation_minutes,
             is_available=True, is_active=True,
         )
         session.add(doc)
         await session.flush()
 
         # Mon-Fri schedules (0=Mon, 4=Fri)
-        for day in range(5):
+        for day in range(schedule_days):
             session.add(DoctorSchedule(
                 id=uuid.uuid4(), doctor_id=doc.id,
                 day_of_week=day,
                 start_time=time(8, 0), end_time=time(16, 0),
                 max_patients_per_slot=20, is_active=True,
             ))
-        print(f"  + doctor: Dr. Sokha Meas, MD (5 schedules)")
+        print(f"  + doctor: {full_name} ({schedule_days} schedules)")
     return doc
 
 
