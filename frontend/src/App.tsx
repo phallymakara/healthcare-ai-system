@@ -3,6 +3,7 @@ import { Header } from './components/Header';
 import { Sidebar, NavTab } from './components/Sidebar';
 import { AuthModal } from './components/AuthModal';
 import { NotificationBanner } from './components/NotificationBanner';
+import { MaintenanceBanner } from './components/MaintenanceBanner';
 import { AuthService, UserProfile } from './services/auth';
 import { API_BASE } from './services/api';
 import { RealTimeQueueClient } from './services/websocket';
@@ -138,12 +139,15 @@ export const App: React.FC = () => {
 
   if (isPartner && !isPartnerUser) {
     return (
-      <HospitalPartnerAuth
-        onSuccess={handleUserLoginSuccess}
-        onSwitchToPatient={() => {
-          window.location.href = getPortalSwitchUrl('patient');
-        }}
-      />
+      <>
+        <MaintenanceBanner />
+        <HospitalPartnerAuth
+          onSuccess={handleUserLoginSuccess}
+          onSwitchToPatient={() => {
+            window.location.href = getPortalSwitchUrl('patient');
+          }}
+        />
+      </>
     );
   }
 
@@ -151,6 +155,7 @@ export const App: React.FC = () => {
 
   return (
     <>
+      <MaintenanceBanner />
       {isLandingView ? (
         <div className="landing-layout">
           {/* Top Header shown on Landing Page */}
