@@ -70,6 +70,17 @@ jobs:
         working-directory: backend
         run: pip install --no-cache-dir -r requirements.txt
 
+      - name: Run database migrations
+        working-directory: backend
+        env:
+          ENVIRONMENT: test
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres123
+          POSTGRES_DB: healthcare_ai_db_test
+        run: alembic upgrade head
+
       - name: Run pytest
         working-directory: backend
         env:
