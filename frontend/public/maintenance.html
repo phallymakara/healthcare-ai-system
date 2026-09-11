@@ -6,8 +6,24 @@
   <title>System Maintenance — Healthcare AI System</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
+    :root {
+      --font-main: 'Kantumruy Pro', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --bg-primary: #ffffff;
+      --bg-secondary: #f8fafc;
+      --border-color: #e2e8f0;
+      --text-main: #0f172a;
+      --text-muted: #475569;
+      --text-dim: #64748b;
+      --accent-primary: #185339;
+      --accent-primary-hover: #0c2f27;
+      --accent-amber: #d97706;
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --radius-full: 9999px;
+    }
+
     *, *::before, *::after {
       box-sizing: border-box;
       margin: 0;
@@ -15,347 +31,267 @@
     }
 
     body {
-      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: var(--font-main);
+      background-color: var(--bg-primary);
+      color: var(--text-main);
       min-height: 100vh;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      background: radial-gradient(120% 120% at 50% 10%, #0f172a 0%, #020617 100%);
-      color: #f1f5f9;
-      padding: 24px;
-      overflow-x: hidden;
-      position: relative;
+      padding: 24px 16px;
+      line-height: 1.5;
     }
 
-    /* Ambient background glow */
-    .glow-sphere {
-      position: absolute;
-      border-radius: 50%;
-      filter: blur(100px);
-      pointer-events: none;
-      opacity: 0.35;
-    }
-    .glow-1 {
-      width: 420px;
-      height: 420px;
-      background: #0284c7;
-      top: -80px;
-      left: 50%;
-      transform: translateX(-50%);
-    }
-    .glow-2 {
-      width: 320px;
-      height: 320px;
-      background: #059669;
-      bottom: -60px;
-      right: 15%;
-    }
-
-    .container {
-      position: relative;
-      z-index: 10;
-      max-width: 580px;
+    .maintenance-wrapper {
       width: 100%;
-      background: rgba(15, 23, 42, 0.75);
-      border: 1px solid rgba(148, 163, 184, 0.15);
-      border-radius: 24px;
-      padding: 44px 36px;
-      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.05);
-      backdrop-filter: blur(20px);
-      text-align: center;
+      max-width: 560px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      background-color: var(--bg-primary);
+      padding: 36px 32px;
     }
 
-    .icon-wrapper {
-      display: inline-flex;
+    .brand-header {
+      display: flex;
       align-items: center;
-      justify-content: center;
-      width: 80px;
-      height: 80px;
-      background: linear-gradient(135deg, rgba(2, 132, 199, 0.18), rgba(16, 185, 129, 0.18));
-      border: 1px solid rgba(56, 189, 248, 0.3);
-      border-radius: 22px;
+      gap: 12px;
       margin-bottom: 24px;
-      box-shadow: 0 10px 25px -5px rgba(2, 132, 199, 0.25);
     }
 
-    .icon-wrapper svg {
-      width: 42px;
-      height: 42px;
-      color: #38bdf8;
+    .brand-logo {
+      height: 38px;
+      width: auto;
+      object-fit: contain;
     }
 
-    .status-badge {
+    .brand-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-main);
+      line-height: 1.2;
+    }
+
+    .badge {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      background: rgba(245, 158, 11, 0.15);
-      border: 1px solid rgba(245, 158, 11, 0.35);
-      color: #fbbf24;
-      font-size: 13px;
+      gap: 6px;
+      padding: 3px 10px;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--border-color);
+      background-color: var(--bg-secondary);
+      font-size: 12px;
       font-weight: 600;
-      padding: 6px 14px;
-      border-radius: 9999px;
-      margin-bottom: 18px;
-      letter-spacing: 0.02em;
+      color: var(--accent-amber);
+      margin-bottom: 16px;
     }
 
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      background: #fbbf24;
-      border-radius: 50%;
-      box-shadow: 0 0 10px #fbbf24;
-      animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.4; transform: scale(0.85); }
+    .badge-dot {
+      width: 6px;
+      height: 6px;
+      background-color: var(--accent-amber);
+      border-radius: var(--radius-full);
     }
 
     h1 {
-      font-size: 28px;
-      font-weight: 800;
-      letter-spacing: -0.02em;
-      color: #ffffff;
-      margin-bottom: 12px;
-      line-height: 1.25;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 8px;
+      letter-spacing: -0.01em;
     }
 
-    p.subtitle {
-      font-size: 15px;
-      color: #94a3b8;
+    p.description {
+      font-size: 0.95rem;
+      color: var(--text-muted);
       line-height: 1.6;
-      margin-bottom: 28px;
+      margin-bottom: 24px;
     }
 
-    .details-box {
-      background: rgba(30, 41, 59, 0.6);
-      border: 1px solid rgba(148, 163, 184, 0.12);
-      border-radius: 14px;
-      padding: 16px 20px;
-      margin-bottom: 28px;
+    .status-rows {
+      border-top: 1px solid var(--border-color);
+      border-bottom: 1px solid var(--border-color);
+      padding: 16px 0;
+      margin-bottom: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .status-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.88rem;
+    }
+
+    .status-label {
+      color: var(--text-dim);
+      font-weight: 500;
+    }
+
+    .status-value {
+      color: var(--text-main);
+      font-weight: 600;
+    }
+
+    .action-row {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      text-align: left;
+      gap: 16px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
     }
 
-    .details-label {
-      font-size: 12px;
-      color: #64748b;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      font-weight: 700;
+    .btn-action {
+      background-color: var(--accent-primary);
+      color: #ffffff;
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      padding: 8px 18px;
+      border-radius: var(--radius-sm);
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: background-color 0.15s ease;
+    }
+
+    .btn-action:hover {
+      background-color: var(--accent-primary-hover);
+    }
+
+    .btn-action:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+
+    .countdown {
+      font-size: 0.85rem;
+      color: var(--text-dim);
+    }
+
+    .emergency-box {
+      border-top: 1px solid var(--border-color);
+      padding-top: 18px;
+      font-size: 0.82rem;
+      color: var(--text-dim);
+      line-height: 1.5;
+    }
+
+    .emergency-title {
+      font-weight: 600;
+      color: var(--text-main);
       margin-bottom: 4px;
     }
 
-    .details-value {
-      font-size: 14px;
-      color: #e2e8f0;
-      font-weight: 600;
-    }
-
-    .retry-section {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      align-items: center;
-      margin-bottom: 28px;
-    }
-
-    .btn-retry {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      background: linear-gradient(135deg, #0284c7, #0369a1);
-      color: #ffffff;
-      font-family: inherit;
-      font-size: 14px;
-      font-weight: 600;
-      padding: 12px 28px;
-      border-radius: 12px;
-      border: none;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
-      width: 100%;
-      max-width: 240px;
-    }
-
-    .btn-retry:hover {
-      background: linear-gradient(135deg, #0369a1, #075985);
-      transform: translateY(-1px);
-      box-shadow: 0 6px 20px rgba(2, 132, 199, 0.45);
-    }
-
-    .btn-retry:active {
-      transform: translateY(0);
-    }
-
-    .countdown-text {
-      font-size: 13px;
-      color: #64748b;
-    }
-
-    .countdown-number {
-      color: #38bdf8;
-      font-weight: 700;
-    }
-
-    .emergency-card {
-      background: rgba(225, 29, 72, 0.08);
-      border: 1px solid rgba(225, 29, 72, 0.25);
-      border-radius: 12px;
-      padding: 14px 18px;
-      text-align: left;
-      font-size: 12.5px;
-      color: #fda4af;
-      line-height: 1.5;
-      display: flex;
-      gap: 12px;
-      align-items: flex-start;
-    }
-
-    .emergency-card svg {
-      width: 20px;
-      height: 20px;
-      flex-shrink: 0;
-      color: #fb7185;
-      margin-top: 1px;
-    }
-
-    .emergency-card strong {
-      color: #ffe4e6;
-    }
-
-    .footer-brand {
-      margin-top: 24px;
-      font-size: 12px;
-      color: #475569;
+    .footer-note {
+      margin-top: 20px;
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      text-align: center;
     }
   </style>
 </head>
 <body>
-  <div class="glow-sphere glow-1"></div>
-  <div class="glow-sphere glow-2"></div>
-
-  <main class="container">
-    <!-- Icon -->
-    <div class="icon-wrapper">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
-        <path d="M12 5v14" />
-        <path d="M5 12h14" />
-      </svg>
+  <div class="maintenance-wrapper">
+    <div class="brand-header">
+      <img src="/assets/ProsethBot.png" alt="Proseth Healthcare AI" class="brand-logo" onerror="this.style.display='none'" />
+      <div class="brand-title">Healthcare AI System</div>
     </div>
 
-    <!-- Status badge -->
-    <div class="status-badge">
-      <span class="status-dot"></span>
+    <div class="badge">
+      <span class="badge-dot"></span>
       System Maintenance & Upgrades
     </div>
 
-    <!-- Heading & message -->
     <h1>We'll be right back</h1>
-    <p class="subtitle">
+    <p class="description">
       Our healthcare system is currently undergoing scheduled maintenance or system updates to improve patient services and security. All patient data remains safe and preserved.
     </p>
 
-    <!-- Info details -->
-    <div class="details-box">
-      <div>
-        <div class="details-label">Current Status</div>
-        <div class="details-value" id="statusText">Upgrading Services...</div>
+    <div class="status-rows">
+      <div class="status-row">
+        <span class="status-label">Current Status</span>
+        <span class="status-value" id="statusValue">Upgrading Services...</span>
       </div>
-      <div style="text-align: right;">
-        <div class="details-label">Expected Resolution</div>
-        <div class="details-value">A few minutes</div>
+      <div class="status-row">
+        <span class="status-label">Expected Resolution</span>
+        <span class="status-value">A few minutes</span>
       </div>
     </div>
 
-    <!-- Retry / Refresh section -->
-    <div class="retry-section">
-      <button class="btn-retry" id="retryBtn" onclick="checkHealthNow()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-          <path d="M3 3v5h5" />
-          <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
-          <path d="M16 21h5v-5" />
-        </svg>
+    <div class="action-row">
+      <button class="btn-action" id="checkBtn" onclick="checkStatusNow()">
         Check Server Status
       </button>
-      <div class="countdown-text">
-        Auto-checking in <span class="countdown-number" id="timer">10</span> seconds
-      </div>
+      <span class="countdown">
+        Auto-checking in <strong id="timerText" style="color: var(--text-main);">10</strong> seconds
+      </span>
     </div>
 
-    <!-- Emergency notice -->
-    <div class="emergency-card">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="10" />
-        <line x1="12" y1="8" x2="12" y2="12" />
-        <line x1="12" y1="16" x2="12.01" y2="16" />
-      </svg>
+    <div class="emergency-box">
+      <div class="emergency-title">Immediate Medical Emergency?</div>
       <div>
-        <strong>Immediate Medical Emergency?</strong><br />
         If you require urgent medical assistance, please dial <strong>119</strong> (Cambodia National Emergency) or visit your nearest hospital emergency department immediately.
       </div>
     </div>
+  </div>
 
-    <div class="footer-brand">
-      Healthcare AI System &bull; National Hospital & Clinic Network
-    </div>
-  </main>
+  <div class="footer-note">
+    Healthcare AI System &bull; National Hospital & Clinic Network
+  </div>
 
   <script>
-    let timeLeft = 10;
-    const timerElement = document.getElementById('timer');
-    const statusText = document.getElementById('statusText');
-    const retryBtn = document.getElementById('retryBtn');
+    var countdownSeconds = 10;
+    var timerElement = document.getElementById('timerText');
+    var statusElement = document.getElementById('statusValue');
+    var checkBtn = document.getElementById('checkBtn');
 
-    async function checkHealthNow() {
-      if (retryBtn) {
-        retryBtn.disabled = true;
-        retryBtn.innerText = 'Checking...';
+    function checkStatusNow() {
+      if (checkBtn) {
+        checkBtn.disabled = true;
+        checkBtn.textContent = 'Checking...';
       }
-      try {
-        const res = await fetch('/api/v1/health', { cache: 'no-store' });
-        if (res.ok) {
-          statusText.innerText = 'Online! Redirecting...';
-          statusText.style.color = '#34d399';
-          setTimeout(() => {
-            window.location.reload();
-          }, 800);
-          return;
-        }
-      } catch (err) {
-        // Backend still down
-      }
-      if (retryBtn) {
-        retryBtn.disabled = false;
-        retryBtn.innerHTML = `
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-            <path d="M3 3v5h5" />
-            <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
-            <path d="M16 21h5v-5" />
-          </svg>
-          Check Server Status
-        `;
-      }
-      timeLeft = 10;
-      if (timerElement) timerElement.innerText = timeLeft;
+      fetch('/api/v1/health', { cache: 'no-store' })
+        .then(function(res) {
+          if (res.ok) {
+            if (statusElement) {
+              statusElement.textContent = 'Online — Refreshing...';
+              statusElement.style.color = '#059669';
+            }
+            setTimeout(function() {
+              window.location.reload();
+            }, 600);
+            return;
+          }
+          resetButton();
+        })
+        .catch(function() {
+          resetButton();
+        });
     }
 
-    setInterval(() => {
-      timeLeft--;
-      if (timerElement) {
-        timerElement.innerText = timeLeft;
+    function resetButton() {
+      if (checkBtn) {
+        checkBtn.disabled = false;
+        checkBtn.textContent = 'Check Server Status';
       }
-      if (timeLeft <= 0) {
-        checkHealthNow();
+      countdownSeconds = 10;
+      if (timerElement) {
+        timerElement.textContent = countdownSeconds;
+      }
+    }
+
+    setInterval(function() {
+      countdownSeconds--;
+      if (timerElement) {
+        timerElement.textContent = countdownSeconds;
+      }
+      if (countdownSeconds <= 0) {
+        checkStatusNow();
       }
     }, 1000);
   </script>

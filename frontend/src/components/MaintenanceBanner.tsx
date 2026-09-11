@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AlertTriangle, RefreshCw, WifiOff, X } from 'lucide-react';
+import { AlertTriangle, RefreshCw, X } from 'lucide-react';
 import { API_BASE } from '../services/api';
 
 interface MaintenanceBannerProps {
@@ -8,14 +8,12 @@ interface MaintenanceBannerProps {
 
 export const MaintenanceBanner: React.FC<MaintenanceBannerProps> = ({ checkIntervalSeconds = 30 }) => {
   const [isIssueDetected, setIsIssueDetected] = useState(false);
-  const [issueType, setIssueType] = useState<'maintenance' | 'offline' | 'unreachable'>('maintenance');
   const [isChecking, setIsChecking] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
 
   const checkStatus = async () => {
     if (!navigator.onLine) {
       setIsIssueDetected(true);
-      setIssueType('offline');
       return;
     }
 
@@ -26,20 +24,14 @@ export const MaintenanceBanner: React.FC<MaintenanceBannerProps> = ({ checkInter
         headers: { Accept: 'application/json' },
       });
 
-      if (res.status === 502 || res.status === 503 || res.status === 504) {
+      if (res.status === 502 || res.status === 503 || res.status === 504 || !res.ok) {
         setIsIssueDetected(true);
-        setIssueType('maintenance');
-      } else if (!res.ok) {
-        setIsIssueDetected(true);
-        setIssueType('unreachable');
       } else {
-        // Healthy!
         setIsIssueDetected(false);
         setIsDismissed(false);
       }
     } catch {
       setIsIssueDetected(true);
-      setIssueType('maintenance');
     } finally {
       setIsChecking(false);
     }
@@ -48,7 +40,6 @@ export const MaintenanceBanner: React.FC<MaintenanceBannerProps> = ({ checkInter
   useEffect(() => {
     const handleOffline = () => {
       setIsIssueDetected(true);
-      setIssueType('offline');
       setIsDismissed(false);
     };
 
@@ -59,7 +50,6 @@ export const MaintenanceBanner: React.FC<MaintenanceBannerProps> = ({ checkInter
     window.addEventListener('offline', handleOffline);
     window.addEventListener('online', handleOnline);
 
-    // Periodic background health poll
     const interval = setInterval(checkStatus, checkIntervalSeconds * 1000);
 
     return () => {
@@ -73,83 +63,63 @@ export const MaintenanceBanner: React.FC<MaintenanceBannerProps> = ({ checkInter
     return null;
   }
 
-  const getNoticeContent = () => {
-    switch (issueType) {
-      case 'offline':
-        return {
-          title: 'You are offline',
-          message: 'Please check your internet connection. We will reconnect as soon as network is restored.',
-          icon: <WifiOff size={18} />,
-        };
-      case 'unreachable':
-        return {
-          title: 'Server Connection Interrupted',
-          message: 'Unable to reach healthcare server. Attempting automatic reconnection...',
-          icon: <AlertTriangle size={18} />,
-        };
-      case 'maintenance':
-      default:
-        return {
-          title: 'Server Under Maintenance',
-          message: 'Our healthcare server is currently undergoing updates or maintenance. Real-time updates may be briefly delayed.',
-          icon: <AlertTriangle size={18} />,
-        };
-    }
-  };
-
-  const notice = getNoticeContent();
-
   return (
     <div
       role="alert"
       style={{
         width: '100%',
-        backgroundColor: '#78350f',
-        background: 'linear-gradient(90deg, #78350f 0%, #92400e 50%, #78350f 100%)',
-        color: '#fef3c7',
-        borderBottom: '1px solid #b45309',
-        padding: '10px 16px',
+        backgroundColor: 'var(--bg-secondary)',
+        borderBottom: '1px solid var(--border-color)',
+        padding: '0.5rem 1rem',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        gap: '12px',
-        fontSize: '13.5px',
-        fontWeight: 500,
+        gap: '0.75rem',
+        fontSize: '0.85rem',
+        fontFamily: 'var(--font-main)',
         position: 'sticky',
         top: 0,
-        zIndex: 9999,
-        boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+        zIndex: 1001,
+        color: 'var(--text-main)',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
-        <div style={{ color: '#fde68a', flexShrink: 0 }}>{notice.icon}</div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '6px 12px' }}>
-          <strong style={{ color: '#ffffff', fontWeight: 700 }}>{notice.title}:</strong>
-          <span style={{ color: '#fef3c7', opacity: 0.95 }}>{notice.message}</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 }}>
+        <AlertTriangle size={15} style={{ color: 'var(--accent-amber)', flexShrink: 0 }} />
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.25rem 0.5rem' }}>
+          <strong style={{ color: 'var(--text-main)', fontWeight: 600 }}>System Notice:</strong>
+          <span style={{ color: 'var(--text-muted)' }}>
+            The server is currently undergoing maintenance or updates. Reconnecting automatically...
+          </span>
         </div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
         <button
           onClick={checkStatus}
           disabled={isChecking}
-          title="Retry server connection"
           style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: '6px',
-            backgroundColor: 'rgba(255, 255, 255, 0.15)',
-            border: '1px solid rgba(255, 255, 255, 0.25)',
-            color: '#ffffff',
-            borderRadius: '6px',
-            padding: '4px 10px',
-            fontSize: '12px',
+            gap: '0.25rem',
+            backgroundColor: 'var(--bg-primary)',
+            border: '1px solid var(--border-color)',
+            color: 'var(--text-main)',
+            borderRadius: 'var(--radius-sm)',
+            padding: '0.2rem 0.5rem',
+            fontSize: '0.75rem',
+            fontWeight: 500,
             cursor: isChecking ? 'wait' : 'pointer',
-            transition: 'background 0.2s ease',
+            fontFamily: 'inherit',
           }}
         >
-          <RefreshCw size={12} className={isChecking ? 'animate-spin' : ''} style={{ animation: isChecking ? 'spin 1s linear infinite' : 'none' }} />
-          {isChecking ? 'Checking...' : 'Retry'}
+          <RefreshCw
+            size={11}
+            style={{
+              animation: isChecking ? 'spin 1s linear infinite' : 'none',
+              transformOrigin: 'center',
+            }}
+          />
+          {isChecking ? 'Checking...' : 'Check Status'}
         </button>
 
         <button
@@ -158,16 +128,15 @@ export const MaintenanceBanner: React.FC<MaintenanceBannerProps> = ({ checkInter
           style={{
             background: 'transparent',
             border: 'none',
-            color: '#fde68a',
+            color: 'var(--text-dim)',
             cursor: 'pointer',
-            padding: '4px',
+            padding: '2px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            borderRadius: '4px',
           }}
         >
-          <X size={16} />
+          <X size={15} />
         </button>
       </div>
     </div>
