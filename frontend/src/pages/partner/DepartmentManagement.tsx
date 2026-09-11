@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { AuthService } from '../../services/auth';
 import { useLanguage } from '../../context/LanguageContext';
 import { API_BASE } from '../../services/api';
+import { useModalClose } from '../../hooks/useModalClose';
 
 export const DepartmentManagement: React.FC = () => {
   const { language, t } = useLanguage();
@@ -14,6 +15,7 @@ export const DepartmentManagement: React.FC = () => {
 
   // Department Modal State
   const [deptModalOpen, setDeptModalOpen] = useState(false);
+  const deptModal = useModalClose(deptModalOpen, setDeptModalOpen);
   const [editingDeptId, setEditingDeptId] = useState<string | null>(null);
   const [deptName, setDeptName] = useState('');
   const [deptCode, setDeptCode] = useState('');
@@ -29,6 +31,7 @@ export const DepartmentManagement: React.FC = () => {
 
   // Service Modal State
   const [srvModalOpen, setSrvModalOpen] = useState(false);
+  const srvModal = useModalClose(srvModalOpen, setSrvModalOpen);
   const [editingSrvId, setEditingSrvId] = useState<string | null>(null);
   const [srvDeptId, setSrvDeptId] = useState('');
   const [srvName, setSrvName] = useState('');
@@ -137,7 +140,7 @@ export const DepartmentManagement: React.FC = () => {
         return;
       }
 
-      setDeptModalOpen(false);
+      deptModal.close();
       await loadData();
     } catch {
       setDeptSubmitError(t('dept_err_conn'));
@@ -249,7 +252,7 @@ export const DepartmentManagement: React.FC = () => {
         return;
       }
 
-      setSrvModalOpen(false);
+      srvModal.close();
       await loadData();
     } catch {
       setSrvSubmitError(t('dept_srv_err_conn'));
@@ -304,7 +307,9 @@ export const DepartmentManagement: React.FC = () => {
       >
         <div style={{ display: 'flex', gap: '0.5rem' }}>
           <button
+            type="button"
             onClick={() => setActiveTab('departments')}
+            className={`category-filter-pill ${activeTab === 'departments' ? 'active' : ''}`}
             style={{
               padding: '0.5rem 1.15rem',
               fontSize: '0.95rem',
@@ -312,17 +317,18 @@ export const DepartmentManagement: React.FC = () => {
               fontFamily: kmFont,
               color: activeTab === 'departments' ? '#ffffff' : 'var(--text-muted)',
               background: activeTab === 'departments' ? 'var(--accent-primary)' : 'transparent',
-              border: 'none',
+              border: activeTab === 'departments' ? '1px solid var(--accent-primary)' : '1px solid var(--border-color)',
               borderRadius: 'var(--radius-full)',
               cursor: 'pointer',
               whiteSpace: 'nowrap',
-              transition: 'all 0.15s ease',
             }}
           >
             {t('dept_title_depts')}
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab('services')}
+            className={`category-filter-pill ${activeTab === 'services' ? 'active' : ''}`}
             style={{
               padding: '0.5rem 1.15rem',
               fontSize: '0.95rem',
@@ -330,11 +336,10 @@ export const DepartmentManagement: React.FC = () => {
               fontFamily: kmFont,
               color: activeTab === 'services' ? '#ffffff' : 'var(--text-muted)',
               background: activeTab === 'services' ? 'var(--accent-primary)' : 'transparent',
-              border: 'none',
+              border: activeTab === 'services' ? '1px solid var(--accent-primary)' : '1px solid var(--border-color)',
               borderRadius: 'var(--radius-full)',
               cursor: 'pointer',
               whiteSpace: 'nowrap',
-              transition: 'all 0.15s ease',
             }}
           >
             {t('dept_title_services')}
@@ -344,7 +349,9 @@ export const DepartmentManagement: React.FC = () => {
         <div>
           {activeTab === 'departments' ? (
             <button
+              type="button"
               onClick={handleOpenNewDept}
+              className="hospital-action-btn"
               style={{
                 padding: '0.55rem 1.15rem',
                 background: 'transparent',
@@ -353,19 +360,19 @@ export const DepartmentManagement: React.FC = () => {
                 color: 'var(--text-main)',
                 fontSize: '0.875rem',
                 fontWeight: 600,
-                cursor: 'pointer',
                 boxShadow: 'none',
                 fontFamily: kmFont,
                 marginBottom: '6px',
-                transition: 'all 0.15s ease',
               }}
             >
               {t('dept_add_btn')}
             </button>
           ) : (
             <button
+              type="button"
               onClick={handleOpenNewService}
               disabled={departments.length === 0}
+              className="hospital-action-btn"
               style={{
                 padding: '0.55rem 1.15rem',
                 background: 'transparent',
@@ -379,7 +386,6 @@ export const DepartmentManagement: React.FC = () => {
                 boxShadow: 'none',
                 fontFamily: kmFont,
                 marginBottom: '6px',
-                transition: 'all 0.15s ease',
               }}
             >
               {t('dept_add_service_btn')}
@@ -815,9 +821,9 @@ export const DepartmentManagement: React.FC = () => {
       )}
 
       {/* Add / Edit Department Modal */}
-      {deptModalOpen && (
-        <div className="responsive-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setDeptModalOpen(false); }}>
-          <div className="responsive-modal-card" style={{ maxWidth: '520px', fontFamily: kmFont }}>
+      {deptModal.shouldRender && (
+        <div className={deptModal.overlayClass} onClick={(e) => { if (e.target === e.currentTarget) deptModal.close(); }}>
+          <div className={deptModal.cardClass} style={{ maxWidth: '520px', fontFamily: kmFont }}>
             <div className="responsive-modal-body" style={{ padding: '1.6rem 1.75rem' }}>
               <h3 style={{ fontSize: '1.35rem', fontWeight: 700, margin: '0 0 1.4rem 0', color: 'var(--text-main)', fontFamily: kmFont }}>
                 {editingDeptId ? t('dept_modal_edit_dept') : t('dept_modal_add_dept')}
@@ -935,7 +941,7 @@ export const DepartmentManagement: React.FC = () => {
               <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.75rem' }}>
                 <button
                   type="button"
-                  onClick={() => setDeptModalOpen(false)}
+                  onClick={deptModal.close}
                   style={{
                     flex: 1,
                     padding: '0.7rem 1.25rem',
@@ -979,9 +985,9 @@ export const DepartmentManagement: React.FC = () => {
       )}
 
       {/* Add / Edit Service Modal */}
-      {srvModalOpen && (
-        <div className="responsive-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setSrvModalOpen(false); }}>
-          <div className="responsive-modal-card" style={{ maxWidth: '520px', fontFamily: kmFont }}>
+      {srvModal.shouldRender && (
+        <div className={srvModal.overlayClass} onClick={(e) => { if (e.target === e.currentTarget) srvModal.close(); }}>
+          <div className={srvModal.cardClass} style={{ maxWidth: '520px', fontFamily: kmFont }}>
             <div className="responsive-modal-body" style={{ padding: '1.6rem 1.75rem' }}>
               <h3 style={{ fontSize: '1.35rem', fontWeight: 700, margin: '0 0 1.4rem 0', color: 'var(--text-main)', fontFamily: kmFont }}>
                 {editingSrvId ? t('dept_modal_edit_srv') : t('dept_modal_add_srv')}
@@ -1151,7 +1157,7 @@ export const DepartmentManagement: React.FC = () => {
               <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.75rem' }}>
                 <button
                   type="button"
-                  onClick={() => setSrvModalOpen(false)}
+                  onClick={srvModal.close}
                   style={{
                     flex: 1,
                     padding: '0.7rem 1.25rem',

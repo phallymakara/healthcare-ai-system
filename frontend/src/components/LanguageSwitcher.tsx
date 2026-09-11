@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Globe, Check } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -15,22 +15,54 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
 }) => {
   const { language, setLanguage } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const closeTimerRef = useRef<number | null>(null);
+
+  const closeDropdown = useCallback(() => {
+    if (isClosing) return;
+    setIsClosing(true);
+    if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    closeTimerRef.current = window.setTimeout(() => {
+      setIsOpen(false);
+      setIsClosing(false);
+      closeTimerRef.current = null;
+    }, 180);
+  }, [isClosing]);
+
+  const toggleDropdown = () => {
+    if (isOpen) {
+      closeDropdown();
+    } else {
+      if (closeTimerRef.current) {
+        clearTimeout(closeTimerRef.current);
+        closeTimerRef.current = null;
+      }
+      setIsClosing(false);
+      setIsOpen(true);
+    }
+  };
 
   useEffect(() => {
+    if (!isOpen) return;
+
     const handleClickOutside = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
+        closeDropdown();
       }
     };
 
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
+    document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isOpen]);
+  }, [isOpen, closeDropdown]);
+
+  useEffect(() => {
+    return () => {
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    };
+  }, []);
 
   const isKm = language === 'km';
   const isSidebar = variant === 'sidebar';
@@ -49,46 +81,40 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
       {/* Trigger: Globe Icon + Language Suffix (EN or KM) */}
       <button
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={toggleDropdown}
+        className={`lang-switcher-btn ${isOpen && !isClosing ? 'is-open' : ''}`}
         style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: isSidebar ? 'flex-start' : 'center',
           gap: isSidebar ? '8px' : '7px',
-          background: 'transparent',
-          border: 'none',
           padding: isSidebar ? '0.45rem 0.65rem' : '0.45rem 0.75rem',
-          cursor: 'pointer',
-          color: 'var(--text-main)',
           fontSize: isSidebar ? '0.95rem' : '1.08rem',
           fontWeight: 700,
           fontFamily: isKm ? kmFont : 'inherit',
-          outline: 'none',
-          boxShadow: 'none',
-          userSelect: 'none',
           width: isSidebar ? '100%' : 'auto',
           textAlign: 'left',
-          transition: 'opacity 0.15s ease, transform 0.15s ease',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.opacity = '0.75';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.opacity = '1';
+          backgroundColor: isOpen && !isClosing ? 'rgba(24, 83, 57, 0.08)' : 'transparent',
         }}
         title={isKm ? 'ជ្រើសរើសភាសា (Select Language)' : 'Select Language'}
         aria-expanded={isOpen}
         aria-haspopup="true"
       >
-        <Globe size={isSidebar ? 18 : 20} color="var(--accent-primary)" style={{ flexShrink: 0 }} />
+        <Globe
+          size={isSidebar ? 18 : 20}
+          color="var(--accent-primary)"
+          className="globe-icon"
+          style={{ flexShrink: 0 }}
+        />
         <span style={{ textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 700 }}>
           {isKm ? 'KM' : 'EN'}
         </span>
       </button>
 
       {/* Language Options List */}
-      {isOpen && (
+      {(isOpen || isClosing) && (
         <div
+          className={isClosing ? 'lang-dropdown-exit' : 'lang-dropdown-animate'}
           style={{
             position: 'absolute',
             [dropUp ? 'bottom' : 'top']: 'calc(100% + 6px)',
@@ -108,33 +134,16 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
           {/* Khmer Button */}
           <button
             type="button"
+            className="lang-dropdown-item"
             onClick={() => {
               setLanguage('km');
-              setIsOpen(false);
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(24, 83, 57, 0.08)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'transparent';
+              closeDropdown();
             }}
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              width: '100%',
-              padding: '0.55rem 0.85rem',
-              border: 'none',
-              borderRadius: '8px',
-              background: 'transparent',
               color: isKm ? 'var(--accent-primary)' : 'var(--text-main)',
               fontSize: '1.02rem',
               fontFamily: kmFont,
               fontWeight: isKm ? 700 : 500,
-              cursor: 'pointer',
-              textAlign: 'left',
-              boxShadow: 'none',
-              transition: 'background 0.15s ease',
             }}
           >
             <span>ខ្មែរ (Khmer)</span>
@@ -144,33 +153,16 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
           {/* English Button */}
           <button
             type="button"
+            className="lang-dropdown-item"
             onClick={() => {
               setLanguage('en');
-              setIsOpen(false);
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(24, 83, 57, 0.08)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'transparent';
+              closeDropdown();
             }}
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              width: '100%',
-              padding: '0.55rem 0.85rem',
-              border: 'none',
-              borderRadius: '8px',
-              background: 'transparent',
               color: !isKm ? 'var(--accent-primary)' : 'var(--text-main)',
               fontSize: '1.02rem',
               fontFamily: 'inherit',
               fontWeight: !isKm ? 700 : 500,
-              cursor: 'pointer',
-              textAlign: 'left',
-              boxShadow: 'none',
-              transition: 'background 0.15s ease',
             }}
           >
             <span>English (EN)</span>

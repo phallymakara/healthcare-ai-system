@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { AuthService, UserProfile } from '../services/auth';
 import { X, Eye, EyeOff } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
@@ -17,6 +17,33 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
   const [tab, setTab] = useState<'login' | 'register'>('login');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isClosing, setIsClosing] = useState(false);
+  const closeTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setIsClosing(false);
+      if (closeTimerRef.current) {
+        clearTimeout(closeTimerRef.current);
+        closeTimerRef.current = null;
+      }
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    return () => {
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    };
+  }, []);
+
+  const handleClose = useCallback(() => {
+    if (isClosing) return;
+    setIsClosing(true);
+    closeTimerRef.current = window.setTimeout(() => {
+      setIsClosing(false);
+      onClose();
+    }, 220);
+  }, [isClosing, onClose]);
 
   // Form states
   const [account, setAccount] = useState('');
@@ -31,18 +58,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
   const [showPassword, setShowPassword] = useState(false);
   const [showRegPassword, setShowRegPassword] = useState(false);
 
-  if (!isOpen) return null;
+  if (!isOpen && !isClosing) return null;
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
     if (!account.trim()) {
-      setError('Please enter your email or phone number.');
+      setError(language === 'km' ? 'សូមបញ្ចូលអ៊ីមែល ឬលេខទូរស័ព្ទរបស់អ្នក។' : 'Please enter your email or phone number.');
       return;
     }
-    if (!password || password.length < 6) {
-      setError('Password must be at least 6 characters.');
+    if (!password) {
+      setError(language === 'km' ? 'សូមបញ្ចូលពាក្យសម្ងាត់របស់អ្នក។' : 'Please enter your password.');
       return;
     }
 
@@ -50,7 +77,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
     try {
       const res = await AuthService.login(account.trim(), password);
       onSuccess(res.user);
-      onClose();
+      handleClose();
     } catch (err: any) {
       const rawMsg = err.message || '';
       if (rawMsg.includes('401') || rawMsg.includes('Invalid credentials') || rawMsg.includes('Incorrect') || rawMsg.includes('not found')) {
@@ -73,15 +100,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
     setError(null);
 
     if (!fullName.trim()) {
-      setError(language === 'km' ? 'សូមបញ្ចូលឈ្មោះពេញ។' : 'Please enter your full name.');
+      setError(language === 'km' ? 'សូមបញ្ចូលឈ្មោះពេញរបស់អ្នក។' : 'Please enter your full name.');
       return;
     }
     if (!phoneOrEmail.trim()) {
-      setError(language === 'km' ? 'សូមបញ្ចូលលេខទូរស័ព្ទ ឬអ៊ីមែល។' : 'Please enter your phone number or email.');
+      setError(language === 'km' ? 'សូមបញ្ចូលលេខទូរស័ព្ទ ឬអ៊ីមែលរបស់អ្នក។' : 'Please enter your phone number or email.');
       return;
     }
     if (!regPassword || regPassword.length < 6) {
-      setError(language === 'km' ? 'ពាក្យសម្ងាត់ត្រូវមានយ៉ាងតិច 6 តួអក្សរ។' : 'Password must be at least 6 characters.');
+      setError(language === 'km' ? 'ពាក្យសម្ងាត់ត្រូវតែមានយ៉ាងតិច ៦ តួអក្សរ។' : 'Password must be at least 6 characters long.');
       return;
     }
 
@@ -98,7 +125,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
         blood_type: 'Unknown',
       });
       onSuccess(res.user);
-      onClose();
+      handleClose();
     } catch (err: any) {
       const rawMsg = err.message || '';
       if (rawMsg.includes('409') || rawMsg.includes('already exists')) {
@@ -112,9 +139,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
   };
 
   return (
-    <div className="responsive-modal-overlay" style={{ zIndex: 99999 }} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+    <div 
+      className={`responsive-modal-overlay ${isClosing ? 'modal-closing' : ''}`}
+      style={{ zIndex: 99999 }} 
+      onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
+    >
       <div 
-        className="responsive-modal-card" 
+        className={`responsive-modal-card ${isClosing ? 'modal-closing' : ''}`} 
         style={{ 
           maxWidth: 'min(440px, 92vw)', 
           borderRadius: '24px', 
@@ -126,7 +157,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
         <div className="responsive-modal-body" style={{ position: 'relative', padding: '1.75rem 1.65rem' }}>
         {/* Close Button */}
         <button
-          onClick={onClose}
+          onClick={handleClose}
           style={{
             position: 'absolute',
             top: '1.15rem',
@@ -178,7 +209,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
 
         {/* Login Form */}
         {tab === 'login' ? (
-          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <form key="login-form" className="modal-form-enter" onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '5px' }}>
                 {language === 'km' ? 'អ៊ីមែល ឬ លេខទូរស័ព្ទ' : 'Email or Phone Number'}
@@ -329,7 +360,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
           </form>
         ) : (
           /* Register Form */
-          <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '0.95rem' }}>
+          <form key="register-form" className="modal-form-enter" onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '0.95rem' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '5px' }}>
                 {language === 'km' ? 'ឈ្មោះពេញ' : 'Full Name'}

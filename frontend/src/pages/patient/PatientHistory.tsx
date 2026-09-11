@@ -479,6 +479,7 @@ export const PatientHistory: React.FC<PatientHistoryProps> = ({
               <button
                 type="button"
                 onClick={() => setStatusFilter('ALL')}
+                className={`history-filter-pill ${statusFilter === 'ALL' ? 'active' : ''}`}
                 style={{
                   padding: '0.42rem 0.95rem',
                   fontSize: '0.85rem',
@@ -490,7 +491,6 @@ export const PatientHistory: React.FC<PatientHistoryProps> = ({
                   cursor: 'pointer',
                   boxShadow: 'none',
                   fontFamily: kmFont,
-                  transition: 'all 0.15s ease',
                 }}
               >
                 {t('history_filter_all')}
@@ -498,6 +498,7 @@ export const PatientHistory: React.FC<PatientHistoryProps> = ({
               <button
                 type="button"
                 onClick={() => setStatusFilter('COMPLETED')}
+                className={`history-filter-pill ${statusFilter === 'COMPLETED' ? 'active' : ''}`}
                 style={{
                   padding: '0.42rem 0.95rem',
                   fontSize: '0.85rem',
@@ -509,7 +510,6 @@ export const PatientHistory: React.FC<PatientHistoryProps> = ({
                   cursor: 'pointer',
                   boxShadow: 'none',
                   fontFamily: kmFont,
-                  transition: 'all 0.15s ease',
                 }}
               >
                 {t('history_filter_completed')}
@@ -517,6 +517,7 @@ export const PatientHistory: React.FC<PatientHistoryProps> = ({
               <button
                 type="button"
                 onClick={() => setStatusFilter('CANCELLED')}
+                className={`history-filter-pill ${statusFilter === 'CANCELLED' ? 'active' : ''}`}
                 style={{
                   padding: '0.42rem 0.95rem',
                   fontSize: '0.85rem',
@@ -528,7 +529,6 @@ export const PatientHistory: React.FC<PatientHistoryProps> = ({
                   cursor: 'pointer',
                   boxShadow: 'none',
                   fontFamily: kmFont,
-                  transition: 'all 0.15s ease',
                 }}
               >
                 {t('history_filter_cancelled')}
@@ -606,14 +606,9 @@ export const PatientHistory: React.FC<PatientHistoryProps> = ({
                 return (
                   <div
                     key={rec.id}
+                    className="patient-record-card"
                     onClick={() => {
                       setSelectedRecord(rec);
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = 'var(--text-main)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = 'var(--border-color)';
                     }}
                     style={{
                       background: '#ffffff',
@@ -621,7 +616,6 @@ export const PatientHistory: React.FC<PatientHistoryProps> = ({
                       borderRadius: '16px',
                       padding: '1.15rem 1.45rem',
                       cursor: 'pointer',
-                      transition: 'border-color 0.15s ease',
                       boxShadow: 'none',
                       fontFamily: kmFont,
                     }}
@@ -777,6 +771,7 @@ export const PatientHistory: React.FC<PatientHistoryProps> = ({
             <button
               type="button"
               onClick={() => setSelectedRecord(null)}
+              className="btn-back-nav"
               style={{
                 padding: '0.2rem 0',
                 fontSize: '0.925rem',
@@ -799,6 +794,7 @@ export const PatientHistory: React.FC<PatientHistoryProps> = ({
 
           {/* Medical Summary Pass Card (Zero shadows, pure white background, no horizontal dividing lines) */}
           <div
+            className="record-detail-animate"
             style={{
               background: '#ffffff',
               border: '1px solid var(--border-color)',

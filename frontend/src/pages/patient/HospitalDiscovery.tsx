@@ -11,6 +11,7 @@ import {
 } from '../../i18n/formatters';
 import { API_BASE } from '../../services/api';
 import { AppointmentSlotPicker } from '../../components/AppointmentSlotPicker';
+import { useModalClose } from '../../hooks/useModalClose';
 
 const getGoogleMapsUrl = (facility: any) => {
   if (facility?.latitude && facility?.longitude) {
@@ -201,6 +202,7 @@ export const HospitalDiscovery: React.FC<HospitalDiscoveryProps> = ({
 
   // Booking Modal State & Field Validation
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
+  const bookingModal = useModalClose(bookingModalOpen, setBookingModalOpen);
   const [selectedHospital, setSelectedHospital] = useState<any>(null);
   const [selectedDept, setSelectedDept] = useState<any>(null);
   const [patientName, setPatientName] = useState('');
@@ -311,7 +313,7 @@ export const HospitalDiscovery: React.FC<HospitalDiscoveryProps> = ({
       }
 
       const ticket = await res.json();
-      setBookingModalOpen(false);
+      bookingModal.close();
       onTicketBooked(ticket);
     } catch {
       setFormError(language === 'km' ? 'បញ្ហាតភ្ជាប់បណ្តាញ។ សូមពិនិត្យមើលបណ្តាញរបស់អ្នកហើយព្យាយាមម្តងទៀត។' : 'Connection issue. Please check your network and try again.');
@@ -348,27 +350,21 @@ export const HospitalDiscovery: React.FC<HospitalDiscoveryProps> = ({
   // Dedicated Facility Services & Queues View
   if (selectedFacility) {
     return (
-      <div style={{ width: '100%', height: '100%', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, maxWidth: '1060px', margin: '0 auto' }}>
+      <div className="facility-detail-animate" style={{ width: '100%', height: '100%', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, maxWidth: '1060px', margin: '0 auto' }}>
         {/* Back Navigation Bar */}
         <div style={{ marginBottom: '1.25rem' }}>
           <button
+            type="button"
             onClick={() => setSelectedFacility(null)}
+            className="btn-back-nav"
             style={{
-              padding: '0.2rem 0',
               fontSize: '0.95rem',
-              fontWeight: 500,
-              background: 'none',
-              border: 'none',
-              color: 'var(--text-main)',
-              cursor: 'pointer',
-              boxShadow: 'none',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.4rem',
+              fontWeight: 600,
               fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
             }}
           >
-            {language === 'km' ? '← ត្រឡប់ទៅបញ្ជីមន្ទីរពេទ្យ & គ្លីនិក' : '← Back to Facilities'}
+            <span className="arrow-icon" style={{ fontSize: '1.1rem' }}>←</span>
+            <span>{language === 'km' ? 'ត្រឡប់ទៅបញ្ជីមន្ទីរពេទ្យ & គ្លីនិក' : 'Back to Facilities'}</span>
           </button>
         </div>
 
@@ -588,7 +584,9 @@ export const HospitalDiscovery: React.FC<HospitalDiscoveryProps> = ({
 
                       <div>
                         <button
+                          type="button"
                           onClick={() => handleOpenBooking(selectedFacility, dept)}
+                          className="btn-book-action"
                           style={{
                             padding: '0.52rem 1.25rem',
                             fontSize: '0.9rem',
@@ -600,16 +598,6 @@ export const HospitalDiscovery: React.FC<HospitalDiscoveryProps> = ({
                             cursor: 'pointer',
                             boxShadow: 'none',
                             whiteSpace: 'nowrap',
-                            fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
-                            transition: 'all 0.15s ease',
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.background = 'var(--text-main)';
-                            e.currentTarget.style.color = '#ffffff';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background = 'transparent';
-                            e.currentTarget.style.color = 'var(--text-main)';
                           }}
                         >
                           {t('book_digital_ticket')}
@@ -808,16 +796,16 @@ export const HospitalDiscovery: React.FC<HospitalDiscoveryProps> = ({
         </div>
 
         {/* Booking Confirmation Modal */}
-        {bookingModalOpen && selectedHospital && selectedDept && (
-          <div className="responsive-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setBookingModalOpen(false); }}>
-            <div className="responsive-modal-card" style={{ maxWidth: '520px', fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit' }}>
+        {bookingModal.shouldRender && selectedHospital && selectedDept && (
+          <div className={bookingModal.overlayClass} onClick={(e) => { if (e.target === e.currentTarget) bookingModal.close(); }}>
+            <div className={bookingModal.cardClass} style={{ maxWidth: '520px', fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit' }}>
               <div className="responsive-modal-body" style={{ padding: '1.6rem 1.75rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                   <h3 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit' }}>
                     {t('confirm_booking')}
                   </h3>
                   <button
-                    onClick={() => setBookingModalOpen(false)}
+                    onClick={bookingModal.close}
                     style={{
                       background: 'transparent',
                       border: 'none',
@@ -954,7 +942,7 @@ export const HospitalDiscovery: React.FC<HospitalDiscoveryProps> = ({
                   <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
                     <button
                       type="button"
-                      onClick={() => setBookingModalOpen(false)}
+                      onClick={bookingModal.close}
                       style={{
                         padding: '0.75rem 1.25rem',
                         background: 'transparent',
@@ -1000,7 +988,7 @@ export const HospitalDiscovery: React.FC<HospitalDiscoveryProps> = ({
 
   // Two-Column Grid Facilities List View
   return (
-    <div style={{ width: '100%', height: '100%', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+    <div className="facility-list-animate" style={{ width: '100%', height: '100%', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
       {/* Top Search Controls & Category Filter Bar */}
       <div style={{ marginBottom: '1.25rem' }}>
         {/* Search Input Row */}
@@ -1102,20 +1090,16 @@ export const HospitalDiscovery: React.FC<HospitalDiscoveryProps> = ({
             { label: t('cat_animal_clinics'), value: 'Animal Clinic' },
           ].map((cat) => (
             <button
+              type="button"
               key={cat.value}
               onClick={() => setSelectedCategory(cat.value as any)}
+              className={`category-filter-pill ${selectedCategory === cat.value ? 'active' : ''}`}
               style={{
-                padding: '0.5rem 1.15rem',
-                fontSize: '0.96rem',
                 fontWeight: selectedCategory === cat.value ? 700 : 500,
                 background: selectedCategory === cat.value ? 'var(--accent-primary)' : 'transparent',
                 border: selectedCategory === cat.value ? '1px solid var(--accent-primary)' : '1px solid var(--border-color)',
-                borderRadius: 'var(--radius-full)',
                 color: selectedCategory === cat.value ? '#ffffff' : 'var(--text-muted)',
-                cursor: 'pointer',
-                boxShadow: 'none',
                 fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
-                transition: 'all 0.15s ease',
               }}
             >
               {cat.label}
@@ -1168,10 +1152,7 @@ export const HospitalDiscovery: React.FC<HospitalDiscoveryProps> = ({
                 boxShadow: 'none',
                 minWidth: 0,
                 boxSizing: 'border-box',
-                transition: 'border-color 0.15s ease',
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--text-main)')}
-              onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border-color)')}
             >
               <SimulatedHospitalLogo name={hosp.name} logoUrl={hosp.logo_url} size={54} />
               <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>

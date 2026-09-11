@@ -17,6 +17,7 @@ import { AuthService } from '../../services/auth';
 import { useLanguage } from '../../context/LanguageContext';
 import { RealTimeQueueClient } from '../../services/websocket';
 import { API_BASE } from '../../services/api';
+import { useModalClose } from '../../hooks/useModalClose';
 
 interface BookingItem {
   id: string;
@@ -102,6 +103,7 @@ export const QueueManagement: React.FC = () => {
 
   // Walk-in modal state & errors
   const [walkInModalOpen, setWalkInModalOpen] = useState(false);
+  const walkInModal = useModalClose(walkInModalOpen, setWalkInModalOpen);
   const [walkInName, setWalkInName] = useState('');
   const [walkInPhone, setWalkInPhone] = useState('');
   const [walkInDeptId, setWalkInDeptId] = useState('');
@@ -1655,6 +1657,8 @@ export const QueueManagement: React.FC = () => {
               }}
             />
             <button
+              type="button"
+              className="hospital-action-btn"
               onClick={() => setSelectedDate(new Date().toISOString().split('T')[0])}
               style={{
                 padding: '0.52rem 0.95rem',
@@ -1670,7 +1674,6 @@ export const QueueManagement: React.FC = () => {
                   selectedDate === new Date().toISOString().split('T')[0]
                     ? 'var(--text-main)'
                     : 'var(--text-muted)',
-                cursor: 'pointer',
                 fontFamily: kmFont,
                 boxShadow: 'none',
               }}
@@ -1680,6 +1683,8 @@ export const QueueManagement: React.FC = () => {
           </div>
 
           <button
+            type="button"
+            className="hospital-action-btn"
             onClick={() => {
               setWalkInName('');
               setWalkInPhone('');
@@ -1700,10 +1705,8 @@ export const QueueManagement: React.FC = () => {
               color: 'var(--text-main)',
               fontSize: '0.875rem',
               fontWeight: 600,
-              cursor: 'pointer',
-              boxShadow: 'none',
               fontFamily: kmFont,
-              transition: 'all 0.15s ease',
+              boxShadow: 'none',
             }}
           >
             {t('qm_issue_walkin_btn')}
@@ -2110,23 +2113,19 @@ export const QueueManagement: React.FC = () => {
       )}
 
       {/* Walk-in Intake / Thermal Slip Modal */}
-      {walkInModalOpen && (
+      {walkInModal.shouldRender && (
         <div
+          className={walkInModal.overlayClass}
           style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0, 0, 0, 0.45)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
             zIndex: 1000,
-            padding: '1rem',
           }}
+          onClick={(e) => { if (e.target === e.currentTarget) walkInModal.close(); }}
         >
           <div
+            className={walkInModal.cardClass}
             style={{
               background: '#ffffff',
-              borderRadius: '6px',
+              borderRadius: '8px',
               border: '1px solid var(--border-color)',
               width: '100%',
               maxWidth: '460px',
@@ -2238,7 +2237,7 @@ export const QueueManagement: React.FC = () => {
                   </h3>
                   <button
                     type="button"
-                    onClick={() => setWalkInModalOpen(false)}
+                    onClick={walkInModal.close}
                     style={{
                       background: 'transparent',
                       border: 'none',
@@ -2372,7 +2371,7 @@ export const QueueManagement: React.FC = () => {
                   <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.75rem' }}>
                     <button
                       type="button"
-                      onClick={() => setWalkInModalOpen(false)}
+                      onClick={walkInModal.close}
                       style={{
                         flex: 1,
                         padding: '0.75rem 1rem',

@@ -160,6 +160,7 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateTo
                 >
                   {/* Container 1: Departments */}
                   <div
+                    className="kpi-stat-card"
                     style={{
                       background: '#ffffff',
                       border: '1px solid var(--border-color)',
@@ -184,6 +185,7 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateTo
 
                   {/* Container 2: Staff & Doctors */}
                   <div
+                    className="kpi-stat-card"
                     style={{
                       background: '#ffffff',
                       border: '1px solid var(--border-color)',
@@ -208,6 +210,7 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateTo
 
                   {/* Container 3: Medical Services */}
                   <div
+                    className="kpi-stat-card"
                     style={{
                       background: '#ffffff',
                       border: '1px solid var(--border-color)',
@@ -242,6 +245,7 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateTo
                 >
                   {/* MAIN CARD 1: Live Floor Activity (Real-Time Queue Pulse) */}
                   <div
+                    className="dashboard-card"
                     style={{
                       background: '#ffffff',
                       border: '1px solid var(--border-color)',
@@ -319,6 +323,7 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateTo
 
                   {/* MAIN CARD 2: Today's Patient Intake & Channels */}
                   <div
+                    className="dashboard-card"
                     style={{
                       background: '#ffffff',
                       border: '1px solid var(--border-color)',
@@ -440,6 +445,7 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateTo
 
                   {/* MAIN CARD 3: Resolution & Operational Efficiency */}
                   <div
+                    className="dashboard-card"
                     style={{
                       background: '#ffffff',
                       border: '1px solid var(--border-color)',

@@ -244,7 +244,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {isPartner ? (
             <button
               onClick={() => handleNavClick('partner_dashboard')}
-              className="brand-logo"
+              className="brand-logo sidebar-brand-btn"
               style={{
                 background: 'none',
                 border: 'none',
@@ -313,7 +313,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           ) : (
             <button
               onClick={() => handleNavClick('landing')}
-              className="brand-logo"
+              className="brand-logo sidebar-brand-btn"
               style={{
                 background: 'none',
                 border: 'none',
@@ -486,33 +486,38 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <div ref={notifRef} style={{ position: 'relative', width: '100%', marginBottom: '0.4rem' }}>
               <button
                 onClick={() => setShowNotifMenu(!showNotifMenu)}
+                className="sidebar-notif-btn"
                 style={{
                   width: '100%',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  padding: '0.55rem 0.4rem',
+                  padding: '0.55rem 0.5rem',
                   fontSize: '0.95rem',
                   background: 'transparent',
                   border: 'none',
                   cursor: 'pointer',
                   boxShadow: 'none',
                   color: 'var(--text-main)',
+                  borderRadius: 'var(--radius-sm)',
                 }}
               >
                 <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Bell size={18} color="var(--accent-primary)" />
+                  <Bell size={18} color="var(--accent-primary)" className="sidebar-bell-icon" />
                   <span style={{ fontWeight: 500 }}>{t('notifications')}</span>
                 </span>
                 {notifications.length > 0 && (
-                  <span style={{
-                    background: 'var(--accent-primary)',
-                    color: '#fff',
-                    borderRadius: '9999px',
-                    padding: '2px 7px',
-                    fontSize: '0.78rem',
-                    fontWeight: 700,
-                  }}>
+                  <span
+                    className="sidebar-notif-badge"
+                    style={{
+                      background: 'var(--accent-primary)',
+                      color: '#fff',
+                      borderRadius: '9999px',
+                      padding: '2px 7px',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                    }}
+                  >
                     {notifications.length}
                   </span>
                 )}
@@ -521,6 +526,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               {/* Notifications Popup - Aligns flush with sidebar footer */}
               {showNotifMenu && (
                 <div
+                  className="sidebar-notif-menu"
                   style={{
                     position: 'absolute',
                     bottom: isMobile ? 'auto' : 'calc(100% + 8px)',
@@ -589,18 +595,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {currentUser ? (
             <div className="sidebar-user-card" style={{ background: 'transparent', border: 'none', padding: '0.5rem 0', boxShadow: 'none' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
-                <div style={{
-                  width: '34px',
-                  height: '34px',
-                  borderRadius: '50%',
-                  border: '1px solid var(--border-color)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'var(--text-main)',
-                  flexShrink: 0,
-                  overflow: 'hidden',
-                }}>
+                <div
+                  className="sidebar-user-avatar"
+                  style={{
+                    width: '34px',
+                    height: '34px',
+                    borderRadius: '50%',
+                    border: '1px solid var(--border-color)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--text-main)',
+                    flexShrink: 0,
+                    overflow: 'hidden',
+                  }}
+                >
                   {currentUser.profile_photo_url ? (
                     <img
                       src={currentUser.profile_photo_url}
@@ -628,14 +637,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <button
                 onClick={onLogout}
                 title={t('sign_out')}
+                className="sidebar-logout-btn"
                 style={{
                   background: 'transparent',
                   border: 'none',
                   color: 'var(--text-muted)',
                   cursor: 'pointer',
-                  padding: '5px',
+                  padding: '6px',
                   display: 'flex',
                   alignItems: 'center',
+                  justifyContent: 'center',
                 }}
               >
                 <LogOut size={18} />

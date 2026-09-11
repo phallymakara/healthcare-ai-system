@@ -151,6 +151,8 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
     }
   };
 
+  const [isClosing, setIsClosing] = useState(false);
+
   const handlePatientSwitch = () => {
     if (onSwitchToPatient) {
       onSwitchToPatient();
@@ -165,7 +167,11 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
       setLoginErrors({});
       setRegisterErrors({});
     } else {
-      handlePatientSwitch();
+      if (isClosing) return;
+      setIsClosing(true);
+      setTimeout(() => {
+        handlePatientSwitch();
+      }, 220);
     }
   };
 
@@ -260,6 +266,7 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
           />
         ) : (
           <div
+            className={`responsive-modal-card ${isClosing ? 'modal-closing' : ''}`}
             style={{
               width: '100%',
               maxWidth: 'min(440px, 92vw)',
@@ -352,7 +359,7 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
 
             {/* VIEW 1: HOSPITAL SIGN IN */}
             {view === 'login' && (
-              <form onSubmit={handleLoginSubmit}>
+              <form key="partner-login-form" className="modal-form-enter" onSubmit={handleLoginSubmit}>
                 {/* Account Input */}
                 <div style={{ marginBottom: '1rem' }}>
                   <label
@@ -624,7 +631,7 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
 
             {/* VIEW 2: REGISTER HOSPITAL ADMIN */}
             {view === 'register' && (
-              <form onSubmit={handleRegisterSubmit}>
+              <form key="partner-register-form" className="modal-form-enter" onSubmit={handleRegisterSubmit}>
                 {/* Admin Full Name */}
                 <div style={{ marginBottom: '0.95rem' }}>
                   <label

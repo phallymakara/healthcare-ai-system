@@ -3,6 +3,7 @@ import { AuthService } from '../../services/auth';
 import { API_BASE } from '../../services/api';
 import { useLanguage } from '../../context/LanguageContext';
 import { Eye, EyeOff } from 'lucide-react';
+import { useModalClose } from '../../hooks/useModalClose';
 
 interface StaffMember {
   id: string;
@@ -25,6 +26,7 @@ export const StaffManagement: React.FC = () => {
 
   // Modal State
   const [modalOpen, setModalOpen] = useState(false);
+  const staffModal = useModalClose(modalOpen, setModalOpen);
   const [editingStaffId, setEditingStaffId] = useState<string | null>(null);
   const [fullName, setFullName] = useState('');
   const [contact, setContact] = useState('');
@@ -195,7 +197,7 @@ export const StaffManagement: React.FC = () => {
         });
       }
 
-      setModalOpen(false);
+      staffModal.close();
       await loadStaff();
     } catch {
       setSubmitError(t('staff_err_conn'));
@@ -238,7 +240,9 @@ export const StaffManagement: React.FC = () => {
       {/* Top Controls: + Invite Staff aligned to the left */}
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1.5rem' }}>
         <button
+          type="button"
           onClick={handleOpenInvite}
+          className="hospital-action-btn"
           style={{
             padding: '0.55rem 1.15rem',
             background: 'transparent',
@@ -247,10 +251,8 @@ export const StaffManagement: React.FC = () => {
             color: 'var(--text-main)',
             fontSize: '0.875rem',
             fontWeight: 600,
-            cursor: 'pointer',
             boxShadow: 'none',
             fontFamily: kmFont,
-            transition: 'all 0.15s ease',
           }}
         >
           {t('staff_invite_btn')}
@@ -549,16 +551,16 @@ export const StaffManagement: React.FC = () => {
       )}
 
       {/* Invite / Edit Staff Modal */}
-      {modalOpen && (
-        <div className="responsive-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setModalOpen(false); }}>
-          <div className="responsive-modal-card" style={{ maxWidth: '520px', fontFamily: kmFont }}>
+      {staffModal.shouldRender && (
+        <div className={staffModal.overlayClass} onClick={(e) => { if (e.target === e.currentTarget) staffModal.close(); }}>
+          <div className={staffModal.cardClass} style={{ maxWidth: '520px', fontFamily: kmFont }}>
             <div className="responsive-modal-body" style={{ padding: '1.6rem 1.75rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.4rem' }}>
                 <h3 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: kmFont }}>
                   {editingStaffId ? t('staff_modal_edit') : t('staff_modal_invite')}
                 </h3>
               <button
-                onClick={() => setModalOpen(false)}
+                onClick={staffModal.close}
                 style={{
                   background: 'transparent',
                   border: 'none',
@@ -749,7 +751,7 @@ export const StaffManagement: React.FC = () => {
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
                 <button
                   type="button"
-                  onClick={() => setModalOpen(false)}
+                  onClick={staffModal.close}
                   style={{
                     padding: '0.75rem 1.25rem',
                     background: 'transparent',

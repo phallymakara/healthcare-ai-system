@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
 import { AuthService } from '../../services/auth';
 import { API_BASE } from '../../services/api';
+import { useModalClose } from '../../hooks/useModalClose';
 import {
   Calendar,
   Clock,
@@ -84,6 +85,7 @@ export const LiveTicketTracker: React.FC<LiveTicketTrackerProps> = ({
   const [actionNotice, setActionNotice] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const cancelModal = useModalClose(showCancelModal, setShowCancelModal);
 
   // Load patient tickets or initial ticket
   const loadData = async (preferredTicketId?: string) => {
@@ -176,7 +178,7 @@ export const LiveTicketTracker: React.FC<LiveTicketTrackerProps> = ({
         const updated = await res.json();
         setActiveTicket(updated);
         setMyTickets((prev) => prev.map((tk) => (tk.id === updated.id ? updated : tk)));
-        setShowCancelModal(false);
+        cancelModal.close();
         setActionNotice(t('appt_cancel_success'));
       } else {
         throw new Error();
@@ -549,16 +551,11 @@ export const LiveTicketTracker: React.FC<LiveTicketTrackerProps> = ({
                 return (
                   <div
                     key={tk.id}
+                    className="appointment-ticket-card"
                     onClick={() => {
                       setActiveTicket(tk);
                       setActionNotice(null);
                       setActionError(null);
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = 'var(--text-main)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = 'var(--border-color)';
                     }}
                     style={{
                       background: '#ffffff',
@@ -567,7 +564,6 @@ export const LiveTicketTracker: React.FC<LiveTicketTrackerProps> = ({
                       padding: '1.15rem 1.45rem',
                       cursor: 'pointer',
                       boxShadow: 'none',
-                      transition: 'border-color 0.15s ease',
                       display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'center',
@@ -711,6 +707,7 @@ export const LiveTicketTracker: React.FC<LiveTicketTrackerProps> = ({
                 setActionNotice(null);
                 setActionError(null);
               }}
+              className="btn-back-nav"
               style={{
                 padding: '0.2rem 0',
                 fontSize: '0.925rem',
@@ -733,6 +730,7 @@ export const LiveTicketTracker: React.FC<LiveTicketTrackerProps> = ({
 
           {/* Active Scheduled Appointment Pass Card */}
           <div
+            className="appointment-detail-animate"
             style={{
               background: '#ffffff',
               border: '1px solid var(--border-color)',
@@ -1101,15 +1099,15 @@ export const LiveTicketTracker: React.FC<LiveTicketTrackerProps> = ({
       )}
 
       {/* Cancellation Confirmation Dialog */}
-      {showCancelModal && (
+      {cancelModal.shouldRender && (
         <div
-          className="responsive-modal-overlay"
+          className={cancelModal.overlayClass}
           onClick={(e) => {
-            if (e.target === e.currentTarget) setShowCancelModal(false);
+            if (e.target === e.currentTarget) cancelModal.close();
           }}
         >
           <div
-            className="responsive-modal-card"
+            className={cancelModal.cardClass}
             style={{
               maxWidth: '440px',
               fontFamily: kmFont,
@@ -1146,7 +1144,7 @@ export const LiveTicketTracker: React.FC<LiveTicketTrackerProps> = ({
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
               <button
                 type="button"
-                onClick={() => setShowCancelModal(false)}
+                onClick={cancelModal.close}
                 disabled={actionLoading}
                 style={{
                   padding: '0.45rem 1rem',

@@ -3,6 +3,7 @@ import { AuthService } from '../../services/auth';
 import { useLanguage } from '../../context/LanguageContext';
 import { API_BASE } from '../../services/api';
 import { Camera, RefreshCw, UserCheck } from 'lucide-react';
+import { useModalClose } from '../../hooks/useModalClose';
 
 const DAY_DEFS = [
   { dayIndex: 0, labelKey: 'day_mon', fullKey: 'day_mon_full' },
@@ -25,6 +26,7 @@ export const DoctorManagement: React.FC = () => {
 
   // Add / Edit Doctor Modal State
   const [docModalOpen, setDocModalOpen] = useState(false);
+  const docModal = useModalClose(docModalOpen, setDocModalOpen);
   const [editingDocId, setEditingDocId] = useState<string | null>(null);
   const [docDeptId, setDocDeptId] = useState('');
   const [docFullName, setDocFullName] = useState('');
@@ -59,6 +61,7 @@ export const DoctorManagement: React.FC = () => {
 
   // Manage Shifts Modal State
   const [shiftModalOpen, setShiftModalOpen] = useState(false);
+  const shiftModal = useModalClose(shiftModalOpen, setShiftModalOpen);
   const [activeShiftDoc, setActiveShiftDoc] = useState<any | null>(null);
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [shiftStartTime, setShiftStartTime] = useState('08:00');
@@ -340,7 +343,7 @@ export const DoctorManagement: React.FC = () => {
         }).catch((e) => console.error('Failed to upload doctor photo:', e));
       }
 
-      setDocModalOpen(false);
+      docModal.close();
       await loadData();
     } catch {
       setDocSubmitError(t('doc_err_conn'));
@@ -437,7 +440,7 @@ export const DoctorManagement: React.FC = () => {
         return;
       }
 
-      setShiftModalOpen(false);
+      shiftModal.close();
       await loadData();
     } catch {
       setShiftSubmitError(t('doc_shift_err_conn'));
@@ -451,8 +454,10 @@ export const DoctorManagement: React.FC = () => {
       {/* Top Controls: + Add Doctor aligned to the left */}
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1.5rem' }}>
         <button
+          type="button"
           onClick={handleOpenNewDoc}
           disabled={departments.length === 0}
+          className="hospital-action-btn"
           style={{
             padding: '0.55rem 1.15rem',
             background: 'transparent',
@@ -465,7 +470,6 @@ export const DoctorManagement: React.FC = () => {
             opacity: departments.length === 0 ? 0.5 : 1,
             boxShadow: 'none',
             fontFamily: kmFont,
-            transition: 'all 0.15s ease',
           }}
         >
           {t('doc_add_btn')}
@@ -791,9 +795,9 @@ export const DoctorManagement: React.FC = () => {
       )}
 
       {/* Add / Edit Doctor Modal */}
-      {docModalOpen && (
-        <div className="responsive-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setDocModalOpen(false); }}>
-          <div className="responsive-modal-card" style={{ maxWidth: '520px', fontFamily: kmFont }}>
+      {docModal.shouldRender && (
+        <div className={docModal.overlayClass} onClick={(e) => { if (e.target === e.currentTarget) docModal.close(); }}>
+          <div className={docModal.cardClass} style={{ maxWidth: '520px', fontFamily: kmFont }}>
             <div className="responsive-modal-body" style={{ padding: '1.6rem 1.75rem' }}>
               <h3 style={{ fontSize: '1.35rem', fontWeight: 700, margin: '0 0 1.35rem 0', color: 'var(--text-main)', fontFamily: kmFont }}>
                 {editingDocId ? t('doc_modal_edit_title') : t('doc_modal_add_title')}
@@ -1003,7 +1007,7 @@ export const DoctorManagement: React.FC = () => {
               <div style={{ display: 'flex', gap: '0.85rem', marginTop: '0.65rem' }}>
                 <button
                   type="button"
-                  onClick={() => setDocModalOpen(false)}
+                  onClick={docModal.close}
                   style={{
                     flex: 1,
                     padding: '0.7rem 1.25rem',
@@ -1049,9 +1053,9 @@ export const DoctorManagement: React.FC = () => {
       )}
 
       {/* Manage Shifts Modal */}
-      {shiftModalOpen && activeShiftDoc && (
-        <div className="responsive-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setShiftModalOpen(false); }}>
-          <div className="responsive-modal-card" style={{ maxWidth: '520px', fontFamily: kmFont }}>
+      {shiftModal.shouldRender && activeShiftDoc && (
+        <div className={shiftModal.overlayClass} onClick={(e) => { if (e.target === e.currentTarget) shiftModal.close(); }}>
+          <div className={shiftModal.cardClass} style={{ maxWidth: '520px', fontFamily: kmFont }}>
             <div className="responsive-modal-body" style={{ padding: '1.6rem 1.75rem' }}>
               <h3 style={{ fontSize: '1.35rem', fontWeight: 700, margin: '0 0 0.35rem 0', color: 'var(--text-main)', fontFamily: kmFont }}>
                 {t('doc_shifts_modal_title')}
@@ -1149,7 +1153,7 @@ export const DoctorManagement: React.FC = () => {
               <div style={{ display: 'flex', gap: '0.85rem', marginTop: '0.65rem' }}>
                 <button
                   type="button"
-                  onClick={() => setShiftModalOpen(false)}
+                  onClick={shiftModal.close}
                   style={{
                     flex: 1,
                     padding: '0.7rem 1.25rem',

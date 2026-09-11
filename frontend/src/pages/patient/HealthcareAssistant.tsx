@@ -5,6 +5,7 @@ import { AuthService } from '../../services/auth';
 import { useLanguage } from '../../context/LanguageContext';
 import { API_BASE } from '../../services/api';
 import { AppointmentSlotPicker } from '../../components/AppointmentSlotPicker';
+import { useModalClose } from '../../hooks/useModalClose';
 
 interface HealthcareAssistantProps {
   onTicketBooked: (ticket: any) => void;
@@ -73,6 +74,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
 
   // Booking Modal State
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
+  const bookingModal = useModalClose(bookingModalOpen, setBookingModalOpen);
   const [selectedMatch, setSelectedMatch] = useState<any>(null);
   const [patientName, setPatientName] = useState('');
   const [patientPhone, setPatientPhone] = useState('');
@@ -272,7 +274,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
       }
 
       const ticket = await res.json();
-      setBookingModalOpen(false);
+      bookingModal.close();
       onTicketBooked(ticket);
     } catch {
       setBookingFormError(language === 'km' ? 'បញ្ហាតភ្ជាប់បណ្តាញ។ សូមពិនិត្យមើលបណ្តាញរបស់អ្នកហើយព្យាយាមម្តងទៀត។' : 'Connection issue. Please check your network and try again.');
@@ -299,6 +301,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
             return (
               <div
                 key={msg.id}
+                className="chat-bubble-animate"
                 style={{
                   display: 'flex',
                   flexDirection: 'column',
@@ -683,9 +686,9 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
       </div>
 
       {/* Manual Booking Modal Dialog */}
-      {bookingModalOpen && selectedMatch && (
-        <div className="responsive-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setBookingModalOpen(false); }}>
-          <div className="responsive-modal-card" style={{ maxWidth: '520px', fontFamily: kmFont }}>
+      {bookingModal.shouldRender && selectedMatch && (
+        <div className={bookingModal.overlayClass} onClick={(e) => { if (e.target === e.currentTarget) bookingModal.close(); }}>
+          <div className={bookingModal.cardClass} style={{ maxWidth: '520px', fontFamily: kmFont }}>
             <div className="responsive-modal-body" style={{ padding: '1.6rem 1.75rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                 <h3 style={{ fontSize: '1.35rem', fontWeight: 700, color: 'var(--text-main)', margin: 0, fontFamily: kmFont }}>
@@ -693,7 +696,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
                 </h3>
                 <button
                   type="button"
-                  onClick={() => setBookingModalOpen(false)}
+                  onClick={bookingModal.close}
                   style={{
                     background: 'transparent',
                     border: 'none',
@@ -826,7 +829,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
                 <button
                   type="button"
-                  onClick={() => setBookingModalOpen(false)}
+                  onClick={bookingModal.close}
                   disabled={bookingLoading}
                   style={{
                     padding: '0.65rem 1.25rem',

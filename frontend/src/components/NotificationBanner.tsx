@@ -17,6 +17,7 @@ export const NotificationBanner: React.FC<NotificationBannerProps> = ({ notifica
 
   return (
     <div
+      className="notification-banner-animate"
       style={{
         position: 'fixed',
         top: '1rem',

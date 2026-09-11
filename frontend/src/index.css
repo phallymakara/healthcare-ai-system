@@ -149,6 +149,19 @@ body.lang-km {
   margin: 1rem 0 0.45rem 0.5rem;
 }
 
+/* Sidebar Navigation Micro-Animations */
+@keyframes sidebarActivePop {
+  0% {
+    transform: scale(0.96);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
 .sidebar-nav-item {
   display: flex;
   align-items: center;
@@ -162,13 +175,33 @@ body.lang-km {
   font-weight: 500;
   cursor: pointer;
   text-align: left;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   width: 100%;
+  position: relative;
+  overflow: hidden;
+  user-select: none;
 }
 
-.sidebar-nav-item:hover {
-  background: var(--bg-secondary);
+.sidebar-nav-item svg {
+  transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+  flex-shrink: 0;
+}
+
+.sidebar-nav-item:hover:not(.active) {
+  background: rgba(24, 83, 57, 0.06);
   color: var(--text-main);
+  transform: translateX(4px);
+}
+
+.sidebar-nav-item:hover:not(.active) svg {
+  transform: scale(1.14) rotate(-3deg);
+}
+
+.sidebar-nav-item:active {
+  transform: scale(0.97) translateX(2px);
 }
 
 .sidebar-nav-item.active {
@@ -177,11 +210,92 @@ body.lang-km {
   font-weight: 700;
   border-left: none !important;
   border-radius: var(--radius-full) !important;
+  box-shadow: 0 4px 14px rgba(24, 83, 57, 0.22);
+  animation: sidebarActivePop 0.26s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .sidebar-nav-item.active svg {
   color: #ffffff !important;
   stroke: #ffffff !important;
+  transform: scale(1.08);
+}
+
+/* Sidebar Brand Header Hover Micro-Animation */
+.sidebar-brand-btn {
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+}
+
+.sidebar-brand-btn:hover {
+  transform: scale(1.02);
+}
+
+.sidebar-brand-btn:active {
+  transform: scale(0.98);
+}
+
+.sidebar-brand-btn img,
+.sidebar-brand-btn > div:first-child {
+  transition: transform 0.26s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.26s ease;
+}
+
+.sidebar-brand-btn:hover img,
+.sidebar-brand-btn:hover > div:first-child {
+  transform: rotate(-3deg) scale(1.06);
+}
+
+/* Sidebar Notification Button & Badge Pulse */
+.sidebar-notif-btn {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.sidebar-notif-btn:hover {
+  background: rgba(24, 83, 57, 0.06) !important;
+  transform: translateX(3px);
+}
+
+.sidebar-notif-btn:active {
+  transform: scale(0.97) translateX(1px);
+}
+
+.sidebar-notif-btn .sidebar-bell-icon {
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sidebar-notif-btn:hover .sidebar-bell-icon {
+  transform: rotate(16deg) scale(1.14);
+}
+
+@keyframes notifBadgePulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.15);
+  }
+}
+
+.sidebar-notif-badge {
+  animation: notifBadgePulse 2.4s infinite ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@keyframes notifMenuDrop {
+  0% {
+    opacity: 0;
+    transform: scale(0.94) translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.sidebar-notif-menu {
+  animation: notifMenuDrop 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-origin: bottom center;
+  will-change: transform, opacity;
 }
 
 .sidebar-footer {
@@ -191,6 +305,7 @@ body.lang-km {
   background: #ffffff;
 }
 
+/* Sidebar User Profile Card & Logout Micro-Animations */
 .sidebar-user-card {
   display: flex;
   align-items: center;
@@ -199,6 +314,30 @@ body.lang-km {
   background: var(--bg-secondary);
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-color);
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.sidebar-user-avatar {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sidebar-user-card:hover .sidebar-user-avatar {
+  transform: scale(1.08);
+}
+
+.sidebar-logout-btn {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  border-radius: 50% !important;
+}
+
+.sidebar-logout-btn:hover {
+  color: #ef4444 !important;
+  background: rgba(239, 68, 68, 0.1) !important;
+  transform: scale(1.14) rotate(8deg);
+}
+
+.sidebar-logout-btn:active {
+  transform: scale(0.92);
 }
 
 .app-main-content {
@@ -264,16 +403,18 @@ body.lang-km {
   .sidebar-container {
     position: fixed;
     top: 0;
-    left: -295px;
+    left: -305px;
     bottom: 0;
-    width: 275px;
+    width: 280px;
     height: 100vh;
     z-index: 100;
-    transition: left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: left 0.32s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: none;
   }
 
   .sidebar-container.open {
     left: 0;
+    box-shadow: 14px 0 38px rgba(12, 47, 39, 0.22);
   }
 
   /* Mobile Sidebar Drawer: remove page switch items because bottom tab bar handles it */
@@ -294,14 +435,37 @@ body.lang-km {
 
   .mobile-drawer-close {
     display: flex !important;
+    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, color 0.2s ease !important;
+  }
+
+  .mobile-drawer-close:hover {
+    transform: rotate(90deg) scale(1.1);
+    color: var(--text-main) !important;
+    background: rgba(0, 0, 0, 0.05) !important;
+  }
+
+  .mobile-drawer-close:active {
+    transform: rotate(90deg) scale(0.95);
+  }
+
+  @keyframes sidebarBackdropFade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
   .sidebar-backdrop {
     display: block;
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.35);
+    background: rgba(12, 47, 39, 0.45);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
     z-index: 90;
+    animation: sidebarBackdropFade 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .mobile-bottom-nav {
@@ -333,7 +497,7 @@ body.lang-km {
     cursor: pointer;
     padding: 5px 2px 3px 2px;
     gap: 3px;
-    transition: color 0.15s ease;
+    transition: color 0.18s cubic-bezier(0.16, 1, 0.3, 1), transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
     text-decoration: none;
     -webkit-tap-highlight-color: transparent;
   }
@@ -342,9 +506,21 @@ body.lang-km {
     color: var(--text-main);
   }
 
+  .mobile-tab-btn:active {
+    transform: scale(0.92);
+  }
+
+  .mobile-tab-btn svg {
+    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
   .mobile-tab-btn.active {
     color: var(--accent-primary);
     font-weight: 700;
+  }
+
+  .mobile-tab-btn.active svg {
+    transform: scale(1.12);
   }
 
   .mobile-tab-label {
@@ -658,8 +834,13 @@ body.lang-km {
   border-radius: var(--radius-full) !important;
   border: 1px solid transparent;
   cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
   text-decoration: none;
+  user-select: none;
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.97) translateY(0) !important;
 }
 
 .btn-primary {
@@ -667,10 +848,13 @@ body.lang-km {
   color: #ffffff;
   border: none;
   border-radius: var(--radius-full) !important;
+  box-shadow: 0 2px 8px rgba(24, 83, 57, 0.18);
 }
 
-.btn-primary:hover {
+.btn-primary:hover:not(:disabled) {
   background: linear-gradient(135deg, #08211b 0%, #113d29 50%, #1a5c39 100%);
+  transform: translateY(-1.5px);
+  box-shadow: 0 6px 18px rgba(24, 83, 57, 0.26) !important;
 }
 
 .btn-outline {
@@ -678,11 +862,17 @@ body.lang-km {
   border-color: var(--border-color);
   color: var(--text-main);
   border-radius: var(--radius-full) !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
-.btn-outline:hover {
+.btn-outline:hover:not(:disabled) {
   background: var(--bg-secondary);
   border-color: #94a3b8;
+  transform: translateY(-1.5px);
+}
+
+.btn-outline:active:not(:disabled) {
+  transform: translateY(0) scale(0.97);
 }
 
 /* Global button rule: All buttons more rounded (pill style) instead of corner style */
@@ -707,6 +897,12 @@ button:not(.brand-logo):not(.nav-brand-btn):not(.btn-text-only):not(.hospital-fa
   font-weight: 600;
   letter-spacing: 0.025em;
   text-transform: uppercase;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+  user-select: none;
+}
+
+.badge:hover {
+  transform: scale(1.06);
 }
 
 .badge-healthy {
@@ -777,8 +973,21 @@ button:not(.brand-logo):not(.nav-brand-btn):not(.btn-text-only):not(.hospital-fa
   border-radius: var(--radius-sm);
   padding: 1.25rem 1.5rem;
   margin-bottom: 0.85rem;
-  transition: border-color 0.15s ease, background-color 0.15s ease;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 0.18s ease;
   box-shadow: none;
+}
+
+.ticket-row-card:hover {
+  transform: translateY(-2.5px);
+  border-color: rgba(24, 83, 57, 0.32) !important;
+  box-shadow: 0 8px 24px rgba(12, 47, 39, 0.08) !important;
+}
+
+.ticket-row-card:active {
+  transform: translateY(0) scale(0.99);
 }
 
 .ticket-row-card.highlighted {
@@ -862,18 +1071,28 @@ button:not(.brand-logo):not(.nav-brand-btn):not(.btn-text-only):not(.hospital-fa
   border-collapse: collapse;
 }
 
+.responsive-table-wrapper table tbody tr {
+  transition: background-color 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.responsive-table-wrapper table tbody tr:hover {
+  background-color: rgba(24, 83, 57, 0.035) !important;
+}
+
 /* Modal Overlay & Responsive Viewport Card */
 .responsive-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(12, 47, 39, 0.55);
+  background: rgba(12, 47, 39, 0.58);
   backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   z-index: 99999;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 1rem;
   overflow-y: auto;
+  animation: modalOverlayFadeIn 0.24s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .responsive-modal-card {
@@ -888,6 +1107,373 @@ button:not(.brand-logo):not(.nav-brand-btn):not(.btn-text-only):not(.hospital-fa
   overflow: hidden;
   box-shadow: none;
   position: relative;
+  animation: modalPopupScaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform, opacity;
+}
+
+@keyframes modalOverlayFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalPopupScaleUp {
+  0% {
+    opacity: 0;
+    transform: scale(0.92) translateY(16px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes modalOverlayFadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes modalPopupScaleDown {
+  0% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.92) translateY(14px);
+  }
+}
+
+.responsive-modal-overlay.modal-closing {
+  animation: modalOverlayFadeOut 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  pointer-events: none;
+}
+
+.responsive-modal-card.modal-closing {
+  animation: modalPopupScaleDown 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  pointer-events: none;
+}
+
+@keyframes modalFormFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-form-enter {
+  animation: modalFormFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes langDropdownScale {
+  0% {
+    opacity: 0;
+    transform: scale(0.92) translateY(-6px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes langDropdownScaleExit {
+  0% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.92) translateY(-6px);
+  }
+}
+
+.lang-dropdown-animate {
+  animation: langDropdownScale 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-origin: top right;
+  will-change: transform, opacity;
+}
+
+.lang-dropdown-exit {
+  animation: langDropdownScaleExit 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transform-origin: top right;
+  will-change: transform, opacity;
+  pointer-events: none;
+}
+
+/* Smooth Interactive Form Inputs & Controls Animation */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="button"]):not([type="submit"]),
+textarea,
+select {
+  transition: border-color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  outline: none !important;
+}
+
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="button"]):not([type="submit"]):hover:not(:disabled),
+textarea:hover:not(:disabled),
+select:hover:not(:disabled) {
+  border-color: #94a3b8 !important;
+}
+
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="button"]):not([type="submit"]):focus:not(:disabled),
+textarea:focus:not(:disabled),
+select:focus:not(:disabled) {
+  border-color: var(--accent-primary) !important;
+  box-shadow: 0 0 0 3.5px rgba(24, 83, 57, 0.14) !important;
+  transform: translateY(-1px);
+}
+
+/* Language Switcher Button Animation */
+.lang-switcher-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--text-main);
+  outline: none;
+  box-shadow: none;
+  user-select: none;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.lang-switcher-btn:hover {
+  background: rgba(24, 83, 57, 0.08);
+  transform: translateY(-1px);
+}
+
+.lang-switcher-btn:active {
+  transform: translateY(0) scale(0.97);
+}
+
+.lang-switcher-btn .globe-icon {
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.lang-switcher-btn:hover .globe-icon {
+  transform: rotate(25deg);
+}
+
+.lang-switcher-btn.is-open .globe-icon {
+  transform: rotate(45deg);
+}
+
+/* Language item button hover slide */
+.lang-dropdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.55rem 0.85rem;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  box-shadow: none;
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.lang-dropdown-item:hover {
+  background-color: rgba(24, 83, 57, 0.08) !important;
+  transform: translateX(4px);
+}
+
+/* Category Filter Pills Micro-Animation */
+.category-filter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1.15rem;
+  font-size: 0.96rem;
+  cursor: pointer;
+  box-shadow: none;
+  border-radius: var(--radius-full) !important;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 0.2s ease,
+              border-color 0.2s ease,
+              color 0.2s ease,
+              box-shadow 0.2s ease !important;
+  user-select: none;
+  will-change: transform;
+}
+
+.category-filter-pill:hover:not(.active) {
+  border-color: #94a3b8 !important;
+  background-color: rgba(24, 83, 57, 0.06) !important;
+  transform: translateY(-2px);
+}
+
+.category-filter-pill:active {
+  transform: scale(0.95) translateY(0) !important;
+}
+
+.category-filter-pill.active {
+  animation: pillSelectPop 0.26s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 14px rgba(24, 83, 57, 0.25) !important;
+}
+
+@keyframes pillSelectPop {
+  0% {
+    transform: scale(0.92);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Facility Cards Entrance & Interactive Animations */
+.hospital-facility-card {
+  transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.24s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 0.2s ease !important;
+  will-change: transform, box-shadow;
+  cursor: pointer;
+}
+
+.hospital-facility-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08) !important;
+  border-color: var(--accent-primary) !important;
+}
+
+.hospital-facility-card:active {
+  transform: translateY(-1px) scale(0.985);
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.06) !important;
+}
+
+/* Facility Detail Page Entrance & Back Transitions */
+@keyframes facilityDetailEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(16px) scale(0.99);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.facility-detail-animate {
+  animation: facilityDetailEnter 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform, opacity;
+}
+
+@keyframes facilityListEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.facility-list-animate {
+  animation: facilityListEnter 0.26s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform, opacity;
+}
+
+/* Back Navigation Button */
+.btn-back-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.85rem 0.35rem 0.5rem;
+  border-radius: var(--radius-full) !important;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+.btn-back-nav:hover {
+  color: var(--accent-primary);
+  background: rgba(24, 83, 57, 0.08);
+  border-color: rgba(24, 83, 57, 0.18);
+  transform: translateX(-4px);
+}
+
+.btn-back-nav:active {
+  transform: translateX(-2px) scale(0.96);
+}
+
+.btn-back-nav .arrow-icon {
+  transition: transform 0.2s ease;
+}
+
+.btn-back-nav:hover .arrow-icon {
+  transform: translateX(-3px);
+}
+
+/* Booking Action Button */
+.btn-book-action {
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  cursor: pointer;
+  user-select: none;
+}
+
+.btn-book-action:hover:not(:disabled) {
+  transform: translateY(-2px);
+  background: var(--accent-primary) !important;
+  color: #ffffff !important;
+  border-color: var(--accent-primary) !important;
+  box-shadow: 0 6px 16px rgba(24, 83, 57, 0.24) !important;
+}
+
+.btn-book-action:active:not(:disabled) {
+  transform: translateY(0) scale(0.96) !important;
+}
+
+/* Hospital & Partner Interactive Elements */
+.hospital-action-btn,
+.queue-action-btn {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  user-select: none;
+  cursor: pointer;
+}
+
+.hospital-action-btn:hover:not(:disabled),
+.queue-action-btn:hover:not(:disabled) {
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.1) !important;
+}
+
+.hospital-action-btn:active:not(:disabled),
+.queue-action-btn:active:not(:disabled) {
+  transform: translateY(0) scale(0.97) !important;
+}
+
+/* Interactive Dashboard & Table Rows */
+.interactive-row {
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.interactive-row:hover {
+  background-color: rgba(24, 83, 57, 0.035) !important;
 }
 
 .responsive-modal-header {
@@ -970,7 +1556,7 @@ button:not(.brand-logo):not(.nav-brand-btn):not(.btn-text-only):not(.hospital-fa
   font-weight: 500;
 }
 
-/* Inputs styling (Strictly Flat - No Shadows) */
+/* Inputs & Form Controls Animation & Focus styling */
 input,
 select,
 textarea {
@@ -979,8 +1565,16 @@ textarea {
   color: var(--text-main);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
-  transition: border-color 0.15s ease;
-  box-shadow: none !important;
+  transition: border-color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 0.2s ease,
+              transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+input:hover:not(:disabled),
+select:hover:not(:disabled),
+textarea:hover:not(:disabled) {
+  border-color: rgba(24, 83, 57, 0.45);
 }
 
 /* Rounded Search Inputs */
@@ -993,15 +1587,16 @@ input[type="search"] {
 input:focus,
 select:focus,
 textarea:focus {
-  border-color: var(--accent-primary) !important;
-  box-shadow: none !important;
+  border-color: var(--accent-primary, #185339) !important;
+  box-shadow: 0 0 0 3.5px rgba(24, 83, 57, 0.14) !important;
+  transform: translateY(-1px);
 }
 
 input.input-error,
 select.input-error,
 textarea.input-error {
   border-color: var(--error-color) !important;
-  box-shadow: none !important;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15) !important;
 }
 
 /* Hospital Operations 4 Cards with Outer Shadow */
@@ -1137,13 +1732,22 @@ textarea.input-error {
   background: #ffffff;
   border: 1px solid #e2e8f0;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 0.18s ease;
   user-select: none;
 }
 
 .slot-card-available:hover {
-  border-color: var(--text-main);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(12, 47, 39, 0.08);
+  border-color: var(--accent-primary) !important;
   background: #ffffff;
+}
+
+.slot-card-available:active {
+  transform: scale(0.97);
 }
 
 .slot-card-unavailable {
@@ -1162,4 +1766,183 @@ textarea.input-error {
     width: 100% !important;
     max-width: 100% !important;
   }
+}
+
+/* ==========================================================================
+   SYSTEM-WIDE PAGE TRANSITIONS & DYNAMIC INTERACTION ANIMATIONS
+   ========================================================================== */
+
+/* Page View Fluid Entrance */
+@keyframes pageFadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-transition-enter {
+  animation: pageFadeInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform, opacity;
+}
+
+/* Chat Assistant Messages Entrance Animation */
+@keyframes chatBubbleEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.985);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.chat-bubble-animate {
+  animation: chatBubbleEnter 0.24s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform, opacity;
+}
+
+/* Global Notification Dropdown Alert Banner Animation */
+@keyframes bannerSlideDown {
+  0% {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.notification-banner-animate {
+  animation: bannerSlideDown 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform, opacity;
+}
+
+/* ==========================================================================
+   APPOINTMENTS & MEDICAL RECORDS CARD ANIMATIONS
+   ========================================================================== */
+
+@keyframes cardItemFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.appointment-ticket-card,
+.patient-record-card {
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  animation: cardItemFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform, opacity;
+  user-select: none;
+}
+
+.appointment-ticket-card:hover,
+.patient-record-card:hover {
+  transform: translateY(-3.5px);
+  border-color: var(--accent-primary) !important;
+  box-shadow: 0 12px 28px rgba(12, 47, 39, 0.1) !important;
+}
+
+.appointment-ticket-card:active,
+.patient-record-card:active {
+  transform: translateY(-1px) scale(0.99);
+}
+
+.appointment-ticket-card img,
+.patient-record-card img {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.appointment-ticket-card:hover img,
+.patient-record-card:hover img {
+  transform: scale(1.08);
+}
+
+/* Detail Pass Cards Slide & Fade in */
+@keyframes detailSlideInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(16px) scale(0.99);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.appointment-detail-animate,
+.record-detail-animate {
+  animation: detailSlideInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform, opacity;
+}
+
+/* History Filter Pills */
+.history-filter-pill {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  user-select: none;
+}
+
+.history-filter-pill:hover:not(.active) {
+  transform: translateY(-1.5px);
+  background: rgba(24, 83, 57, 0.08) !important;
+  color: var(--text-main) !important;
+}
+
+.history-filter-pill:active {
+  transform: scale(0.96);
+}
+
+.history-filter-pill.active {
+  box-shadow: 0 3px 10px rgba(24, 83, 57, 0.24);
+}
+
+/* Back Navigation Button Micro-Animation */
+.btn-back-nav {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  user-select: none;
+}
+
+.btn-back-nav:hover {
+  transform: translateX(-4px);
+  color: var(--accent-primary) !important;
+}
+
+.btn-back-nav:active {
+  transform: translateX(-6px) scale(0.96);
+}
+
+/* Universal Dashboard & KPI Stat Card Animations */
+.dashboard-card,
+.kpi-stat-card {
+  transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.24s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, box-shadow;
+}
+
+.dashboard-card:hover,
+.kpi-stat-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(24, 83, 57, 0.35) !important;
+  box-shadow: 0 10px 28px rgba(12, 47, 39, 0.09) !important;
+}
+
+.kpi-stat-card svg {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.kpi-stat-card:hover svg {
+  transform: scale(1.12) rotate(-4deg);
 }

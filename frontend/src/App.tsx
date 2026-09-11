@@ -139,7 +139,7 @@ export const App: React.FC = () => {
 
   if (isPartner && !isPartnerUser) {
     return (
-      <>
+      <div className="page-transition-enter" style={{ minHeight: '100vh' }}>
         <MaintenanceBanner />
         <HospitalPartnerAuth
           onSuccess={handleUserLoginSuccess}
@@ -153,7 +153,7 @@ export const App: React.FC = () => {
             }
           }}
         />
-      </>
+      </div>
     );
   }
 
@@ -179,7 +179,7 @@ export const App: React.FC = () => {
             onDismiss={() => setActiveBanner(null)}
           />
 
-          <main className="landing-content-container">
+          <main className="landing-content-container page-transition-enter">
             <LandingPage
               onOpenAuth={() => setAuthModalOpen(true)}
               currentUser={currentUser}
@@ -207,64 +207,76 @@ export const App: React.FC = () => {
             />
 
             <main className="app-content-inner">
-              {/* --- PORTAL VIEW ROUTING --- */}
-              {activeTab === 'patient_discovery' && (
-                <HospitalDiscovery
-                  onTicketBooked={handleTicketBooked}
-                  onNavigateToTriage={() => setActiveTab('patient_triage')}
-                  onNavigateToTracker={() => setActiveTab('patient_live_ticket')}
-                />
-              )}
+              {/* --- PORTAL VIEW ROUTING WITH FLUID PAGE-TRANSITION --- */}
+              <div
+                key={activeTab}
+                className="page-transition-enter"
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  flex: 1,
+                  minHeight: 0,
+                }}
+              >
+                {activeTab === 'patient_discovery' && (
+                  <HospitalDiscovery
+                    onTicketBooked={handleTicketBooked}
+                    onNavigateToTriage={() => setActiveTab('patient_triage')}
+                    onNavigateToTracker={() => setActiveTab('patient_live_ticket')}
+                  />
+                )}
 
-              {activeTab === 'patient_triage' && (
-                <HealthcareAssistant
-                  onTicketBooked={handleTicketBooked}
-                  onNavigateToDiscovery={() => setActiveTab('patient_discovery')}
-                  onNavigateToTracker={() => setActiveTab('patient_live_ticket')}
-                />
-              )}
+                {activeTab === 'patient_triage' && (
+                  <HealthcareAssistant
+                    onTicketBooked={handleTicketBooked}
+                    onNavigateToDiscovery={() => setActiveTab('patient_discovery')}
+                    onNavigateToTracker={() => setActiveTab('patient_live_ticket')}
+                  />
+                )}
 
-              {activeTab === 'patient_live_ticket' && (
-                <LiveTicketTracker
-                  initialTicketId={selectedTicketId}
-                  onExploreHospitals={() => setActiveTab('patient_discovery')}
-                  onConsultAi={() => setActiveTab('patient_triage')}
-                />
-              )}
+                {activeTab === 'patient_live_ticket' && (
+                  <LiveTicketTracker
+                    initialTicketId={selectedTicketId}
+                    onExploreHospitals={() => setActiveTab('patient_discovery')}
+                    onConsultAi={() => setActiveTab('patient_triage')}
+                  />
+                )}
 
-              {activeTab === 'patient_history' && (
-                <PatientHistory
-                  onExploreHospitals={() => setActiveTab('patient_discovery')}
-                />
-              )}
+                {activeTab === 'patient_history' && (
+                  <PatientHistory
+                    onExploreHospitals={() => setActiveTab('patient_discovery')}
+                  />
+                )}
 
-              {activeTab === 'partner_dashboard' && (
-                <PartnerDashboard onNavigateToQueue={() => setActiveTab('partner_counter')} />
-              )}
+                {activeTab === 'partner_dashboard' && (
+                  <PartnerDashboard onNavigateToQueue={() => setActiveTab('partner_counter')} />
+                )}
 
-              {activeTab === 'partner_counter' && (
-                <QueueManagement />
-              )}
+                {activeTab === 'partner_counter' && (
+                  <QueueManagement />
+                )}
 
-              {activeTab === 'partner_doctors' && (
-                <DoctorManagement />
-              )}
+                {activeTab === 'partner_doctors' && (
+                  <DoctorManagement />
+                )}
 
-              {activeTab === 'partner_departments' && (
-                <DepartmentManagement />
-              )}
+                {activeTab === 'partner_departments' && (
+                  <DepartmentManagement />
+                )}
 
-              {activeTab === 'partner_staff' && (
-                <StaffManagement />
-              )}
+                {activeTab === 'partner_staff' && (
+                  <StaffManagement />
+                )}
 
-              {activeTab === 'partner_profile' && (
-                <HospitalProfile />
-              )}
+                {activeTab === 'partner_profile' && (
+                  <HospitalProfile />
+                )}
 
-              {activeTab === 'admin_center' && (
-                <AdminDashboard />
-              )}
+                {activeTab === 'admin_center' && (
+                  <AdminDashboard />
+                )}
+              </div>
             </main>
           </div>
         </div>
