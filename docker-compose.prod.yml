@@ -1,0 +1,21 @@
+# ==============================================================================
+# Healthcare AI System — Production Image Overrides
+# ==============================================================================
+# This file overrides the build: sections in docker-compose.yml with pre-built
+# images from GitHub Container Registry (GHCR) for production deployment.
+#
+# Usage on the server:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# Images are built and pushed by GitHub Actions on every push to main.
+# ==============================================================================
+
+services:
+  backend:
+    image: ghcr.io/phallymakara/healthcare-backend:latest
+    build: !reset null
+
+  frontend:
+    image: ghcr.io/phallymakara/healthcare-frontend:latest
+    build: !reset null
