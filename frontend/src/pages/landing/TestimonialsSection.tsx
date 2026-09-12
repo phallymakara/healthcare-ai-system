@@ -221,6 +221,7 @@ export const TestimonialsSection: React.FC = () => {
 
               {/* Testimonial Quote */}
               <p
+                className="text-clamp-3"
                 style={{
                   fontSize: '0.98rem',
                   color: '#334155',
@@ -231,18 +232,19 @@ export const TestimonialsSection: React.FC = () => {
                   WebkitLineClamp: 3,
                   WebkitBoxOrient: 'vertical',
                   overflow: 'hidden',
+                  textOverflow: 'ellipsis',
                 }}
               >
                 {t(currentItem.quoteKey)}
               </p>
 
               {/* Author & Role */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ fontSize: '0.86rem', fontWeight: 700, color: '#0c2f27' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 }}>
+                <span className="text-truncate" style={{ fontSize: '0.86rem', fontWeight: 700, color: '#0c2f27', maxWidth: '140px' }}>
                   {t(currentItem.authorKey)}
                 </span>
-                <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>•</span>
-                <span style={{ fontSize: '0.82rem', color: '#64748b' }}>
+                <span style={{ fontSize: '0.8rem', color: '#94a3b8', flexShrink: 0 }}>•</span>
+                <span className="text-truncate" style={{ fontSize: '0.82rem', color: '#64748b', maxWidth: '160px' }}>
                   {t(currentItem.roleKey)}
                 </span>
               </div>

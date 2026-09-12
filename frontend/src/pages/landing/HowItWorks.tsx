@@ -70,6 +70,7 @@ export const HowItWorks: React.FC = () => {
 
       {/* Timeline Connector Bar (Matching Reference Image) */}
       <div
+        className="how-it-works-timeline"
         style={{
           position: 'relative',
           marginBottom: '2rem',
@@ -197,6 +198,7 @@ export const HowItWorks: React.FC = () => {
             {/* Step Title and Description */}
             <div style={{ padding: '0 0.25rem' }}>
               <h3
+                className="text-truncate"
                 style={{
                   fontSize: language === 'km' ? '1.26rem' : '1.18rem',
                   fontWeight: 700,
@@ -208,6 +210,7 @@ export const HowItWorks: React.FC = () => {
                 {step.title}
               </h3>
               <p
+                className="text-clamp-3"
                 style={{
                   fontSize: language === 'km' ? '1.02rem' : '0.95rem',
                   color: '#475569',

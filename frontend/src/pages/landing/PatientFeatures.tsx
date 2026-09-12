@@ -20,6 +20,10 @@ export const PatientFeatures: React.FC = () => {
         color: '#ffffff',
         padding: '4.5rem 1.5rem 3rem 1.5rem',
         overflow: 'hidden',
+        border: 'none',
+        outline: 'none',
+        borderTop: 'none',
+        marginTop: '-2px',
       }}
     >
       {/* Decorative ambient radial glows concentrated at the upper green area */}
@@ -173,6 +177,7 @@ export const PatientFeatures: React.FC = () => {
               </div>
 
               <h3
+                className="text-truncate"
                 style={{
                   fontSize: language === 'km' ? '1.32rem' : '1.25rem',
                   fontWeight: 700,
@@ -185,6 +190,7 @@ export const PatientFeatures: React.FC = () => {
                 {t('pf_card1_title')}
               </h3>
               <p
+                className="text-clamp-3"
                 style={{
                   fontSize: language === 'km' ? '0.98rem' : '0.92rem',
                   color: 'rgba(255, 255, 255, 0.92)',
@@ -280,6 +286,7 @@ export const PatientFeatures: React.FC = () => {
               </div>
 
               <h3
+                className="text-truncate"
                 style={{
                   fontSize: language === 'km' ? '1.32rem' : '1.25rem',
                   fontWeight: 700,
@@ -292,6 +299,7 @@ export const PatientFeatures: React.FC = () => {
                 {t('pf_card2_title')}
               </h3>
               <p
+                className="text-clamp-3"
                 style={{
                   fontSize: language === 'km' ? '0.98rem' : '0.92rem',
                   color: 'rgba(255, 255, 255, 0.92)',
@@ -386,6 +394,7 @@ export const PatientFeatures: React.FC = () => {
               </div>
 
               <h3
+                className="text-truncate"
                 style={{
                   fontSize: language === 'km' ? '1.32rem' : '1.25rem',
                   fontWeight: 700,
@@ -398,6 +407,7 @@ export const PatientFeatures: React.FC = () => {
                 {t('pf_card3_title')}
               </h3>
               <p
+                className="text-clamp-3"
                 style={{
                   fontSize: language === 'km' ? '0.98rem' : '0.92rem',
                   color: 'rgba(255, 255, 255, 0.92)',
@@ -505,6 +515,7 @@ export const PatientFeatures: React.FC = () => {
               </div>
 
               <h3
+                className="text-truncate"
                 style={{
                   fontSize: language === 'km' ? '1.32rem' : '1.25rem',
                   fontWeight: 700,
@@ -517,6 +528,7 @@ export const PatientFeatures: React.FC = () => {
                 {t('pf_card4_title')}
               </h3>
               <p
+                className="text-clamp-3"
                 style={{
                   fontSize: language === 'km' ? '0.98rem' : '0.92rem',
                   color: 'rgba(255, 255, 255, 0.92)',

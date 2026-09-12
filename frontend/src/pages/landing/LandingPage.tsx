@@ -17,7 +17,7 @@ interface LandingPageProps {
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth, currentUser, onSelectTab }) => {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', width: '100%', margin: 0, padding: 0 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', width: '100%', margin: 0, padding: 0, background: '#ffffff' }}>
       {/* Full-width Hero Section */}
       <HeroSection onOpenAuth={onOpenAuth} currentUser={currentUser} onSelectTab={onSelectTab} />
 
@@ -25,7 +25,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth, currentUse
       <PatientFeatures />
 
       {/* Structured Content Sections in Responsive Centered Container */}
-      <div className="landing-inner-container" style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem', marginTop: '0', paddingBottom: '0.75rem' }}>
+      <div className="landing-inner-container" style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem', marginTop: '0', paddingBottom: '0.75rem', background: '#ffffff' }}>
         <HospitalFeatures />
         <TestimonialsSection />
         <HowItWorks />

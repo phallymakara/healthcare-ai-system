@@ -4,8 +4,6 @@ import { useLanguage } from '../../context/LanguageContext';
 import { UserProfile } from '../../services/auth';
 
 import heroLandscapeBg from '../../assets/hero_landscape_bg.jpg';
-import heroHospitalBuilding from '../../assets/hero_hospital_building.jpg';
-import heroDoctorsAnalytics from '../../assets/hero_doctors_analytics.jpg';
 
 interface HeroSectionProps {
   onOpenAuth: () => void;
@@ -35,69 +33,16 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenAuth, currentUse
         width: '100%',
         maxWidth: '100%',
         boxSizing: 'border-box',
-        backgroundImage: `linear-gradient(180deg, rgba(237, 247, 238, 0.58) 0%, rgba(220, 242, 226, 0.22) 42%, rgba(19, 68, 50, 0.68) 82%, #11402e 100%), url(${heroLandscapeBg})`,
+        backgroundImage: `linear-gradient(180deg, rgba(8, 28, 20, 0.35) 0%, rgba(8, 28, 20, 0.10) 30%, rgba(17, 64, 46, 0.35) 55%, rgba(17, 64, 46, 0.78) 75%, #11402e 92%, #11402e 100%), url(${heroLandscapeBg})`,
         backgroundPosition: 'center bottom',
         backgroundSize: 'cover',
         backgroundRepeat: 'no-repeat',
+        border: 'none',
+        outline: 'none',
+        borderBottom: 'none',
+        marginBottom: 0,
       }}
     >
-      {/* Left Layer: Modern Hospital Building Artwork grounded on bottom terrain */}
-      <div
-        className="hero-left-art"
-        style={{
-          position: 'absolute',
-          left: 'clamp(8px, 3vw, 48px)',
-          bottom: '0px',
-          width: 'clamp(280px, 26vw, 420px)',
-          zIndex: 2,
-          pointerEvents: 'none',
-          transition: 'all 0.3s ease',
-        }}
-      >
-        <img
-          src={heroHospitalBuilding}
-          alt="Modern Eco Hospital Building"
-          style={{
-            width: '100%',
-            height: 'auto',
-            borderTopLeftRadius: '24px',
-            borderTopRightRadius: '24px',
-            borderBottomLeftRadius: '0px',
-            borderBottomRightRadius: '0px',
-            boxShadow: '0 16px 40px rgba(12, 47, 39, 0.16)',
-            display: 'block',
-          }}
-        />
-      </div>
-
-      {/* Right Layer: Doctors & Queue Analytics Artwork grounded on bottom terrain */}
-      <div
-        className="hero-right-art"
-        style={{
-          position: 'absolute',
-          right: 'clamp(8px, 3vw, 48px)',
-          bottom: '0px',
-          width: 'clamp(280px, 26vw, 420px)',
-          zIndex: 2,
-          pointerEvents: 'none',
-          transition: 'all 0.3s ease',
-        }}
-      >
-        <img
-          src={heroDoctorsAnalytics}
-          alt="Healthcare Analytics & Queue Management"
-          style={{
-            width: '100%',
-            height: 'auto',
-            borderTopLeftRadius: '24px',
-            borderTopRightRadius: '24px',
-            borderBottomLeftRadius: '0px',
-            borderBottomRightRadius: '0px',
-            boxShadow: '0 16px 40px rgba(12, 47, 39, 0.16)',
-            display: 'block',
-          }}
-        />
-      </div>
 
       {/* Center Layer: Content & Floating Glassmorphism Cards */}
       <div
@@ -116,12 +61,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenAuth, currentUse
           style={{
             fontSize: 'clamp(2.1rem, 4.4vw, 3.1rem)',
             fontWeight: 800,
-            color: '#0c2f27',
+            color: '#ffffff',
             lineHeight: 1.3,
             letterSpacing: '-0.02em',
             marginBottom: '1.25rem',
             fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
-            textShadow: '0 2px 10px rgba(255, 255, 255, 0.8)',
+            textShadow: '0 2px 14px rgba(0, 0, 0, 0.55), 0 1px 3px rgba(0, 0, 0, 0.4)',
           }}
         >
           {t('hero_title_1')} <br />
@@ -132,13 +77,13 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenAuth, currentUse
         <p
           style={{
             fontSize: language === 'km' ? 'clamp(1.15rem, 2.3vw, 1.35rem)' : 'clamp(1.08rem, 2.1vw, 1.25rem)',
-            color: '#1e3a2f',
+            color: '#ffffff',
             lineHeight: language === 'km' ? 1.85 : 1.7,
             maxWidth: '820px',
             margin: '0 auto',
             fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
             fontWeight: 500,
-            textShadow: '0 1px 4px rgba(255, 255, 255, 0.6)',
+            textShadow: '0 1px 8px rgba(0, 0, 0, 0.5)',
           }}
         >
           {t('hero_subtitle')}
@@ -165,6 +110,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenAuth, currentUse
                 <Clock size={18} />
               </div>
               <div
+                className="hero-card-title text-truncate"
                 style={{
                   fontWeight: 700,
                   fontSize: language === 'km' ? '1.12rem' : '1.05rem',
@@ -176,6 +122,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenAuth, currentUse
               </div>
             </div>
             <div
+              className="hero-card-desc text-clamp-2"
               style={{
                 fontSize: language === 'km' ? '0.98rem' : '0.92rem',
                 color: '#2d4a3e',
@@ -206,6 +153,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenAuth, currentUse
                 <Users size={18} />
               </div>
               <div
+                className="hero-card-title text-truncate"
                 style={{
                   fontWeight: 700,
                   fontSize: language === 'km' ? '1.12rem' : '1.05rem',
@@ -217,6 +165,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenAuth, currentUse
               </div>
             </div>
             <div
+              className="hero-card-desc text-clamp-2"
               style={{
                 fontSize: language === 'km' ? '0.98rem' : '0.92rem',
                 color: '#2d4a3e',
@@ -247,6 +196,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenAuth, currentUse
                 <Sparkles size={18} />
               </div>
               <div
+                className="hero-card-title text-truncate"
                 style={{
                   fontWeight: 700,
                   fontSize: language === 'km' ? '1.12rem' : '1.05rem',
@@ -258,6 +208,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenAuth, currentUse
               </div>
             </div>
             <div
+              className="hero-card-desc text-clamp-2"
               style={{
                 fontSize: language === 'km' ? '0.98rem' : '0.92rem',
                 color: '#2d4a3e',
@@ -274,10 +225,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenAuth, currentUse
         <form
           onSubmit={handleSearchSubmit}
           className="hero-search-container"
-          style={{ marginTop: '7.5rem', marginBottom: '1.25rem' }}
         >
           <button
             type="button"
+            className="text-truncate"
             onClick={() => {
               if (!currentUser) {
                 if (onOpenAuth) onOpenAuth();
@@ -290,7 +241,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenAuth, currentUse
               color: '#ffffff',
               border: 'none',
               borderRadius: 'var(--radius-full)',
-              padding: '0.65rem 1.45rem',
+              padding: '0.65rem 1.35rem',
               fontWeight: 700,
               fontSize: '0.92rem',
               cursor: 'pointer',
@@ -298,6 +249,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenAuth, currentUse
               fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
               boxShadow: '0 2px 8px rgba(12, 47, 39, 0.2)',
               transition: 'background-color 0.15s ease',
+              maxWidth: '140px',
             }}
           >
             {t('hero_get_started')}
@@ -305,14 +257,16 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenAuth, currentUse
 
           <input
             type="text"
+            className="text-truncate"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={t('hero_quick_search_placeholder')}
             style={{
               flex: 1,
+              minWidth: 0,
               border: 'none',
               outline: 'none',
-              padding: '0.65rem 1.15rem',
+              padding: '0.65rem 1rem',
               fontSize: '0.96rem',
               color: 'var(--text-main)',
               background: 'transparent',

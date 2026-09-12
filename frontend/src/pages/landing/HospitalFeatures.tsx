@@ -142,6 +142,7 @@ export const HospitalFeatures: React.FC = () => {
             >
               <div>
                 <h3
+                  className="text-truncate"
                   style={{
                     fontSize: '1.42rem',
                     fontWeight: 700,
@@ -153,6 +154,7 @@ export const HospitalFeatures: React.FC = () => {
                   {card.title}
                 </h3>
                 <p
+                  className="text-clamp-3"
                   style={{
                     fontSize: '1.02rem',
                     color: '#475569',
@@ -194,7 +196,7 @@ export const HospitalFeatures: React.FC = () => {
                       color="#16a34a"
                       style={{ flexShrink: 0, marginTop: '2px' }}
                     />
-                    <span>{bullet}</span>
+                    <span className="text-clamp-2">{bullet}</span>
                   </li>
                 ))}
               </ul>

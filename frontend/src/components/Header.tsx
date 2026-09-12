@@ -79,7 +79,7 @@ export const Header: React.FC<HeaderProps> = ({
                 display: 'block',
               }} 
             />
-            <div style={{ display: 'flex', alignItems: 'center' }}>
+            <div className="brand-title" style={{ display: 'flex', alignItems: 'center' }}>
               <span style={{ 
                 fontSize: '1.22rem', 
                 fontWeight: 800, 
@@ -516,7 +516,7 @@ export const Header: React.FC<HeaderProps> = ({
                   }}
                 >
                   <div style={{ marginBottom: '0.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
-                    <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)' }}>
+                    <div className="text-truncate" style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)', maxWidth: '170px' }}>
                       {currentUser.full_name}
                     </div>
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
@@ -551,6 +551,7 @@ export const Header: React.FC<HeaderProps> = ({
           ) : (
             <button 
               onClick={onOpenAuth} 
+              className="header-auth-btn"
               style={{
                 background: 'linear-gradient(135deg, #0c2f27 0%, #185339 50%, #227349 100%)',
                 color: '#ffffff',
@@ -565,10 +566,11 @@ export const Header: React.FC<HeaderProps> = ({
                 gap: '6px',
                 boxShadow: '0 4px 14px rgba(12, 47, 39, 0.2)',
                 transition: 'all 0.2s ease',
+                whiteSpace: 'nowrap',
               }}
             >
-              <span>{t('nav_register_signin')}</span>
-              <ArrowRight size={16} />
+              <span className="text-truncate" style={{ maxWidth: '140px', display: 'inline-block' }}>{t('nav_register_signin')}</span>
+              <ArrowRight size={16} style={{ flexShrink: 0 }} />
             </button>
           )}
 
@@ -649,7 +651,7 @@ export const Header: React.FC<HeaderProps> = ({
                   <User size={17} />
                 </div>
                 <div>
-                  <div style={{ fontSize: '0.98rem', fontWeight: 600, color: 'var(--text-main)' }}>
+                  <div className="text-truncate" style={{ fontSize: '0.98rem', fontWeight: 600, color: 'var(--text-main)', maxWidth: '200px' }}>
                     {currentUser.full_name}
                   </div>
                   <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>

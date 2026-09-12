@@ -190,7 +190,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 alt="Proseth Logo"
                 style={{ height: '36px', width: 'auto', objectFit: 'contain' }}
               />
-              <div>
+              <div className="mobile-brand-title brand-title">
                 <span
                   style={{
                     fontSize: '1.15rem',

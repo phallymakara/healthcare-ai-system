@@ -16,6 +16,7 @@ export const FooterSection: React.FC = () => {
       }}
     >
       <div
+        className="footer-content-inner"
         style={{
           maxWidth: '1280px',
           width: '100%',

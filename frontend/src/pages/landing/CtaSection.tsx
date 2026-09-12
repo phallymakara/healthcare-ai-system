@@ -38,6 +38,7 @@ export const CtaSection: React.FC<CtaSectionProps> = ({ onOpenAuth, currentUser,
     >
       {/* Curved Full-Width Gradient Banner (Matching Reference Image) */}
       <div
+        className="cta-banner-wrapper"
         style={{
           width: '100%',
           borderTopLeftRadius: '36px',
