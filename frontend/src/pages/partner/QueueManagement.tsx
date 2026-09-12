@@ -253,51 +253,14 @@ export const QueueManagement: React.FC = () => {
   return (
     <div
       style={{
-        maxWidth: '1280px',
-        margin: '0 auto',
+        width: '100%',
         padding: '1.25rem 1.5rem',
         display: 'flex',
         flexDirection: 'column',
         gap: '1.25rem',
+        boxSizing: 'border-box',
       }}
     >
-      {/* Top Header */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '1rem',
-          paddingBottom: '0.5rem',
-          marginBottom: '0.25rem',
-        }}
-      >
-        <div>
-          <h1
-            style={{
-              fontSize: '1.28rem',
-              fontWeight: 700,
-              color: 'var(--text-main)',
-              margin: 0,
-              fontFamily: kmFont,
-            }}
-          >
-            {t('cbs_title')}
-          </h1>
-          <p
-            style={{
-              fontSize: '0.9rem',
-              color: 'var(--text-muted)',
-              margin: '0.3rem 0 0 0',
-              fontFamily: kmFont,
-            }}
-          >
-            {t('cbs_subtitle')}
-          </p>
-        </div>
-      </div>
-
       {/* Summary KPI Cards */}
       <QueueStatsCards summary={effectiveSummary} kmFont={kmFont} t={t} />
 
@@ -451,13 +414,10 @@ export const QueueManagement: React.FC = () => {
         <div
           style={{
             textAlign: 'center',
-            padding: '4rem 1rem',
+            padding: '3.5rem 1rem',
             fontFamily: kmFont,
             color: 'var(--text-muted)',
             fontSize: '0.95rem',
-            background: '#ffffff',
-            borderRadius: '6px',
-            border: '1px solid var(--border-color)',
           }}
         >
           {t('cbs_no_bookings')}

@@ -63,7 +63,12 @@ export const WalkInModal: React.FC<WalkInModalProps> = ({
   return (
     <div
       className={modal.overlayClass}
-      style={{ zIndex: 1000 }}
+      style={{
+        zIndex: 1000,
+        backdropFilter: 'none',
+        WebkitBackdropFilter: 'none',
+        background: 'transparent',
+      }}
       onClick={(e) => {
         if (e.target === e.currentTarget) modal.close();
       }}
@@ -72,12 +77,12 @@ export const WalkInModal: React.FC<WalkInModalProps> = ({
         className={modal.cardClass}
         style={{
           background: '#ffffff',
-          borderRadius: '8px',
+          borderRadius: '24px',
           border: '1px solid var(--border-color)',
           width: '100%',
           maxWidth: '460px',
-          boxShadow: 'none',
-          padding: '1.5rem',
+          boxShadow: '0 20px 50px rgba(0, 0, 0, 0.16), 0 0 0 1px rgba(0, 0, 0, 0.08)',
+          padding: '1.75rem',
         }}
       >
         {issuedTicketSlip ? (
@@ -191,7 +196,7 @@ export const WalkInModal: React.FC<WalkInModalProps> = ({
                   fontFamily: kmFont,
                   background: 'transparent',
                   border: '1px solid var(--border-color)',
-                  borderRadius: '4px',
+                  borderRadius: '22px',
                   color: 'var(--text-muted)',
                   cursor: 'pointer',
                   boxShadow: 'none',
@@ -210,7 +215,7 @@ export const WalkInModal: React.FC<WalkInModalProps> = ({
                   fontFamily: kmFont,
                   background: 'transparent',
                   border: '1px solid var(--text-main)',
-                  borderRadius: '4px',
+                  borderRadius: '22px',
                   color: 'var(--text-main)',
                   cursor: 'pointer',
                   boxShadow: 'none',
@@ -281,10 +286,10 @@ export const WalkInModal: React.FC<WalkInModalProps> = ({
                   }}
                   style={{
                     width: '100%',
-                    padding: '0.72rem 0.85rem',
+                    padding: '0.75rem 1.15rem',
                     fontSize: '0.95rem',
                     fontFamily: kmFont,
-                    borderRadius: '4px',
+                    borderRadius: '22px',
                     border: walkInNameError ? '1px solid #dc2626' : '1px solid var(--border-color)',
                     boxShadow: 'none',
                     outline: 'none',
@@ -292,7 +297,7 @@ export const WalkInModal: React.FC<WalkInModalProps> = ({
                   }}
                 />
                 {walkInNameError && (
-                  <div style={{ color: '#dc2626', fontSize: '0.85rem', marginTop: '5px', fontFamily: kmFont }}>
+                  <div style={{ color: '#dc2626', fontSize: '0.85rem', marginTop: '5px', paddingLeft: '0.5rem', fontFamily: kmFont }}>
                     {walkInNameError}
                   </div>
                 )}
@@ -318,10 +323,10 @@ export const WalkInModal: React.FC<WalkInModalProps> = ({
                   onChange={(e) => setWalkInPhone(e.target.value)}
                   style={{
                     width: '100%',
-                    padding: '0.72rem 0.85rem',
+                    padding: '0.75rem 1.15rem',
                     fontSize: '0.95rem',
                     fontFamily: kmFont,
-                    borderRadius: '4px',
+                    borderRadius: '22px',
                     border: '1px solid var(--border-color)',
                     boxShadow: 'none',
                     outline: 'none',
@@ -336,10 +341,10 @@ export const WalkInModal: React.FC<WalkInModalProps> = ({
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    padding: '0.65rem 0.85rem',
+                    padding: '0.7rem 1.15rem',
                     background: '#f8fafc',
                     border: '1px solid var(--border-color)',
-                    borderRadius: '4px',
+                    borderRadius: '18px',
                     fontSize: '0.86rem',
                     fontFamily: kmFont,
                   }}
@@ -382,10 +387,10 @@ export const WalkInModal: React.FC<WalkInModalProps> = ({
                   onChange={(e) => setWalkInServiceId(e.target.value)}
                   style={{
                     width: '100%',
-                    padding: '0.72rem 0.85rem',
+                    padding: '0.75rem 1.15rem',
                     fontSize: '0.95rem',
                     fontFamily: kmFont,
-                    borderRadius: '4px',
+                    borderRadius: '22px',
                     border: '1px solid var(--border-color)',
                     boxShadow: 'none',
                     outline: 'none',
@@ -404,7 +409,7 @@ export const WalkInModal: React.FC<WalkInModalProps> = ({
               </div>
 
               {walkInError && (
-                <div style={{ color: '#dc2626', fontSize: '0.85rem', fontFamily: kmFont }}>{walkInError}</div>
+                <div style={{ color: '#dc2626', fontSize: '0.85rem', paddingLeft: '0.5rem', fontFamily: kmFont }}>{walkInError}</div>
               )}
 
               <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.75rem' }}>
@@ -419,7 +424,7 @@ export const WalkInModal: React.FC<WalkInModalProps> = ({
                     fontFamily: kmFont,
                     background: 'transparent',
                     border: '1px solid var(--border-color)',
-                    borderRadius: '4px',
+                    borderRadius: '22px',
                     color: 'var(--text-muted)',
                     cursor: 'pointer',
                     boxShadow: 'none',
@@ -438,7 +443,7 @@ export const WalkInModal: React.FC<WalkInModalProps> = ({
                     fontFamily: kmFont,
                     background: 'transparent',
                     border: '1px solid var(--text-main)',
-                    borderRadius: '4px',
+                    borderRadius: '22px',
                     color: 'var(--text-main)',
                     cursor: 'pointer',
                     boxShadow: 'none',

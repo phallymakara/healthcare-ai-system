@@ -278,7 +278,7 @@ export const StaffManagement: React.FC = () => {
               background: 'transparent',
               border: 'none',
               borderRadius: 0,
-              overflowX: 'auto',
+              overflow: 'visible',
               boxShadow: 'none',
               flex: 1,
             }}
@@ -305,23 +305,27 @@ export const StaffManagement: React.FC = () => {
                   borderCollapse: 'collapse',
                   textAlign: 'left',
                   fontFamily: kmFont,
+                  overflow: 'visible',
                 }}
               >
                 <thead>
                   <tr
                     style={{
+                      background: '#f8fafc',
+                      borderTop: '1px solid var(--border-color)',
                       borderBottom: '1px solid var(--border-color)',
-                      background: 'transparent',
                     }}
                   >
                     <th
                       style={{
                         padding: '0.85rem 1.25rem',
-                        fontSize: '0.98rem',
+                        fontSize: '0.82rem',
                         fontWeight: 700,
-                        color: 'var(--text-main)',
-                        letterSpacing: '0.02em',
+                        color: 'var(--text-muted)',
+                        letterSpacing: '0.03em',
                         fontFamily: kmFont,
+                        borderTopLeftRadius: '10px',
+                        borderBottomLeftRadius: '10px',
                       }}
                     >
                       {t('staff_col_name')}
@@ -329,10 +333,10 @@ export const StaffManagement: React.FC = () => {
                     <th
                       style={{
                         padding: '0.85rem 1.25rem',
-                        fontSize: '0.98rem',
+                        fontSize: '0.82rem',
                         fontWeight: 700,
-                        color: 'var(--text-main)',
-                        letterSpacing: '0.02em',
+                        color: 'var(--text-muted)',
+                        letterSpacing: '0.03em',
                         fontFamily: kmFont,
                       }}
                     >
@@ -341,10 +345,10 @@ export const StaffManagement: React.FC = () => {
                     <th
                       style={{
                         padding: '0.85rem 1.25rem',
-                        fontSize: '0.98rem',
+                        fontSize: '0.82rem',
                         fontWeight: 700,
-                        color: 'var(--text-main)',
-                        letterSpacing: '0.02em',
+                        color: 'var(--text-muted)',
+                        letterSpacing: '0.03em',
                         fontFamily: kmFont,
                       }}
                     >
@@ -353,12 +357,14 @@ export const StaffManagement: React.FC = () => {
                     <th
                       style={{
                         padding: '0.85rem 1.25rem',
-                        fontSize: '0.98rem',
+                        fontSize: '0.82rem',
                         fontWeight: 700,
-                        color: 'var(--text-main)',
-                        letterSpacing: '0.02em',
+                        color: 'var(--text-muted)',
+                        letterSpacing: '0.03em',
                         textAlign: 'right',
                         fontFamily: kmFont,
+                        borderTopRightRadius: '10px',
+                        borderBottomRightRadius: '10px',
                       }}
                     >
                       {t('staff_col_actions')}
@@ -366,183 +372,144 @@ export const StaffManagement: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {staffList.map((staff) => (
-                    <tr
-                      key={staff.id}
-                      style={{
-                        borderBottom: '1px solid var(--border-color)',
-                        background: 'transparent',
-                        transition: 'background 0.15s ease',
-                      }}
-                    >
-                      {/* Name & Contact */}
-                      <td style={{ padding: '0.95rem 1.25rem', verticalAlign: 'middle' }}>
-                        <div style={{ fontSize: '0.98rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: kmFont }}>
-                          {staff.full_name}
-                        </div>
-                        <div style={{ fontSize: '0.84rem', color: 'var(--text-muted)', marginTop: '2px', fontFamily: kmFont }}>
-                          {staff.email && staff.phone_number
-                            ? `${staff.email} • ${staff.phone_number}`
-                            : staff.email || staff.phone_number || t('staff_no_email')}
-                        </div>
-                      </td>
+                  {staffList.map((staff) => {
+                    const isOpen = activeDropdownId === staff.id;
 
-                      {/* Role */}
-                      <td style={{ padding: '0.95rem 1.25rem', verticalAlign: 'middle' }}>
-                        <div
-                          style={{
-                            fontSize: '0.92rem',
-                            fontWeight: 600,
-                            color: 'var(--text-main)',
-                            fontFamily: kmFont,
-                          }}
-                        >
-                          {getRoleLabel(staff.role)}
-                        </div>
-                      </td>
+                    return (
+                      <tr
+                        key={staff.id}
+                        style={{
+                          borderBottom: '1px solid var(--border-color)',
+                          background: 'transparent',
+                          transition: 'background 0.15s ease',
+                          position: 'relative',
+                          zIndex: isOpen ? 1000 : 1,
+                        }}
+                      >
+                        {/* Name & Contact */}
+                        <td style={{ padding: '0.95rem 1.25rem', verticalAlign: 'middle' }}>
+                          <div style={{ fontSize: '0.98rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: kmFont }}>
+                            {staff.full_name}
+                          </div>
+                          <div style={{ fontSize: '0.84rem', color: 'var(--text-muted)', marginTop: '2px', fontFamily: kmFont }}>
+                            {staff.email && staff.phone_number
+                              ? `${staff.email} • ${staff.phone_number}`
+                              : staff.email || staff.phone_number || t('staff_no_email')}
+                          </div>
+                        </td>
 
-                      {/* Status (No background fill outside of text) */}
-                      <td style={{ padding: '0.95rem 1.25rem', verticalAlign: 'middle' }}>
-                        <div
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.4rem',
-                            fontSize: '0.88rem',
-                            fontWeight: 600,
-                            color: staff.is_active ? '#15803d' : '#64748b',
-                            fontFamily: kmFont,
-                          }}
-                        >
-                          <span style={{ fontSize: '0.75rem', color: staff.is_active ? '#16a34a' : '#94a3b8' }}>●</span>
-                          <span>{staff.is_active ? t('doc_active') : t('doc_inactive')}</span>
-                        </div>
-                      </td>
-
-                      {/* Actions: Three-dot dropdown menu */}
-                      <td style={{ padding: '0.95rem 1.25rem', verticalAlign: 'middle', textAlign: 'right' }}>
-                        <div style={{ position: 'relative', display: 'inline-block', zIndex: activeDropdownId === staff.id ? 60 : 'auto' }}>
-                          <button
-                            onClick={() => setActiveDropdownId(activeDropdownId === staff.id ? null : staff.id)}
+                        {/* Role */}
+                        <td style={{ padding: '0.95rem 1.25rem', verticalAlign: 'middle' }}>
+                          <div
                             style={{
-                              width: '32px',
-                              height: '32px',
-                              padding: 0,
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              fontSize: '1.2rem',
-                              fontWeight: 700,
-                              letterSpacing: '1px',
-                              background: '#ffffff',
-                              border: '1px solid var(--border-color)',
-                              borderRadius: '4px',
+                              fontSize: '0.92rem',
+                              fontWeight: 600,
                               color: 'var(--text-main)',
-                              cursor: 'pointer',
-                              boxShadow: 'none',
-                              lineHeight: 1,
+                              fontFamily: kmFont,
                             }}
                           >
-                            ···
-                          </button>
+                            {getRoleLabel(staff.role)}
+                          </div>
+                        </td>
 
-                          {activeDropdownId === staff.id && (
-                            <>
-                              <div
-                                onClick={() => setActiveDropdownId(null)}
-                                style={{
-                                  position: 'fixed',
-                                  inset: 0,
-                                  zIndex: 99,
-                                  background: 'transparent',
-                                }}
-                              />
-                              <div
-                                style={{
-                                  position: 'absolute',
-                                  right: 0,
-                                  top: 'calc(100% + 4px)',
-                                  background: 'var(--bg-primary, #ffffff)',
-                                  border: 'none',
-                                  borderRadius: 0,
-                                  display: 'flex',
-                                  flexDirection: 'column',
-                                  minWidth: '120px',
-                                  zIndex: 100,
-                                  boxShadow: 'none',
-                                  textAlign: 'left',
-                                }}
-                              >
-                                <button
-                                  onClick={() => handleToggleActive(staff)}
-                                  onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
-                                  onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
+                        {/* Status (No background fill outside of text) */}
+                        <td style={{ padding: '0.95rem 1.25rem', verticalAlign: 'middle' }}>
+                          <div
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.4rem',
+                              fontSize: '0.88rem',
+                              fontWeight: 600,
+                              color: staff.is_active ? '#15803d' : '#64748b',
+                              fontFamily: kmFont,
+                            }}
+                          >
+                            <span style={{ fontSize: '0.75rem', color: staff.is_active ? '#16a34a' : '#94a3b8' }}>●</span>
+                            <span>{staff.is_active ? t('doc_active') : t('doc_inactive')}</span>
+                          </div>
+                        </td>
+
+                        {/* Actions: Three-dot dropdown menu */}
+                        <td
+                          style={{
+                            padding: '0.95rem 1.25rem',
+                            verticalAlign: 'middle',
+                            textAlign: 'right',
+                            position: 'relative',
+                            zIndex: isOpen ? 1001 : 1,
+                          }}
+                        >
+                          <div style={{ position: 'relative', display: 'inline-block' }}>
+                            <button
+                              className="action-dots-btn"
+                              onClick={() => setActiveDropdownId(isOpen ? null : staff.id)}
+                              aria-label="Actions"
+                            >
+                              ···
+                            </button>
+
+                            {isOpen && (
+                              <>
+                                <div
+                                  onClick={() => setActiveDropdownId(null)}
                                   style={{
-                                    padding: '0.5rem 0.8rem',
-                                    fontSize: '0.92rem',
-                                    fontWeight: 500,
-                                    textAlign: 'left',
+                                    position: 'fixed',
+                                    inset: 0,
+                                    zIndex: 9998,
                                     background: 'transparent',
-                                    border: 'none',
-                                    color: staff.is_active ? '#059669' : 'var(--text-muted)',
-                                    cursor: 'pointer',
-                                    boxShadow: 'none',
-                                    fontFamily: kmFont,
-                                    transition: 'opacity 0.15s ease',
+                                  }}
+                                />
+                                <div
+                                  className="action-popup-menu"
+                                  style={{
+                                    zIndex: 9999,
+                                    position: 'absolute',
+                                    right: 0,
+                                    top: 'calc(100% + 6px)',
                                   }}
                                 >
-                                  {staff.is_active ? t('doc_inactive') : t('doc_active')}
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    setActiveDropdownId(null);
-                                    handleOpenEdit(staff);
-                                  }}
-                                  onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
-                                  onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
-                                  style={{
-                                    padding: '0.5rem 0.8rem',
-                                    fontSize: '0.92rem',
-                                    fontWeight: 500,
-                                    textAlign: 'left',
-                                    background: 'transparent',
-                                    border: 'none',
-                                    color: 'var(--text-main)',
-                                    cursor: 'pointer',
-                                    boxShadow: 'none',
-                                    fontFamily: kmFont,
-                                    transition: 'opacity 0.15s ease',
-                                  }}
-                                >
-                                  {t('doc_edit')}
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteStaff(staff.id)}
-                                  onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
-                                  onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
-                                  style={{
-                                    padding: '0.5rem 0.8rem',
-                                    fontSize: '0.92rem',
-                                    fontWeight: 500,
-                                    textAlign: 'left',
-                                    background: 'transparent',
-                                    border: 'none',
-                                    color: '#dc2626',
-                                    cursor: 'pointer',
-                                    boxShadow: 'none',
-                                    fontFamily: kmFont,
-                                    transition: 'opacity 0.15s ease',
-                                  }}
-                                >
-                                  {t('doc_delete')}
-                                </button>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                                  <button
+                                    className="action-popup-item"
+                                    onClick={() => handleToggleActive(staff)}
+                                    style={{
+                                      color: staff.is_active ? '#059669' : 'var(--text-muted)',
+                                      fontFamily: kmFont,
+                                    }}
+                                  >
+                                    {staff.is_active ? t('doc_inactive') : t('doc_active')}
+                                  </button>
+                                  <button
+                                    className="action-popup-item"
+                                    onClick={() => {
+                                      setActiveDropdownId(null);
+                                      handleOpenEdit(staff);
+                                    }}
+                                    style={{
+                                      color: 'var(--text-main)',
+                                      fontFamily: kmFont,
+                                    }}
+                                  >
+                                    {t('doc_edit')}
+                                  </button>
+                                  <button
+                                    className="action-popup-item"
+                                    onClick={() => handleDeleteStaff(staff.id)}
+                                    style={{
+                                      color: '#dc2626',
+                                      fontFamily: kmFont,
+                                    }}
+                                  >
+                                    {t('doc_delete')}
+                                  </button>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             )}
@@ -552,241 +519,264 @@ export const StaffManagement: React.FC = () => {
 
       {/* Invite / Edit Staff Modal */}
       {staffModal.shouldRender && (
-        <div className={staffModal.overlayClass} onClick={(e) => { if (e.target === e.currentTarget) staffModal.close(); }}>
-          <div className={staffModal.cardClass} style={{ maxWidth: '520px', fontFamily: kmFont }}>
-            <div className="responsive-modal-body" style={{ padding: '1.6rem 1.75rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.4rem' }}>
-                <h3 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: kmFont }}>
+        <div
+          className={staffModal.overlayClass}
+          style={{
+            backdropFilter: 'none',
+            WebkitBackdropFilter: 'none',
+            background: 'transparent',
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) staffModal.close();
+          }}
+        >
+          <div
+            className={staffModal.cardClass}
+            style={{
+              width: '94%',
+              maxWidth: '460px',
+              fontFamily: kmFont,
+              borderRadius: '24px',
+              boxShadow: '0 20px 50px rgba(0, 0, 0, 0.16), 0 0 0 1px rgba(0, 0, 0, 0.08)',
+              background: '#ffffff',
+              overflow: 'hidden',
+            }}
+          >
+            <div className="responsive-modal-body" style={{ padding: '1.45rem 1.6rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.15rem' }}>
+                <h3 style={{ margin: 0, fontSize: '1.22rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: kmFont }}>
                   {editingStaffId ? t('staff_modal_edit') : t('staff_modal_invite')}
                 </h3>
-              <button
-                onClick={staffModal.close}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  fontSize: '1.1rem',
-                  cursor: 'pointer',
-                  color: 'var(--text-muted)',
-                }}
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveStaff} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
-              {/* Full Name */}
-              <div>
-                <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, marginBottom: '6px', color: 'var(--text-main)', fontFamily: kmFont }}>
-                  {t('staff_name_label')}
-                </label>
-                <input
-                  type="text"
-                  value={fullName}
-                  onChange={(e) => {
-                    setFullName(e.target.value);
-                    setNameError(null);
-                  }}
-                  placeholder={t('staff_name_placeholder')}
+                <button
+                  onClick={staffModal.close}
                   style={{
-                    width: '100%',
-                    padding: '0.72rem 0.85rem',
-                    border: nameError ? '1px solid #dc2626' : '1px solid var(--border-color)',
-                    borderRadius: '4px',
-                    fontSize: '0.95rem',
-                    boxShadow: 'none',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                    fontFamily: kmFont,
-                  }}
-                />
-                {nameError && (
-                  <div style={{ color: '#dc2626', fontSize: '0.85rem', marginTop: '5px', fontFamily: kmFont }}>
-                    {nameError}
-                  </div>
-                )}
-              </div>
-
-              {/* Email or Phone */}
-              <div>
-                <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, marginBottom: '6px', color: 'var(--text-main)', fontFamily: kmFont }}>
-                  {t('staff_contact_label')}
-                </label>
-                <input
-                  type="text"
-                  value={contact}
-                  onChange={(e) => {
-                    setContact(e.target.value);
-                    setContactError(null);
-                  }}
-                  placeholder={t('staff_contact_placeholder')}
-                  style={{
-                    width: '100%',
-                    padding: '0.72rem 0.85rem',
-                    border: contactError ? '1px solid #dc2626' : '1px solid var(--border-color)',
-                    borderRadius: '4px',
-                    fontSize: '0.95rem',
-                    boxShadow: 'none',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                    fontFamily: kmFont,
-                  }}
-                />
-                {contactError && (
-                  <div style={{ color: '#dc2626', fontSize: '0.85rem', marginTop: '5px', fontFamily: kmFont }}>
-                    {contactError}
-                  </div>
-                )}
-              </div>
-
-              {/* Role Selection */}
-              <div>
-                <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, marginBottom: '6px', color: 'var(--text-main)', fontFamily: kmFont }}>
-                  {t('staff_assigned_role')}
-                </label>
-                <select
-                  value={role}
-                  onChange={(e) => setRole(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '0.72rem 0.85rem',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: '4px',
-                    fontSize: '0.95rem',
-                    boxShadow: 'none',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                    background: '#ffffff',
-                    fontFamily: kmFont,
+                    background: 'transparent',
+                    border: 'none',
+                    fontSize: '1.1rem',
+                    cursor: 'pointer',
+                    color: 'var(--text-muted)',
                   }}
                 >
-                  <option value="RECEPTIONIST">{t('staff_role_receptionist')}</option>
-                  <option value="DOCTOR">{t('staff_role_doctor')}</option>
-                  <option value="NURSE">{t('staff_role_nurse')}</option>
-                  <option value="HOSPITAL_ADMIN">{t('staff_role_admin')}</option>
-                </select>
+                  ✕
+                </button>
               </div>
 
-              {/* Password - Only when editing existing staff */}
-              {editingStaffId && (
+              <form onSubmit={handleSaveStaff} style={{ display: 'flex', flexDirection: 'column', gap: '0.95rem' }}>
+                {/* Full Name */}
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, marginBottom: '6px', color: 'var(--text-main)', fontFamily: kmFont }}>
-                    {t('staff_password_new')}
+                  <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 600, marginBottom: '5px', color: 'var(--text-main)', fontFamily: kmFont }}>
+                    {t('staff_name_label')}
                   </label>
-                  <div style={{ position: 'relative' }}>
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      value={password}
-                      onChange={(e) => {
-                        setPassword(e.target.value);
-                        setPasswordError(null);
-                      }}
-                      placeholder="••••••••"
-                      style={{
-                        width: '100%',
-                        padding: '0.72rem 2.4rem 0.72rem 0.85rem',
-                        border: passwordError ? '1px solid #dc2626' : '1px solid var(--border-color)',
-                        borderRadius: '4px',
-                        fontSize: '0.95rem',
-                        boxShadow: 'none',
-                        outline: 'none',
-                        boxSizing: 'border-box',
-                        fontFamily: kmFont,
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((p) => !p)}
-                      style={{
-                        position: 'absolute',
-                        right: '10px',
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        background: 'transparent',
-                        border: 'none',
-                        color: 'var(--text-muted)',
-                        cursor: 'pointer',
-                        padding: '2px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                      tabIndex={-1}
-                      aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    >
-                      {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
-                    </button>
-                  </div>
-                  {passwordError && (
-                    <div style={{ color: '#dc2626', fontSize: '0.85rem', marginTop: '5px', fontFamily: kmFont }}>
-                      {passwordError}
+                  <input
+                    type="text"
+                    value={fullName}
+                    onChange={(e) => {
+                      setFullName(e.target.value);
+                      setNameError(null);
+                    }}
+                    placeholder={t('staff_name_placeholder')}
+                    style={{
+                      width: '100%',
+                      padding: '0.68rem 1.05rem',
+                      border: nameError ? '1px solid #dc2626' : '1px solid var(--border-color)',
+                      borderRadius: '22px',
+                      fontSize: '0.94rem',
+                      boxShadow: 'none',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                      fontFamily: kmFont,
+                    }}
+                  />
+                  {nameError && (
+                    <div style={{ color: '#dc2626', fontSize: '0.82rem', marginTop: '3px', paddingLeft: '0.5rem', fontFamily: kmFont }}>
+                      {nameError}
                     </div>
                   )}
                 </div>
-              )}
 
-              {/* Active Toggle (for edit) */}
-              {editingStaffId && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <input
-                    type="checkbox"
-                    id="staff-active-check"
-                    checked={isActive}
-                    onChange={(e) => setIsActive(e.target.checked)}
-                    style={{ cursor: 'pointer' }}
-                  />
-                  <label htmlFor="staff-active-check" style={{ fontSize: '0.9rem', color: 'var(--text-main)', cursor: 'pointer', fontFamily: kmFont }}>
-                    {t('staff_active_account')}
+                {/* Email or Phone */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 600, marginBottom: '5px', color: 'var(--text-main)', fontFamily: kmFont }}>
+                    {t('staff_contact_label')}
                   </label>
+                  <input
+                    type="text"
+                    value={contact}
+                    onChange={(e) => {
+                      setContact(e.target.value);
+                      setContactError(null);
+                    }}
+                    placeholder={t('staff_contact_placeholder')}
+                    style={{
+                      width: '100%',
+                      padding: '0.68rem 1.05rem',
+                      border: contactError ? '1px solid #dc2626' : '1px solid var(--border-color)',
+                      borderRadius: '22px',
+                      fontSize: '0.94rem',
+                      boxShadow: 'none',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                      fontFamily: kmFont,
+                    }}
+                  />
+                  {contactError && (
+                    <div style={{ color: '#dc2626', fontSize: '0.82rem', marginTop: '3px', paddingLeft: '0.5rem', fontFamily: kmFont }}>
+                      {contactError}
+                    </div>
+                  )}
                 </div>
-              )}
 
-              {/* Action Error */}
-              {submitError && (
-                <div style={{ color: '#dc2626', fontSize: '0.85rem', fontFamily: kmFont }}>
-                  {submitError}
+                {/* Role Selection */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 600, marginBottom: '5px', color: 'var(--text-main)', fontFamily: kmFont }}>
+                    {t('staff_assigned_role')}
+                  </label>
+                  <select
+                    value={role}
+                    onChange={(e) => setRole(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '0.68rem 1.05rem',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: '22px',
+                      fontSize: '0.94rem',
+                      boxShadow: 'none',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                      background: '#ffffff',
+                      fontFamily: kmFont,
+                    }}
+                  >
+                    <option value="RECEPTIONIST">{t('staff_role_receptionist')}</option>
+                    <option value="DOCTOR">{t('staff_role_doctor')}</option>
+                    <option value="NURSE">{t('staff_role_nurse')}</option>
+                    <option value="HOSPITAL_ADMIN">{t('staff_role_admin')}</option>
+                  </select>
                 </div>
-              )}
 
-              {/* Buttons */}
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
-                <button
-                  type="button"
-                  onClick={staffModal.close}
-                  style={{
-                    padding: '0.75rem 1.25rem',
-                    background: 'transparent',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: '4px',
-                    color: 'var(--text-muted)',
-                    fontSize: '0.98rem',
-                    fontWeight: 500,
-                    cursor: 'pointer',
-                    boxShadow: 'none',
-                    fontFamily: kmFont,
-                  }}
-                >
-                  {t('cancel')}
-                </button>
-                <button
-                  type="submit"
-                  disabled={actionLoading}
-                  style={{
-                    padding: '0.75rem 1.45rem',
-                    background: 'transparent',
-                    border: '1px solid var(--text-main)',
-                    borderRadius: '4px',
-                    color: 'var(--text-main)',
-                    fontSize: '0.98rem',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    boxShadow: 'none',
-                    fontFamily: kmFont,
-                  }}
-                >
-                  {actionLoading ? t('staff_saving') : editingStaffId ? t('staff_save_btn') : t('staff_invite_btn')}
-                </button>
-              </div>
-            </form>
+                {/* Password - Only when editing existing staff */}
+                {editingStaffId && (
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 600, marginBottom: '5px', color: 'var(--text-main)', fontFamily: kmFont }}>
+                      {t('staff_password_new')}
+                    </label>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={password}
+                        onChange={(e) => {
+                          setPassword(e.target.value);
+                          setPasswordError(null);
+                        }}
+                        placeholder="••••••••"
+                        style={{
+                          width: '100%',
+                          padding: '0.68rem 2.5rem 0.68rem 1.05rem',
+                          border: passwordError ? '1px solid #dc2626' : '1px solid var(--border-color)',
+                          borderRadius: '22px',
+                          fontSize: '0.94rem',
+                          boxShadow: 'none',
+                          outline: 'none',
+                          boxSizing: 'border-box',
+                          fontFamily: kmFont,
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((p) => !p)}
+                        style={{
+                          position: 'absolute',
+                          right: '12px',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          background: 'transparent',
+                          border: 'none',
+                          color: 'var(--text-muted)',
+                          cursor: 'pointer',
+                          padding: '2px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                        tabIndex={-1}
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      >
+                        {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                      </button>
+                    </div>
+                    {passwordError && (
+                      <div style={{ color: '#dc2626', fontSize: '0.82rem', marginTop: '3px', paddingLeft: '0.5rem', fontFamily: kmFont }}>
+                        {passwordError}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Active Toggle (for edit) */}
+                {editingStaffId && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.15rem' }}>
+                    <input
+                      type="checkbox"
+                      id="staff-active-check"
+                      checked={isActive}
+                      onChange={(e) => setIsActive(e.target.checked)}
+                      style={{ cursor: 'pointer' }}
+                    />
+                    <label htmlFor="staff-active-check" style={{ fontSize: '0.88rem', color: 'var(--text-main)', cursor: 'pointer', fontFamily: kmFont }}>
+                      {t('staff_active_account')}
+                    </label>
+                  </div>
+                )}
+
+                {/* Action Error */}
+                {submitError && (
+                  <div style={{ color: '#dc2626', fontSize: '0.82rem', paddingLeft: '0.5rem', fontFamily: kmFont }}>
+                    {submitError}
+                  </div>
+                )}
+
+                {/* Buttons */}
+                <div style={{ display: 'flex', gap: '0.65rem', marginTop: '0.5rem' }}>
+                  <button
+                    type="button"
+                    onClick={staffModal.close}
+                    style={{
+                      flex: 1,
+                      padding: '0.68rem 1.15rem',
+                      background: 'transparent',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: '22px',
+                      color: 'var(--text-muted)',
+                      fontSize: '0.94rem',
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                      boxShadow: 'none',
+                      fontFamily: kmFont,
+                    }}
+                  >
+                    {t('cancel')}
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={actionLoading}
+                    style={{
+                      flex: 1,
+                      padding: '0.68rem 1.15rem',
+                      background: 'transparent',
+                      border: '1px solid var(--text-main)',
+                      borderRadius: '22px',
+                      color: 'var(--text-main)',
+                      fontSize: '0.94rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      boxShadow: 'none',
+                      fontFamily: kmFont,
+                    }}
+                  >
+                    {actionLoading ? t('staff_saving') : editingStaffId ? t('staff_save_btn') : t('staff_invite_btn')}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>
@@ -798,7 +788,9 @@ export const StaffManagement: React.FC = () => {
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(0, 0, 0, 0.45)',
+            background: 'transparent',
+            backdropFilter: 'none',
+            WebkitBackdropFilter: 'none',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -811,24 +803,24 @@ export const StaffManagement: React.FC = () => {
             onClick={(e) => e.stopPropagation()}
             style={{
               background: '#ffffff',
-              borderRadius: '8px',
-              maxWidth: '480px',
-              width: '100%',
-              padding: '1.75rem',
-              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
+              borderRadius: '24px',
+              maxWidth: '460px',
+              width: '94%',
+              padding: '1.45rem 1.6rem',
+              boxShadow: '0 20px 50px rgba(0, 0, 0, 0.16), 0 0 0 1px rgba(0, 0, 0, 0.08)',
               fontFamily: kmFont,
             }}
           >
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 700, margin: '0 0 0.5rem 0', color: 'var(--text-main)' }}>
+            <h3 style={{ fontSize: '1.18rem', fontWeight: 700, margin: '0 0 0.5rem 0', color: 'var(--text-main)' }}>
               {isKm ? 'បានបង្កើតគណនីបុគ្គលិកដោយជោគជ័យ' : 'Staff Account Created Successfully'}
             </h3>
-            <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', margin: '0 0 1.25rem 0', lineHeight: 1.5 }}>
+            <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', margin: '0 0 1.15rem 0', lineHeight: 1.5 }}>
               {isKm
                 ? `ពាក្យសម្ងាត់បណ្តោះអាសន្នត្រូវបានបង្កើតដោយស្វ័យប្រវត្តិ និងផ្ញើទៅកាន់ ${invitedStaffInfo.contact} រួចហើយ។`
                 : `A temporary password has been automatically generated and sent to ${invitedStaffInfo.contact}.`}
             </p>
 
-            <div style={{ background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '1rem', marginBottom: '1.25rem' }}>
+            <div style={{ background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '1rem', marginBottom: '1.15rem' }}>
               <div style={{ fontSize: '0.84rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
                 {isKm ? 'ឈ្មោះបុគ្គលិក' : 'Staff Name'}: <strong style={{ color: 'var(--text-main)' }}>{invitedStaffInfo.name}</strong>
               </div>
@@ -839,7 +831,7 @@ export const StaffManagement: React.FC = () => {
                 {isKm ? 'ពាក្យសម្ងាត់បណ្តោះអាសន្ន' : 'Temporary Password'}:
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <code style={{ flex: 1, padding: '0.55rem 0.75rem', background: '#ffffff', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '1.05rem', fontWeight: 700, letterSpacing: '0.06em', color: 'var(--text-main)' }}>
+                <code style={{ flex: 1, padding: '0.55rem 0.85rem', background: '#ffffff', border: '1px solid var(--border-color)', borderRadius: '22px', fontSize: '1.05rem', fontWeight: 700, letterSpacing: '0.06em', color: 'var(--text-main)' }}>
                   {invitedStaffInfo.password}
                 </code>
                 <button
@@ -850,11 +842,11 @@ export const StaffManagement: React.FC = () => {
                     setTimeout(() => setCopiedPass(false), 2000);
                   }}
                   style={{
-                    padding: '0.55rem 0.95rem',
+                    padding: '0.55rem 1.1rem',
                     background: 'transparent',
                     border: '1px solid var(--text-main)',
-                    borderRadius: '4px',
-                    fontSize: '0.85rem',
+                    borderRadius: '22px',
+                    fontSize: '0.88rem',
                     fontWeight: 600,
                     cursor: 'pointer',
                     color: 'var(--text-main)',
@@ -871,10 +863,11 @@ export const StaffManagement: React.FC = () => {
                 type="button"
                 onClick={() => setInvitedStaffInfo(null)}
                 style={{
-                  padding: '0.65rem 1.4rem',
+                  width: '100%',
+                  padding: '0.68rem 1.4rem',
                   background: 'transparent',
                   border: '1px solid var(--text-main)',
-                  borderRadius: '4px',
+                  borderRadius: '22px',
                   color: 'var(--text-main)',
                   fontSize: '0.92rem',
                   fontWeight: 600,

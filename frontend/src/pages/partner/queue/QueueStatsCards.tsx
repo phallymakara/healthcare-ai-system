@@ -1,5 +1,4 @@
 import React from 'react';
-import { Smartphone, User } from 'lucide-react';
 import { BookingsSummary } from './types';
 
 export interface QueueStatsCardsProps {
@@ -10,180 +9,169 @@ export interface QueueStatsCardsProps {
 
 export const QueueStatsCards: React.FC<QueueStatsCardsProps> = ({ summary, kmFont, t }) => {
   return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(135px, 1fr))',
-        gap: '0.75rem',
-        marginBottom: '1rem',
-      }}
-    >
-      <div
-        style={{
-          background: '#ffffff',
-          border: '1px solid var(--border-color)',
-          borderRadius: '6px',
-          padding: '0.95rem 1.15rem',
-          boxShadow: 'none',
-        }}
-      >
-        <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontFamily: kmFont, fontWeight: 500 }}>
+    <div className="queue-stats-grid">
+      {/* 1. Total Bookings */}
+      <div className="queue-stat-kpi-card">
+        <div
+          className="text-truncate"
+          title={t('cbs_stat_total')}
+          style={{
+            fontSize: '0.86rem',
+            color: 'var(--text-muted)',
+            fontWeight: 500,
+            fontFamily: kmFont,
+            lineHeight: 1.2,
+          }}
+        >
           {t('cbs_stat_total')}
         </div>
         <div
           style={{
-            fontSize: '1.6rem',
-            fontWeight: 700,
+            fontSize: '1.65rem',
+            fontWeight: 800,
             color: 'var(--text-main)',
-            marginTop: '0.2rem',
-            lineHeight: 1.2,
+            marginTop: '0.35rem',
+            lineHeight: 1.15,
           }}
         >
           {summary.total_bookings}
         </div>
       </div>
 
-      <div
-        style={{
-          background: '#ffffff',
-          border: '1px solid var(--border-color)',
-          borderRadius: '6px',
-          padding: '0.95rem 1.15rem',
-          boxShadow: 'none',
-        }}
-      >
+      {/* 2. Online Bookings */}
+      <div className="queue-stat-kpi-card">
         <div
+          className="text-truncate"
+          title={t('cbs_stat_online')}
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.35rem',
-            fontSize: '0.82rem',
+            fontSize: '0.86rem',
             color: 'var(--text-muted)',
-            fontFamily: kmFont,
             fontWeight: 500,
+            fontFamily: kmFont,
+            lineHeight: 1.2,
           }}
         >
-          <Smartphone size={14} />
           {t('cbs_stat_online')}
         </div>
         <div
           style={{
-            fontSize: '1.6rem',
-            fontWeight: 700,
+            fontSize: '1.65rem',
+            fontWeight: 800,
             color: 'var(--text-main)',
-            marginTop: '0.2rem',
-            lineHeight: 1.2,
+            marginTop: '0.35rem',
+            lineHeight: 1.15,
           }}
         >
           {summary.online_bookings}
         </div>
       </div>
 
-      <div
-        style={{
-          background: '#ffffff',
-          border: '1px solid var(--border-color)',
-          borderRadius: '6px',
-          padding: '0.95rem 1.15rem',
-          boxShadow: 'none',
-        }}
-      >
+      {/* 3. Walk-in */}
+      <div className="queue-stat-kpi-card">
         <div
+          className="text-truncate"
+          title={t('cbs_stat_walkin')}
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.35rem',
-            fontSize: '0.82rem',
+            fontSize: '0.86rem',
             color: 'var(--text-muted)',
-            fontFamily: kmFont,
             fontWeight: 500,
+            fontFamily: kmFont,
+            lineHeight: 1.2,
           }}
         >
-          <User size={14} />
           {t('cbs_stat_walkin')}
         </div>
         <div
           style={{
-            fontSize: '1.6rem',
-            fontWeight: 700,
+            fontSize: '1.65rem',
+            fontWeight: 800,
             color: 'var(--text-main)',
-            marginTop: '0.2rem',
-            lineHeight: 1.2,
+            marginTop: '0.35rem',
+            lineHeight: 1.15,
           }}
         >
           {summary.walkin_bookings}
         </div>
       </div>
 
-      <div
-        style={{
-          background: '#ffffff',
-          border: '1px solid var(--border-color)',
-          borderRadius: '6px',
-          padding: '0.95rem 1.15rem',
-          boxShadow: 'none',
-        }}
-      >
-        <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontFamily: kmFont, fontWeight: 500 }}>
+      {/* 4. Waiting */}
+      <div className="queue-stat-kpi-card">
+        <div
+          className="text-truncate"
+          title={t('cbs_stat_waiting')}
+          style={{
+            fontSize: '0.86rem',
+            color: 'var(--text-muted)',
+            fontWeight: 500,
+            fontFamily: kmFont,
+            lineHeight: 1.2,
+          }}
+        >
           {t('cbs_stat_waiting')}
         </div>
         <div
           style={{
-            fontSize: '1.6rem',
-            fontWeight: 700,
+            fontSize: '1.65rem',
+            fontWeight: 800,
             color: '#d97706',
-            marginTop: '0.2rem',
-            lineHeight: 1.2,
+            marginTop: '0.35rem',
+            lineHeight: 1.15,
           }}
         >
           {summary.waiting_count}
         </div>
       </div>
 
-      <div
-        style={{
-          background: '#ffffff',
-          border: '1px solid var(--border-color)',
-          borderRadius: '6px',
-          padding: '0.95rem 1.15rem',
-          boxShadow: 'none',
-        }}
-      >
-        <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontFamily: kmFont, fontWeight: 500 }}>
+      {/* 5. Serving */}
+      <div className="queue-stat-kpi-card">
+        <div
+          className="text-truncate"
+          title={t('cbs_stat_serving')}
+          style={{
+            fontSize: '0.86rem',
+            color: 'var(--text-muted)',
+            fontWeight: 500,
+            fontFamily: kmFont,
+            lineHeight: 1.2,
+          }}
+        >
           {t('cbs_stat_serving')}
         </div>
         <div
           style={{
-            fontSize: '1.6rem',
-            fontWeight: 700,
+            fontSize: '1.65rem',
+            fontWeight: 800,
             color: '#059669',
-            marginTop: '0.2rem',
-            lineHeight: 1.2,
+            marginTop: '0.35rem',
+            lineHeight: 1.15,
           }}
         >
           {summary.serving_count}
         </div>
       </div>
 
-      <div
-        style={{
-          background: '#ffffff',
-          border: '1px solid var(--border-color)',
-          borderRadius: '6px',
-          padding: '0.95rem 1.15rem',
-          boxShadow: 'none',
-        }}
-      >
-        <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontFamily: kmFont, fontWeight: 500 }}>
+      {/* 6. Completed */}
+      <div className="queue-stat-kpi-card">
+        <div
+          className="text-truncate"
+          title={t('cbs_stat_completed')}
+          style={{
+            fontSize: '0.86rem',
+            color: 'var(--text-muted)',
+            fontWeight: 500,
+            fontFamily: kmFont,
+            lineHeight: 1.2,
+          }}
+        >
           {t('cbs_stat_completed')}
         </div>
         <div
           style={{
-            fontSize: '1.6rem',
-            fontWeight: 700,
-            color: 'var(--text-muted)',
-            marginTop: '0.2rem',
-            lineHeight: 1.2,
+            fontSize: '1.65rem',
+            fontWeight: 800,
+            color: 'var(--text-main)',
+            marginTop: '0.35rem',
+            lineHeight: 1.15,
           }}
         >
           {summary.completed_count}
@@ -194,3 +182,5 @@ export const QueueStatsCards: React.FC<QueueStatsCardsProps> = ({ summary, kmFon
 };
 
 export default QueueStatsCards;
+
+

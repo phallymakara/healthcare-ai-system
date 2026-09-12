@@ -291,9 +291,9 @@ export const DepartmentManagement: React.FC = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          borderBottom: '1px solid var(--border-color)',
-          paddingBottom: '0.65rem',
-          marginBottom: '1.5rem',
+          borderBottom: 'none',
+          paddingBottom: '0.25rem',
+          marginBottom: '1.25rem',
           flexWrap: 'wrap',
           gap: '1rem',
         }}

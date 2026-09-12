@@ -286,10 +286,10 @@ export const HospitalProfile: React.FC = () => {
     <div
       style={{
         width: '100%',
-        maxWidth: '920px',
+        maxWidth: '580px',
         margin: '0 auto',
         fontFamily: kmFont,
-        paddingBottom: '3rem',
+        paddingBottom: '2rem',
       }}
     >
       {loading ? (
@@ -348,6 +348,10 @@ export const HospitalProfile: React.FC = () => {
             fileInputRef={fileInputRef}
             onLogoFileChange={handleLogoFileChange}
             onDeleteLogo={handleDeleteLogo}
+            saving={saving}
+            loading={loading}
+            successMessage={successMessage}
+            submitError={submitError}
           />
 
           <HospitalContactSection
@@ -363,6 +367,10 @@ export const HospitalProfile: React.FC = () => {
             setEmergencyPhone={setEmergencyPhone}
             emergencyPhoneError={emergencyPhoneError}
             setEmergencyPhoneError={setEmergencyPhoneError}
+            saving={saving}
+            loading={loading}
+            successMessage={successMessage}
+            submitError={submitError}
           />
 
           <HospitalLocationSection
@@ -379,65 +387,11 @@ export const HospitalProfile: React.FC = () => {
             longitude={longitude}
             setLongitude={setLongitude}
             onParseGoogleMapsInput={parseGoogleMapsInput}
+            saving={saving}
+            loading={loading}
+            successMessage={successMessage}
+            submitError={submitError}
           />
-
-          {/* Action Area & Error Display */}
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'flex-end',
-              gap: '0.65rem',
-              paddingTop: '0.25rem',
-            }}
-          >
-            {submitError && (
-              <div
-                style={{
-                  color: '#dc2626',
-                  fontSize: '0.95rem',
-                  fontFamily: kmFont,
-                  textAlign: 'right',
-                }}
-              >
-                {submitError}
-              </div>
-            )}
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-              {successMessage && (
-                <span style={{ color: '#16a34a', fontSize: '0.95rem', fontWeight: 600, fontFamily: kmFont }}>
-                  ✓ {successMessage}
-                </span>
-              )}
-
-              <button
-                type="submit"
-                disabled={saving || loading}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  padding: '0.7rem 1.85rem',
-                  background: 'transparent',
-                  color: 'var(--text-main)',
-                  border: '1px solid var(--text-main)',
-                  borderRadius: 'var(--radius-full)',
-                  fontSize: '0.98rem',
-                  fontWeight: 600,
-                  cursor: saving || loading ? 'not-allowed' : 'pointer',
-                  opacity: saving || loading ? 0.7 : 1,
-                  boxShadow: 'none',
-                  fontFamily: kmFont,
-                }}
-              >
-                {saving && (
-                  <RefreshCw size={17} style={{ animation: 'spin 1s linear infinite' }} />
-                )}
-                <span>{saving ? t('prof_saving') : t('prof_save_btn')}</span>
-              </button>
-            </div>
-          </div>
         </form>
       )}
     </div>

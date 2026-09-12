@@ -1,13 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import {
-  Building2,
-  Users,
-  Layers,
-  Globe,
-  Activity,
-  CheckCircle2,
-  TrendingUp,
-} from 'lucide-react';
 import { AuthService } from '../../services/auth';
 import { useLanguage } from '../../context/LanguageContext';
 import { API_BASE } from '../../services/api';
@@ -97,7 +88,7 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateTo
   }, []);
 
   return (
-    <div style={{ width: '100%', fontFamily: kmFont }}>
+    <div className="partner-dashboard-container" style={{ width: '100%', fontFamily: kmFont }}>
       {/* Human-Friendly Error Display: Plain text only, no container, no shadow, no background fill */}
       {loadError && (
         <span
@@ -133,8 +124,6 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateTo
             const totalTickets = metrics?.total_tickets_today || 0;
             const onlineTickets = metrics?.online_bookings_today || 0;
             const walkinTickets = metrics?.walkin_tickets_today || 0;
-            const onlinePct = totalTickets > 0 ? Math.round((onlineTickets / totalTickets) * 100) : 0;
-            const walkinPct = totalTickets > 0 ? Math.round((walkinTickets / totalTickets) * 100) : 0;
 
             const completedCount = metrics?.completed_today || 0;
             const servingCount = metrics?.currently_serving || 0;
@@ -154,8 +143,8 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateTo
                   style={{
                     display: 'grid',
                     gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-                    gap: '1.25rem',
-                    marginBottom: '1.5rem',
+                    gap: '0.75rem',
+                    marginBottom: '0.85rem',
                   }}
                 >
                   {/* Container 1: Departments */}
@@ -167,19 +156,13 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateTo
                       borderRadius: '16px',
                       padding: '1.25rem 1.5rem',
                       boxShadow: 'none',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '1rem',
                     }}
                   >
-                    <Building2 size={24} color="var(--text-muted)" style={{ flexShrink: 0 }} />
-                    <div>
-                      <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)', fontWeight: 500, fontFamily: kmFont }}>
-                        {t('pd_total_departments')}
-                      </div>
-                      <div style={{ fontSize: '1.65rem', fontWeight: 800, color: 'var(--text-main)', lineHeight: 1.15 }}>
-                        {totalDepts}
-                      </div>
+                    <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)', fontWeight: 500, fontFamily: kmFont, marginBottom: '0.35rem' }}>
+                      {t('pd_total_departments')}
+                    </div>
+                    <div style={{ fontSize: '1.65rem', fontWeight: 800, color: 'var(--text-main)', lineHeight: 1.15 }}>
+                      {totalDepts}
                     </div>
                   </div>
 
@@ -192,19 +175,13 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateTo
                       borderRadius: '16px',
                       padding: '1.25rem 1.5rem',
                       boxShadow: 'none',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '1rem',
                     }}
                   >
-                    <Users size={24} color="var(--text-muted)" style={{ flexShrink: 0 }} />
-                    <div>
-                      <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)', fontWeight: 500, fontFamily: kmFont }}>
-                        {t('pd_total_staff')}
-                      </div>
-                      <div style={{ fontSize: '1.65rem', fontWeight: 800, color: 'var(--text-main)', lineHeight: 1.15 }}>
-                        {totalStaff}
-                      </div>
+                    <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)', fontWeight: 500, fontFamily: kmFont, marginBottom: '0.35rem' }}>
+                      {t('pd_total_staff')}
+                    </div>
+                    <div style={{ fontSize: '1.65rem', fontWeight: 800, color: 'var(--text-main)', lineHeight: 1.15 }}>
+                      {totalStaff}
                     </div>
                   </div>
 
@@ -217,348 +194,367 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateTo
                       borderRadius: '16px',
                       padding: '1.25rem 1.5rem',
                       boxShadow: 'none',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '1rem',
                     }}
                   >
-                    <Layers size={24} color="var(--text-muted)" style={{ flexShrink: 0 }} />
-                    <div>
-                      <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)', fontWeight: 500, fontFamily: kmFont }}>
-                        {t('pd_total_services')}
-                      </div>
-                      <div style={{ fontSize: '1.65rem', fontWeight: 800, color: 'var(--text-main)', lineHeight: 1.15 }}>
-                        {totalServices}
-                      </div>
+                    <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)', fontWeight: 500, fontFamily: kmFont, marginBottom: '0.35rem' }}>
+                      {t('pd_total_services')}
+                    </div>
+                    <div style={{ fontSize: '1.65rem', fontWeight: 800, color: 'var(--text-main)', lineHeight: 1.15 }}>
+                      {totalServices}
                     </div>
                   </div>
                 </div>
 
-                {/* 2. The 3 Primary Operational Main Cards */}
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-                    gap: '1.25rem',
-                    marginBottom: '2rem',
-                  }}
-                >
-                  {/* MAIN CARD 1: Live Floor Activity (Real-Time Queue Pulse) */}
-                  <div
-                    className="dashboard-card"
-                    style={{
-                      background: '#ffffff',
-                      border: '1px solid var(--border-color)',
-                      borderRadius: '16px',
-                      padding: '1.5rem 1.6rem',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'space-between',
-                      boxShadow: 'none',
-                    }}
-                  >
-                    <div>
-                      {/* Card Header */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', color: 'var(--accent-primary, #0284c7)' }}>
-                        <Activity size={18} />
-                        <span style={{ fontSize: '0.88rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.02em', fontFamily: kmFont }}>
-                          {t('pd_live_floor_activity')}
-                        </span>
-                      </div>
+                {/* 2. Operational Compound Metric Cards: 3 Columns on Desktop (Queue, Intake, Resolution) */}
+                <div className="dashboard-metrics-tri-grid">
+                  {/* Column 1: Live Floor Queue Activity (1 Main Card + 2 Stacked Sub Cards) */}
+                  <div className="live-floor-compound-container">
+                    <div className="live-floor-compound-grid">
+                      {/* MAIN CARD (Left): Live Floor Activity Status */}
+                      <div className="dashboard-card live-floor-main-card">
+                        {/* Ambient background accent */}
+                        <div
+                          style={{
+                            position: 'absolute',
+                            top: 0,
+                            right: 0,
+                            width: '240px',
+                            height: '240px',
+                            background: 'radial-gradient(circle, rgba(24, 83, 57, 0.06) 0%, transparent 70%)',
+                            pointerEvents: 'none',
+                          }}
+                        />
 
-                      {/* Hero Metric: Active in Clinic */}
-                      <div style={{ marginBottom: '1.25rem' }}>
-                        <div style={{ fontSize: '2.4rem', fontWeight: 800, color: 'var(--text-main)', lineHeight: 1.1 }}>
-                          {activePatients}
-                        </div>
-                        <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '4px', fontFamily: kmFont }}>
-                          {t('pd_active_on_floor')}
-                        </div>
-                      </div>
-
-                      {/* Sub-Metrics: Clean Side-by-Side (Unboxed) */}
-                      <div
-                        style={{
-                          display: 'grid',
-                          gridTemplateColumns: '1fr 1fr',
-                          gap: '1rem',
-                          paddingTop: '1.15rem',
-                          borderTop: '1px solid var(--border-color)',
-                        }}
-                      >
-                        {/* Serving Now */}
+                        {/* Header (No Badge, No Icon) */}
                         <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '4px' }}>
-                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--accent-primary, #0284c7)', display: 'inline-block' }} />
-                            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)', fontFamily: kmFont }}>
-                              {t('pd_currently_serving')}
+                          <div style={{ marginBottom: '0.45rem' }}>
+                            <span
+                              className="text-truncate"
+                              style={{
+                                fontSize: '0.92rem',
+                                fontWeight: 700,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.02em',
+                                fontFamily: kmFont,
+                                color: 'var(--text-main)',
+                                display: 'block',
+                              }}
+                            >
+                              {t('pd_live_floor_activity')}
                             </span>
                           </div>
-                          <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--accent-primary, #0284c7)', lineHeight: 1.1 }}>
+
+                          {/* Hero Metric: Active in Clinic */}
+                          <div style={{ margin: '0.15rem 0 0 0' }}>
+                            <div
+                              style={{
+                                fontSize: 'clamp(2.1rem, 2.6vw, 2.75rem)',
+                                fontWeight: 800,
+                                color: '#0c2f27',
+                                lineHeight: 1.1,
+                                letterSpacing: '-0.03em',
+                              }}
+                            >
+                              {activePatients}
+                            </div>
+                          </div>
+                        </div>
+
+                      </div>
+
+                      {/* SUB CARDS COLUMN (Right): Serving & In Line */}
+                      <div className="live-floor-sub-column">
+                        {/* SUB CARD 1: Serving Now */}
+                        <div className="dashboard-card live-floor-sub-card">
+                          <div
+                            className="text-truncate"
+                            style={{
+                              fontSize: '0.82rem',
+                              fontWeight: 600,
+                              color: 'var(--text-muted)',
+                              fontFamily: kmFont,
+                              lineHeight: 1.25,
+                              width: '100%',
+                            }}
+                            title={t('pd_currently_serving')}
+                          >
+                            {t('pd_currently_serving')}
+                          </div>
+                          <div
+                            style={{
+                              fontSize: '1.5rem',
+                              fontWeight: 800,
+                              color: '#059669',
+                              lineHeight: 1,
+                              marginTop: '0.3rem',
+                            }}
+                          >
                             {servingCount}
                           </div>
-                          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '3px', fontFamily: kmFont }}>
-                            {t('pd_serving_now')}
-                          </div>
                         </div>
 
-                        {/* Waiting in Queue */}
-                        <div style={{ paddingLeft: '1rem', borderLeft: '1px solid var(--border-color)' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '4px' }}>
-                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--accent-amber, #d97706)', display: 'inline-block' }} />
-                            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)', fontFamily: kmFont }}>
-                              {t('pd_currently_waiting')}
-                            </span>
+                        {/* SUB CARD 2: In Queue */}
+                        <div className="dashboard-card live-floor-sub-card">
+                          <div
+                            className="text-truncate"
+                            style={{
+                              fontSize: '0.82rem',
+                              fontWeight: 600,
+                              color: 'var(--text-muted)',
+                              fontFamily: kmFont,
+                              lineHeight: 1.25,
+                              width: '100%',
+                            }}
+                            title={t('pd_currently_waiting')}
+                          >
+                            {t('pd_currently_waiting')}
                           </div>
-                          <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--accent-amber, #d97706)', lineHeight: 1.1 }}>
+                          <div
+                            style={{
+                              fontSize: '1.5rem',
+                              fontWeight: 800,
+                              color: '#d97706',
+                              lineHeight: 1,
+                              marginTop: '0.3rem',
+                            }}
+                          >
                             {waitingCount}
                           </div>
-                          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '3px', fontFamily: kmFont }}>
-                            {t('pd_in_line')}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Column 2: Today's Patient Intake & Channels (1 Main Card + 2 Stacked Sub Cards) */}
+                  <div className="live-floor-compound-container">
+                    <div className="live-floor-compound-grid">
+                      {/* MAIN CARD (Left): Today's Total Visits */}
+                      <div className="dashboard-card live-floor-main-card">
+                        {/* Ambient background accent */}
+                        <div
+                          style={{
+                            position: 'absolute',
+                            top: 0,
+                            right: 0,
+                            width: '240px',
+                            height: '240px',
+                            background: 'radial-gradient(circle, rgba(15, 23, 42, 0.04) 0%, transparent 70%)',
+                            pointerEvents: 'none',
+                          }}
+                        />
+
+                        <div>
+                          <div style={{ marginBottom: '0.45rem' }}>
+                            <span
+                              className="text-truncate"
+                              style={{
+                                fontSize: '0.92rem',
+                                fontWeight: 700,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.02em',
+                                fontFamily: kmFont,
+                                color: 'var(--text-main)',
+                                display: 'block',
+                              }}
+                            >
+                              {t('pd_total_visits')}
+                            </span>
+                          </div>
+
+                          {/* Hero Metric: Total Visits Today */}
+                          <div style={{ margin: '0.15rem 0 0 0' }}>
+                            <div
+                              style={{
+                                fontSize: 'clamp(2.1rem, 2.6vw, 2.75rem)',
+                                fontWeight: 800,
+                                color: 'var(--text-main)',
+                                lineHeight: 1.1,
+                                letterSpacing: '-0.03em',
+                              }}
+                            >
+                              {totalTickets}
+                            </div>
+                          </div>
+                        </div>
+
+                      </div>
+
+                      {/* SUB CARDS COLUMN (Right): Online Bookings & Walk-in Arrivals */}
+                      <div className="live-floor-sub-column">
+                        {/* SUB CARD 1: Online Bookings */}
+                        <div className="dashboard-card live-floor-sub-card">
+                          <div
+                            className="text-truncate"
+                            style={{
+                              fontSize: '0.82rem',
+                              fontWeight: 600,
+                              color: 'var(--text-muted)',
+                              fontFamily: kmFont,
+                              lineHeight: 1.25,
+                              width: '100%',
+                            }}
+                            title={t('pd_online_bookings')}
+                          >
+                            {t('pd_online_bookings')}
+                          </div>
+                          <div
+                            style={{
+                              fontSize: '1.5rem',
+                              fontWeight: 800,
+                              color: 'var(--text-main)',
+                              lineHeight: 1,
+                              marginTop: '0.3rem',
+                            }}
+                          >
+                            {onlineTickets}
+                          </div>
+                        </div>
+
+                        {/* SUB CARD 2: Walk-in Arrivals */}
+                        <div className="dashboard-card live-floor-sub-card">
+                          <div
+                            className="text-truncate"
+                            style={{
+                              fontSize: '0.82rem',
+                              fontWeight: 600,
+                              color: 'var(--text-muted)',
+                              fontFamily: kmFont,
+                              lineHeight: 1.25,
+                              width: '100%',
+                            }}
+                            title={t('pd_walkin_arrivals')}
+                          >
+                            {t('pd_walkin_arrivals')}
+                          </div>
+                          <div
+                            style={{
+                              fontSize: '1.5rem',
+                              fontWeight: 800,
+                              color: 'var(--accent-primary, #0284c7)',
+                              lineHeight: 1,
+                              marginTop: '0.3rem',
+                            }}
+                          >
+                            {walkinTickets}
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* MAIN CARD 2: Today's Patient Intake & Channels */}
-                  <div
-                    className="dashboard-card"
-                    style={{
-                      background: '#ffffff',
-                      border: '1px solid var(--border-color)',
-                      borderRadius: '16px',
-                      padding: '1.5rem 1.6rem',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'space-between',
-                      boxShadow: 'none',
-                    }}
-                  >
-                    <div>
-                      {/* Card Header */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', color: 'var(--text-main)' }}>
-                        <TrendingUp size={18} />
-                        <span style={{ fontSize: '0.88rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.02em', fontFamily: kmFont }}>
-                          {t('pd_total_visits')}
-                        </span>
-                      </div>
+                  {/* Column 3: Resolution & Operational Efficiency (1 Main Card + 2 Stacked Sub Cards) */}
+                  <div className="live-floor-compound-container">
+                    <div className="live-floor-compound-grid">
+                      {/* MAIN CARD (Left): Clearance Rate */}
+                      <div className="dashboard-card live-floor-main-card">
+                        {/* Ambient background accent */}
+                        <div
+                          style={{
+                            position: 'absolute',
+                            top: 0,
+                            right: 0,
+                            width: '240px',
+                            height: '240px',
+                            background: 'radial-gradient(circle, rgba(5, 150, 105, 0.06) 0%, transparent 70%)',
+                            pointerEvents: 'none',
+                          }}
+                        />
 
-                      {/* Hero Metric: Total Visits Today */}
-                      <div style={{ marginBottom: '1.25rem' }}>
-                        <div style={{ fontSize: '2.4rem', fontWeight: 800, color: 'var(--text-main)', lineHeight: 1.1 }}>
-                          {totalTickets}
-                        </div>
-                        <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '4px', fontFamily: kmFont }}>
-                          {onlineTickets} Online • {walkinTickets} Walk-in
-                        </div>
-                      </div>
-
-                      {/* Sub-Metrics: Online vs Walk-in (Unboxed) */}
-                      <div
-                        style={{
-                          display: 'grid',
-                          gridTemplateColumns: '1fr 1fr',
-                          gap: '1rem',
-                          paddingTop: '1.15rem',
-                          borderTop: '1px solid var(--border-color)',
-                          marginBottom: '1rem',
-                        }}
-                      >
-                        {/* Online Bookings */}
                         <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: 'var(--text-muted)', marginBottom: '4px' }}>
-                            <Globe size={14} />
-                            <span style={{ fontSize: '0.85rem', fontWeight: 600, fontFamily: kmFont }}>
-                              {t('pd_online_bookings')}
+                          <div style={{ marginBottom: '0.45rem' }}>
+                            <span
+                              className="text-truncate"
+                              style={{
+                                fontSize: '0.92rem',
+                                fontWeight: 700,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.02em',
+                                fontFamily: kmFont,
+                                color: 'var(--text-main)',
+                                display: 'block',
+                              }}
+                            >
+                              {t('pd_clearance_rate')}
                             </span>
                           </div>
-                          <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.35rem' }}>
-                            <span style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-main)', lineHeight: 1.1 }}>
-                              {onlineTickets}
-                            </span>
-                            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>
-                              ({onlinePct}%)
-                            </span>
-                          </div>
-                        </div>
 
-                        {/* Walk-in Arrivals */}
-                        <div style={{ paddingLeft: '1rem', borderLeft: '1px solid var(--border-color)' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: 'var(--text-muted)', marginBottom: '4px' }}>
-                            <Users size={14} />
-                            <span style={{ fontSize: '0.85rem', fontWeight: 600, fontFamily: kmFont }}>
-                              {t('pd_walkin_arrivals')}
-                            </span>
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.35rem' }}>
-                            <span style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-main)', lineHeight: 1.1 }}>
-                              {walkinTickets}
-                            </span>
-                            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>
-                              ({walkinPct}%)
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Integrated Proportion Bar */}
-                    <div>
-                      <div
-                        style={{
-                          display: 'flex',
-                          height: '6px',
-                          borderRadius: '10px',
-                          overflow: 'hidden',
-                          background: '#f1f5f9',
-                          border: '1px solid var(--border-color)',
-                        }}
-                      >
-                        {totalTickets > 0 ? (
-                          <>
+                          {/* Hero Metric: Clearance Rate */}
+                          <div style={{ margin: '0.15rem 0 0 0' }}>
                             <div
-                              style={{ width: `${onlinePct}%`, background: 'var(--text-main)' }}
-                              title={`${isKm ? 'កក់តាមអ៊ីនធឺណិត' : 'Online'}: ${onlineTickets} (${onlinePct}%)`}
-                            />
-                            <div
-                              style={{ width: `${walkinPct}%`, background: 'var(--accent-primary, #0284c7)' }}
-                              title={`${isKm ? 'មកដល់ដោយផ្ទាល់' : 'Walk-in'}: ${walkinTickets} (${walkinPct}%)`}
-                            />
-                          </>
-                        ) : (
-                          <div style={{ width: '100%', background: '#e2e8f0' }} />
-                        )}
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem', marginTop: '6px', fontFamily: kmFont }}>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', color: 'var(--text-main)', fontWeight: 600 }}>
-                          <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: 'var(--text-main)', display: 'inline-block' }} />
-                          {isKm ? 'អនឡាញ' : 'Online'} ({onlinePct}%)
-                        </span>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', color: 'var(--accent-primary, #0284c7)', fontWeight: 600 }}>
-                          <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: 'var(--accent-primary, #0284c7)', display: 'inline-block' }} />
-                          {isKm ? 'មកដល់ផ្ទាល់' : 'Walk-in'} ({walkinPct}%)
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* MAIN CARD 3: Resolution & Operational Efficiency */}
-                  <div
-                    className="dashboard-card"
-                    style={{
-                      background: '#ffffff',
-                      border: '1px solid var(--border-color)',
-                      borderRadius: '16px',
-                      padding: '1.5rem 1.6rem',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'space-between',
-                      boxShadow: 'none',
-                    }}
-                  >
-                    <div>
-                      {/* Card Header */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', color: 'var(--accent-emerald, #059669)' }}>
-                        <CheckCircle2 size={18} />
-                        <span style={{ fontSize: '0.88rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.02em', fontFamily: kmFont }}>
-                          {t('pd_clearance_rate')}
-                        </span>
-                      </div>
-
-                      {/* Hero Metric: Clearance Rate */}
-                      <div style={{ marginBottom: '1.25rem' }}>
-                        <div style={{ fontSize: '2.4rem', fontWeight: 800, color: 'var(--accent-emerald, #059669)', lineHeight: 1.1 }}>
-                          {clearanceRate}%
+                              style={{
+                                fontSize: 'clamp(2.1rem, 2.6vw, 2.75rem)',
+                                fontWeight: 800,
+                                color: 'var(--accent-emerald, #059669)',
+                                lineHeight: 1.1,
+                                letterSpacing: '-0.03em',
+                              }}
+                            >
+                              {clearanceRate}%
+                            </div>
+                          </div>
                         </div>
-                        <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '4px', fontFamily: kmFont }}>
-                          {completedCount} / {totalTickets} {t('pd_resolved')}
-                        </div>
+
                       </div>
 
-                      {/* Sub-Metrics: Completed vs Skipped (Unboxed) */}
-                      <div
-                        style={{
-                          display: 'grid',
-                          gridTemplateColumns: '1fr 1fr',
-                          gap: '1rem',
-                          paddingTop: '1.15rem',
-                          borderTop: '1px solid var(--border-color)',
-                          marginBottom: '1rem',
-                        }}
-                      >
-                        {/* Completed */}
-                        <div>
-                          <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px', fontFamily: kmFont }}>
+                      {/* SUB CARDS COLUMN (Right): Completed Consultations & Skipped / No-Shows */}
+                      <div className="live-floor-sub-column">
+                        {/* SUB CARD 1: Completed Consultations */}
+                        <div className="dashboard-card live-floor-sub-card">
+                          <div
+                            className="text-truncate"
+                            style={{
+                              fontSize: '0.82rem',
+                              fontWeight: 600,
+                              color: 'var(--text-muted)',
+                              fontFamily: kmFont,
+                              lineHeight: 1.25,
+                              width: '100%',
+                            }}
+                            title={t('pd_completed_consultations')}
+                          >
                             {t('pd_completed_consultations')}
                           </div>
-                          <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--accent-emerald, #059669)', lineHeight: 1.1 }}>
+                          <div
+                            style={{
+                              fontSize: '1.5rem',
+                              fontWeight: 800,
+                              color: 'var(--accent-emerald, #059669)',
+                              lineHeight: 1,
+                              marginTop: '0.3rem',
+                            }}
+                          >
                             {completedCount}
                           </div>
-                          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '3px', fontFamily: kmFont }}>
-                            {t('pd_resolved')}
-                          </div>
                         </div>
 
-                        {/* Skipped / No-Shows */}
-                        <div style={{ paddingLeft: '1rem', borderLeft: '1px solid var(--border-color)' }}>
-                          <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px', fontFamily: kmFont }}>
+                        {/* SUB CARD 2: Skipped / No-Shows */}
+                        <div className="dashboard-card live-floor-sub-card">
+                          <div
+                            className="text-truncate"
+                            style={{
+                              fontSize: '0.82rem',
+                              fontWeight: 600,
+                              color: 'var(--text-muted)',
+                              fontFamily: kmFont,
+                              lineHeight: 1.25,
+                              width: '100%',
+                            }}
+                            title={t('pd_skipped_no_shows')}
+                          >
                             {t('pd_skipped_no_shows')}
                           </div>
-                          <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-main)', lineHeight: 1.1 }}>
+                          <div
+                            style={{
+                              fontSize: '1.5rem',
+                              fontWeight: 800,
+                              color: 'var(--text-main)',
+                              lineHeight: 1,
+                              marginTop: '0.3rem',
+                            }}
+                          >
                             {skippedCount}
                           </div>
-                          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '3px', fontFamily: kmFont }}>
-                            {skippedCount > 0 ? `${Math.round((skippedCount / Math.max(1, totalTickets)) * 100)}%` : '0%'}
-                          </div>
                         </div>
-                      </div>
-                    </div>
-
-                    {/* Integrated Resolution Progress Bar */}
-                    <div>
-                      <div
-                        style={{
-                          display: 'flex',
-                          height: '6px',
-                          borderRadius: '10px',
-                          overflow: 'hidden',
-                          background: '#f1f5f9',
-                          border: '1px solid var(--border-color)',
-                        }}
-                      >
-                        {totalTickets > 0 ? (
-                          <>
-                            <div
-                              style={{ width: `${(completedCount / totalTickets) * 100}%`, background: 'var(--accent-emerald, #059669)' }}
-                              title={`${isKm ? 'ពិគ្រោះបានបញ្ចប់' : 'Completed'}: ${completedCount}`}
-                            />
-                            <div
-                              style={{ width: `${(servingCount / totalTickets) * 100}%`, background: 'var(--accent-primary, #0284c7)' }}
-                              title={`${isKm ? 'កំពុងពិគ្រោះ' : 'Serving'}: ${servingCount}`}
-                            />
-                            <div
-                              style={{ width: `${(skippedCount / totalTickets) * 100}%`, background: '#cbd5e1' }}
-                              title={`${isKm ? 'រំលង / មិនបានមក' : 'Skipped'}: ${skippedCount}`}
-                            />
-                          </>
-                        ) : (
-                          <div style={{ width: '100%', background: '#e2e8f0' }} />
-                        )}
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem', marginTop: '6px', fontFamily: kmFont }}>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', color: 'var(--accent-emerald, #059669)', fontWeight: 600 }}>
-                          <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: 'var(--accent-emerald, #059669)', display: 'inline-block' }} />
-                          {isKm ? 'បញ្ចប់' : 'Done'} ({completedCount})
-                        </span>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', color: 'var(--accent-primary, #0284c7)', fontWeight: 600 }}>
-                          <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: 'var(--accent-primary, #0284c7)', display: 'inline-block' }} />
-                          {isKm ? 'កំពុងពិគ្រោះ' : 'Serving'} ({servingCount})
-                        </span>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', color: '#64748b', fontWeight: 600 }}>
-                          <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#94a3b8', display: 'inline-block' }} />
-                          {isKm ? 'រំលង' : 'Skipped'} ({skippedCount})
-                        </span>
                       </div>
                     </div>
                   </div>
@@ -600,52 +596,100 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateTo
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))',
-                  gap: '1.15rem',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+                  gap: '1rem',
                 }}
               >
-                {metrics.departments.map((dept: any) => (
-                  <div
-                    key={dept.department_id}
-                    style={{
-                      background: '#ffffff',
-                      border: '1px solid var(--border-color)',
-                      borderRadius: '16px',
-                      padding: '1.35rem 1.45rem',
-                      boxShadow: 'none',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'space-between',
-                    }}
-                  >
-                    <div>
-                      {/* Department Header */}
-                      <div style={{ marginBottom: '0.85rem' }}>
-                        <div style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: kmFont, lineHeight: 1.25 }}>
+                {metrics.departments.map((dept: any) => {
+                  const totalDeptPatients = dept.total_patients ?? ((dept.waiting_count || 0) + (dept.completed_today || 0) + (dept.current_serving_number ? 1 : 0));
+
+                  return (
+                    <div
+                      key={dept.department_id}
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.65rem',
+                      }}
+                    >
+                      {/* Top Card: Department Name at top, Total Number at bottom (aligned start) */}
+                      <div
+                        style={{
+                          background: '#ffffff',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: '16px',
+                          padding: '1.35rem 1.45rem',
+                          boxShadow: 'none',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          justifyContent: 'space-between',
+                          alignItems: 'flex-start',
+                          minHeight: '130px',
+                          boxSizing: 'border-box',
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontSize: '1.18rem',
+                            fontWeight: 700,
+                            color: 'var(--text-main)',
+                            fontFamily: kmFont,
+                            lineHeight: 1.3,
+                          }}
+                        >
                           {dept.department_name}
+                        </div>
+
+                        <div
+                          style={{
+                            fontSize: '1.85rem',
+                            fontWeight: 800,
+                            color: 'var(--text-main)',
+                            lineHeight: 1,
+                            letterSpacing: '-0.02em',
+                          }}
+                        >
+                          {totalDeptPatients}
                         </div>
                       </div>
 
-                      {/* Live Counter Metrics Grid */}
+                      {/* Bottom Row: 2 Cards (Serving + Completed) */}
                       <div
                         style={{
                           display: 'grid',
                           gridTemplateColumns: '1fr 1fr',
-                          gap: '0.85rem',
-                          paddingTop: '0.95rem',
-                          borderTop: '1px solid var(--border-color)',
+                          gap: '0.65rem',
                         }}
                       >
-                        <div>
-                          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, marginBottom: '4px', fontFamily: kmFont }}>
+                        {/* Bottom Left Card: Serving */}
+                        <div
+                          style={{
+                            background: '#ffffff',
+                            border: '1px solid var(--border-color)',
+                            borderRadius: '16px',
+                            padding: '1.1rem 1.25rem',
+                            boxShadow: 'none',
+                          }}
+                        >
+                          <div
+                            style={{
+                              fontSize: '0.8rem',
+                              color: 'var(--text-muted)',
+                              textTransform: 'uppercase',
+                              fontWeight: 600,
+                              marginBottom: '6px',
+                              fontFamily: kmFont,
+                            }}
+                          >
                             {t('pd_serving_now')}
                           </div>
                           <div
                             style={{
-                              fontSize: '1.25rem',
+                              fontSize: '1.45rem',
                               fontWeight: 800,
                               color: dept.current_serving_number ? 'var(--accent-primary, #0284c7)' : 'var(--text-muted)',
                               fontFamily: 'monospace',
+                              lineHeight: 1.2,
                             }}
                           >
                             {dept.current_serving_number
@@ -656,25 +700,42 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateTo
                           </div>
                         </div>
 
-                        <div style={{ paddingLeft: '0.85rem', borderLeft: '1px solid var(--border-color)' }}>
-                          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, marginBottom: '4px', fontFamily: kmFont }}>
-                            {t('pd_in_line')}
+                        {/* Bottom Right Card: Completed */}
+                        <div
+                          style={{
+                            background: '#ffffff',
+                            border: '1px solid var(--border-color)',
+                            borderRadius: '16px',
+                            padding: '1.1rem 1.25rem',
+                            boxShadow: 'none',
+                          }}
+                        >
+                          <div
+                            style={{
+                              fontSize: '0.8rem',
+                              color: 'var(--text-muted)',
+                              fontWeight: 600,
+                              marginBottom: '6px',
+                              fontFamily: kmFont,
+                            }}
+                          >
+                            {t('pd_completed_today')}
                           </div>
-                          <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)' }}>
-                            {dept.waiting_count}{' '}
-                            <span style={{ fontSize: '0.82rem', fontWeight: 500, color: 'var(--text-muted)' }}>
-                              {t('pd_patients')}
-                            </span>
+                          <div
+                            style={{
+                              fontSize: '1.45rem',
+                              fontWeight: 800,
+                              color: 'var(--text-main)',
+                              lineHeight: 1.2,
+                            }}
+                          >
+                            {dept.completed_today || 0}
                           </div>
                         </div>
                       </div>
-
-                      <div style={{ marginTop: '0.75rem', fontSize: '0.85rem', color: 'var(--text-muted)', fontFamily: kmFont }}>
-                        {t('pd_completed_today')}: <strong style={{ color: 'var(--text-main)' }}>{dept.completed_today || 0}</strong>
-                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </section>

@@ -217,25 +217,9 @@ export const DoctorList: React.FC<DoctorListProps> = ({
               {/* Actions Column: Three-dot dropdown menu */}
               <div style={{ position: 'relative', zIndex: activeDropdownDocId === doc.id ? 60 : 'auto' }}>
                 <button
+                  className="action-dots-btn"
                   onClick={() => setActiveDropdownDocId(activeDropdownDocId === doc.id ? null : doc.id)}
-                  style={{
-                    width: '32px',
-                    height: '32px',
-                    padding: 0,
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '1.2rem',
-                    fontWeight: 700,
-                    letterSpacing: '1px',
-                    background: 'transparent',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: '4px',
-                    color: 'var(--text-main)',
-                    cursor: 'pointer',
-                    boxShadow: 'none',
-                    lineHeight: 1,
-                  }}
+                  aria-label="Actions"
                 >
                   ···
                 </button>
@@ -251,103 +235,49 @@ export const DoctorList: React.FC<DoctorListProps> = ({
                         background: 'transparent',
                       }}
                     />
-                    <div
-                      style={{
-                        position: 'absolute',
-                        right: 0,
-                        top: 'calc(100% + 4px)',
-                        background: 'var(--bg-primary, #ffffff)',
-                        border: 'none',
-                        borderRadius: 0,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        minWidth: '140px',
-                        zIndex: 100,
-                        boxShadow: 'none',
-                      }}
-                    >
+                    <div className="action-popup-menu" style={{ minWidth: '150px' }}>
                       <button
+                        className="action-popup-item"
                         onClick={() => onToggleAvailable(doc)}
-                        onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
-                        onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
                         style={{
-                          padding: '0.5rem 0.8rem',
-                          fontSize: '0.92rem',
-                          fontWeight: 500,
-                          textAlign: 'left',
-                          background: 'transparent',
-                          border: 'none',
                           color: doc.is_available ? '#059669' : 'var(--text-muted)',
-                          cursor: 'pointer',
-                          boxShadow: 'none',
                           fontFamily: kmFont,
-                          transition: 'opacity 0.15s ease',
                         }}
                       >
                         {doc.is_available ? t('doc_active') : t('doc_inactive')}
                       </button>
                       <button
+                        className="action-popup-item"
                         onClick={() => {
                           setActiveDropdownDocId(null);
                           onEdit(doc);
                         }}
-                        onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
-                        onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
                         style={{
-                          padding: '0.5rem 0.8rem',
-                          fontSize: '0.92rem',
-                          fontWeight: 500,
-                          textAlign: 'left',
-                          background: 'transparent',
-                          border: 'none',
                           color: 'var(--text-main)',
-                          cursor: 'pointer',
-                          boxShadow: 'none',
                           fontFamily: kmFont,
-                          transition: 'opacity 0.15s ease',
                         }}
                       >
                         {t('doc_edit')}
                       </button>
                       <button
+                        className="action-popup-item"
                         onClick={() => {
                           setActiveDropdownDocId(null);
                           onOpenShifts(doc);
                         }}
-                        onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
-                        onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
                         style={{
-                          padding: '0.5rem 0.8rem',
-                          fontSize: '0.92rem',
-                          fontWeight: 500,
-                          textAlign: 'left',
-                          background: 'transparent',
-                          border: 'none',
                           color: 'var(--text-main)',
-                          cursor: 'pointer',
-                          boxShadow: 'none',
                           fontFamily: kmFont,
-                          transition: 'opacity 0.15s ease',
                         }}
                       >
                         {t('doc_manage_shifts')}
                       </button>
                       <button
+                        className="action-popup-item"
                         onClick={() => onDelete(doc.id)}
-                        onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
-                        onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
                         style={{
-                          padding: '0.5rem 0.8rem',
-                          fontSize: '0.92rem',
-                          fontWeight: 500,
-                          textAlign: 'left',
-                          background: 'transparent',
-                          border: 'none',
                           color: '#dc2626',
-                          cursor: 'pointer',
-                          boxShadow: 'none',
                           fontFamily: kmFont,
-                          transition: 'opacity 0.15s ease',
                         }}
                       >
                         {t('doc_delete')}

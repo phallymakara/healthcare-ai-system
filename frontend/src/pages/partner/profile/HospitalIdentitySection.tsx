@@ -23,6 +23,10 @@ interface HospitalIdentitySectionProps {
   fileInputRef: React.RefObject<HTMLInputElement>;
   onLogoFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onDeleteLogo: () => void;
+  saving?: boolean;
+  loading?: boolean;
+  successMessage?: string | null;
+  submitError?: string | null;
 }
 
 export const HospitalIdentitySection: React.FC<HospitalIdentitySectionProps> = ({
@@ -46,6 +50,10 @@ export const HospitalIdentitySection: React.FC<HospitalIdentitySectionProps> = (
   fileInputRef,
   onLogoFileChange,
   onDeleteLogo,
+  saving,
+  loading,
+  successMessage,
+  submitError,
 }) => {
   const { language, t } = useLanguage();
   const isKm = language === 'km';
@@ -56,16 +64,16 @@ export const HospitalIdentitySection: React.FC<HospitalIdentitySectionProps> = (
       style={{
         background: '#ffffff',
         border: '1px solid var(--border-color)',
-        borderRadius: '16px',
-        padding: '1.75rem',
-        marginBottom: '1.75rem',
+        borderRadius: '14px',
+        padding: '1rem 1.25rem',
+        marginBottom: '0.85rem',
         boxShadow: 'none',
       }}
     >
-      <div style={{ marginBottom: '1.25rem' }}>
+      <div style={{ marginBottom: '0.75rem' }}>
         <h2
           style={{
-            fontSize: '1.25rem',
+            fontSize: '1rem',
             fontWeight: 700,
             color: 'var(--text-main)',
             margin: 0,
@@ -77,8 +85,8 @@ export const HospitalIdentitySection: React.FC<HospitalIdentitySectionProps> = (
       </div>
 
       {/* Circular Logo Uploader (Centered) */}
-      <div style={{ marginBottom: '1.75rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.6rem' }}>
+      <div style={{ marginBottom: '1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.45rem' }}>
           <input
             type="file"
             ref={fileInputRef}
@@ -90,8 +98,8 @@ export const HospitalIdentitySection: React.FC<HospitalIdentitySectionProps> = (
           <div
             onClick={() => !uploadingLogo && fileInputRef.current?.click()}
             style={{
-              width: '124px',
-              height: '124px',
+              width: '98px',
+              height: '98px',
               borderRadius: '50%',
               border: '1px dashed var(--border-color)',
               backgroundColor: '#ffffff',
@@ -136,7 +144,7 @@ export const HospitalIdentitySection: React.FC<HospitalIdentitySectionProps> = (
                     bottom: 0,
                     left: 0,
                     right: 0,
-                    height: '30px',
+                    height: '28px',
                     backgroundColor: 'rgba(0, 0, 0, 0.45)',
                     display: 'flex',
                     alignItems: 'center',
@@ -144,13 +152,13 @@ export const HospitalIdentitySection: React.FC<HospitalIdentitySectionProps> = (
                     color: '#ffffff',
                   }}
                 >
-                  <Camera size={18} strokeWidth={2} />
+                  <Camera size={16} strokeWidth={2} />
                 </div>
               </>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.35rem', color: 'var(--text-muted)' }}>
                 <Camera size={32} color="var(--accent-primary)" />
-                <span style={{ fontSize: '0.92rem', fontWeight: 500, fontFamily: kmFont }}>
+                <span style={{ fontSize: '0.88rem', fontWeight: 500, fontFamily: kmFont }}>
                   {isKm ? 'រូបសញ្ញា' : 'Logo'}
                 </span>
               </div>
@@ -169,10 +177,10 @@ export const HospitalIdentitySection: React.FC<HospitalIdentitySectionProps> = (
                     border: 'none',
                     outline: 'none',
                     color: '#dc2626',
-                    fontSize: '0.92rem',
+                    fontSize: '0.86rem',
                     fontWeight: 500,
                     cursor: uploadingLogo ? 'not-allowed' : 'pointer',
-                    padding: '0.25rem 0',
+                    padding: '0.2rem 0',
                     fontFamily: kmFont,
                     opacity: uploadingLogo ? 0.5 : 1,
                     transition: 'opacity 0.15s ease',
@@ -183,7 +191,7 @@ export const HospitalIdentitySection: React.FC<HospitalIdentitySectionProps> = (
               )}
 
               {logoError && (
-                <div style={{ color: '#dc2626', fontSize: '0.88rem', marginTop: '4px', fontFamily: kmFont }}>
+                <div style={{ color: '#dc2626', fontSize: '0.82rem', marginTop: '3px', fontFamily: kmFont }}>
                   {logoError}
                 </div>
               )}
@@ -196,8 +204,8 @@ export const HospitalIdentitySection: React.FC<HospitalIdentitySectionProps> = (
         style={{
           display: 'flex',
           flexDirection: 'column',
-          gap: '1.15rem',
-          marginBottom: '1.25rem',
+          gap: '0.85rem',
+          marginBottom: '0.85rem',
         }}
       >
         {/* Hospital Name */}
@@ -205,10 +213,10 @@ export const HospitalIdentitySection: React.FC<HospitalIdentitySectionProps> = (
           <label
             style={{
               display: 'block',
-              fontSize: '1.02rem',
+              fontSize: '0.92rem',
               fontWeight: 600,
               color: 'var(--text-muted)',
-              marginBottom: '6px',
+              marginBottom: '4px',
               fontFamily: kmFont,
             }}
           >
@@ -224,8 +232,8 @@ export const HospitalIdentitySection: React.FC<HospitalIdentitySectionProps> = (
             placeholder="Clinic / Hospital Name"
             style={{
               width: '100%',
-              padding: '0.72rem 1.25rem',
-              fontSize: '1.05rem',
+              padding: '0.62rem 1.05rem',
+              fontSize: '0.95rem',
               borderRadius: 'var(--radius-full)',
               border: nameError ? '1px solid #dc2626' : '1px solid var(--border-color)',
               background: '#ffffff',
@@ -237,7 +245,7 @@ export const HospitalIdentitySection: React.FC<HospitalIdentitySectionProps> = (
             }}
           />
           {nameError && (
-            <div style={{ color: '#dc2626', fontSize: '0.88rem', marginTop: '4px', fontFamily: kmFont }}>
+            <div style={{ color: '#dc2626', fontSize: '0.82rem', marginTop: '3px', fontFamily: kmFont }}>
               {nameError}
             </div>
           )}
@@ -248,10 +256,10 @@ export const HospitalIdentitySection: React.FC<HospitalIdentitySectionProps> = (
           <label
             style={{
               display: 'block',
-              fontSize: '1.02rem',
+              fontSize: '0.92rem',
               fontWeight: 600,
               color: 'var(--text-muted)',
-              marginBottom: '6px',
+              marginBottom: '4px',
               fontFamily: kmFont,
             }}
           >
@@ -267,8 +275,8 @@ export const HospitalIdentitySection: React.FC<HospitalIdentitySectionProps> = (
             placeholder={t('prof_city_placeholder') || 'ឧ. រាជធានីភ្នំពេញ'}
             style={{
               width: '100%',
-              padding: '0.72rem 1.25rem',
-              fontSize: '1.05rem',
+              padding: '0.62rem 1.05rem',
+              fontSize: '0.95rem',
               borderRadius: 'var(--radius-full)',
               border: cityError ? '1px solid #dc2626' : '1px solid var(--border-color)',
               background: '#ffffff',
@@ -280,7 +288,7 @@ export const HospitalIdentitySection: React.FC<HospitalIdentitySectionProps> = (
             }}
           />
           {cityError && (
-            <div style={{ color: '#dc2626', fontSize: '0.88rem', marginTop: '4px', fontFamily: kmFont }}>
+            <div style={{ color: '#dc2626', fontSize: '0.82rem', marginTop: '3px', fontFamily: kmFont }}>
               {cityError}
             </div>
           )}
@@ -291,10 +299,10 @@ export const HospitalIdentitySection: React.FC<HospitalIdentitySectionProps> = (
           <label
             style={{
               display: 'block',
-              fontSize: '1.02rem',
+              fontSize: '0.92rem',
               fontWeight: 600,
               color: 'var(--text-muted)',
-              marginBottom: '6px',
+              marginBottom: '4px',
               fontFamily: kmFont,
             }}
           >
@@ -308,8 +316,8 @@ export const HospitalIdentitySection: React.FC<HospitalIdentitySectionProps> = (
               placeholder={t('prof_website_placeholder')}
               style={{
                 width: '100%',
-                padding: '0.72rem 1.25rem 0.72rem 2.85rem',
-                fontSize: '1.05rem',
+                padding: '0.62rem 1.05rem 0.62rem 2.6rem',
+                fontSize: '0.95rem',
                 borderRadius: 'var(--radius-full)',
                 border: '1px solid var(--border-color)',
                 background: '#ffffff',
@@ -321,11 +329,11 @@ export const HospitalIdentitySection: React.FC<HospitalIdentitySectionProps> = (
               }}
             />
             <Globe
-              size={18}
+              size={16}
               color="var(--text-muted)"
               style={{
                 position: 'absolute',
-                left: '14px',
+                left: '12px',
                 top: '50%',
                 transform: 'translateY(-50%)',
               }}
@@ -335,13 +343,13 @@ export const HospitalIdentitySection: React.FC<HospitalIdentitySectionProps> = (
       </div>
 
       {/* Emergency Service Available Toggle */}
-      <div style={{ marginBottom: '1.25rem' }}>
+      <div style={{ marginBottom: '0.85rem' }}>
         <label
           style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: '0.6rem',
-            padding: '0.65rem 1.25rem',
+            gap: '0.55rem',
+            padding: '0.52rem 1.05rem',
             border: '1px solid var(--border-color)',
             borderRadius: 'var(--radius-full)',
             background: '#ffffff',
@@ -354,15 +362,15 @@ export const HospitalIdentitySection: React.FC<HospitalIdentitySectionProps> = (
             checked={emergencyAvailable}
             onChange={(e) => setEmergencyAvailable(e.target.checked)}
             style={{
-              width: '18px',
-              height: '18px',
+              width: '17px',
+              height: '17px',
               accentColor: 'var(--accent-primary)',
               cursor: 'pointer',
             }}
           />
           <span
             style={{
-              fontSize: '1.02rem',
+              fontSize: '0.94rem',
               fontWeight: 500,
               color: 'var(--text-main)',
               fontFamily: kmFont,
@@ -378,10 +386,10 @@ export const HospitalIdentitySection: React.FC<HospitalIdentitySectionProps> = (
         <label
           style={{
             display: 'block',
-            fontSize: '1.02rem',
+            fontSize: '0.92rem',
             fontWeight: 600,
             color: 'var(--text-muted)',
-            marginBottom: '6px',
+            marginBottom: '4px',
             fontFamily: kmFont,
           }}
         >
@@ -398,8 +406,8 @@ export const HospitalIdentitySection: React.FC<HospitalIdentitySectionProps> = (
           }
           style={{
             width: '100%',
-            padding: '0.85rem 1.25rem',
-            fontSize: '1.05rem',
+            padding: '0.65rem 1.05rem',
+            fontSize: '0.95rem',
             borderRadius: '12px',
             border: '1px solid var(--border-color)',
             background: '#ffffff',
@@ -412,6 +420,41 @@ export const HospitalIdentitySection: React.FC<HospitalIdentitySectionProps> = (
             fontFamily: kmFont,
           }}
         />
+      </div>
+
+      {/* Container Save Action */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'flex-end',
+          gap: '0.65rem',
+          marginTop: '0.85rem',
+          paddingTop: '0.65rem',
+          borderTop: '1px solid var(--border-color)',
+        }}
+      >
+        {successMessage && (
+          <span className="save-status-badge" style={{ color: '#16a34a', fontSize: '0.82rem', fontWeight: 600, fontFamily: kmFont }}>
+            ✓ {successMessage}
+          </span>
+        )}
+        {submitError && (
+          <span className="save-status-badge" style={{ color: '#dc2626', fontSize: '0.82rem', fontFamily: kmFont }}>
+            {submitError}
+          </span>
+        )}
+        <button
+          type="submit"
+          className="btn-save-profile"
+          disabled={saving || loading}
+          style={{ fontFamily: kmFont }}
+        >
+          {saving && (
+            <RefreshCw size={13} style={{ animation: 'spin 1s linear infinite' }} />
+          )}
+          <span>{saving ? t('prof_saving') : t('prof_save_btn')}</span>
+        </button>
       </div>
     </div>
   );

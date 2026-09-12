@@ -341,6 +341,7 @@ export const km: Record<TranslationKey, string> = {
   pd_daily_completion: "អត្រាបញ្ចប់ប្រចាំថ្ងៃ",
   pd_hourly_flow: "ចំនួនអ្នកជំងឺតាមម៉ោង",
   pd_dept_status: "ស្ថានភាពបញ្ជរផ្នែកផ្សេងៗ",
+  pd_total_patients: "អ្នកជំងឺសរុប",
   pd_serving_now: "កំពុងបម្រើ",
   pd_in_line: "ក្នុងជួរ / រង់ចាំ",
   pd_patients: "អ្នកជំងឺ",

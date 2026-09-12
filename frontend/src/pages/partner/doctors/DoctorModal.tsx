@@ -70,16 +70,37 @@ export const DoctorModal: React.FC<DoctorModalProps> = ({
   if (!modal.shouldRender) return null;
 
   return (
-    <div className={modal.overlayClass} onClick={(e) => { if (e.target === e.currentTarget) modal.close(); }}>
-      <div className={modal.cardClass} style={{ maxWidth: '520px', fontFamily: kmFont }}>
-        <div className="responsive-modal-body" style={{ padding: '1.6rem 1.75rem' }}>
-          <h3 style={{ fontSize: '1.35rem', fontWeight: 700, margin: '0 0 1.35rem 0', color: 'var(--text-main)', fontFamily: kmFont }}>
+    <div
+      className={modal.overlayClass}
+      style={{
+        backdropFilter: 'none',
+        WebkitBackdropFilter: 'none',
+        background: 'transparent',
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) modal.close();
+      }}
+    >
+      <div
+        className={modal.cardClass}
+        style={{
+          width: '94%',
+          maxWidth: '460px',
+          fontFamily: kmFont,
+          borderRadius: '24px',
+          boxShadow: '0 20px 50px rgba(0, 0, 0, 0.16), 0 0 0 1px rgba(0, 0, 0, 0.08)',
+          background: '#ffffff',
+          overflow: 'hidden',
+        }}
+      >
+        <div className="responsive-modal-body" style={{ padding: '1.45rem 1.6rem' }}>
+          <h3 style={{ fontSize: '1.22rem', fontWeight: 700, margin: '0 0 1.15rem 0', color: 'var(--text-main)', fontFamily: kmFont }}>
             {editingDocId ? t('doc_modal_edit_title') : t('doc_modal_add_title')}
           </h3>
 
-          <form onSubmit={onSave} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <form onSubmit={onSave} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
             {/* Doctor Avatar Picker */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '0.5rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '0.25rem' }}>
               <input
                 type="file"
                 ref={fileInputRef}
@@ -90,8 +111,8 @@ export const DoctorModal: React.FC<DoctorModalProps> = ({
               <div
                 onClick={() => !docUploadingPhoto && fileInputRef.current?.click()}
                 style={{
-                  width: '100px',
-                  height: '100px',
+                  width: '88px',
+                  height: '88px',
                   borderRadius: '50%',
                   border: '1px dashed var(--border-color)',
                   backgroundColor: '#ffffff',
@@ -108,7 +129,7 @@ export const DoctorModal: React.FC<DoctorModalProps> = ({
                 title={isKm ? 'ចុចដើម្បីប្តូររូបថត' : 'Click to change photo'}
               >
                 {docUploadingPhoto ? (
-                  <RefreshCw size={24} className="spin" color="var(--accent-primary)" />
+                  <RefreshCw size={22} className="spin" color="var(--accent-primary)" />
                 ) : docPhotoUrl ? (
                   <img
                     src={docPhotoUrl}
@@ -117,9 +138,9 @@ export const DoctorModal: React.FC<DoctorModalProps> = ({
                     onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }}
                   />
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', color: 'var(--text-muted)' }}>
-                    <Camera size={26} color="var(--accent-primary)" />
-                    <span style={{ fontSize: '0.85rem', fontFamily: kmFont }}>{isKm ? 'រូបថត' : 'Photo'}</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', color: 'var(--text-muted)' }}>
+                    <Camera size={24} color="var(--accent-primary)" />
+                    <span style={{ fontSize: '0.82rem', fontFamily: kmFont }}>{isKm ? 'រូបថត' : 'Photo'}</span>
                   </div>
                 )}
               </div>
@@ -133,7 +154,7 @@ export const DoctorModal: React.FC<DoctorModalProps> = ({
                     background: 'transparent',
                     border: 'none',
                     color: '#dc2626',
-                    fontSize: '0.88rem',
+                    fontSize: '0.84rem',
                     cursor: docUploadingPhoto ? 'not-allowed' : 'pointer',
                     marginTop: '4px',
                     fontFamily: kmFont,
@@ -145,14 +166,14 @@ export const DoctorModal: React.FC<DoctorModalProps> = ({
               )}
 
               {docPhotoError && (
-                <div style={{ color: '#dc2626', fontSize: '0.85rem', marginTop: '4px', fontFamily: kmFont }}>
+                <div style={{ color: '#dc2626', fontSize: '0.82rem', marginTop: '4px', fontFamily: kmFont }}>
                   {docPhotoError}
                 </div>
               )}
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px', fontFamily: kmFont }}>
+              <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px', fontFamily: kmFont }}>
                 {t('doc_dept_label')}
               </label>
               <select
@@ -160,9 +181,9 @@ export const DoctorModal: React.FC<DoctorModalProps> = ({
                 onChange={(e) => setDocDeptId(e.target.value)}
                 style={{
                   width: '100%',
-                  padding: '0.65rem 1.15rem',
-                  fontSize: '0.98rem',
-                  borderRadius: 'var(--radius-full)',
+                  padding: '0.68rem 1.05rem',
+                  fontSize: '0.94rem',
+                  borderRadius: '22px',
                   border: docDeptError ? '1px solid #dc2626' : '1px solid var(--border-color)',
                   boxShadow: 'none',
                   outline: 'none',
@@ -179,14 +200,14 @@ export const DoctorModal: React.FC<DoctorModalProps> = ({
                 ))}
               </select>
               {docDeptError && (
-                <div style={{ color: '#dc2626', fontSize: '0.88rem', marginTop: '4px', fontFamily: kmFont }}>
+                <div style={{ color: '#dc2626', fontSize: '0.82rem', marginTop: '3px', paddingLeft: '0.5rem', fontFamily: kmFont }}>
                   {docDeptError}
                 </div>
               )}
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px', fontFamily: kmFont }}>
+              <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px', fontFamily: kmFont }}>
                 {t('doc_name_label')}
               </label>
               <input
@@ -196,9 +217,9 @@ export const DoctorModal: React.FC<DoctorModalProps> = ({
                 onChange={(e) => setDocFullName(e.target.value)}
                 style={{
                   width: '100%',
-                  padding: '0.65rem 1.15rem',
-                  fontSize: '0.98rem',
-                  borderRadius: 'var(--radius-full)',
+                  padding: '0.68rem 1.05rem',
+                  fontSize: '0.94rem',
+                  borderRadius: '22px',
                   border: docNameError ? '1px solid #dc2626' : '1px solid var(--border-color)',
                   boxShadow: 'none',
                   outline: 'none',
@@ -207,14 +228,14 @@ export const DoctorModal: React.FC<DoctorModalProps> = ({
                 }}
               />
               {docNameError && (
-                <div style={{ color: '#dc2626', fontSize: '0.88rem', marginTop: '4px', fontFamily: kmFont }}>
+                <div style={{ color: '#dc2626', fontSize: '0.82rem', marginTop: '3px', paddingLeft: '0.5rem', fontFamily: kmFont }}>
                   {docNameError}
                 </div>
               )}
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px', fontFamily: kmFont }}>
+              <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px', fontFamily: kmFont }}>
                 {t('doc_specialty_label')}
               </label>
               <input
@@ -224,9 +245,9 @@ export const DoctorModal: React.FC<DoctorModalProps> = ({
                 onChange={(e) => setDocSpecialty(e.target.value)}
                 style={{
                   width: '100%',
-                  padding: '0.65rem 1.15rem',
-                  fontSize: '0.98rem',
-                  borderRadius: 'var(--radius-full)',
+                  padding: '0.68rem 1.05rem',
+                  fontSize: '0.94rem',
+                  borderRadius: '22px',
                   border: docSpecialtyError ? '1px solid #dc2626' : '1px solid var(--border-color)',
                   boxShadow: 'none',
                   outline: 'none',
@@ -235,14 +256,14 @@ export const DoctorModal: React.FC<DoctorModalProps> = ({
                 }}
               />
               {docSpecialtyError && (
-                <div style={{ color: '#dc2626', fontSize: '0.88rem', marginTop: '4px', fontFamily: kmFont }}>
+                <div style={{ color: '#dc2626', fontSize: '0.82rem', marginTop: '3px', paddingLeft: '0.5rem', fontFamily: kmFont }}>
                   {docSpecialtyError}
                 </div>
               )}
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px', fontFamily: kmFont }}>
+              <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px', fontFamily: kmFont }}>
                 {t('doc_license_label')}
               </label>
               <input
@@ -252,9 +273,9 @@ export const DoctorModal: React.FC<DoctorModalProps> = ({
                 onChange={(e) => setDocLicense(e.target.value)}
                 style={{
                   width: '100%',
-                  padding: '0.65rem 1.15rem',
-                  fontSize: '0.98rem',
-                  borderRadius: 'var(--radius-full)',
+                  padding: '0.68rem 1.05rem',
+                  fontSize: '0.94rem',
+                  borderRadius: '22px',
                   border: '1px solid var(--border-color)',
                   boxShadow: 'none',
                   outline: 'none',
@@ -265,28 +286,27 @@ export const DoctorModal: React.FC<DoctorModalProps> = ({
             </div>
 
             {docSubmitError && (
-              <div style={{ color: '#dc2626', fontSize: '0.88rem', fontFamily: kmFont }}>
+              <div style={{ color: '#dc2626', fontSize: '0.82rem', paddingLeft: '0.5rem', fontFamily: kmFont }}>
                 {docSubmitError}
               </div>
             )}
 
-            <div style={{ display: 'flex', gap: '0.85rem', marginTop: '0.65rem' }}>
+            <div style={{ display: 'flex', gap: '0.65rem', marginTop: '0.5rem' }}>
               <button
                 type="button"
                 onClick={modal.close}
                 style={{
                   flex: 1,
-                  padding: '0.7rem 1.25rem',
-                  fontSize: '1rem',
+                  padding: '0.68rem 1.15rem',
+                  fontSize: '0.94rem',
                   fontWeight: 500,
                   background: 'transparent',
                   border: '1px solid var(--border-color)',
-                  borderRadius: 'var(--radius-full)',
+                  borderRadius: '22px',
                   color: 'var(--text-muted)',
                   cursor: 'pointer',
                   boxShadow: 'none',
                   fontFamily: kmFont,
-                  transition: 'all 0.15s ease',
                 }}
               >
                 {t('cancel')}
@@ -296,17 +316,16 @@ export const DoctorModal: React.FC<DoctorModalProps> = ({
                 disabled={docLoading}
                 style={{
                   flex: 1,
-                  padding: '0.7rem 1.25rem',
-                  fontSize: '1rem',
+                  padding: '0.68rem 1.15rem',
+                  fontSize: '0.94rem',
                   fontWeight: 600,
                   background: 'transparent',
                   border: '1px solid var(--text-main)',
-                  borderRadius: 'var(--radius-full)',
+                  borderRadius: '22px',
                   color: 'var(--text-main)',
                   cursor: 'pointer',
                   boxShadow: 'none',
                   fontFamily: kmFont,
-                  transition: 'all 0.15s ease',
                 }}
               >
                 {editingDocId ? t('doc_btn_save') : t('doc_btn_create')}

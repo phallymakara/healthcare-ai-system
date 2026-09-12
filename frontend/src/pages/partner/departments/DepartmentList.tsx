@@ -43,188 +43,250 @@ export const DepartmentList: React.FC<DepartmentListProps> = ({
   }
 
   return (
-    <div style={{ background: 'transparent', border: 'none', borderRadius: 0, boxShadow: 'none', overflow: 'visible' }}>
-      {departments.map((dept) => (
-        <div
-          key={dept.id}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: '1rem',
-            padding: '1.1rem 0',
-            borderBottom: '1px solid var(--border-color)',
-            background: 'transparent',
-            position: 'relative',
-            zIndex: activeDropdownDeptId === dept.id ? 50 : 1,
-          }}
-        >
-          {/* Department Name & Code */}
-          <div style={{ minWidth: '220px', flex: '1.5' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-              <div style={{ fontSize: '1.18rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: kmFont }}>
-                {dept.name}
-              </div>
-              <span
-                style={{
-                  fontSize: '0.9rem',
-                  fontFamily: 'monospace',
-                  fontWeight: 600,
-                  color: 'var(--text-muted)',
-                }}
-              >
-                {dept.code || 'DEPT'}
-              </span>
-            </div>
-            {dept.description && (
-              <div style={{ fontSize: '0.95rem', color: 'var(--text-muted)', marginTop: '3px', fontFamily: kmFont }}>
-                {dept.description}
-              </div>
-            )}
-          </div>
-
-          {/* Location */}
-          <div style={{ minWidth: '180px', flex: '1' }}>
-            <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, fontFamily: kmFont }}>
-              {t('dept_th_location')}
-            </div>
-            <div style={{ fontSize: '1.02rem', color: 'var(--text-main)', marginTop: '2px', fontFamily: kmFont }}>
-              {dept.floor_room || t('dept_main_building')}
-            </div>
-          </div>
-
-          {/* Consultation Duration */}
-          <div style={{ minWidth: '140px', flex: '0.8' }}>
-            <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, fontFamily: kmFont }}>
-              {t('dept_th_duration')}
-            </div>
-            <div style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-main)', marginTop: '2px', fontFamily: kmFont }}>
-              {t('dept_mins').replace('{mins}', String(dept.avg_consultation_minutes || 15))}
-            </div>
-          </div>
-
-          {/* Actions Dropdown */}
-          <div style={{ position: 'relative', zIndex: activeDropdownDeptId === dept.id ? 60 : 'auto' }}>
-            <button
-              onClick={() => setActiveDropdownDeptId(activeDropdownDeptId === dept.id ? null : dept.id)}
+    <div style={{ width: '100%', overflow: 'visible', background: 'transparent' }}>
+      <table
+        style={{
+          width: '100%',
+          borderCollapse: 'collapse',
+          textAlign: 'left',
+          fontFamily: kmFont,
+          overflow: 'visible',
+        }}
+      >
+        <thead>
+          <tr
+            style={{
+              background: '#f8fafc',
+              borderTop: '1px solid var(--border-color)',
+              borderBottom: '1px solid var(--border-color)',
+            }}
+          >
+            <th
               style={{
-                width: '32px',
-                height: '32px',
-                padding: 0,
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '1.2rem',
+                padding: '0.85rem 1.25rem',
+                fontSize: '0.82rem',
                 fontWeight: 700,
-                letterSpacing: '1px',
-                background: 'transparent',
-                border: '1px solid var(--border-color)',
-                borderRadius: '4px',
-                color: 'var(--text-main)',
-                cursor: 'pointer',
-                boxShadow: 'none',
-                lineHeight: 1,
+                color: 'var(--text-muted)',
+                letterSpacing: '0.03em',
+                fontFamily: kmFont,
+                borderTopLeftRadius: '10px',
+                borderBottomLeftRadius: '10px',
               }}
             >
-              ···
-            </button>
+              {t('dept_name_label') || t('dept_title_depts')}
+            </th>
+            <th
+              style={{
+                padding: '0.85rem 1.25rem',
+                fontSize: '0.82rem',
+                fontWeight: 700,
+                color: 'var(--text-muted)',
+                letterSpacing: '0.03em',
+                fontFamily: kmFont,
+              }}
+            >
+              {t('dept_th_location')}
+            </th>
+            <th
+              style={{
+                padding: '0.85rem 1.25rem',
+                fontSize: '0.82rem',
+                fontWeight: 700,
+                color: 'var(--text-muted)',
+                letterSpacing: '0.03em',
+                fontFamily: kmFont,
+              }}
+            >
+              {t('dept_th_duration')}
+            </th>
+            <th
+              style={{
+                padding: '0.85rem 1.25rem',
+                fontSize: '0.82rem',
+                fontWeight: 700,
+                color: 'var(--text-muted)',
+                letterSpacing: '0.03em',
+                fontFamily: kmFont,
+              }}
+            >
+              {t('staff_col_status')}
+            </th>
+            <th
+              style={{
+                padding: '0.85rem 1.25rem',
+                fontSize: '0.82rem',
+                fontWeight: 700,
+                color: 'var(--text-muted)',
+                letterSpacing: '0.03em',
+                textAlign: 'right',
+                fontFamily: kmFont,
+                borderTopRightRadius: '10px',
+                borderBottomRightRadius: '10px',
+              }}
+            >
+              {t('staff_col_actions')}
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {departments.map((dept) => {
+            const isOpen = activeDropdownDeptId === dept.id;
 
-            {activeDropdownDeptId === dept.id && (
-              <>
-                <div
-                  onClick={() => setActiveDropdownDeptId(null)}
+            return (
+              <tr
+                key={dept.id}
+                style={{
+                  borderBottom: '1px solid var(--border-color)',
+                  background: 'transparent',
+                  transition: 'background 0.15s ease',
+                  position: 'relative',
+                  zIndex: isOpen ? 1000 : 1,
+                }}
+              >
+                {/* Department Name & Code / Description */}
+                <td style={{ padding: '0.95rem 1.25rem', verticalAlign: 'middle' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: kmFont }}>
+                      {dept.name}
+                    </span>
+                    {dept.code && (
+                      <span
+                        style={{
+                          fontSize: '0.78rem',
+                          fontFamily: 'monospace',
+                          fontWeight: 600,
+                          color: 'var(--text-muted)',
+                          background: 'rgba(0,0,0,0.04)',
+                          padding: '2px 7px',
+                          borderRadius: '6px',
+                          letterSpacing: '0.04em',
+                        }}
+                      >
+                        {dept.code}
+                      </span>
+                    )}
+                  </div>
+                  {dept.description && (
+                    <div style={{ fontSize: '0.84rem', color: 'var(--text-muted)', marginTop: '3px', fontFamily: kmFont }}>
+                      {dept.description}
+                    </div>
+                  )}
+                </td>
+
+                {/* Location */}
+                <td style={{ padding: '0.95rem 1.25rem', verticalAlign: 'middle' }}>
+                  <div style={{ fontSize: '0.94rem', color: 'var(--text-main)', fontFamily: kmFont }}>
+                    {dept.floor_room || t('dept_main_building')}
+                  </div>
+                </td>
+
+                {/* Consultation Duration */}
+                <td style={{ padding: '0.95rem 1.25rem', verticalAlign: 'middle' }}>
+                  <div style={{ fontSize: '0.94rem', fontWeight: 600, color: 'var(--text-main)', fontFamily: kmFont }}>
+                    {t('dept_mins').replace('{mins}', String(dept.avg_consultation_minutes || 15))}
+                  </div>
+                </td>
+
+                {/* Status */}
+                <td style={{ padding: '0.95rem 1.25rem', verticalAlign: 'middle' }}>
+                  <div
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.4rem',
+                      fontSize: '0.88rem',
+                      fontWeight: 600,
+                      color: dept.is_active ? '#15803d' : '#64748b',
+                      fontFamily: kmFont,
+                    }}
+                  >
+                    <span style={{ fontSize: '0.75rem', color: dept.is_active ? '#16a34a' : '#94a3b8' }}>●</span>
+                    <span>{dept.is_active ? t('doc_active') : t('doc_inactive')}</span>
+                  </div>
+                </td>
+
+                {/* Actions Dropdown */}
+                <td
                   style={{
-                    position: 'fixed',
-                    inset: 0,
-                    zIndex: 99,
-                    background: 'transparent',
-                  }}
-                />
-                <div
-                  style={{
-                    position: 'absolute',
-                    right: 0,
-                    top: 'calc(100% + 4px)',
-                    background: 'var(--bg-primary, #ffffff)',
-                    border: 'none',
-                    borderRadius: 0,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    minWidth: '110px',
-                    zIndex: 100,
-                    boxShadow: 'none',
+                    padding: '0.95rem 1.25rem',
+                    verticalAlign: 'middle',
+                    textAlign: 'right',
+                    position: 'relative',
+                    zIndex: isOpen ? 1001 : 1,
                   }}
                 >
-                  <button
-                    onClick={() => onToggleActive(dept)}
-                    onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
-                    onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
-                    style={{
-                      padding: '0.45rem 0.75rem',
-                      fontSize: '0.92rem',
-                      fontWeight: 500,
-                      textAlign: 'left',
-                      background: 'transparent',
-                      border: 'none',
-                      color: dept.is_active ? '#059669' : 'var(--text-muted)',
-                      cursor: 'pointer',
-                      boxShadow: 'none',
-                      fontFamily: kmFont,
-                      transition: 'opacity 0.15s ease',
-                    }}
-                  >
-                    {dept.is_active ? t('doc_active') : t('doc_inactive')}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setActiveDropdownDeptId(null);
-                      onEdit(dept);
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
-                    onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
-                    style={{
-                      padding: '0.45rem 0.75rem',
-                      fontSize: '0.92rem',
-                      fontWeight: 500,
-                      textAlign: 'left',
-                      background: 'transparent',
-                      border: 'none',
-                      color: 'var(--text-main)',
-                      cursor: 'pointer',
-                      boxShadow: 'none',
-                      fontFamily: kmFont,
-                      transition: 'opacity 0.15s ease',
-                    }}
-                  >
-                    {t('doc_edit')}
-                  </button>
-                  <button
-                    onClick={() => onDelete(dept.id)}
-                    onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
-                    onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
-                    style={{
-                      padding: '0.45rem 0.75rem',
-                      fontSize: '0.92rem',
-                      fontWeight: 500,
-                      textAlign: 'left',
-                      background: 'transparent',
-                      border: 'none',
-                      color: '#dc2626',
-                      cursor: 'pointer',
-                      boxShadow: 'none',
-                      fontFamily: kmFont,
-                      transition: 'opacity 0.15s ease',
-                    }}
-                  >
-                    {t('doc_delete')}
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      ))}
+                  <div style={{ position: 'relative', display: 'inline-block' }}>
+                    <button
+                      className="action-dots-btn"
+                      onClick={() => setActiveDropdownDeptId(isOpen ? null : dept.id)}
+                      aria-label="Actions"
+                    >
+                      ···
+                    </button>
+
+                    {isOpen && (
+                      <>
+                        <div
+                          onClick={() => setActiveDropdownDeptId(null)}
+                          style={{
+                            position: 'fixed',
+                            inset: 0,
+                            zIndex: 9998,
+                            background: 'transparent',
+                          }}
+                        />
+                        <div
+                          className="action-popup-menu"
+                          style={{
+                            zIndex: 9999,
+                            position: 'absolute',
+                            right: 0,
+                            top: 'calc(100% + 6px)',
+                          }}
+                        >
+                          <button
+                            className="action-popup-item"
+                            onClick={() => onToggleActive(dept)}
+                            style={{
+                              color: dept.is_active ? '#059669' : 'var(--text-muted)',
+                              fontFamily: kmFont,
+                            }}
+                          >
+                            {dept.is_active ? t('doc_active') : t('doc_inactive')}
+                          </button>
+                          <button
+                            className="action-popup-item"
+                            onClick={() => {
+                              setActiveDropdownDeptId(null);
+                              onEdit(dept);
+                            }}
+                            style={{
+                              color: 'var(--text-main)',
+                              fontFamily: kmFont,
+                            }}
+                          >
+                            {t('doc_edit')}
+                          </button>
+                          <button
+                            className="action-popup-item"
+                            onClick={() => onDelete(dept.id)}
+                            style={{
+                              color: '#dc2626',
+                              fontFamily: kmFont,
+                            }}
+                          >
+                            {t('doc_delete')}
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 };

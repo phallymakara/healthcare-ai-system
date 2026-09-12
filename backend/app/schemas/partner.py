@@ -187,6 +187,7 @@ class DepartmentQueueSummary(BaseModel):
     waiting_count: int
     completed_today: int
     avg_wait_minutes: int
+    total_patients: int = 0
 
 
 class HourlyFlowItem(BaseModel):

@@ -60,16 +60,37 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
   if (!modal.shouldRender) return null;
 
   return (
-    <div className={modal.overlayClass} onClick={(e) => { if (e.target === e.currentTarget) modal.close(); }}>
-      <div className={modal.cardClass} style={{ maxWidth: '520px', fontFamily: kmFont }}>
-        <div className="responsive-modal-body" style={{ padding: '1.6rem 1.75rem' }}>
-          <h3 style={{ fontSize: '1.35rem', fontWeight: 700, margin: '0 0 1.4rem 0', color: 'var(--text-main)', fontFamily: kmFont }}>
+    <div
+      className={modal.overlayClass}
+      style={{
+        backdropFilter: 'none',
+        WebkitBackdropFilter: 'none',
+        background: 'transparent',
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) modal.close();
+      }}
+    >
+      <div
+        className={modal.cardClass}
+        style={{
+          width: '92%',
+          maxWidth: '410px',
+          fontFamily: kmFont,
+          borderRadius: '24px',
+          boxShadow: '0 20px 50px rgba(0, 0, 0, 0.16), 0 0 0 1px rgba(0, 0, 0, 0.08)',
+          background: '#ffffff',
+          overflow: 'hidden',
+        }}
+      >
+        <div className="responsive-modal-body" style={{ padding: '1.2rem 1.35rem' }}>
+          <h3 style={{ fontSize: '1.12rem', fontWeight: 700, margin: '0 0 0.95rem 0', color: 'var(--text-main)', fontFamily: kmFont }}>
             {editingSrvId ? t('dept_modal_edit_srv') : t('dept_modal_add_srv')}
           </h3>
 
-          <form onSubmit={onSave} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
+          <form onSubmit={onSave} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px', fontFamily: kmFont }}>
+              <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px', fontFamily: kmFont }}>
                 {t('dept_srv_th_dept')}
               </label>
               <select
@@ -77,9 +98,9 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
                 onChange={(e) => setSrvDeptId(e.target.value)}
                 style={{
                   width: '100%',
-                  padding: '0.65rem 1.15rem',
-                  fontSize: '0.98rem',
-                  borderRadius: 'var(--radius-full)',
+                  padding: '0.55rem 0.9rem',
+                  fontSize: '0.88rem',
+                  borderRadius: '22px',
                   border: srvDeptError ? '1px solid #dc2626' : '1px solid var(--border-color)',
                   boxShadow: 'none',
                   outline: 'none',
@@ -96,14 +117,14 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
                 ))}
               </select>
               {srvDeptError && (
-                <div style={{ color: '#dc2626', fontSize: '0.85rem', marginTop: '5px', fontFamily: kmFont }}>
+                <div style={{ color: '#dc2626', fontSize: '0.8rem', marginTop: '3px', paddingLeft: '0.5rem', fontFamily: kmFont }}>
                   {srvDeptError}
                 </div>
               )}
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px', fontFamily: kmFont }}>
+              <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px', fontFamily: kmFont }}>
                 {t('dept_srv_name_label')}
               </label>
               <input
@@ -113,9 +134,9 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
                 onChange={(e) => setSrvName(e.target.value)}
                 style={{
                   width: '100%',
-                  padding: '0.65rem 1.15rem',
-                  fontSize: '0.98rem',
-                  borderRadius: 'var(--radius-full)',
+                  padding: '0.55rem 0.9rem',
+                  fontSize: '0.88rem',
+                  borderRadius: '22px',
                   border: srvNameError ? '1px solid #dc2626' : '1px solid var(--border-color)',
                   boxShadow: 'none',
                   outline: 'none',
@@ -124,15 +145,15 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
                 }}
               />
               {srvNameError && (
-                <div style={{ color: '#dc2626', fontSize: '0.85rem', marginTop: '5px', fontFamily: kmFont }}>
+                <div style={{ color: '#dc2626', fontSize: '0.8rem', marginTop: '3px', paddingLeft: '0.5rem', fontFamily: kmFont }}>
                   {srvNameError}
                 </div>
               )}
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.65rem' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px', fontFamily: kmFont }}>
+                <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px', fontFamily: kmFont }}>
                   {t('dept_srv_duration_label')}
                 </label>
                 <input
@@ -143,9 +164,9 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
                   onChange={(e) => setSrvDuration(Number(e.target.value))}
                   style={{
                     width: '100%',
-                    padding: '0.65rem 1.15rem',
-                    fontSize: '0.98rem',
-                    borderRadius: 'var(--radius-full)',
+                    padding: '0.55rem 0.9rem',
+                    fontSize: '0.88rem',
+                    borderRadius: '22px',
                     border: '1px solid var(--border-color)',
                     boxShadow: 'none',
                     outline: 'none',
@@ -156,7 +177,7 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px', fontFamily: kmFont }}>
+                <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px', fontFamily: kmFont }}>
                   {t('dept_srv_price_label')}
                 </label>
                 <input
@@ -167,9 +188,9 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
                   onChange={(e) => setSrvPrice(Number(e.target.value))}
                   style={{
                     width: '100%',
-                    padding: '0.65rem 1.15rem',
-                    fontSize: '0.98rem',
-                    borderRadius: 'var(--radius-full)',
+                    padding: '0.55rem 0.9rem',
+                    fontSize: '0.88rem',
+                    borderRadius: '22px',
                     border: '1px solid var(--border-color)',
                     boxShadow: 'none',
                     outline: 'none',
@@ -181,7 +202,7 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px', fontFamily: kmFont }}>
+              <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px', fontFamily: kmFont }}>
                 {t('dept_srv_desc_label')}
               </label>
               <textarea
@@ -191,9 +212,9 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
                 rows={2}
                 style={{
                   width: '100%',
-                  padding: '0.65rem 1.15rem',
-                  fontSize: '0.98rem',
-                  borderRadius: '12px',
+                  padding: '0.55rem 0.9rem',
+                  fontSize: '0.88rem',
+                  borderRadius: '16px',
                   border: '1px solid var(--border-color)',
                   boxShadow: 'none',
                   outline: 'none',
@@ -204,36 +225,36 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
               />
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.1rem' }}>
               <input
                 type="checkbox"
                 id="srvActiveCheck"
                 checked={srvIsActive}
                 onChange={(e) => setSrvIsActive(e.target.checked)}
               />
-              <label htmlFor="srvActiveCheck" style={{ fontSize: '0.9rem', color: 'var(--text-main)', cursor: 'pointer', fontFamily: kmFont }}>
+              <label htmlFor="srvActiveCheck" style={{ fontSize: '0.84rem', color: 'var(--text-main)', cursor: 'pointer', fontFamily: kmFont }}>
                 {t('dept_srv_active_check')}
               </label>
             </div>
 
             {srvSubmitError && (
-              <div style={{ color: '#dc2626', fontSize: '0.85rem', fontFamily: kmFont }}>
+              <div style={{ color: '#dc2626', fontSize: '0.8rem', paddingLeft: '0.5rem', fontFamily: kmFont }}>
                 {srvSubmitError}
               </div>
             )}
 
-            <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.75rem' }}>
+            <div style={{ display: 'flex', gap: '0.6rem', marginTop: '0.4rem' }}>
               <button
                 type="button"
                 onClick={modal.close}
                 style={{
                   flex: 1,
-                  padding: '0.7rem 1.25rem',
-                  fontSize: '0.98rem',
+                  padding: '0.58rem 1rem',
+                  fontSize: '0.88rem',
                   fontWeight: 500,
                   background: 'transparent',
                   border: '1px solid var(--border-color)',
-                  borderRadius: 'var(--radius-full)',
+                  borderRadius: '22px',
                   color: 'var(--text-muted)',
                   cursor: 'pointer',
                   boxShadow: 'none',
@@ -247,12 +268,12 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
                 disabled={srvLoading}
                 style={{
                   flex: 1,
-                  padding: '0.7rem 1.25rem',
-                  fontSize: '0.98rem',
+                  padding: '0.58rem 1rem',
+                  fontSize: '0.88rem',
                   fontWeight: 600,
                   background: 'transparent',
                   border: '1px solid var(--text-main)',
-                  borderRadius: 'var(--radius-full)',
+                  borderRadius: '22px',
                   color: 'var(--text-main)',
                   cursor: 'pointer',
                   boxShadow: 'none',

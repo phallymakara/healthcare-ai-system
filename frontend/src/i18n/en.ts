@@ -339,6 +339,7 @@ export const en = {
   pd_daily_completion: "daily completion rate",
   pd_hourly_flow: "Hourly Patient Flow",
   pd_dept_status: "Department Live Counter Status",
+  pd_total_patients: "Total Patients",
   pd_serving_now: "Serving Now",
   pd_in_line: "In Line / Waiting",
   pd_patients: "patients",

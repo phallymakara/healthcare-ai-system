@@ -45,205 +45,252 @@ export const ServiceList: React.FC<ServiceListProps> = ({
   }
 
   return (
-    <div style={{ background: 'transparent', border: 'none', borderRadius: 0, boxShadow: 'none', overflow: 'visible' }}>
-      {services.map((srv) => {
-        const parentDept = departments.find((d) => d.id === srv.department_id);
-        return (
-          <div
-            key={srv.id}
+    <div style={{ width: '100%', overflow: 'visible', background: 'transparent' }}>
+      <table
+        style={{
+          width: '100%',
+          borderCollapse: 'collapse',
+          textAlign: 'left',
+          fontFamily: kmFont,
+          overflow: 'visible',
+        }}
+      >
+        <thead>
+          <tr
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: '1rem',
-              padding: '1.1rem 0',
+              background: '#f8fafc',
+              borderTop: '1px solid var(--border-color)',
               borderBottom: '1px solid var(--border-color)',
-              background: 'transparent',
-              position: 'relative',
-              zIndex: activeDropdownSrvId === srv.id ? 50 : 1,
             }}
           >
-            {/* Service Name & Description */}
-            <div style={{ minWidth: '220px', flex: '1.5' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                <div style={{ fontSize: '1.18rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: kmFont }}>
-                  {srv.name}
-                </div>
-                {!srv.is_active && (
-                  <span
-                    style={{
-                      fontSize: '0.78rem',
-                      color: 'var(--text-muted)',
-                      border: '1px solid var(--border-color)',
-                      borderRadius: '3px',
-                      padding: '1px 5px',
-                      fontWeight: 500,
-                    }}
-                  >
-                    {t('doc_inactive')}
-                  </span>
-                )}
-              </div>
-              {srv.description && (
-                <div style={{ fontSize: '0.95rem', color: 'var(--text-muted)', marginTop: '3px', fontFamily: kmFont }}>
-                  {srv.description}
-                </div>
-              )}
-            </div>
+            <th
+              style={{
+                padding: '0.85rem 1.25rem',
+                fontSize: '0.82rem',
+                fontWeight: 700,
+                color: 'var(--text-muted)',
+                letterSpacing: '0.03em',
+                fontFamily: kmFont,
+                borderTopLeftRadius: '10px',
+                borderBottomLeftRadius: '10px',
+              }}
+            >
+              {t('dept_title_services')}
+            </th>
+            <th
+              style={{
+                padding: '0.85rem 1.25rem',
+                fontSize: '0.82rem',
+                fontWeight: 700,
+                color: 'var(--text-muted)',
+                letterSpacing: '0.03em',
+                fontFamily: kmFont,
+              }}
+            >
+              {t('dept_srv_th_dept')}
+            </th>
+            <th
+              style={{
+                padding: '0.85rem 1.25rem',
+                fontSize: '0.82rem',
+                fontWeight: 700,
+                color: 'var(--text-muted)',
+                letterSpacing: '0.03em',
+                fontFamily: kmFont,
+              }}
+            >
+              {t('dept_srv_th_duration')}
+            </th>
+            <th
+              style={{
+                padding: '0.85rem 1.25rem',
+                fontSize: '0.82rem',
+                fontWeight: 700,
+                color: 'var(--text-muted)',
+                letterSpacing: '0.03em',
+                fontFamily: kmFont,
+              }}
+            >
+              {t('dept_srv_th_price')}
+            </th>
+            <th
+              style={{
+                padding: '0.85rem 1.25rem',
+                fontSize: '0.82rem',
+                fontWeight: 700,
+                color: 'var(--text-muted)',
+                letterSpacing: '0.03em',
+                fontFamily: kmFont,
+              }}
+            >
+              {t('staff_col_status')}
+            </th>
+            <th
+              style={{
+                padding: '0.85rem 1.25rem',
+                fontSize: '0.82rem',
+                fontWeight: 700,
+                color: 'var(--text-muted)',
+                letterSpacing: '0.03em',
+                textAlign: 'right',
+                fontFamily: kmFont,
+                borderTopRightRadius: '10px',
+                borderBottomRightRadius: '10px',
+              }}
+            >
+              {t('staff_col_actions')}
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {services.map((srv) => {
+            const parentDept = departments.find((d) => d.id === srv.department_id);
+            const isOpen = activeDropdownSrvId === srv.id;
 
-            {/* Department */}
-            <div style={{ minWidth: '180px', flex: '1' }}>
-              <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, fontFamily: kmFont }}>
-                {t('dept_srv_th_dept')}
-              </div>
-              <div style={{ fontSize: '1.02rem', color: 'var(--text-main)', marginTop: '2px', fontFamily: kmFont }}>
-                {parentDept ? parentDept.name : t('doc_general')}
-              </div>
-            </div>
-
-            {/* Duration */}
-            <div style={{ minWidth: '120px', flex: '0.7' }}>
-              <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, fontFamily: kmFont }}>
-                {t('dept_srv_th_duration')}
-              </div>
-              <div style={{ fontSize: '1.05rem', color: 'var(--text-main)', marginTop: '2px', fontFamily: kmFont }}>
-                {t('dept_mins').replace('{mins}', String(srv.duration_minutes || 20))}
-              </div>
-            </div>
-
-            {/* Price */}
-            <div style={{ minWidth: '100px', flex: '0.6' }}>
-              <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, fontFamily: kmFont }}>
-                {t('dept_srv_th_price')}
-              </div>
-              <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-main)', marginTop: '2px' }}>
-                ${srv.price.toFixed(2)}
-              </div>
-            </div>
-
-            {/* Actions: Three-dot dropdown menu */}
-            <div style={{ position: 'relative', zIndex: activeDropdownSrvId === srv.id ? 60 : 'auto' }}>
-              <button
-                onClick={() => setActiveDropdownSrvId(activeDropdownSrvId === srv.id ? null : srv.id)}
+            return (
+              <tr
+                key={srv.id}
                 style={{
-                  width: '32px',
-                  height: '32px',
-                  padding: 0,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '1.2rem',
-                  fontWeight: 700,
-                  letterSpacing: '1px',
+                  borderBottom: '1px solid var(--border-color)',
                   background: 'transparent',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: '4px',
-                  color: 'var(--text-main)',
-                  cursor: 'pointer',
-                  boxShadow: 'none',
-                  lineHeight: 1,
+                  transition: 'background 0.15s ease',
+                  position: 'relative',
+                  zIndex: isOpen ? 1000 : 1,
                 }}
               >
-                ···
-              </button>
+                {/* Service Name & Description */}
+                <td style={{ padding: '0.95rem 1.25rem', verticalAlign: 'middle' }}>
+                  <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: kmFont }}>
+                    {srv.name}
+                  </div>
+                  {srv.description && (
+                    <div style={{ fontSize: '0.84rem', color: 'var(--text-muted)', marginTop: '3px', fontFamily: kmFont }}>
+                      {srv.description}
+                    </div>
+                  )}
+                </td>
 
-              {activeDropdownSrvId === srv.id && (
-                <>
+                {/* Department */}
+                <td style={{ padding: '0.95rem 1.25rem', verticalAlign: 'middle' }}>
+                  <div style={{ fontSize: '0.94rem', color: 'var(--text-main)', fontFamily: kmFont }}>
+                    {parentDept ? parentDept.name : t('doc_general')}
+                  </div>
+                </td>
+
+                {/* Duration */}
+                <td style={{ padding: '0.95rem 1.25rem', verticalAlign: 'middle' }}>
+                  <div style={{ fontSize: '0.94rem', fontWeight: 600, color: 'var(--text-main)', fontFamily: kmFont }}>
+                    {t('dept_mins').replace('{mins}', String(srv.duration_minutes || 20))}
+                  </div>
+                </td>
+
+                {/* Price */}
+                <td style={{ padding: '0.95rem 1.25rem', verticalAlign: 'middle' }}>
+                  <div style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                    ${srv.price.toFixed(2)}
+                  </div>
+                </td>
+
+                {/* Status */}
+                <td style={{ padding: '0.95rem 1.25rem', verticalAlign: 'middle' }}>
                   <div
-                    onClick={() => setActiveDropdownSrvId(null)}
                     style={{
-                      position: 'fixed',
-                      inset: 0,
-                      zIndex: 99,
-                      background: 'transparent',
-                    }}
-                  />
-                  <div
-                    style={{
-                      position: 'absolute',
-                      right: 0,
-                      top: 'calc(100% + 4px)',
-                      background: 'var(--bg-primary, #ffffff)',
-                      border: 'none',
-                      borderRadius: 0,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      minWidth: '110px',
-                      zIndex: 100,
-                      boxShadow: 'none',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.4rem',
+                      fontSize: '0.88rem',
+                      fontWeight: 600,
+                      color: srv.is_active ? '#15803d' : '#64748b',
+                      fontFamily: kmFont,
                     }}
                   >
-                    <button
-                      onClick={() => onToggleActive(srv)}
-                      onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
-                      onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
-                      style={{
-                        padding: '0.45rem 0.75rem',
-                        fontSize: '0.92rem',
-                        fontWeight: 500,
-                        textAlign: 'left',
-                        background: 'transparent',
-                        border: 'none',
-                        color: srv.is_active ? '#059669' : 'var(--text-muted)',
-                        cursor: 'pointer',
-                        boxShadow: 'none',
-                        fontFamily: kmFont,
-                        transition: 'opacity 0.15s ease',
-                      }}
-                    >
-                      {srv.is_active ? t('doc_active') : t('doc_inactive')}
-                    </button>
-                    <button
-                      onClick={() => {
-                        setActiveDropdownSrvId(null);
-                        onEdit(srv);
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
-                      onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
-                      style={{
-                        padding: '0.45rem 0.75rem',
-                        fontSize: '0.92rem',
-                        fontWeight: 500,
-                        textAlign: 'left',
-                        background: 'transparent',
-                        border: 'none',
-                        color: 'var(--text-main)',
-                        cursor: 'pointer',
-                        boxShadow: 'none',
-                        fontFamily: kmFont,
-                        transition: 'opacity 0.15s ease',
-                      }}
-                    >
-                      {t('doc_edit')}
-                    </button>
-                    <button
-                      onClick={() => onDelete(srv.id)}
-                      onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
-                      onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
-                      style={{
-                        padding: '0.45rem 0.75rem',
-                        fontSize: '0.92rem',
-                        fontWeight: 500,
-                        textAlign: 'left',
-                        background: 'transparent',
-                        border: 'none',
-                        color: '#dc2626',
-                        cursor: 'pointer',
-                        boxShadow: 'none',
-                        fontFamily: kmFont,
-                        transition: 'opacity 0.15s ease',
-                      }}
-                    >
-                      {t('doc_delete')}
-                    </button>
+                    <span style={{ fontSize: '0.75rem', color: srv.is_active ? '#16a34a' : '#94a3b8' }}>●</span>
+                    <span>{srv.is_active ? t('doc_active') : t('doc_inactive')}</span>
                   </div>
-                </>
-              )}
-            </div>
-          </div>
-        );
-      })}
+                </td>
+
+                {/* Actions: Three-dot dropdown menu */}
+                <td
+                  style={{
+                    padding: '0.95rem 1.25rem',
+                    verticalAlign: 'middle',
+                    textAlign: 'right',
+                    position: 'relative',
+                    zIndex: isOpen ? 1001 : 1,
+                  }}
+                >
+                  <div style={{ position: 'relative', display: 'inline-block' }}>
+                    <button
+                      className="action-dots-btn"
+                      onClick={() => setActiveDropdownSrvId(isOpen ? null : srv.id)}
+                      aria-label="Actions"
+                    >
+                      ···
+                    </button>
+
+                    {isOpen && (
+                      <>
+                        <div
+                          onClick={() => setActiveDropdownSrvId(null)}
+                          style={{
+                            position: 'fixed',
+                            inset: 0,
+                            zIndex: 9998,
+                            background: 'transparent',
+                          }}
+                        />
+                        <div
+                          className="action-popup-menu"
+                          style={{
+                            zIndex: 9999,
+                            position: 'absolute',
+                            right: 0,
+                            top: 'calc(100% + 6px)',
+                          }}
+                        >
+                          <button
+                            className="action-popup-item"
+                            onClick={() => onToggleActive(srv)}
+                            style={{
+                              color: srv.is_active ? '#059669' : 'var(--text-muted)',
+                              fontFamily: kmFont,
+                            }}
+                          >
+                            {srv.is_active ? t('doc_active') : t('doc_inactive')}
+                          </button>
+                          <button
+                            className="action-popup-item"
+                            onClick={() => {
+                              setActiveDropdownSrvId(null);
+                              onEdit(srv);
+                            }}
+                            style={{
+                              color: 'var(--text-main)',
+                              fontFamily: kmFont,
+                            }}
+                          >
+                            {t('doc_edit')}
+                          </button>
+                          <button
+                            className="action-popup-item"
+                            onClick={() => onDelete(srv.id)}
+                            style={{
+                              color: '#dc2626',
+                              fontFamily: kmFont,
+                            }}
+                          >
+                            {t('doc_delete')}
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 };

@@ -170,6 +170,9 @@ async def get_partner_dashboard(
         d_completed = len([t for t in today_tickets if t.department_id == d.id and t.status == TicketStatus.COMPLETED])
         d_status = today_session.status if today_session else QueueStatus.ACTIVE
         d_avg_wait = d.avg_consultation_minutes * d_waiting
+        d_total_patients = len([t for t in today_tickets if t.department_id == d.id])
+        if d_total_patients == 0:
+            d_total_patients = d_waiting + d_completed + (1 if d_serving_num else 0)
 
         if d_waiting > 0:
             total_wait_minutes += d_avg_wait
@@ -186,6 +189,7 @@ async def get_partner_dashboard(
                 waiting_count=d_waiting,
                 completed_today=d_completed,
                 avg_wait_minutes=d_avg_wait,
+                total_patients=d_total_patients,
             )
         )
 

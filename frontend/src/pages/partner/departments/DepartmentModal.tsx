@@ -54,16 +54,37 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
   if (!modal.shouldRender) return null;
 
   return (
-    <div className={modal.overlayClass} onClick={(e) => { if (e.target === e.currentTarget) modal.close(); }}>
-      <div className={modal.cardClass} style={{ maxWidth: '520px', fontFamily: kmFont }}>
-        <div className="responsive-modal-body" style={{ padding: '1.6rem 1.75rem' }}>
-          <h3 style={{ fontSize: '1.35rem', fontWeight: 700, margin: '0 0 1.4rem 0', color: 'var(--text-main)', fontFamily: kmFont }}>
+    <div
+      className={modal.overlayClass}
+      style={{
+        backdropFilter: 'none',
+        WebkitBackdropFilter: 'none',
+        background: 'transparent',
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) modal.close();
+      }}
+    >
+      <div
+        className={modal.cardClass}
+        style={{
+          width: '94%',
+          maxWidth: '460px',
+          fontFamily: kmFont,
+          borderRadius: '24px',
+          boxShadow: '0 20px 50px rgba(0, 0, 0, 0.16), 0 0 0 1px rgba(0, 0, 0, 0.08)',
+          background: '#ffffff',
+          overflow: 'hidden',
+        }}
+      >
+        <div className="responsive-modal-body" style={{ padding: '1.45rem 1.6rem' }}>
+          <h3 style={{ fontSize: '1.22rem', fontWeight: 700, margin: '0 0 1.15rem 0', color: 'var(--text-main)', fontFamily: kmFont }}>
             {editingDeptId ? t('dept_modal_edit_dept') : t('dept_modal_add_dept')}
           </h3>
 
-          <form onSubmit={onSave} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
+          <form onSubmit={onSave} style={{ display: 'flex', flexDirection: 'column', gap: '0.95rem' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px', fontFamily: kmFont }}>
+              <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px', fontFamily: kmFont }}>
                 {t('dept_name_label')}
               </label>
               <input
@@ -73,9 +94,9 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
                 onChange={(e) => setDeptName(e.target.value)}
                 style={{
                   width: '100%',
-                  padding: '0.65rem 1.15rem',
-                  fontSize: '0.98rem',
-                  borderRadius: 'var(--radius-full)',
+                  padding: '0.68rem 1.05rem',
+                  fontSize: '0.94rem',
+                  borderRadius: '22px',
                   border: deptNameError ? '1px solid #dc2626' : '1px solid var(--border-color)',
                   boxShadow: 'none',
                   outline: 'none',
@@ -84,14 +105,14 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
                 }}
               />
               {deptNameError && (
-                <div style={{ color: '#dc2626', fontSize: '0.85rem', marginTop: '5px', fontFamily: kmFont }}>
+                <div style={{ color: '#dc2626', fontSize: '0.82rem', marginTop: '3px', paddingLeft: '0.5rem', fontFamily: kmFont }}>
                   {deptNameError}
                 </div>
               )}
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px', fontFamily: kmFont }}>
+              <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px', fontFamily: kmFont }}>
                 {t('dept_code_label')}
               </label>
               <input
@@ -101,9 +122,9 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
                 onChange={(e) => setDeptCode(e.target.value)}
                 style={{
                   width: '100%',
-                  padding: '0.65rem 1.15rem',
-                  fontSize: '0.98rem',
-                  borderRadius: 'var(--radius-full)',
+                  padding: '0.68rem 1.05rem',
+                  fontSize: '0.94rem',
+                  borderRadius: '22px',
                   border: deptCodeError ? '1px solid #dc2626' : '1px solid var(--border-color)',
                   boxShadow: 'none',
                   outline: 'none',
@@ -112,14 +133,14 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
                 }}
               />
               {deptCodeError && (
-                <div style={{ color: '#dc2626', fontSize: '0.85rem', marginTop: '5px', fontFamily: kmFont }}>
+                <div style={{ color: '#dc2626', fontSize: '0.82rem', marginTop: '3px', paddingLeft: '0.5rem', fontFamily: kmFont }}>
                   {deptCodeError}
                 </div>
               )}
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px', fontFamily: kmFont }}>
+              <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px', fontFamily: kmFont }}>
                 {t('dept_duration_label')}
               </label>
               <input
@@ -130,9 +151,9 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
                 onChange={(e) => setDeptMinutes(Number(e.target.value))}
                 style={{
                   width: '100%',
-                  padding: '0.65rem 1.15rem',
-                  fontSize: '0.98rem',
-                  borderRadius: 'var(--radius-full)',
+                  padding: '0.68rem 1.05rem',
+                  fontSize: '0.94rem',
+                  borderRadius: '22px',
                   border: '1px solid var(--border-color)',
                   boxShadow: 'none',
                   outline: 'none',
@@ -140,41 +161,41 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
                   fontFamily: kmFont,
                 }}
               />
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px', fontFamily: kmFont }}>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '3px', paddingLeft: '0.5rem', fontFamily: kmFont }}>
                 {t('dept_duration_hint')}
               </div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.15rem' }}>
               <input
                 type="checkbox"
                 id="deptActiveCheck"
                 checked={deptIsActive}
                 onChange={(e) => setDeptIsActive(e.target.checked)}
               />
-              <label htmlFor="deptActiveCheck" style={{ fontSize: '0.9rem', color: 'var(--text-main)', cursor: 'pointer', fontFamily: kmFont }}>
+              <label htmlFor="deptActiveCheck" style={{ fontSize: '0.88rem', color: 'var(--text-main)', cursor: 'pointer', fontFamily: kmFont }}>
                 {t('dept_active_check')}
               </label>
             </div>
 
             {deptSubmitError && (
-              <div style={{ color: '#dc2626', fontSize: '0.85rem', fontFamily: kmFont }}>
+              <div style={{ color: '#dc2626', fontSize: '0.82rem', paddingLeft: '0.5rem', fontFamily: kmFont }}>
                 {deptSubmitError}
               </div>
             )}
 
-            <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.75rem' }}>
+            <div style={{ display: 'flex', gap: '0.65rem', marginTop: '0.5rem' }}>
               <button
                 type="button"
                 onClick={modal.close}
                 style={{
                   flex: 1,
-                  padding: '0.7rem 1.25rem',
-                  fontSize: '0.98rem',
+                  padding: '0.68rem 1.15rem',
+                  fontSize: '0.94rem',
                   fontWeight: 500,
                   background: 'transparent',
                   border: '1px solid var(--border-color)',
-                  borderRadius: 'var(--radius-full)',
+                  borderRadius: '22px',
                   color: 'var(--text-muted)',
                   cursor: 'pointer',
                   boxShadow: 'none',
@@ -188,12 +209,12 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
                 disabled={deptLoading}
                 style={{
                   flex: 1,
-                  padding: '0.7rem 1.25rem',
-                  fontSize: '0.98rem',
+                  padding: '0.68rem 1.15rem',
+                  fontSize: '0.94rem',
                   fontWeight: 600,
                   background: 'transparent',
                   border: '1px solid var(--text-main)',
-                  borderRadius: 'var(--radius-full)',
+                  borderRadius: '22px',
                   color: 'var(--text-main)',
                   cursor: 'pointer',
                   boxShadow: 'none',

@@ -94,6 +94,44 @@ export const App: React.FC = () => {
     };
   }, []);
 
+  // Show Chumnouykar AI Assistant Widget ONLY on Landing Page
+  useEffect(() => {
+    const isLanding = !isPartner && activeTab === 'landing';
+    if (isLanding) {
+      document.body.classList.add('is-landing-page');
+    } else {
+      document.body.classList.remove('is-landing-page');
+    }
+
+    const syncWidgetVisibility = () => {
+      const widget = document.getElementById('aisale-widget-root');
+      if (widget) {
+        if (isLanding) {
+          widget.style.removeProperty('display');
+          widget.style.removeProperty('visibility');
+          widget.style.removeProperty('pointer-events');
+          widget.style.removeProperty('opacity');
+        } else {
+          widget.style.setProperty('display', 'none', 'important');
+          widget.style.setProperty('visibility', 'hidden', 'important');
+          widget.style.setProperty('pointer-events', 'none', 'important');
+          widget.style.setProperty('opacity', '0', 'important');
+        }
+      }
+    };
+
+    syncWidgetVisibility();
+
+    const observer = new MutationObserver(() => {
+      syncWidgetVisibility();
+    });
+    observer.observe(document.body, { childList: true });
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [activeTab, isPartner]);
+
   const handleLogout = () => {
     AuthService.clearSession();
     setCurrentUser(null);
