@@ -56,75 +56,70 @@ export const DepartmentList: React.FC<DepartmentListProps> = ({
         <thead>
           <tr
             style={{
-              background: '#f8fafc',
-              borderTop: '1px solid var(--border-color)',
+              background: 'transparent',
               borderBottom: '1px solid var(--border-color)',
             }}
           >
             <th
               style={{
-                padding: '0.85rem 1.25rem',
-                fontSize: '0.82rem',
+                padding: '0.8rem 1.25rem',
+                fontSize: '0.92rem',
                 fontWeight: 700,
                 color: 'var(--text-muted)',
-                letterSpacing: '0.03em',
                 fontFamily: kmFont,
-                borderTopLeftRadius: '10px',
-                borderBottomLeftRadius: '10px',
+                whiteSpace: 'nowrap',
               }}
             >
               {t('dept_name_label') || t('dept_title_depts')}
             </th>
             <th
               style={{
-                padding: '0.85rem 1.25rem',
-                fontSize: '0.82rem',
+                padding: '0.8rem 1.25rem',
+                fontSize: '0.92rem',
                 fontWeight: 700,
                 color: 'var(--text-muted)',
-                letterSpacing: '0.03em',
                 fontFamily: kmFont,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {t('dept_th_id')}
+            </th>
+            <th
+              style={{
+                padding: '0.8rem 1.25rem',
+                fontSize: '0.92rem',
+                fontWeight: 700,
+                color: 'var(--text-muted)',
+                fontFamily: kmFont,
+                whiteSpace: 'nowrap',
               }}
             >
               {t('dept_th_location')}
             </th>
             <th
               style={{
-                padding: '0.85rem 1.25rem',
-                fontSize: '0.82rem',
+                padding: '0.8rem 1.25rem',
+                fontSize: '0.92rem',
                 fontWeight: 700,
                 color: 'var(--text-muted)',
-                letterSpacing: '0.03em',
                 fontFamily: kmFont,
-              }}
-            >
-              {t('dept_th_duration')}
-            </th>
-            <th
-              style={{
-                padding: '0.85rem 1.25rem',
-                fontSize: '0.82rem',
-                fontWeight: 700,
-                color: 'var(--text-muted)',
-                letterSpacing: '0.03em',
-                fontFamily: kmFont,
+                whiteSpace: 'nowrap',
               }}
             >
               {t('staff_col_status')}
             </th>
             <th
               style={{
-                padding: '0.85rem 1.25rem',
-                fontSize: '0.82rem',
+                padding: '0.8rem 1.25rem',
+                fontSize: '0.92rem',
                 fontWeight: 700,
                 color: 'var(--text-muted)',
-                letterSpacing: '0.03em',
                 textAlign: 'right',
                 fontFamily: kmFont,
-                borderTopRightRadius: '10px',
-                borderBottomRightRadius: '10px',
+                whiteSpace: 'nowrap',
               }}
             >
-              {t('staff_col_actions')}
+              {isKm ? 'សកម្ម' : t('staff_col_actions')}
             </th>
           </tr>
         </thead>
@@ -143,76 +138,68 @@ export const DepartmentList: React.FC<DepartmentListProps> = ({
                   zIndex: isOpen ? 1000 : 1,
                 }}
               >
-                {/* Department Name & Code / Description */}
-                <td style={{ padding: '0.95rem 1.25rem', verticalAlign: 'middle' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: kmFont }}>
-                      {dept.name}
-                    </span>
-                    {dept.code && (
-                      <span
-                        style={{
-                          fontSize: '0.78rem',
-                          fontFamily: 'monospace',
-                          fontWeight: 600,
-                          color: 'var(--text-muted)',
-                          background: 'rgba(0,0,0,0.04)',
-                          padding: '2px 7px',
-                          borderRadius: '6px',
-                          letterSpacing: '0.04em',
-                        }}
-                      >
-                        {dept.code}
-                      </span>
-                    )}
+                {/* Department Name */}
+                <td style={{ padding: '0.85rem 1.25rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                  <div style={{ fontSize: '0.94rem', fontWeight: 600, color: 'var(--text-main)', fontFamily: kmFont }}>
+                    {dept.name}
                   </div>
                   {dept.description && (
-                    <div style={{ fontSize: '0.84rem', color: 'var(--text-muted)', marginTop: '3px', fontFamily: kmFont }}>
+                    <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '2px', fontFamily: kmFont }}>
                       {dept.description}
                     </div>
                   )}
                 </td>
 
+                {/* Department ID */}
+                <td style={{ padding: '0.85rem 1.25rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                  <span
+                    style={{
+                      fontSize: '0.84rem',
+                      fontFamily: 'monospace',
+                      fontWeight: 600,
+                      color: 'var(--text-main)',
+                      letterSpacing: '0.04em',
+                    }}
+                  >
+                    {dept.code || dept.id.slice(0, 8)}
+                  </span>
+                </td>
+
                 {/* Location */}
-                <td style={{ padding: '0.95rem 1.25rem', verticalAlign: 'middle' }}>
-                  <div style={{ fontSize: '0.94rem', color: 'var(--text-main)', fontFamily: kmFont }}>
+                <td style={{ padding: '0.85rem 1.25rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                  <div style={{ fontSize: '0.88rem', color: 'var(--text-main)', fontFamily: kmFont }}>
                     {dept.floor_room || t('dept_main_building')}
                   </div>
                 </td>
 
-                {/* Consultation Duration */}
-                <td style={{ padding: '0.95rem 1.25rem', verticalAlign: 'middle' }}>
-                  <div style={{ fontSize: '0.94rem', fontWeight: 600, color: 'var(--text-main)', fontFamily: kmFont }}>
-                    {t('dept_mins').replace('{mins}', String(dept.avg_consultation_minutes || 15))}
-                  </div>
-                </td>
-
                 {/* Status */}
-                <td style={{ padding: '0.95rem 1.25rem', verticalAlign: 'middle' }}>
+                <td style={{ padding: '0.85rem 1.25rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
                   <div
                     style={{
                       display: 'inline-flex',
                       alignItems: 'center',
-                      gap: '0.4rem',
-                      fontSize: '0.88rem',
-                      fontWeight: 600,
+                      gap: '0.45rem',
+                      fontSize: '0.86rem',
+                      fontWeight: 500,
                       color: dept.is_active ? '#15803d' : '#64748b',
                       fontFamily: kmFont,
+                      whiteSpace: 'nowrap',
                     }}
                   >
-                    <span style={{ fontSize: '0.75rem', color: dept.is_active ? '#16a34a' : '#94a3b8' }}>●</span>
-                    <span>{dept.is_active ? t('doc_active') : t('doc_inactive')}</span>
+                    <span style={{ fontSize: '0.7rem', color: dept.is_active ? '#16a34a' : '#94a3b8', flexShrink: 0, lineHeight: 1 }}>●</span>
+                    <span style={{ whiteSpace: 'nowrap' }}>{dept.is_active ? t('doc_active') : t('doc_inactive')}</span>
                   </div>
                 </td>
 
                 {/* Actions Dropdown */}
                 <td
                   style={{
-                    padding: '0.95rem 1.25rem',
+                    padding: '0.85rem 1.25rem',
                     verticalAlign: 'middle',
                     textAlign: 'right',
                     position: 'relative',
                     zIndex: isOpen ? 1001 : 1,
+                    whiteSpace: 'nowrap',
                   }}
                 >
                   <div style={{ position: 'relative', display: 'inline-block' }}>

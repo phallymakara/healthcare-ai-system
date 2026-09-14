@@ -2,7 +2,7 @@ import uuid
 import secrets
 import string
 from typing import List
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, UploadFile, File
 from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -11,9 +11,10 @@ from app.core.deps import require_hospital_staff
 from app.core.security import get_password_hash
 from app.exceptions import not_found, bad_request
 from app.models import Hospital, User, UserRole
-from app.schemas.partner import StaffCreateSchema, StaffUpdateSchema, StaffResponse
+from app.schemas.partner import StaffCreateSchema, StaffUpdateSchema, StaffResponse, AssetUploadResponse, AssetDeleteResponse
 from app.schemas.notification import NotificationChannel, NotificationType
 from app.services.notification_service import NotificationService
+from app.services.azure_storage import azure_storage_service
 
 router = APIRouter()
 
@@ -174,3 +175,72 @@ async def delete_partner_staff(
     await db.delete(staff)
     await db.commit()
     return None
+
+
+# --- Staff Photo CRUD (Azure Blob Storage) ---
+
+@router.post("/staff/{user_id}/photo", response_model=AssetUploadResponse, status_code=status.HTTP_201_CREATED)
+async def upload_staff_photo(
+    user_id: uuid.UUID,
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_hospital_staff),
+):
+    hospital_id = current_user.hospital_id or (await db.execute(select(Hospital.id))).scalar()
+    res = await db.execute(
+        select(User).where(and_(User.id == user_id, User.hospital_id == hospital_id))
+    )
+    staff = res.scalar_one_or_none()
+    if not staff:
+        raise not_found("Staff member not found in this hospital")
+
+    owner_prefix = azure_storage_service.user_avatar_prefix(str(user_id))
+    result = await azure_storage_service.replace_asset(
+        file=file,
+        owner_prefix=owner_prefix,
+        subfolder="avatar",
+        old_blob_url=staff.profile_photo_url,
+    )
+
+    staff.profile_photo_url = result["url"]
+    await db.commit()
+    await db.refresh(staff)
+
+    return AssetUploadResponse(
+        url=result["url"],
+        blob_name=result["blob_name"],
+        content_type=result.get("content_type"),
+        size=result.get("size"),
+        is_mock=result.get("is_mock", False),
+        message="Staff photo uploaded successfully",
+    )
+
+
+@router.delete("/staff/{user_id}/photo", response_model=AssetDeleteResponse)
+async def delete_staff_photo(
+    user_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_hospital_staff),
+):
+    hospital_id = current_user.hospital_id or (await db.execute(select(Hospital.id))).scalar()
+    res = await db.execute(
+        select(User).where(and_(User.id == user_id, User.hospital_id == hospital_id))
+    )
+    staff = res.scalar_one_or_none()
+    if not staff:
+        raise not_found("Staff member not found in this hospital")
+
+    if staff.profile_photo_url:
+        owner_prefix = azure_storage_service.user_avatar_prefix(str(user_id))
+        await azure_storage_service.delete_asset(
+            blob_url=staff.profile_photo_url,
+            owner_prefix=owner_prefix,
+        )
+        staff.profile_photo_url = None
+        await db.commit()
+
+    return AssetDeleteResponse(
+        deleted=True,
+        blob_url=None,
+        message="Staff photo removed successfully",
+    )

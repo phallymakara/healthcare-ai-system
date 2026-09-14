@@ -281,10 +281,10 @@ export const AdminDashboard: React.FC = () => {
                 <div className="responsive-table-wrapper">
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
                     <thead>
-                      <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)', textAlign: 'left' }}>
-                        <th style={{ padding: '0.9rem 1rem', fontFamily: kmFont, fontWeight: 600 }}>{t('admin_th_hospital')}</th>
-                        <th style={{ padding: '0.9rem 1rem', fontFamily: kmFont, fontWeight: 600 }}>{t('admin_th_location')}</th>
-                        <th style={{ padding: '0.9rem 1rem', fontFamily: kmFont, fontWeight: 600 }}>{t('admin_th_status')}</th>
+                      <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)', textAlign: 'left', background: 'transparent' }}>
+                        <th style={{ padding: '0.8rem 1rem', fontFamily: kmFont, fontWeight: 700, fontSize: '0.92rem', whiteSpace: 'nowrap' }}>{t('admin_th_hospital')}</th>
+                        <th style={{ padding: '0.8rem 1rem', fontFamily: kmFont, fontWeight: 700, fontSize: '0.92rem', whiteSpace: 'nowrap' }}>{t('admin_th_location')}</th>
+                        <th style={{ padding: '0.8rem 1rem', fontFamily: kmFont, fontWeight: 700, fontSize: '0.92rem', whiteSpace: 'nowrap' }}>{t('admin_th_status')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -322,12 +322,12 @@ export const AdminDashboard: React.FC = () => {
               <div className="responsive-table-wrapper">
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
                   <thead>
-                    <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)', textAlign: 'left' }}>
-                      <th style={{ padding: '0.9rem 1rem', fontFamily: kmFont, fontWeight: 600 }}>{t('admin_th_hospital')}</th>
-                      <th style={{ padding: '0.9rem 1rem', fontFamily: kmFont, fontWeight: 600 }}>{t('admin_th_location')}</th>
-                      <th style={{ padding: '0.9rem 1rem', fontFamily: kmFont, fontWeight: 600 }}>{t('admin_th_departments')}</th>
-                      <th style={{ padding: '0.9rem 1rem', fontFamily: kmFont, fontWeight: 600 }}>{t('admin_th_status')}</th>
-                      <th style={{ padding: '0.9rem 1rem', fontFamily: kmFont, fontWeight: 600 }}>{t('admin_th_actions')}</th>
+                    <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)', textAlign: 'left', background: 'transparent' }}>
+                      <th style={{ padding: '0.8rem 1rem', fontFamily: kmFont, fontWeight: 700, fontSize: '0.92rem', whiteSpace: 'nowrap' }}>{t('admin_th_hospital')}</th>
+                      <th style={{ padding: '0.8rem 1rem', fontFamily: kmFont, fontWeight: 700, fontSize: '0.92rem', whiteSpace: 'nowrap' }}>{t('admin_th_location')}</th>
+                      <th style={{ padding: '0.8rem 1rem', fontFamily: kmFont, fontWeight: 700, fontSize: '0.92rem', whiteSpace: 'nowrap' }}>{t('admin_th_departments')}</th>
+                      <th style={{ padding: '0.8rem 1rem', fontFamily: kmFont, fontWeight: 700, fontSize: '0.92rem', whiteSpace: 'nowrap' }}>{t('admin_th_status')}</th>
+                      <th style={{ padding: '0.8rem 1rem', fontFamily: kmFont, fontWeight: 700, fontSize: '0.92rem', textAlign: 'right', whiteSpace: 'nowrap' }}>{t('admin_th_actions')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -393,12 +393,12 @@ export const AdminDashboard: React.FC = () => {
             <div className="responsive-table-wrapper">
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
                 <thead>
-                  <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)', textAlign: 'left' }}>
-                    <th style={{ padding: '0.9rem 1rem', fontFamily: kmFont, fontWeight: 600 }}>{t('admin_th_name')}</th>
-                    <th style={{ padding: '0.9rem 1rem', fontFamily: kmFont, fontWeight: 600 }}>{t('admin_th_role')}</th>
-                    <th style={{ padding: '0.9rem 1rem', fontFamily: kmFont, fontWeight: 600 }}>{t('admin_th_email_phone')}</th>
-                    <th style={{ padding: '0.9rem 1rem', fontFamily: kmFont, fontWeight: 600 }}>{t('admin_th_status')}</th>
-                    <th style={{ padding: '0.9rem 1rem', fontFamily: kmFont, fontWeight: 600 }}>{t('admin_th_action')}</th>
+                  <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)', textAlign: 'left', background: 'transparent' }}>
+                    <th style={{ padding: '0.8rem 1rem', fontFamily: kmFont, fontWeight: 700, fontSize: '0.92rem', whiteSpace: 'nowrap' }}>{t('admin_th_name')}</th>
+                    <th style={{ padding: '0.8rem 1rem', fontFamily: kmFont, fontWeight: 700, fontSize: '0.92rem', whiteSpace: 'nowrap' }}>{t('admin_th_role')}</th>
+                    <th style={{ padding: '0.8rem 1rem', fontFamily: kmFont, fontWeight: 700, fontSize: '0.92rem', whiteSpace: 'nowrap' }}>{t('admin_th_email_phone')}</th>
+                    <th style={{ padding: '0.8rem 1rem', fontFamily: kmFont, fontWeight: 700, fontSize: '0.92rem', whiteSpace: 'nowrap' }}>{t('admin_th_status')}</th>
+                    <th style={{ padding: '0.8rem 1rem', fontFamily: kmFont, fontWeight: 700, fontSize: '0.92rem', textAlign: 'right', whiteSpace: 'nowrap' }}>{t('admin_th_action')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -448,12 +448,12 @@ export const AdminDashboard: React.FC = () => {
               <div className="responsive-table-wrapper">
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
                   <thead>
-                    <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)', textAlign: 'left' }}>
-                      <th style={{ padding: '0.9rem 1rem', fontFamily: kmFont, fontWeight: 600 }}>{t('admin_th_timestamp')}</th>
-                      <th style={{ padding: '0.9rem 1rem', fontFamily: kmFont, fontWeight: 600 }}>{t('admin_th_ticket')}</th>
-                      <th style={{ padding: '0.9rem 1rem', fontFamily: kmFont, fontWeight: 600 }}>{t('admin_th_hospital_audit')}</th>
-                      <th style={{ padding: '0.9rem 1rem', fontFamily: kmFont, fontWeight: 600 }}>{t('admin_th_state_shift')}</th>
-                      <th style={{ padding: '0.9rem 1rem', fontFamily: kmFont, fontWeight: 600 }}>{t('admin_th_operator')}</th>
+                    <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)', textAlign: 'left', background: 'transparent' }}>
+                      <th style={{ padding: '0.8rem 1rem', fontFamily: kmFont, fontWeight: 700, fontSize: '0.92rem', whiteSpace: 'nowrap' }}>{t('admin_th_timestamp')}</th>
+                      <th style={{ padding: '0.8rem 1rem', fontFamily: kmFont, fontWeight: 700, fontSize: '0.92rem', whiteSpace: 'nowrap' }}>{t('admin_th_ticket')}</th>
+                      <th style={{ padding: '0.8rem 1rem', fontFamily: kmFont, fontWeight: 700, fontSize: '0.92rem', whiteSpace: 'nowrap' }}>{t('admin_th_hospital_audit')}</th>
+                      <th style={{ padding: '0.8rem 1rem', fontFamily: kmFont, fontWeight: 700, fontSize: '0.92rem', whiteSpace: 'nowrap' }}>{t('admin_th_state_shift')}</th>
+                      <th style={{ padding: '0.8rem 1rem', fontFamily: kmFont, fontWeight: 700, fontSize: '0.92rem', whiteSpace: 'nowrap' }}>{t('admin_th_operator')}</th>
                     </tr>
                   </thead>
                   <tbody>

@@ -58,84 +58,79 @@ export const ServiceList: React.FC<ServiceListProps> = ({
         <thead>
           <tr
             style={{
-              background: '#f8fafc',
-              borderTop: '1px solid var(--border-color)',
+              background: 'transparent',
               borderBottom: '1px solid var(--border-color)',
             }}
           >
             <th
               style={{
-                padding: '0.85rem 1.25rem',
-                fontSize: '0.82rem',
+                padding: '0.8rem 1.25rem',
+                fontSize: '0.92rem',
                 fontWeight: 700,
                 color: 'var(--text-muted)',
-                letterSpacing: '0.03em',
                 fontFamily: kmFont,
-                borderTopLeftRadius: '10px',
-                borderBottomLeftRadius: '10px',
+                whiteSpace: 'nowrap',
               }}
             >
               {t('dept_title_services')}
             </th>
             <th
               style={{
-                padding: '0.85rem 1.25rem',
-                fontSize: '0.82rem',
+                padding: '0.8rem 1.25rem',
+                fontSize: '0.92rem',
                 fontWeight: 700,
                 color: 'var(--text-muted)',
-                letterSpacing: '0.03em',
                 fontFamily: kmFont,
+                whiteSpace: 'nowrap',
               }}
             >
               {t('dept_srv_th_dept')}
             </th>
             <th
               style={{
-                padding: '0.85rem 1.25rem',
-                fontSize: '0.82rem',
+                padding: '0.8rem 1.25rem',
+                fontSize: '0.92rem',
                 fontWeight: 700,
                 color: 'var(--text-muted)',
-                letterSpacing: '0.03em',
                 fontFamily: kmFont,
+                whiteSpace: 'nowrap',
               }}
             >
               {t('dept_srv_th_duration')}
             </th>
             <th
               style={{
-                padding: '0.85rem 1.25rem',
-                fontSize: '0.82rem',
+                padding: '0.8rem 1.25rem',
+                fontSize: '0.92rem',
                 fontWeight: 700,
                 color: 'var(--text-muted)',
-                letterSpacing: '0.03em',
                 fontFamily: kmFont,
+                whiteSpace: 'nowrap',
               }}
             >
               {t('dept_srv_th_price')}
             </th>
             <th
               style={{
-                padding: '0.85rem 1.25rem',
-                fontSize: '0.82rem',
+                padding: '0.8rem 1.25rem',
+                fontSize: '0.92rem',
                 fontWeight: 700,
                 color: 'var(--text-muted)',
-                letterSpacing: '0.03em',
                 fontFamily: kmFont,
+                whiteSpace: 'nowrap',
               }}
             >
               {t('staff_col_status')}
             </th>
             <th
               style={{
-                padding: '0.85rem 1.25rem',
-                fontSize: '0.82rem',
+                padding: '0.8rem 1.25rem',
+                fontSize: '0.92rem',
                 fontWeight: 700,
                 color: 'var(--text-muted)',
-                letterSpacing: '0.03em',
                 textAlign: 'right',
                 fontFamily: kmFont,
-                borderTopRightRadius: '10px',
-                borderBottomRightRadius: '10px',
+                whiteSpace: 'nowrap',
               }}
             >
               {t('staff_col_actions')}
@@ -159,64 +154,66 @@ export const ServiceList: React.FC<ServiceListProps> = ({
                 }}
               >
                 {/* Service Name & Description */}
-                <td style={{ padding: '0.95rem 1.25rem', verticalAlign: 'middle' }}>
-                  <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: kmFont }}>
+                <td style={{ padding: '0.85rem 1.25rem', verticalAlign: 'middle' }}>
+                  <div style={{ fontSize: '0.94rem', fontWeight: 600, color: 'var(--text-main)', fontFamily: kmFont, whiteSpace: 'nowrap' }}>
                     {srv.name}
                   </div>
                   {srv.description && (
-                    <div style={{ fontSize: '0.84rem', color: 'var(--text-muted)', marginTop: '3px', fontFamily: kmFont }}>
+                    <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '2px', fontFamily: kmFont }}>
                       {srv.description}
                     </div>
                   )}
                 </td>
 
                 {/* Department */}
-                <td style={{ padding: '0.95rem 1.25rem', verticalAlign: 'middle' }}>
-                  <div style={{ fontSize: '0.94rem', color: 'var(--text-main)', fontFamily: kmFont }}>
+                <td style={{ padding: '0.85rem 1.25rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                  <div style={{ fontSize: '0.88rem', color: 'var(--text-main)', fontFamily: kmFont }}>
                     {parentDept ? parentDept.name : t('doc_general')}
                   </div>
                 </td>
 
                 {/* Duration */}
-                <td style={{ padding: '0.95rem 1.25rem', verticalAlign: 'middle' }}>
-                  <div style={{ fontSize: '0.94rem', fontWeight: 600, color: 'var(--text-main)', fontFamily: kmFont }}>
+                <td style={{ padding: '0.85rem 1.25rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                  <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)', fontFamily: kmFont }}>
                     {t('dept_mins').replace('{mins}', String(srv.duration_minutes || 20))}
                   </div>
                 </td>
 
                 {/* Price */}
-                <td style={{ padding: '0.95rem 1.25rem', verticalAlign: 'middle' }}>
-                  <div style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                <td style={{ padding: '0.85rem 1.25rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-main)' }}>
                     ${srv.price.toFixed(2)}
                   </div>
                 </td>
 
                 {/* Status */}
-                <td style={{ padding: '0.95rem 1.25rem', verticalAlign: 'middle' }}>
+                <td style={{ padding: '0.85rem 1.25rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
                   <div
                     style={{
                       display: 'inline-flex',
                       alignItems: 'center',
-                      gap: '0.4rem',
-                      fontSize: '0.88rem',
-                      fontWeight: 600,
+                      gap: '0.45rem',
+                      fontSize: '0.86rem',
+                      fontWeight: 500,
                       color: srv.is_active ? '#15803d' : '#64748b',
                       fontFamily: kmFont,
+                      whiteSpace: 'nowrap',
                     }}
                   >
-                    <span style={{ fontSize: '0.75rem', color: srv.is_active ? '#16a34a' : '#94a3b8' }}>●</span>
-                    <span>{srv.is_active ? t('doc_active') : t('doc_inactive')}</span>
+                    <span style={{ fontSize: '0.7rem', color: srv.is_active ? '#16a34a' : '#94a3b8', flexShrink: 0, lineHeight: 1 }}>●</span>
+                    <span style={{ whiteSpace: 'nowrap' }}>{srv.is_active ? t('doc_active') : t('doc_inactive')}</span>
                   </div>
                 </td>
 
                 {/* Actions: Three-dot dropdown menu */}
                 <td
                   style={{
-                    padding: '0.95rem 1.25rem',
+                    padding: '0.85rem 1.25rem',
                     verticalAlign: 'middle',
                     textAlign: 'right',
                     position: 'relative',
                     zIndex: isOpen ? 1001 : 1,
+                    whiteSpace: 'nowrap',
                   }}
                 >
                   <div style={{ position: 'relative', display: 'inline-block' }}>

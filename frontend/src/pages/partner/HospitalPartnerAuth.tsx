@@ -212,7 +212,7 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                 display: 'block',
               }}
             />
-            <div>
+            <div className="brand-title">
               <div
                 style={{
                   fontSize: '1rem',

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AuthService } from '../../services/auth';
 import { API_BASE } from '../../services/api';
 import { useLanguage } from '../../context/LanguageContext';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, User, Camera, RefreshCw } from 'lucide-react';
 import { useModalClose } from '../../hooks/useModalClose';
 
 interface StaffMember {
@@ -13,6 +13,7 @@ interface StaffMember {
   role: string;
   is_active: boolean;
   is_verified: boolean;
+  profile_photo_url?: string | null;
   created_at: string;
 }
 
@@ -41,6 +42,19 @@ export const StaffManagement: React.FC = () => {
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+
+  // Row Photo Upload State
+  const rowPhotoInputRef = React.useRef<HTMLInputElement | null>(null);
+  const activeUploadStaffIdRef = React.useRef<string | null>(null);
+  const [rowUploadingStaffId, setRowUploadingStaffId] = useState<string | null>(null);
+  const [hoveredAvatarStaffId, setHoveredAvatarStaffId] = useState<string | null>(null);
+  const [rowUploadError, setRowUploadError] = useState<{ staffId: string; message: string } | null>(null);
+
+  // Modal Photo Upload State
+  const modalPhotoInputRef = React.useRef<HTMLInputElement | null>(null);
+  const [modalPhotoUrl, setModalPhotoUrl] = useState<string>('');
+  const [modalPhotoFile, setModalPhotoFile] = useState<File | null>(null);
+  const [removeModalPhoto, setRemoveModalPhoto] = useState(false);
 
   // Auto-Generated Temporary Password Modal State
   const [invitedStaffInfo, setInvitedStaffInfo] = useState<{
@@ -92,6 +106,9 @@ export const StaffManagement: React.FC = () => {
     setPassword('');
     setShowPassword(false);
     setIsActive(true);
+    setModalPhotoUrl('');
+    setModalPhotoFile(null);
+    setRemoveModalPhoto(false);
     setNameError(null);
     setContactError(null);
     setPasswordError(null);
@@ -107,11 +124,89 @@ export const StaffManagement: React.FC = () => {
     setPassword('');
     setShowPassword(false);
     setIsActive(staff.is_active);
+    setModalPhotoUrl(staff.profile_photo_url || '');
+    setModalPhotoFile(null);
+    setRemoveModalPhoto(false);
     setNameError(null);
     setContactError(null);
     setPasswordError(null);
     setSubmitError(null);
     setModalOpen(true);
+  };
+
+  const handleModalPhotoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      setSubmitError(isKm ? 'ទំហំរូបភាពត្រូវតែតូចជាង 5MB' : 'Image size must be under 5MB');
+      return;
+    }
+    setModalPhotoFile(file);
+    setModalPhotoUrl(URL.createObjectURL(file));
+    setRemoveModalPhoto(false);
+  };
+
+  const handleRemoveModalPhoto = () => {
+    setModalPhotoFile(null);
+    setModalPhotoUrl('');
+    setRemoveModalPhoto(true);
+    if (modalPhotoInputRef.current) {
+      modalPhotoInputRef.current.value = '';
+    }
+  };
+
+  const handleTriggerRowPhotoUpload = (staffId: string) => {
+    if (rowUploadingStaffId) return;
+    setRowUploadError(null);
+    activeUploadStaffIdRef.current = staffId;
+    if (rowPhotoInputRef.current) {
+      rowPhotoInputRef.current.value = '';
+      rowPhotoInputRef.current.click();
+    }
+  };
+
+  const handleRowPhotoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    const targetStaffId = activeUploadStaffIdRef.current;
+    if (!file || !targetStaffId) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      setRowUploadError({
+        staffId: targetStaffId,
+        message: isKm ? 'ទំហំរូបភាពត្រូវតែតូចជាង 5MB' : 'Image size must be under 5MB',
+      });
+      return;
+    }
+
+    setRowUploadError(null);
+    setRowUploadingStaffId(targetStaffId);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch(`${API_BASE}/partners/staff/${targetStaffId}/photo`, {
+        method: 'POST',
+        headers: AuthService.getAuthHeaders(),
+        body: formData,
+      });
+
+      if (!res.ok) {
+        throw new Error('Upload failed');
+      }
+
+      const data = await res.json();
+      setStaffList(prev =>
+        prev.map(s => s.id === targetStaffId ? { ...s, profile_photo_url: data.url } : s)
+      );
+    } catch {
+      setRowUploadError({
+        staffId: targetStaffId,
+        message: isKm ? 'មិនអាចផ្ទុករូបភាពឡើងបានទេ។' : 'Failed to upload photo.',
+      });
+    } finally {
+      setRowUploadingStaffId(null);
+      activeUploadStaffIdRef.current = null;
+    }
   };
 
   const handleSaveStaff = async (e: React.FormEvent) => {
@@ -183,11 +278,34 @@ export const StaffManagement: React.FC = () => {
 
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
-        setSubmitError(errData.detail || t('staff_err_save'));
+        const rawDetail = typeof errData.detail === 'string' ? errData.detail : '';
+        if (rawDetail.includes('already exists') || rawDetail.includes('already registered') || res.status === 409) {
+          setContactError(t('err_partner_exists') || t('staff_err_contact'));
+        } else {
+          setSubmitError(t('staff_err_save'));
+        }
         return;
       }
 
       const createdStaff = await res.json().catch(() => null);
+
+      const targetId = editingStaffId || createdStaff?.id;
+      if (targetId) {
+        if (modalPhotoFile) {
+          const formData = new FormData();
+          formData.append('file', modalPhotoFile);
+          await fetch(`${API_BASE}/partners/staff/${targetId}/photo`, {
+            method: 'POST',
+            headers: AuthService.getAuthHeaders(),
+            body: formData,
+          }).catch(() => null);
+        } else if (removeModalPhoto && editingStaffId) {
+          await fetch(`${API_BASE}/partners/staff/${editingStaffId}/photo`, {
+            method: 'DELETE',
+            headers: AuthService.getAuthHeaders(),
+          }).catch(() => null);
+        }
+      }
 
       if (!isEdit && createdStaff?.temp_password) {
         setInvitedStaffInfo({
@@ -265,20 +383,23 @@ export const StaffManagement: React.FC = () => {
         </div>
       ) : (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-          {/* Section Heading */}
-          <div style={{ marginBottom: '0.75rem' }}>
-            <h2 style={{ fontSize: '1.15rem', fontWeight: 600, margin: 0, color: 'var(--text-main)', fontFamily: kmFont }}>
-              {t('staff_roster_title')}
-            </h2>
-          </div>
+          {/* Hidden File Input for Row Avatar Upload */}
+          <input
+            type="file"
+            ref={rowPhotoInputRef}
+            accept="image/*"
+            onChange={handleRowPhotoFileChange}
+            style={{ display: 'none' }}
+          />
 
-          {/* Staff Table (Containerless) */}
+          {/* Staff Table */}
           <div
             style={{
+              width: '100%',
+              overflowX: 'auto',
               background: 'transparent',
               border: 'none',
               borderRadius: 0,
-              overflow: 'visible',
               boxShadow: 'none',
               flex: 1,
             }}
@@ -311,63 +432,70 @@ export const StaffManagement: React.FC = () => {
                 <thead>
                   <tr
                     style={{
-                      background: '#f8fafc',
-                      borderTop: '1px solid var(--border-color)',
+                      background: 'transparent',
                       borderBottom: '1px solid var(--border-color)',
                     }}
                   >
                     <th
                       style={{
-                        padding: '0.85rem 1.25rem',
-                        fontSize: '0.82rem',
+                        padding: '0.8rem 1.25rem',
+                        fontSize: '0.92rem',
                         fontWeight: 700,
                         color: 'var(--text-muted)',
-                        letterSpacing: '0.03em',
                         fontFamily: kmFont,
-                        borderTopLeftRadius: '10px',
-                        borderBottomLeftRadius: '10px',
+                        whiteSpace: 'nowrap',
                       }}
                     >
-                      {t('staff_col_name')}
+                      {isKm ? 'ឈ្មោះ' : t('staff_col_name')}
                     </th>
                     <th
                       style={{
-                        padding: '0.85rem 1.25rem',
-                        fontSize: '0.82rem',
+                        padding: '0.8rem 1.25rem',
+                        fontSize: '0.92rem',
                         fontWeight: 700,
                         color: 'var(--text-muted)',
-                        letterSpacing: '0.03em',
                         fontFamily: kmFont,
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {isKm ? 'ទំនាក់ទំនង' : t('staff_col_contact')}
+                    </th>
+                    <th
+                      style={{
+                        padding: '0.8rem 1.25rem',
+                        fontSize: '0.92rem',
+                        fontWeight: 700,
+                        color: 'var(--text-muted)',
+                        fontFamily: kmFont,
+                        whiteSpace: 'nowrap',
                       }}
                     >
                       {t('staff_col_role')}
                     </th>
                     <th
                       style={{
-                        padding: '0.85rem 1.25rem',
-                        fontSize: '0.82rem',
+                        padding: '0.8rem 1.25rem',
+                        fontSize: '0.92rem',
                         fontWeight: 700,
                         color: 'var(--text-muted)',
-                        letterSpacing: '0.03em',
                         fontFamily: kmFont,
+                        whiteSpace: 'nowrap',
                       }}
                     >
                       {t('staff_col_status')}
                     </th>
                     <th
                       style={{
-                        padding: '0.85rem 1.25rem',
-                        fontSize: '0.82rem',
+                        padding: '0.8rem 1.25rem',
+                        fontSize: '0.92rem',
                         fontWeight: 700,
                         color: 'var(--text-muted)',
-                        letterSpacing: '0.03em',
                         textAlign: 'right',
                         fontFamily: kmFont,
-                        borderTopRightRadius: '10px',
-                        borderBottomRightRadius: '10px',
+                        whiteSpace: 'nowrap',
                       }}
                     >
-                      {t('staff_col_actions')}
+                      {isKm ? 'សកម្ម' : t('staff_col_actions')}
                     </th>
                   </tr>
                 </thead>
@@ -378,20 +506,89 @@ export const StaffManagement: React.FC = () => {
                     return (
                       <tr
                         key={staff.id}
+                        className="staff-table-row"
                         style={{
                           borderBottom: '1px solid var(--border-color)',
                           background: 'transparent',
-                          transition: 'background 0.15s ease',
                           position: 'relative',
                           zIndex: isOpen ? 1000 : 1,
                         }}
                       >
-                        {/* Name & Contact */}
-                        <td style={{ padding: '0.95rem 1.25rem', verticalAlign: 'middle' }}>
-                          <div style={{ fontSize: '0.98rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: kmFont }}>
-                            {staff.full_name}
+                        {/* Name with User Profile Prefix & Photo Upload */}
+                        <td style={{ padding: '0.85rem 1.25rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', whiteSpace: 'nowrap' }}>
+                            <div
+                              onClick={() => handleTriggerRowPhotoUpload(staff.id)}
+                              onMouseEnter={() => setHoveredAvatarStaffId(staff.id)}
+                              onMouseLeave={() => setHoveredAvatarStaffId(null)}
+                              title={isKm ? 'ចុចដើម្បីផ្ទុកឡើងរូបថត' : 'Click to upload photo'}
+                              style={{
+                                width: '38px',
+                                height: '38px',
+                                borderRadius: '50%',
+                                background: '#f1f5f9',
+                                border: hoveredAvatarStaffId === staff.id ? '1px solid var(--accent-primary)' : '1px solid var(--border-color)',
+                                overflow: 'hidden',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                flexShrink: 0,
+                                cursor: rowUploadingStaffId === staff.id ? 'wait' : 'pointer',
+                                position: 'relative',
+                                transition: 'all 0.15s ease',
+                              }}
+                            >
+                              {rowUploadingStaffId === staff.id ? (
+                                <RefreshCw size={15} className="spin" color="var(--accent-primary)" />
+                              ) : staff.profile_photo_url ? (
+                                <>
+                                  <img
+                                    src={staff.profile_photo_url}
+                                    alt={staff.full_name}
+                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                    onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }}
+                                  />
+                                  {hoveredAvatarStaffId === staff.id && (
+                                    <div
+                                      style={{
+                                        position: 'absolute',
+                                        inset: 0,
+                                        background: 'rgba(0, 0, 0, 0.4)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                      }}
+                                    >
+                                      <Camera size={14} color="#ffffff" />
+                                    </div>
+                                  )}
+                                </>
+                              ) : (
+                                <>
+                                  {hoveredAvatarStaffId === staff.id ? (
+                                    <Camera size={15} color="var(--accent-primary)" />
+                                  ) : (
+                                    <User size={18} color="var(--text-muted)" />
+                                  )}
+                                </>
+                              )}
+                            </div>
+                            <div>
+                              <span style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-main)', fontFamily: kmFont }}>
+                                {staff.full_name}
+                              </span>
+                              {rowUploadError && rowUploadError.staffId === staff.id && (
+                                <span style={{ fontSize: '0.78rem', color: '#dc2626', fontFamily: kmFont, display: 'block', marginTop: '2px' }}>
+                                  {rowUploadError.message}
+                                </span>
+                              )}
+                            </div>
                           </div>
-                          <div style={{ fontSize: '0.84rem', color: 'var(--text-muted)', marginTop: '2px', fontFamily: kmFont }}>
+                        </td>
+
+                        {/* Contact */}
+                        <td style={{ padding: '0.85rem 1.25rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                          <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)', fontFamily: kmFont }}>
                             {staff.email && staff.phone_number
                               ? `${staff.email} • ${staff.phone_number}`
                               : staff.email || staff.phone_number || t('staff_no_email')}
@@ -399,11 +596,11 @@ export const StaffManagement: React.FC = () => {
                         </td>
 
                         {/* Role */}
-                        <td style={{ padding: '0.95rem 1.25rem', verticalAlign: 'middle' }}>
+                        <td style={{ padding: '0.85rem 1.25rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
                           <div
                             style={{
-                              fontSize: '0.92rem',
-                              fontWeight: 600,
+                              fontSize: '0.88rem',
+                              fontWeight: 500,
                               color: 'var(--text-main)',
                               fontFamily: kmFont,
                             }}
@@ -412,21 +609,22 @@ export const StaffManagement: React.FC = () => {
                           </div>
                         </td>
 
-                        {/* Status (No background fill outside of text) */}
-                        <td style={{ padding: '0.95rem 1.25rem', verticalAlign: 'middle' }}>
+                        {/* Status */}
+                        <td style={{ padding: '0.85rem 1.25rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
                           <div
                             style={{
                               display: 'inline-flex',
                               alignItems: 'center',
-                              gap: '0.4rem',
-                              fontSize: '0.88rem',
-                              fontWeight: 600,
+                              gap: '0.45rem',
+                              fontSize: '0.86rem',
+                              fontWeight: 500,
                               color: staff.is_active ? '#15803d' : '#64748b',
                               fontFamily: kmFont,
+                              whiteSpace: 'nowrap',
                             }}
                           >
-                            <span style={{ fontSize: '0.75rem', color: staff.is_active ? '#16a34a' : '#94a3b8' }}>●</span>
-                            <span>{staff.is_active ? t('doc_active') : t('doc_inactive')}</span>
+                            <span style={{ fontSize: '0.7rem', color: staff.is_active ? '#16a34a' : '#94a3b8', lineHeight: 1, flexShrink: 0 }}>●</span>
+                            <span style={{ whiteSpace: 'nowrap' }}>{staff.is_active ? t('doc_active') : t('doc_inactive')}</span>
                           </div>
                         </td>
 
@@ -445,6 +643,7 @@ export const StaffManagement: React.FC = () => {
                               className="action-dots-btn"
                               onClick={() => setActiveDropdownId(isOpen ? null : staff.id)}
                               aria-label="Actions"
+                              style={{ boxShadow: 'none' }}
                             >
                               ···
                             </button>
@@ -467,6 +666,8 @@ export const StaffManagement: React.FC = () => {
                                     position: 'absolute',
                                     right: 0,
                                     top: 'calc(100% + 6px)',
+                                    boxShadow: 'none',
+                                    border: '1px solid var(--border-color)',
                                   }}
                                 >
                                   <button
@@ -537,7 +738,8 @@ export const StaffManagement: React.FC = () => {
               maxWidth: '460px',
               fontFamily: kmFont,
               borderRadius: '24px',
-              boxShadow: '0 20px 50px rgba(0, 0, 0, 0.16), 0 0 0 1px rgba(0, 0, 0, 0.08)',
+              border: '1px solid var(--border-color)',
+              boxShadow: 'none',
               background: '#ffffff',
               overflow: 'hidden',
             }}
@@ -562,6 +764,70 @@ export const StaffManagement: React.FC = () => {
               </div>
 
               <form onSubmit={handleSaveStaff} style={{ display: 'flex', flexDirection: 'column', gap: '0.95rem' }}>
+                {/* Profile Photo Upload in Modal (matching Doctor modal design) */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.35rem', paddingBottom: '0.75rem' }}>
+                  <div
+                    onClick={() => modalPhotoInputRef.current?.click()}
+                    style={{
+                      width: '88px',
+                      height: '88px',
+                      borderRadius: '50%',
+                      border: '1px dashed var(--border-color)',
+                      backgroundColor: '#ffffff',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      position: 'relative',
+                      overflow: 'hidden',
+                      boxShadow: 'none',
+                    }}
+                    title={isKm ? 'ចុចដើម្បីប្តូររូបថត' : 'Click to change photo'}
+                  >
+                    {modalPhotoUrl ? (
+                      <img
+                        src={modalPhotoUrl}
+                        alt="Staff Preview"
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }}
+                      />
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', color: 'var(--text-muted)' }}>
+                        <Camera size={24} color="var(--accent-primary)" />
+                        <span style={{ fontSize: '0.82rem', fontFamily: kmFont }}>{isKm ? 'រូបថត' : 'Photo'}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {modalPhotoUrl && (
+                    <button
+                      type="button"
+                      onClick={handleRemoveModalPhoto}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: '#dc2626',
+                        fontSize: '0.84rem',
+                        cursor: 'pointer',
+                        marginTop: '4px',
+                        fontFamily: kmFont,
+                        textDecoration: 'underline',
+                      }}
+                    >
+                      {isKm ? 'លុបរូបចេញ' : 'Remove Photo'}
+                    </button>
+                  )}
+
+                  <input
+                    type="file"
+                    ref={modalPhotoInputRef}
+                    accept="image/*"
+                    onChange={handleModalPhotoFileChange}
+                    style={{ display: 'none' }}
+                  />
+                </div>
+
                 {/* Full Name */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 600, marginBottom: '5px', color: 'var(--text-main)', fontFamily: kmFont }}>
@@ -804,10 +1070,11 @@ export const StaffManagement: React.FC = () => {
             style={{
               background: '#ffffff',
               borderRadius: '24px',
+              border: '1px solid var(--border-color)',
               maxWidth: '460px',
               width: '94%',
               padding: '1.45rem 1.6rem',
-              boxShadow: '0 20px 50px rgba(0, 0, 0, 0.16), 0 0 0 1px rgba(0, 0, 0, 0.08)',
+              boxShadow: 'none',
               fontFamily: kmFont,
             }}
           >

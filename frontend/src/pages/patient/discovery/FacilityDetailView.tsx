@@ -337,16 +337,16 @@ export const FacilityDetailView: React.FC<FacilityDetailViewProps> = ({
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.95rem', fontFamily: kmFont }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)', textAlign: 'left', background: 'transparent' }}>
-                    <th style={{ padding: '0.95rem 1.35rem', fontWeight: 700, fontSize: '0.88rem', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                    <th style={{ padding: '0.8rem 1.25rem', fontWeight: 700, fontSize: '0.92rem', whiteSpace: 'nowrap' }}>
                       {language === 'km' ? 'ឈ្មោះសេវាកម្ម' : 'Service Name'}
                     </th>
-                    <th style={{ padding: '0.95rem 1.35rem', fontWeight: 700, fontSize: '0.88rem', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                    <th style={{ padding: '0.8rem 1.25rem', fontWeight: 700, fontSize: '0.92rem', whiteSpace: 'nowrap' }}>
                       {language === 'km' ? 'ព័ត៌មានពិពណ៌នា' : 'Description'}
                     </th>
-                    <th style={{ padding: '0.95rem 1.35rem', fontWeight: 700, fontSize: '0.88rem', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                    <th style={{ padding: '0.8rem 1.25rem', fontWeight: 700, fontSize: '0.92rem', whiteSpace: 'nowrap' }}>
                       {language === 'km' ? 'រយៈពេល' : 'Duration'}
                     </th>
-                    <th style={{ padding: '0.95rem 1.35rem', fontWeight: 700, fontSize: '0.88rem', textTransform: 'uppercase', letterSpacing: '0.03em', textAlign: 'right' }}>
+                    <th style={{ padding: '0.8rem 1.25rem', fontWeight: 700, fontSize: '0.92rem', textAlign: 'right', whiteSpace: 'nowrap' }}>
                       {language === 'km' ? 'តម្លៃ (USD)' : 'Price (USD)'}
                     </th>
                   </tr>

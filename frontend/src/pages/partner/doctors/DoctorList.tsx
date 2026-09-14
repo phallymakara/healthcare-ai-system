@@ -97,8 +97,8 @@ export const DoctorList: React.FC<DoctorListProps> = ({
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 flexWrap: 'wrap',
-                gap: '1rem',
-                padding: '0.85rem 0',
+                gap: '0.85rem',
+                padding: '0.65rem 0',
                 borderBottom: '1px solid var(--border-color)',
                 background: 'transparent',
                 position: 'relative',
@@ -106,15 +106,15 @@ export const DoctorList: React.FC<DoctorListProps> = ({
               }}
             >
               {/* Doctor Info Column with Avatar */}
-              <div style={{ minWidth: '260px', flex: '1.5', display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+              <div style={{ minWidth: '230px', flex: '1.4', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <div
                   onClick={() => onTriggerRowPhotoUpload(doc.id)}
                   onMouseEnter={() => setHoveredAvatarDocId(doc.id)}
                   onMouseLeave={() => setHoveredAvatarDocId(null)}
                   title={isKm ? 'ចុចដើម្បីប្តូររូបថត' : 'Click to change photo'}
                   style={{
-                    width: '42px',
-                    height: '42px',
+                    width: '36px',
+                    height: '36px',
                     borderRadius: '50%',
                     border: hoveredAvatarDocId === doc.id ? '1px solid var(--accent-primary)' : '1px solid var(--border-color)',
                     overflow: 'hidden',
@@ -129,7 +129,7 @@ export const DoctorList: React.FC<DoctorListProps> = ({
                   }}
                 >
                   {rowUploadingDocId === doc.id ? (
-                    <RefreshCw size={18} className="spin" color="var(--accent-primary)" />
+                    <RefreshCw size={15} className="spin" color="var(--accent-primary)" />
                   ) : doc.photo_url ? (
                     <>
                       <img
@@ -149,29 +149,29 @@ export const DoctorList: React.FC<DoctorListProps> = ({
                             justifyContent: 'center',
                           }}
                         >
-                          <Camera size={16} color="#ffffff" />
+                          <Camera size={14} color="#ffffff" />
                         </div>
                       )}
                     </>
                   ) : (
                     <>
                       {hoveredAvatarDocId === doc.id ? (
-                        <Camera size={18} color="var(--accent-primary)" />
+                        <Camera size={15} color="var(--accent-primary)" />
                       ) : (
-                        <UserCheck size={20} color="var(--accent-primary)" />
+                        <UserCheck size={18} color="var(--accent-primary)" />
                       )}
                     </>
                   )}
                 </div>
                 <div>
-                  <div style={{ fontSize: '1.28rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: kmFont, lineHeight: 1.25 }}>
+                  <div style={{ fontSize: '1.02rem', fontWeight: 600, color: 'var(--text-main)', fontFamily: kmFont, lineHeight: 1.25 }}>
                     {doc.full_name}
                   </div>
-                  <div style={{ fontSize: '1.02rem', color: 'var(--text-muted)', marginTop: '2px', fontFamily: kmFont }}>
+                  <div style={{ fontSize: '0.84rem', color: 'var(--text-muted)', marginTop: '2px', fontFamily: kmFont }}>
                     {deptObj ? deptObj.name : t('doc_general')} • {doc.specialty}
                   </div>
                   {rowUploadError && rowUploadError.docId === doc.id && (
-                    <span style={{ fontSize: '0.82rem', color: '#dc2626', fontFamily: kmFont, display: 'block', marginTop: '2px' }}>
+                    <span style={{ fontSize: '0.78rem', color: '#dc2626', fontFamily: kmFont, display: 'block', marginTop: '2px' }}>
                       {rowUploadError.message}
                     </span>
                   )}
@@ -179,28 +179,28 @@ export const DoctorList: React.FC<DoctorListProps> = ({
               </div>
 
               {/* Station Column */}
-              <div style={{ minWidth: '180px', flex: '1' }}>
-                <div style={{ fontSize: '1.12rem', color: 'var(--text-main)', fontWeight: 600, fontFamily: kmFont, lineHeight: 1.25 }}>
+              <div style={{ minWidth: '150px', flex: '1' }}>
+                <div style={{ fontSize: '0.92rem', color: 'var(--text-main)', fontWeight: 500, fontFamily: kmFont, lineHeight: 1.25 }}>
                   {doc.room_number || t('doc_general_outpatient')}
                 </div>
               </div>
 
               {/* Weekly Working Days Column */}
-              <div style={{ minWidth: '240px', flex: '1.2' }}>
-                <div style={{ fontSize: '0.92rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, marginBottom: '4px', fontFamily: kmFont }}>
+              <div style={{ minWidth: '210px', flex: '1.2' }}>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, marginBottom: '3px', fontFamily: kmFont }}>
                   {t('doc_weekly_working_days')}
                 </div>
-                <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: '3px', flexWrap: 'wrap' }}>
                   {DAY_DEFS.map((day) => {
                     const isScheduled = scheduleDays.includes(day.dayIndex);
                     return (
                       <span
                         key={day.dayIndex}
                         style={{
-                          padding: '0.15rem 0.45rem',
+                          padding: '0.12rem 0.36rem',
                           border: isScheduled ? '1px solid var(--text-main)' : '1px solid var(--border-color)',
                           borderRadius: '4px',
-                          fontSize: '0.85rem',
+                          fontSize: '0.76rem',
                           fontWeight: isScheduled ? 600 : 400,
                           color: isScheduled ? 'var(--text-main)' : 'var(--text-muted)',
                           background: 'transparent',

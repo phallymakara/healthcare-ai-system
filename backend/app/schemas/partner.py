@@ -242,6 +242,7 @@ class StaffResponse(BaseModel):
     role: UserRole
     is_active: bool
     is_verified: bool
+    profile_photo_url: Optional[str] = None
     created_at: datetime
     temp_password: Optional[str] = None
 

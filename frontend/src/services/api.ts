@@ -5,15 +5,15 @@ export const getApiBase = (): string => {
   if (import.meta.env.VITE_API_BASE_URL) {
     return import.meta.env.VITE_API_BASE_URL;
   }
-  // 2. Production or runtime server: dynamically use current window origin
-  //    Works automatically on any domain, server IP, custom port, or behind reverse proxies
-  if (typeof window !== 'undefined') {
-    if (import.meta.env.PROD || window.location.port !== '5173') {
-      return `${window.location.origin}/api/v1`;
-    }
+  // 2. Local Vite development mode -> always target FastAPI backend
+  if (import.meta.env.DEV) {
+    return 'http://127.0.0.1:8000/api/v1';
   }
-  // 3. Local Vite dev server fallback
-  return 'http://localhost:8000/api/v1';
+  // 3. Production or runtime server: dynamically use current window origin
+  if (typeof window !== 'undefined') {
+    return `${window.location.origin}/api/v1`;
+  }
+  return 'http://127.0.0.1:8000/api/v1';
 };
 
 export const getWsBase = (): string => {
@@ -21,15 +21,16 @@ export const getWsBase = (): string => {
   if (import.meta.env.VITE_WS_BASE_URL) {
     return import.meta.env.VITE_WS_BASE_URL;
   }
-  // 2. Production or runtime server: dynamically adapt protocol (ws:// or wss://) and host
+  // 2. Local Vite development mode -> target FastAPI WebSocket
+  if (import.meta.env.DEV) {
+    return 'ws://127.0.0.1:8000/ws';
+  }
+  // 3. Production or runtime server: dynamically adapt protocol (ws:// or wss://) and host
   if (typeof window !== 'undefined') {
     const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    if (import.meta.env.PROD || window.location.port !== '5173') {
-      return `${wsProtocol}//${window.location.host}/ws`;
-    }
+    return `${wsProtocol}//${window.location.host}/ws`;
   }
-  // 3. Local Vite dev server fallback
-  return 'ws://localhost:8000/ws';
+  return 'ws://127.0.0.1:8000/ws';
 };
 
 export const API_BASE = getApiBase();

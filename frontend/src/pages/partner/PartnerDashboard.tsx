@@ -232,7 +232,7 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateTo
                               className="text-truncate"
                               style={{
                                 fontSize: '0.92rem',
-                                fontWeight: 700,
+                                fontWeight: 400,
                                 textTransform: 'uppercase',
                                 letterSpacing: '0.02em',
                                 fontFamily: kmFont,
@@ -248,7 +248,7 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateTo
                           <div style={{ margin: '0.15rem 0 0 0' }}>
                             <div
                               style={{
-                                fontSize: 'clamp(2.1rem, 2.6vw, 2.75rem)',
+                                fontSize: 'clamp(1.65rem, 2vw, 2rem)',
                                 fontWeight: 800,
                                 color: '#0c2f27',
                                 lineHeight: 1.1,
@@ -349,7 +349,7 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateTo
                               className="text-truncate"
                               style={{
                                 fontSize: '0.92rem',
-                                fontWeight: 700,
+                                fontWeight: 400,
                                 textTransform: 'uppercase',
                                 letterSpacing: '0.02em',
                                 fontFamily: kmFont,
@@ -365,7 +365,7 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateTo
                           <div style={{ margin: '0.15rem 0 0 0' }}>
                             <div
                               style={{
-                                fontSize: 'clamp(2.1rem, 2.6vw, 2.75rem)',
+                                fontSize: 'clamp(1.65rem, 2vw, 2rem)',
                                 fontWeight: 800,
                                 color: 'var(--text-main)',
                                 lineHeight: 1.1,
@@ -466,7 +466,7 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateTo
                               className="text-truncate"
                               style={{
                                 fontSize: '0.92rem',
-                                fontWeight: 700,
+                                fontWeight: 400,
                                 textTransform: 'uppercase',
                                 letterSpacing: '0.02em',
                                 fontFamily: kmFont,
@@ -482,7 +482,7 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateTo
                           <div style={{ margin: '0.15rem 0 0 0' }}>
                             <div
                               style={{
-                                fontSize: 'clamp(2.1rem, 2.6vw, 2.75rem)',
+                                fontSize: 'clamp(1.65rem, 2vw, 2rem)',
                                 fontWeight: 800,
                                 color: 'var(--accent-emerald, #059669)',
                                 lineHeight: 1.1,
