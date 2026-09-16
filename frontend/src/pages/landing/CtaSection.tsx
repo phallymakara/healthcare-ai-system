@@ -9,7 +9,7 @@ interface CtaSectionProps {
   onSelectTab?: (tab: any) => void;
 }
 
-export const CtaSection: React.FC<CtaSectionProps> = ({ onOpenAuth, currentUser, onSelectTab }) => {
+export const CtaSection: React.FC<CtaSectionProps> = ({ currentUser, onSelectTab }) => {
   const { t } = useLanguage();
 
   const handleClick = (e?: React.FormEvent) => {
@@ -23,7 +23,7 @@ export const CtaSection: React.FC<CtaSectionProps> = ({ onOpenAuth, currentUser,
         onSelectTab?.('patient_discovery');
       }
     } else {
-      onOpenAuth();
+      onSelectTab?.('patient_triage');
     }
   };
 

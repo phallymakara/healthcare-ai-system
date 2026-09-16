@@ -766,6 +766,17 @@ export const en = {
   footer_terms: "Terms",
   footer_privacy: "Privacy Policy",
   footer_rights: "All rights reserved © 2026 CareQueue AI",
+
+  // PWA Install Banner
+  pwa_install_title: "Install Health AI App",
+  pwa_install_desc: "Fast access, live queue tracker & full screen",
+  pwa_install_btn: "Install",
+  pwa_ios_guide_btn: "How to Add",
+  pwa_ios_guide_title: "Add to iPhone Home Screen",
+  pwa_ios_step1: "Tap the Share button at the bottom of Safari.",
+  pwa_ios_step2: "Scroll down in the menu and tap \"Add to Home Screen\".",
+  pwa_ios_step3: "Tap \"Add\" in the top right corner.",
+  pwa_ios_got_it: "Got it",
 };
 
 export type TranslationKey = keyof typeof en;

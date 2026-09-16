@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LogIn, LogOut, User, Bell, X, Menu, ArrowRight } from 'lucide-react';
+import { LogIn, LogOut, User, Bell, X, Menu, ArrowRight, Wifi } from 'lucide-react';
 import { UserProfile } from '../services/auth';
 import { useLanguage } from '../context/LanguageContext';
 import { LanguageSwitcher } from './LanguageSwitcher';
@@ -26,6 +26,7 @@ interface HeaderProps {
   onSelectTab: (tab: NavTab) => void;
   onOpenAuth: () => void;
   onLogout: () => void;
+  onOpenServerConfig?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -35,6 +36,7 @@ export const Header: React.FC<HeaderProps> = ({
   onSelectTab,
   onOpenAuth,
   onLogout,
+  onOpenServerConfig,
 }) => {
   const { t } = useLanguage();
   const [showNotifMenu, setShowNotifMenu] = useState(false);
@@ -380,6 +382,27 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Right Header Utilities (Right) */}
         <div className="header-actions">
+          {onOpenServerConfig && (
+            <button
+              onClick={onOpenServerConfig}
+              title="Server Connection & Network"
+              aria-label="Server Connection"
+              style={{
+                background: 'transparent',
+                border: 'none',
+                padding: '6px',
+                color: 'var(--text-main)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                borderRadius: '8px',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <Wifi size={17} />
+            </button>
+          )}
+
           {/* Language Switcher */}
           <LanguageSwitcher />
 
@@ -629,6 +652,52 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           )}
 
+          {/* Navigation Links for Mobile */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', width: '100%' }}>
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                onSelectTab('patient_triage');
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                padding: '0.65rem 0.9rem',
+                borderRadius: '8px',
+                background: 'linear-gradient(135deg, #185339, #059669)',
+                color: '#ffffff',
+                fontWeight: 700,
+                border: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              <span>{t('nav_ai_assistant')}</span>
+            </button>
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                onSelectTab('patient_discovery');
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                padding: '0.6rem 0.9rem',
+                borderRadius: '8px',
+                background: 'transparent',
+                color: 'var(--text-main)',
+                fontWeight: 600,
+                border: '1px solid var(--border-color)',
+                cursor: 'pointer',
+              }}
+            >
+              <span>{t('nav_clinics_dept')}</span>
+            </button>
+          </div>
+
           {/* 2. Language Switcher */}
           <div style={{ width: '100%' }}>
             <LanguageSwitcher variant="sidebar" style={{ width: '100%' }} />
@@ -694,6 +763,33 @@ export const Header: React.FC<HeaderProps> = ({
               }}
             >
               <LogIn size={18} /> {t('sign_in')}
+            </button>
+          )}
+
+          {onOpenServerConfig && (
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                onOpenServerConfig();
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                width: '100%',
+                padding: '0.65rem 1rem',
+                borderRadius: '8px',
+                border: '1px dashed var(--border-color)',
+                background: 'transparent',
+                color: 'var(--text-muted)',
+                fontSize: '0.85rem',
+                cursor: 'pointer',
+                marginTop: '0.6rem',
+              }}
+            >
+              <Wifi size={15} />
+              <span>Server Connection</span>
             </button>
           )}
         </div>

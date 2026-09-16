@@ -111,3 +111,40 @@ logs/
 *.bak
 *.orig
 scratch/
+
+# --- 9. Mobile & Native Apps (Android / iOS / Capacitor) ---
+# Android build artifacts and caches
+.gradle/
+**/android/.gradle/
+**/android/build/
+**/android/app/build/
+**/android/local.properties
+**/android/.cxx/
+**/android/*.iml
+**/android/**/.idea/
+**/android/captures/
+*.hprof
+*.jks
+*.keystore
+
+# Android Capacitor generated assets & plugins
+**/android/capacitor-cordova-android-plugins/
+**/android/app/src/main/assets/public/
+**/android/app/src/main/assets/capacitor.config.json
+**/android/app/src/main/assets/capacitor.plugins.json
+**/android/app/src/main/res/xml/config.xml
+
+# iOS build artifacts and caches
+**/ios/App/build/
+**/ios/App/Pods/
+**/ios/App/output/
+**/ios/DerivedData/
+**/ios/**/xcuserdata/
+*.xcuserstate
+
+# iOS Capacitor generated assets & plugins
+**/ios/capacitor-cordova-ios-plugins/
+**/ios/App/App/public/
+**/ios/App/App/capacitor.config.json
+**/ios/App/App/config.xml
+

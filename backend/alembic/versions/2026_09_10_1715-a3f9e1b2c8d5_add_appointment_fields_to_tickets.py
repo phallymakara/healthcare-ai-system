@@ -22,18 +22,28 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # Add appointment_date — nullable Date column for pre-booked appointments
-    op.add_column(
-        'tickets',
-        sa.Column('appointment_date', sa.Date(), nullable=True)
-    )
-    # Add appointment_time — nullable String column (e.g. "09:00", "14:30")
-    op.add_column(
-        'tickets',
-        sa.Column('appointment_time', sa.String(length=32), nullable=True)
-    )
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    existing_columns = [col['name'] for col in inspector.get_columns('tickets')]
+
+    if 'appointment_date' not in existing_columns:
+        op.add_column(
+            'tickets',
+            sa.Column('appointment_date', sa.Date(), nullable=True)
+        )
+    if 'appointment_time' not in existing_columns:
+        op.add_column(
+            'tickets',
+            sa.Column('appointment_time', sa.String(length=32), nullable=True)
+        )
 
 
 def downgrade() -> None:
-    op.drop_column('tickets', 'appointment_time')
-    op.drop_column('tickets', 'appointment_date')
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    existing_columns = [col['name'] for col in inspector.get_columns('tickets')]
+
+    if 'appointment_time' in existing_columns:
+        op.drop_column('tickets', 'appointment_time')
+    if 'appointment_date' in existing_columns:
+        op.drop_column('tickets', 'appointment_date')

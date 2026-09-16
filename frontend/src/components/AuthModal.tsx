@@ -390,7 +390,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
               </label>
               <input
                 type="text"
-                placeholder={language === 'km' ? 'ឧ. 012888999 ឬ user@gmail.com' : 'e.g. 012888999 or user@gmail.com'}
+                placeholder={language === 'km' ? 'បញ្ចូលអុីមែល​ ឬ លេខទូរស័ព្ទ' : 'Enter phone or email'}
                 value={phoneOrEmail}
                 onChange={(e) => setPhoneOrEmail(e.target.value)}
                 required

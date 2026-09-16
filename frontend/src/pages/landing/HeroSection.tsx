@@ -11,16 +11,12 @@ interface HeroSectionProps {
   onSelectTab?: (tab: any) => void;
 }
 
-export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenAuth, currentUser, onSelectTab }) => {
+export const HeroSection: React.FC<HeroSectionProps> = ({ onSelectTab }) => {
   const { t, language } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentUser) {
-      if (onOpenAuth) onOpenAuth();
-      return;
-    }
     if (onSelectTab) {
       onSelectTab('patient_discovery');
     }
@@ -91,8 +87,13 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenAuth, currentUse
 
         {/* 3 Floating Glassmorphism Feature Highlight Cards */}
         <div className="hero-highlight-cards">
-          {/* Card 1: Live wait times */}
-          <div className="hero-glass-card">
+          {/* Card 1: Live Wait Times */}
+          <div
+            className="hero-glass-card"
+            onClick={() => onSelectTab?.('patient_discovery')}
+            style={{ cursor: 'pointer' }}
+            title={t('hero_live_wait_title')}
+          >
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.45rem' }}>
               <div
                 style={{
@@ -135,7 +136,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenAuth, currentUse
           </div>
 
           {/* Card 2: Remote Tickets */}
-          <div className="hero-glass-card">
+          <div
+            className="hero-glass-card"
+            onClick={() => onSelectTab?.('patient_live_ticket')}
+            style={{ cursor: 'pointer' }}
+            title={t('hero_remote_ticket_title')}
+          >
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.45rem' }}>
               <div
                 style={{
@@ -178,7 +184,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenAuth, currentUse
           </div>
 
           {/* Card 3: AI & Clinic Integration */}
-          <div className="hero-glass-card">
+          <div
+            className="hero-glass-card"
+            onClick={() => onSelectTab?.('patient_triage')}
+            style={{ cursor: 'pointer' }}
+            title={t('hero_card_ai_clinic_title')}
+          >
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.45rem' }}>
               <div
                 style={{
@@ -229,13 +240,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenAuth, currentUse
           <button
             type="button"
             className="text-truncate"
-            onClick={() => {
-              if (!currentUser) {
-                if (onOpenAuth) onOpenAuth();
-              } else if (onSelectTab) {
-                onSelectTab('patient_discovery');
-              }
-            }}
+            onClick={() => onSelectTab?.('patient_discovery')}
             style={{
               background: '#0c2f27',
               color: '#ffffff',

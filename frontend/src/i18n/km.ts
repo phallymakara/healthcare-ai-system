@@ -768,5 +768,16 @@ export const km: Record<TranslationKey, string> = {
   footer_terms: "លក្ខខណ្ឌ",
   footer_privacy: "គោលការណ៍ភាពឯកជន",
   footer_rights: "រក្សាសិទ្ធិគ្រប់យ៉ាង © 2026 CareQueue AI",
+
+  // PWA Install Banner
+  pwa_install_title: "ដំឡើងកម្មវិធី Health AI",
+  pwa_install_desc: "ចូលប្រើប្រាស់បានរហ័ស តាមដានជួររង់ចាំផ្ទាល់ និងពេញអេក្រង់",
+  pwa_install_btn: "ដំឡើង",
+  pwa_ios_guide_btn: "របៀបបន្ថែម",
+  pwa_ios_guide_title: "បន្ថែមទៅកាន់អេក្រង់ដើម iPhone",
+  pwa_ios_step1: "ចុចលើប៊ូតុង ចែករំលែក (Share) នៅផ្នែកខាងក្រោមនៃ Safari។",
+  pwa_ios_step2: "រំកិលចុះក្រោមក្នុងម៉ឺនុយ ហើយចុច \"បន្ថែមទៅអេក្រង់ដើម (Add to Home Screen)\"។",
+  pwa_ios_step3: "ចុច \"បន្ថែម (Add)\" នៅជ្រុងខាងស្តាំខាងលើ។",
+  pwa_ios_got_it: "យល់ព្រម",
 };
 

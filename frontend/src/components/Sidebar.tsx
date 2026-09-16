@@ -14,7 +14,8 @@ import {
   User, 
   Bell, 
   X, 
-  Menu 
+  Menu,
+  Wifi 
 } from 'lucide-react';
 import { UserProfile, AuthService } from '../services/auth';
 import { useLanguage } from '../context/LanguageContext';
@@ -43,6 +44,7 @@ interface SidebarProps {
   onSelectTab: (tab: NavTab) => void;
   onOpenAuth: () => void;
   onLogout: () => void;
+  onOpenServerConfig?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -52,6 +54,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onSelectTab,
   onOpenAuth,
   onLogout,
+  onOpenServerConfig,
 }) => {
   const { t } = useLanguage();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -663,6 +666,32 @@ export const Sidebar: React.FC<SidebarProps> = ({
               }}
             >
               <LogIn size={18} /> {t('sign_in')}
+            </button>
+          )}
+
+          {onOpenServerConfig && (
+            <button
+              onClick={onOpenServerConfig}
+              title="Server Connection & Network"
+              style={{
+                marginTop: '0.65rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                width: '100%',
+                padding: '0.4rem 0.5rem',
+                borderRadius: '6px',
+                border: '1px dashed var(--border-color)',
+                background: 'transparent',
+                color: 'var(--text-muted)',
+                fontSize: '0.78rem',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <Wifi size={13} />
+              <span>Server Connection</span>
             </button>
           )}
         </div>

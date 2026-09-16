@@ -4,6 +4,9 @@ import { Sidebar, NavTab } from './components/Sidebar';
 import { AuthModal } from './components/AuthModal';
 import { NotificationBanner } from './components/NotificationBanner';
 import { MaintenanceBanner } from './components/MaintenanceBanner';
+import { PWAInstallBanner } from './components/PWAInstallBanner';
+import { ServerConfigModal } from './components/ServerConfigModal';
+import { useLanguage } from './context/LanguageContext';
 import { AuthService, UserProfile } from './services/auth';
 import { API_BASE } from './services/api';
 import { RealTimeQueueClient } from './services/websocket';
@@ -21,21 +24,51 @@ import { HospitalProfile } from './pages/partner/HospitalProfile';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { HospitalPartnerAuth } from './pages/partner/HospitalPartnerAuth';
 import { isPartnerPortal, getPortalSwitchUrl } from './utils/subdomain';
+import { App as CapApp } from '@capacitor/app';
+import { StatusBar, Style } from '@capacitor/status-bar';
+import { SplashScreen } from '@capacitor/splash-screen';
+
+const isStandalonePWA = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('pwa') === '1') return true;
+  return (
+    window.matchMedia('(display-mode: standalone)').matches ||
+    (window.navigator as any).standalone === true ||
+    document.referrer.includes('android-app://')
+  );
+};
 
 export const App: React.FC = () => {
   const isPartner = isPartnerPortal();
+  const { language } = useLanguage();
+  const isKm = language === 'km';
   const storedUser = AuthService.getStoredUser();
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(storedUser);
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [serverConfigOpen, setServerConfigOpen] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [activeBanner, setActiveBanner] = useState<any | null>(null);
   const [activeTab, setActiveTab] = useState<NavTab>(() => {
-    if (!storedUser) return 'landing';
-    if (storedUser.role === 'SUPER_ADMIN') return 'admin_center';
-    if (storedUser.role === 'DOCTOR' || storedUser.role === 'HOSPITAL_ADMIN' || storedUser.role === 'RECEPTIONIST') {
-      return 'partner_counter';
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab') as NavTab | null;
+      if (tabParam && ['landing', 'patient_triage', 'patient_discovery', 'patient_live_ticket'].includes(tabParam)) {
+        return tabParam;
+      }
     }
-    return 'patient_triage';
+    if (storedUser) {
+      if (storedUser.role === 'SUPER_ADMIN') return 'admin_center';
+      if (storedUser.role === 'DOCTOR' || storedUser.role === 'HOSPITAL_ADMIN' || storedUser.role === 'RECEPTIONIST') {
+        return 'partner_counter';
+      }
+      return 'patient_triage';
+    }
+    // When opened as an installed PWA on mobile, skip landing page and go directly to AI Chat!
+    if (isStandalonePWA()) {
+      return 'patient_triage';
+    }
+    return 'landing';
   });
   const [selectedTicketId, setSelectedTicketId] = useState<string | undefined>();
 
@@ -70,7 +103,14 @@ export const App: React.FC = () => {
       loadNotifications();
     } else {
       setCurrentUser(null);
-      setActiveTab('landing');
+      // Preserve tab if loaded with URL parameter, or go straight to AI chat in PWA mode
+      const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+      const tabParam = params?.get('tab') as NavTab | null;
+      if (tabParam && ['patient_triage', 'patient_discovery', 'patient_live_ticket'].includes(tabParam)) {
+        setActiveTab(tabParam);
+      } else if (isStandalonePWA()) {
+        setActiveTab('patient_triage');
+      }
     }
 
     // 2. Initialize WebSocket connection for background alerts
@@ -93,6 +133,48 @@ export const App: React.FC = () => {
       ws.disconnect();
     };
   }, []);
+
+  // 3. Native Capacitor Setup: Status Bar, Splash Screen & Android Hardware Back Button
+  useEffect(() => {
+    // Hide native splash screen once UI is mounted
+    SplashScreen.hide().catch(() => {});
+
+    // Style native status bar
+    try {
+      StatusBar.setBackgroundColor({ color: '#185339' }).catch(() => {});
+      StatusBar.setStyle({ style: Style.Dark }).catch(() => {});
+    } catch {}
+
+    // Android hardware back button handler
+    const backButtonPromise = CapApp.addListener('backButton', () => {
+      if (serverConfigOpen) {
+        setServerConfigOpen(false);
+        return;
+      }
+      if (authModalOpen) {
+        setAuthModalOpen(false);
+        return;
+      }
+      if (selectedTicketId) {
+        setSelectedTicketId(undefined);
+        return;
+      }
+      if (activeTab !== 'landing' && activeTab !== 'patient_triage') {
+        setActiveTab('patient_triage');
+        return;
+      }
+      if (activeTab === 'patient_triage' && !isStandalonePWA()) {
+        setActiveTab('landing');
+        return;
+      }
+      // On root view: minimize app
+      CapApp.minimizeApp().catch(() => {});
+    });
+
+    return () => {
+      backButtonPromise.then((handle) => handle.remove()).catch(() => {});
+    };
+  }, [serverConfigOpen, authModalOpen, selectedTicketId, activeTab]);
 
   // Show Chumnouykar AI Assistant Widget ONLY on Landing Page
   useEffect(() => {
@@ -161,8 +243,19 @@ export const App: React.FC = () => {
 
 
   const handleSelectTab = (tab: NavTab) => {
-    if (!currentUser && tab !== 'landing') {
-      setActiveTab('landing');
+    const protectedTabs: NavTab[] = [
+      'patient_history',
+      'partner_dashboard',
+      'partner_counter',
+      'partner_doctors',
+      'partner_departments',
+      'partner_staff',
+      'partner_profile',
+      'admin_center',
+    ];
+
+    if (!currentUser && protectedTabs.includes(tab)) {
+      setAuthModalOpen(true);
       return;
     }
     setActiveTab(tab);
@@ -195,7 +288,7 @@ export const App: React.FC = () => {
     );
   }
 
-  const isLandingView = !currentUser || activeTab === 'landing';
+  const isLandingView = activeTab === 'landing';
 
   return (
     <>
@@ -210,6 +303,7 @@ export const App: React.FC = () => {
             onSelectTab={handleSelectTab}
             onOpenAuth={() => setAuthModalOpen(true)}
             onLogout={handleLogout}
+            onOpenServerConfig={() => setServerConfigOpen(true)}
           />
 
           <NotificationBanner
@@ -232,9 +326,10 @@ export const App: React.FC = () => {
             currentUser={currentUser}
             notifications={notifications}
             activeTab={activeTab}
-            onSelectTab={setActiveTab}
+            onSelectTab={handleSelectTab}
             onOpenAuth={() => setAuthModalOpen(true)}
             onLogout={handleLogout}
+            onOpenServerConfig={() => setServerConfigOpen(true)}
           />
 
           {/* Main Content Area */}
@@ -328,6 +423,14 @@ export const App: React.FC = () => {
           setAuthModalOpen(false);
           window.location.href = getPortalSwitchUrl('partner');
         }}
+      />
+
+      <PWAInstallBanner />
+
+      <ServerConfigModal
+        isOpen={serverConfigOpen}
+        onClose={() => setServerConfigOpen(false)}
+        isKm={isKm}
       />
     </>
   );
