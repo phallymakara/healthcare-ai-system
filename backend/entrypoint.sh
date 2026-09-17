@@ -27,9 +27,9 @@ echo "✅ Database migrations complete!"
 
 # --- 3. Seed initial data if needed ---
 if [ "${SEED_DATA:-false}" = "true" ]; then
-    echo "🌱 Seeding initial demonstration data..."
-    python -m scripts.seed_cambodia_data || python -m app.seeds.seed_data
-    echo "✅ Seeding complete!"
+    echo "🌱 Seeding official NSSF Cambodia healthcare facilities..."
+    python -m scripts.seed_production_nssf
+    echo "✅ Production seeding complete!"
 fi
 
 # --- 4. Start the FastAPI application ---

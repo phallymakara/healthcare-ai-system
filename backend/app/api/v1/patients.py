@@ -133,6 +133,7 @@ async def search_hospitals(
     lat: Optional[float] = Query(None, description="User latitude for distance calculation"),
     lng: Optional[float] = Query(None, description="User longitude for distance calculation"),
     sort_by_distance: bool = Query(False, description="Sort hospitals by proximity to user"),
+    limit: int = Query(200, ge=1, le=1500, description="Max facilities to return"),
     db: AsyncSession = Depends(get_db),
 ):
     """Public search and discovery of verified hospitals, branches, and live department queues"""
@@ -269,7 +270,7 @@ async def search_hospitals(
     if (sort_by_distance or (lat is not None and lng is not None)) and lat is not None and lng is not None:
         result.sort(key=lambda x: (x.distance_km is None, x.distance_km if x.distance_km is not None else 99999))
 
-    return result
+    return result[:limit]
 
 
 @router.get("/discovery/doctors", response_model=List[DoctorDiscoveryResponse])

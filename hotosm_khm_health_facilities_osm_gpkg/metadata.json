@@ -1,0 +1,535 @@
+{
+  "feature_count": 1391,
+  "geometry_types": {
+    "POINT": 1270,
+    "POLYGON": 121
+  },
+  "bbox": [
+    102.377703,
+    10.4299169,
+    107.4320015,
+    14.3781415
+  ],
+  "columns": [
+    {
+      "name": "id",
+      "type": "VARCHAR",
+      "null_count": 0,
+      "null_percent": 0.0,
+      "distinct_count": 1391,
+      "top_values": []
+    },
+    {
+      "name": "name",
+      "type": "VARCHAR",
+      "null_count": 935,
+      "null_percent": 67.22,
+      "distinct_count": 440,
+      "top_values": [
+        {
+          "value": "\u1798\u1793\u17d2\u1791\u17b8\u179a\u1796\u17c1\u1791\u17d2\u1799 \u1782\u1793\u17d2\u1792\u1794\u17bb\u1794\u17d2\u1795\u17b6",
+          "count": 3
+        },
+        {
+          "value": "U-Care Pharmacy",
+          "count": 2
+        },
+        {
+          "value": "Praram 9 Hospital Cambodia Office",
+          "count": 2
+        },
+        {
+          "value": "Sereysophorn Referral Hospital",
+          "count": 2
+        },
+        {
+          "value": "LENG KILEN DENTAL CLINIC -\u200b \u1796\u17c1\u1791\u17d2\u1799\u1792\u17d2\u1798\u17c1\u1789 \u17a1\u17c1\u1784 \u1782\u17b8\u17a1\u17c2\u1793",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "name": "name_en",
+      "type": "VARCHAR",
+      "null_count": 665,
+      "null_percent": 47.81,
+      "distinct_count": 682,
+      "top_values": [
+        {
+          "value": "Health Center",
+          "count": 5
+        },
+        {
+          "value": "Health center",
+          "count": 5
+        },
+        {
+          "value": "Clinic",
+          "count": 4
+        },
+        {
+          "value": "Dental",
+          "count": 3
+        },
+        {
+          "value": "Preah Vihear Pharmacy",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "name": "name_km",
+      "type": "VARCHAR",
+      "null_count": 1269,
+      "null_percent": 91.23,
+      "distinct_count": 118,
+      "top_values": [
+        {
+          "value": "\u1798\u1793\u17d2\u1791\u17b8\u179a\u1796\u17c1\u1791\u17d2\u1799 \u1782\u1793\u17d2\u1792\u1794\u17bb\u1794\u17d2\u1795\u17b6",
+          "count": 2
+        },
+        {
+          "value": "\u179c\u17b7\u1785\u17b7\u178f\u17d2\u179a\u17b6",
+          "count": 2
+        },
+        {
+          "value": "\u17b1\u179f\u1790\u179f\u17d2\u1790\u17b6\u1793",
+          "count": 2
+        },
+        {
+          "value": "\u17b1\u179f\u1790\u179f\u17d2\u1790\u17b6\u1793 \u1799\u17bc\u1783\u17c2\u179a",
+          "count": 2
+        },
+        {
+          "value": "\u17aa\u179f\u1790\u179f\u17d2\u1790\u17b6\u1793\u1796\u17d2\u179a\u17c7\u179c\u17b7\u17a0\u17b6\u179a",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "name": "amenity",
+      "type": "VARCHAR",
+      "null_count": 23,
+      "null_percent": 1.65,
+      "distinct_count": 6,
+      "top_values": [
+        {
+          "value": "pharmacy",
+          "count": 671
+        },
+        {
+          "value": "clinic",
+          "count": 246
+        },
+        {
+          "value": "hospital",
+          "count": 243
+        },
+        {
+          "value": "dentist",
+          "count": 134
+        },
+        {
+          "value": "doctors",
+          "count": 73
+        }
+      ]
+    },
+    {
+      "name": "building",
+      "type": "VARCHAR",
+      "null_count": 1373,
+      "null_percent": 98.71,
+      "distinct_count": 3,
+      "top_values": [
+        {
+          "value": "yes",
+          "count": 16
+        },
+        {
+          "value": "retail",
+          "count": 1
+        },
+        {
+          "value": "garage",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "name": "healthcare",
+      "type": "VARCHAR",
+      "null_count": 807,
+      "null_percent": 58.02,
+      "distinct_count": 15,
+      "top_values": [
+        {
+          "value": "pharmacy",
+          "count": 247
+        },
+        {
+          "value": "hospital",
+          "count": 120
+        },
+        {
+          "value": "clinic",
+          "count": 103
+        },
+        {
+          "value": "dentist",
+          "count": 62
+        },
+        {
+          "value": "doctor",
+          "count": 29
+        }
+      ]
+    },
+    {
+      "name": "healthcare_speciality",
+      "type": "VARCHAR",
+      "null_count": 1368,
+      "null_percent": 98.35,
+      "distinct_count": 17,
+      "top_values": [
+        {
+          "value": "plastic_surgery",
+          "count": 3
+        },
+        {
+          "value": "dentist",
+          "count": 3
+        },
+        {
+          "value": "general",
+          "count": 2
+        },
+        {
+          "value": "dentistry",
+          "count": 2
+        },
+        {
+          "value": "meditation",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "name": "operator_type",
+      "type": "VARCHAR",
+      "null_count": 1386,
+      "null_percent": 99.64,
+      "distinct_count": 2,
+      "top_values": [
+        {
+          "value": "private",
+          "count": 3
+        },
+        {
+          "value": "public",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "name": "capacity_persons",
+      "type": "VARCHAR",
+      "null_count": 1391,
+      "null_percent": 100.0,
+      "distinct_count": 0,
+      "top_values": []
+    },
+    {
+      "name": "addr_full",
+      "type": "VARCHAR",
+      "null_count": 1391,
+      "null_percent": 100.0,
+      "distinct_count": 0,
+      "top_values": []
+    },
+    {
+      "name": "addr_city",
+      "type": "VARCHAR",
+      "null_count": 1323,
+      "null_percent": 95.11,
+      "distinct_count": 9,
+      "top_values": [
+        {
+          "value": "Phnom Penh",
+          "count": 33
+        },
+        {
+          "value": "Siem Reap",
+          "count": 27
+        },
+        {
+          "value": "Tani Commune",
+          "count": 2
+        },
+        {
+          "value": "Phnom Penh city , Sangkat Praek Thmi",
+          "count": 1
+        },
+        {
+          "value": "Kampong Cham",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "name": "source",
+      "type": "VARCHAR",
+      "null_count": 1391,
+      "null_percent": 100.0,
+      "distinct_count": 0,
+      "top_values": []
+    },
+    {
+      "name": "adm0_pcode",
+      "type": "VARCHAR",
+      "null_count": 0,
+      "null_percent": 0.0,
+      "distinct_count": 1,
+      "top_values": [
+        {
+          "value": "KHM",
+          "count": 1391
+        }
+      ]
+    },
+    {
+      "name": "adm0_name",
+      "type": "VARCHAR",
+      "null_count": 0,
+      "null_percent": 0.0,
+      "distinct_count": 1,
+      "top_values": [
+        {
+          "value": "Cambodia",
+          "count": 1391
+        }
+      ]
+    },
+    {
+      "name": "adm1_pcode",
+      "type": "VARCHAR",
+      "null_count": 0,
+      "null_percent": 0.0,
+      "distinct_count": 25,
+      "top_values": [
+        {
+          "value": "KH12",
+          "count": 801
+        },
+        {
+          "value": "KH17",
+          "count": 136
+        },
+        {
+          "value": "KH03",
+          "count": 87
+        },
+        {
+          "value": "KH02",
+          "count": 77
+        },
+        {
+          "value": "KH08",
+          "count": 36
+        }
+      ]
+    },
+    {
+      "name": "adm1_name",
+      "type": "VARCHAR",
+      "null_count": 0,
+      "null_percent": 0.0,
+      "distinct_count": 25,
+      "top_values": [
+        {
+          "value": "Phnom Penh",
+          "count": 801
+        },
+        {
+          "value": "Siemreap",
+          "count": 136
+        },
+        {
+          "value": "Kampong Cham",
+          "count": 87
+        },
+        {
+          "value": "Battambang",
+          "count": 77
+        },
+        {
+          "value": "Kandal",
+          "count": 36
+        }
+      ]
+    },
+    {
+      "name": "adm2_pcode",
+      "type": "VARCHAR",
+      "null_count": 0,
+      "null_percent": 0.0,
+      "distinct_count": 124,
+      "top_values": [
+        {
+          "value": "KH1202",
+          "count": 203
+        },
+        {
+          "value": "KH1209",
+          "count": 118
+        },
+        {
+          "value": "KH1208",
+          "count": 115
+        },
+        {
+          "value": "KH1710",
+          "count": 113
+        },
+        {
+          "value": "KH1207",
+          "count": 104
+        }
+      ]
+    },
+    {
+      "name": "adm2_name",
+      "type": "VARCHAR",
+      "null_count": 0,
+      "null_percent": 0.0,
+      "distinct_count": 123,
+      "top_values": [
+        {
+          "value": "Doun Penh",
+          "count": 203
+        },
+        {
+          "value": "Pur SenChey",
+          "count": 118
+        },
+        {
+          "value": "Saensokh",
+          "count": 115
+        },
+        {
+          "value": "Siem Reap",
+          "count": 113
+        },
+        {
+          "value": "Russey Keo",
+          "count": 104
+        }
+      ]
+    },
+    {
+      "name": "adm3_pcode",
+      "type": "VARCHAR",
+      "null_count": 0,
+      "null_percent": 0.0,
+      "distinct_count": 262,
+      "top_values": [
+        {
+          "value": "KH120207",
+          "count": 135
+        },
+        {
+          "value": "KH120107",
+          "count": 71
+        },
+        {
+          "value": "KH120706",
+          "count": 70
+        },
+        {
+          "value": "KH120210",
+          "count": 68
+        },
+        {
+          "value": "KH120802",
+          "count": 68
+        }
+      ]
+    },
+    {
+      "name": "adm3_name",
+      "type": "VARCHAR",
+      "null_count": 0,
+      "null_percent": 0.0,
+      "distinct_count": 255,
+      "top_values": [
+        {
+          "value": "Chakto Mukh",
+          "count": 135
+        },
+        {
+          "value": "Tuol Svay Prey Ti Pir",
+          "count": 71
+        },
+        {
+          "value": "Ruessei Kaev",
+          "count": 70
+        },
+        {
+          "value": "Tuek Thla",
+          "count": 68
+        },
+        {
+          "value": "Srah Chak",
+          "count": 68
+        }
+      ]
+    },
+    {
+      "name": "adm4_pcode",
+      "type": "VARCHAR",
+      "null_count": 1391,
+      "null_percent": 100.0,
+      "distinct_count": 0,
+      "top_values": []
+    },
+    {
+      "name": "adm4_name",
+      "type": "VARCHAR",
+      "null_count": 1391,
+      "null_percent": 100.0,
+      "distinct_count": 0,
+      "top_values": []
+    },
+    {
+      "name": "name_latin",
+      "type": "VARCHAR",
+      "null_count": 365,
+      "null_percent": 26.24,
+      "distinct_count": 969,
+      "top_values": [
+        {
+          "value": "Clinic",
+          "count": 6
+        },
+        {
+          "value": "Health center",
+          "count": 5
+        },
+        {
+          "value": "Health Center",
+          "count": 5
+        },
+        {
+          "value": "Dental",
+          "count": 3
+        },
+        {
+          "value": "Preah Vihear Pharmacy",
+          "count": 3
+        }
+      ]
+    }
+  ],
+  "summary": "1,391 features. geometry types: 1,270 POINT, 121 POLYGON. 12 of 24 columns are >=50% null (name, name_km, building, healthcare, healthcare_speciality, operator_type, capacity_persons, addr_full, addr_city, source, adm4_pcode, adm4_name).",
+  "temporal": null
+}

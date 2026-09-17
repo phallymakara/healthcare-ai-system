@@ -44,7 +44,7 @@ self.addEventListener('fetch', (event) => {
     url.pathname.startsWith('/ws') ||
     url.protocol === 'ws:' ||
     url.protocol === 'wss:' ||
-    url.hostname.includes('chumnouykar.bcietech.com') ||
+    url.hostname.includes('bcietech.com') ||
     event.request.method !== 'GET'
   ) {
     return;

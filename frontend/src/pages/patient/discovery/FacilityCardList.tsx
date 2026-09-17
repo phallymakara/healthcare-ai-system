@@ -35,6 +35,11 @@ export const FacilityCardList: React.FC<FacilityCardListProps> = ({
 }) => {
   const { language, t } = useLanguage();
   const kmFont = language === 'km' ? 'var(--font-khmer)' : 'inherit';
+  const [visibleCount, setVisibleCount] = React.useState(40);
+
+  React.useEffect(() => {
+    setVisibleCount(40);
+  }, [searchQuery, selectedCategory, hospitals.length]);
 
   return (
     <div className="facility-list-animate" style={{ width: '100%', height: '100%', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
@@ -189,90 +194,118 @@ export const FacilityCardList: React.FC<FacilityCardListProps> = ({
           {language === 'km' ? 'មិនមានទីតាំងត្រូវនឹងការស្វែងរករបស់អ្នកឡើយ' : 'No facilities found matching your selected category or query.'}
         </div>
       ) : (
-        <div className="discovery-facilities-grid">
-          {hospitals.map((hosp) => (
-            <button
-              key={hosp.id}
-              className="hospital-facility-card"
-              onClick={() => onSelectFacility(hosp)}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.zIndex = '35';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.zIndex = '1';
-              }}
-              style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: '1rem',
-                width: '100%',
-                height: '100%',
-                textAlign: 'left',
-                padding: '1.1rem 1.25rem',
-                background: '#ffffff',
-                border: '1px solid var(--border-color)',
-                borderRadius: '16px',
-                cursor: 'pointer',
-                minWidth: 0,
-                boxSizing: 'border-box',
-                position: 'relative',
-              }}
-            >
-              <SimulatedHospitalLogo name={hosp.name} logoUrl={hosp.logo_url} size={54} />
-              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap' }}>
+        <>
+          <div className="discovery-facilities-grid">
+            {hospitals.slice(0, visibleCount).map((hosp) => (
+              <button
+                key={hosp.id}
+                className="hospital-facility-card"
+                onClick={() => onSelectFacility(hosp)}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.zIndex = '35';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.zIndex = '1';
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '1rem',
+                  width: '100%',
+                  height: '100%',
+                  textAlign: 'left',
+                  padding: '1.1rem 1.25rem',
+                  background: '#ffffff',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '16px',
+                  cursor: 'pointer',
+                  minWidth: 0,
+                  boxSizing: 'border-box',
+                  position: 'relative',
+                }}
+              >
+                <SimulatedHospitalLogo name={hosp.name} logoUrl={hosp.logo_url} size={54} />
+                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <div
+                      title={formatFacilityName(hosp.name, language)}
+                      style={{
+                        fontSize: '1.08rem',
+                        fontWeight: 600,
+                        color: 'var(--text-main)',
+                        lineHeight: 1.35,
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        fontFamily: kmFont,
+                        flex: 1,
+                        minWidth: '150px',
+                      }}
+                    >
+                      {formatFacilityName(hosp.name, language)}
+                    </div>
+                  </div>
+
                   <div
-                    title={formatFacilityName(hosp.name, language)}
                     style={{
-                      fontSize: '1.08rem',
-                      fontWeight: 600,
-                      color: 'var(--text-main)',
-                      lineHeight: 1.35,
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
+                      fontSize: '0.9rem',
+                      color: 'var(--text-muted)',
+                      lineHeight: 1.4,
                       fontFamily: kmFont,
-                      flex: 1,
-                      minWidth: '150px',
                     }}
                   >
-                    {formatFacilityName(hosp.name, language)}
+                    <span style={{ color: 'var(--text-main)', fontWeight: 600 }}>
+                      {t('hotline_contact')}{' '}
+                    </span>
+                    {hosp.phone || (language === 'km' ? 'មិនមាន' : 'N/A')}
+                  </div>
+
+                  <div
+                    style={{
+                      fontSize: '0.9rem',
+                      color: 'var(--text-muted)',
+                      lineHeight: 1.4,
+                      wordBreak: 'break-word',
+                      fontFamily: kmFont,
+                    }}
+                    title={hosp.address || hosp.city || (language === 'km' ? 'រាជធានីភ្នំពេញ' : 'Phnom Penh')}
+                  >
+                    <span style={{ color: 'var(--text-main)', fontWeight: 600 }}>
+                      {t('location_label')}{' '}
+                    </span>
+                    {hosp.address || hosp.city || (language === 'km' ? 'រាជធានីភ្នំពេញ' : 'Phnom Penh')}
                   </div>
                 </div>
+              </button>
+            ))}
+          </div>
 
-                <div
-                  style={{
-                    fontSize: '0.9rem',
-                    color: 'var(--text-muted)',
-                    lineHeight: 1.4,
-                    fontFamily: kmFont,
-                  }}
-                >
-                  <span style={{ color: 'var(--text-main)', fontWeight: 600 }}>
-                    {t('hotline_contact')}{' '}
-                  </span>
-                  {hosp.phone || (language === 'km' ? 'មិនមាន' : 'N/A')}
-                </div>
-
-                <div
-                  style={{
-                    fontSize: '0.9rem',
-                    color: 'var(--text-muted)',
-                    lineHeight: 1.4,
-                    wordBreak: 'break-word',
-                    fontFamily: kmFont,
-                  }}
-                  title={hosp.address || hosp.city || (language === 'km' ? 'រាជធានីភ្នំពេញ' : 'Phnom Penh')}
-                >
-                  <span style={{ color: 'var(--text-main)', fontWeight: 600 }}>
-                    {t('location_label')}{' '}
-                  </span>
-                  {hosp.address || hosp.city || (language === 'km' ? 'រាជធានីភ្នំពេញ' : 'Phnom Penh')}
-                </div>
-              </div>
-            </button>
-          ))}
-        </div>
+          {visibleCount < hospitals.length && (
+            <div style={{ textAlign: 'center', marginTop: '1.5rem', marginBottom: '1rem' }}>
+              <button
+                type="button"
+                onClick={() => setVisibleCount((prev) => prev + 40)}
+                className="btn btn-outline"
+                style={{
+                  padding: '0.58rem 1.65rem',
+                  borderRadius: 'var(--radius-full)',
+                  fontSize: '0.9rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontFamily: kmFont,
+                  backgroundColor: '#ffffff',
+                  border: '1px solid var(--border-color)',
+                  color: 'var(--accent-primary)',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                {language === 'km'
+                  ? `បង្ហាញបន្ថែម (${Math.min(visibleCount, hospitals.length)} នៃ ${hospitals.length})`
+                  : `Load More Facilities (${Math.min(visibleCount, hospitals.length)} of ${hospitals.length})`}
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
