@@ -17,6 +17,19 @@ export function useVisualViewport() {
 
     const isMobileDevice = () => window.innerWidth <= 1023;
 
+    const scrollInputIntoView = (el: HTMLElement | null) => {
+      if (!el) return;
+      setTimeout(() => {
+        try {
+          el.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
+        } catch {
+          try {
+            el.scrollIntoView(false);
+          } catch {}
+        }
+      }, 250);
+    };
+
     const checkKeyboard = () => {
       if (vv) {
         const layoutHeight = window.innerHeight;
@@ -26,6 +39,15 @@ export function useVisualViewport() {
         setViewportHeight(visibleHeight);
         if (offset > 60) {
           setIsKeyboardOpen(true);
+          const activeEl = document.activeElement as HTMLElement | null;
+          if (
+            activeEl &&
+            (activeEl.tagName === "INPUT" ||
+              activeEl.tagName === "TEXTAREA" ||
+              activeEl.getAttribute("contenteditable") === "true")
+          ) {
+            scrollInputIntoView(activeEl);
+          }
           return;
         }
       }
@@ -39,6 +61,7 @@ export function useVisualViewport() {
 
       if (isMobileDevice() && isInputFocused) {
         setIsKeyboardOpen(true);
+        scrollInputIntoView(activeEl);
       } else {
         setIsKeyboardOpen(false);
       }
@@ -54,6 +77,7 @@ export function useVisualViewport() {
           target.getAttribute("contenteditable") === "true")
       ) {
         setIsKeyboardOpen(true);
+        scrollInputIntoView(target);
         setTimeout(checkKeyboard, 50);
         setTimeout(checkKeyboard, 200);
       }

@@ -246,7 +246,7 @@ export const en = {
   take_ticket: "Book Queue Ticket",
   active_departments: "Active Departments",
   services_offered: "Available Medical Services",
-  filter_nearby: "📍 Nearby",
+  filter_nearby: "Nearby",
   distance_km_away: "km away",
   btn_use_location: "Use My Location",
   locating: "Locating...",

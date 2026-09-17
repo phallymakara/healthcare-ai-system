@@ -563,7 +563,10 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
       {/* Bottom Chat Input Form Area */}
       <div style={{
         padding: '0.75rem 0 0.35rem 0',
-        background: 'transparent',
+        background: 'var(--bg-primary, #f6faf6)',
+        position: 'sticky',
+        bottom: 0,
+        zIndex: 30,
       }}>
         <form
           onSubmit={handleSendMessage}
@@ -583,10 +586,16 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
             onClick={() => {
               if (hasReachedLimit) onOpenAuth?.();
             }}
-            onFocus={() => {
+            onFocus={(e) => {
+              const target = e.target;
+              setTimeout(() => {
+                try {
+                  target.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
+                } catch {}
+              }, 250);
               setTimeout(() => {
                 messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-              }, 250);
+              }, 150);
             }}
             className="input-search-rounded chat-input-bar-input"
             style={{

@@ -17,7 +17,6 @@ interface FacilityCardListProps {
   onRequestLocation?: () => void;
   hasLocation?: boolean;
   locationLoading?: boolean;
-  userLocation?: { latitude: number; longitude: number } | null;
 }
 
 export const FacilityCardList: React.FC<FacilityCardListProps> = ({
@@ -33,7 +32,6 @@ export const FacilityCardList: React.FC<FacilityCardListProps> = ({
   onRequestLocation,
   hasLocation,
   locationLoading,
-  userLocation,
 }) => {
   const { language, t } = useLanguage();
   const kmFont = language === 'km' ? 'var(--font-khmer)' : 'inherit';
@@ -166,64 +164,6 @@ export const FacilityCardList: React.FC<FacilityCardListProps> = ({
         </div>
       </div>
 
-      {/* Nearby Location Status Indicator */}
-      {selectedCategory === 'Nearby' && (
-        <div
-          style={{
-            marginBottom: '1rem',
-            padding: '0.65rem 1rem',
-            borderRadius: '12px',
-            background: hasLocation ? 'rgba(5, 150, 105, 0.07)' : 'rgba(2, 132, 199, 0.07)',
-            border: hasLocation ? '1px solid rgba(5, 150, 105, 0.2)' : '1px solid rgba(2, 132, 199, 0.2)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: '0.6rem',
-            fontSize: '0.88rem',
-            fontFamily: kmFont,
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: hasLocation ? '#059669' : '#0284c7' }}>
-            <span>📍</span>
-            <span>
-              {locationLoading
-                ? (language === 'km' ? 'កំពុងកំណត់ទីតាំង GPS របស់អ្នក...' : 'Detecting your GPS location...')
-                : hasLocation
-                ? (language === 'km'
-                    ? `បានរកឃើញទីតាំងរបស់អ្នក (${userLocation?.latitude.toFixed(3)}, ${userLocation?.longitude.toFixed(3)}) — រៀបតាមចម្ងាយជិតបំផុត`
-                    : `Location detected (${userLocation?.latitude.toFixed(3)}, ${userLocation?.longitude.toFixed(3)}) — Sorted by nearest distance`)
-                : (language === 'km'
-                    ? 'មិនទាន់បានកំណត់ទីតាំងនៅឡើយទេ។ សូមអនុញ្ញាតការកំណត់ទីតាំងដើម្បីបង្ហាញមន្ទីរពេទ្យនៅជិតអ្នក'
-                    : 'Location not detected yet. Enable GPS to view hospitals closest to you.')}
-            </span>
-          </div>
-
-          {!hasLocation && onRequestLocation && (
-            <button
-              type="button"
-              onClick={onRequestLocation}
-              disabled={locationLoading}
-              style={{
-                padding: '0.3rem 0.85rem',
-                fontSize: '0.82rem',
-                fontWeight: 600,
-                background: '#0284c7',
-                color: '#ffffff',
-                border: 'none',
-                borderRadius: 'var(--radius-full)',
-                cursor: 'pointer',
-                fontFamily: kmFont,
-              }}
-            >
-              {locationLoading
-                ? (language === 'km' ? 'កំពុងស្វែងរក...' : 'Detecting...')
-                : (language === 'km' ? 'កំណត់ទីតាំងខ្ញុំ' : 'Detect My Location')}
-            </button>
-          )}
-        </div>
-      )}
-
       {/* Facility 2-Column Grid List */}
       {loading ? (
         <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
@@ -298,23 +238,6 @@ export const FacilityCardList: React.FC<FacilityCardListProps> = ({
                   >
                     {formatFacilityName(hosp.name, language)}
                   </div>
-                  {hosp.distance_km !== undefined && hosp.distance_km !== null && (
-                    <span
-                      style={{
-                        fontSize: '0.78rem',
-                        fontWeight: 600,
-                        color: '#059669',
-                        background: 'rgba(5, 150, 105, 0.08)',
-                        border: '1px solid rgba(5, 150, 105, 0.22)',
-                        padding: '0.12rem 0.55rem',
-                        borderRadius: 'var(--radius-full)',
-                        whiteSpace: 'nowrap',
-                        fontFamily: kmFont,
-                      }}
-                    >
-                      📍 ~{hosp.distance_km} {language === 'km' ? 'គ.ម' : 'km away'}
-                    </span>
-                  )}
                 </div>
 
                 <div

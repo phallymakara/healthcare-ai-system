@@ -7,7 +7,6 @@ import {
 import {
   getGoogleMapsDirectionsUrl,
   getGoogleMapsEmbedUrl,
-  calculateDistanceKm,
 } from './discoveryUtils';
 
 interface FacilityDetailViewProps {
@@ -25,16 +24,6 @@ export const FacilityDetailView: React.FC<FacilityDetailViewProps> = ({
   const { language, t } = useLanguage();
   const isKm = language === 'km';
   const kmFont = isKm ? 'var(--font-khmer)' : 'inherit';
-
-  const computedDistance =
-    typeof selectedFacility?.distance_km === 'number'
-      ? selectedFacility.distance_km
-      : calculateDistanceKm(
-          userLocation?.latitude,
-          userLocation?.longitude,
-          selectedFacility?.latitude,
-          selectedFacility?.longitude
-        );
 
   return (
     <div className="facility-detail-animate" style={{ width: '100%', height: '100%', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, maxWidth: '1060px', margin: '0 auto' }}>
@@ -126,25 +115,6 @@ export const FacilityDetailView: React.FC<FacilityDetailViewProps> = ({
                   </span>
                   {selectedFacility.address || selectedFacility.city || (language === 'km' ? 'រាជធានីភ្នំពេញ' : 'Phnom Penh')}
                 </span>
-                {computedDistance !== null && computedDistance !== undefined && (
-                  <span
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '0.3rem',
-                      padding: '0.2rem 0.65rem',
-                      fontSize: '0.82rem',
-                      fontWeight: 600,
-                      background: 'rgba(5, 150, 105, 0.08)',
-                      color: '#059669',
-                      borderRadius: 'var(--radius-full)',
-                      border: '1px solid rgba(5, 150, 105, 0.22)',
-                      fontFamily: kmFont,
-                    }}
-                  >
-                    📍 ~{computedDistance} {language === 'km' ? 'គ.ម ពីទីតាំងអ្នក' : 'km from you'}
-                  </span>
-                )}
                 <a
                   href={getGoogleMapsDirectionsUrl(userLocation, selectedFacility)}
                   target="_blank"

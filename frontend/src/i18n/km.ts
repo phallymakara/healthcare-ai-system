@@ -248,7 +248,7 @@ export const km: Record<TranslationKey, string> = {
   take_ticket: "កក់សំបុត្រជួរ",
   active_departments: "ផ្នែកវេជ្ជសាស្ត្រសកម្ម",
   services_offered: "សេវាកម្មវេជ្ជសាស្ត្រ",
-  filter_nearby: "📍 នៅជិតខ្ញុំ",
+  filter_nearby: "នៅជិតខ្ញុំ",
   distance_km_away: "គ.ម",
   btn_use_location: "ប្រើទីតាំងបច្ចុប្បន្ន",
   locating: "កំពុងកំណត់ទីតាំង...",

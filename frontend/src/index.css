@@ -127,7 +127,10 @@ body.lang-km {
   line-height: 1.7;
 }
 
-
+input, textarea {
+  scroll-margin-top: 24px;
+  scroll-margin-bottom: 24px;
+}
 
 /* Layout */
 .app-layout {
@@ -735,8 +738,8 @@ body.lang-km {
 .hero-wrapper {
   position: relative;
   overflow: hidden;
-  min-height: 620px;
-  padding: 3.5rem 1.5rem 2.5rem 1.5rem;
+  min-height: 720px;
+  padding: 4.75rem 1.5rem 3.75rem 1.5rem;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -815,8 +818,8 @@ body.lang-km {
 /* Tablet Breakpoint (641px to 1024px) */
 @media (min-width: 641px) and (max-width: 1024px) {
   .hero-wrapper {
-    min-height: 540px;
-    padding: 3rem 1.25rem 2rem 1.25rem;
+    min-height: 630px;
+    padding: 3.75rem 1.25rem 2.75rem 1.25rem;
   }
 
   .hero-highlight-cards {
@@ -838,8 +841,8 @@ body.lang-km {
 /* Mobile Breakpoint (< 640px) */
 @media (max-width: 640px) {
   .hero-wrapper {
-    min-height: auto;
-    padding: 2.25rem 1rem 1.75rem 1rem;
+    min-height: 520px;
+    padding: 3.25rem 1rem 2.25rem 1rem;
   }
 
   .hero-highlight-cards {

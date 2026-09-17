@@ -239,7 +239,6 @@ export const HospitalDiscovery: React.FC<HospitalDiscoveryProps> = ({
           onRequestLocation={requestLocation}
           hasLocation={hasLocation}
           locationLoading={locationLoading}
-          userLocation={userLocation}
         />
       )}
 

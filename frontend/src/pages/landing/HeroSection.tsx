@@ -63,7 +63,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSelectTab, onStartCh
           bottom: 0,
           left: 0,
           right: 0,
-          height: '95px',
+          height: '115px',
           background: 'linear-gradient(180deg, rgba(17, 64, 46, 0) 0%, rgba(17, 64, 46, 0.22) 25%, rgba(17, 64, 46, 0.65) 55%, #11402e 84%, #11402e 100%)',
           pointerEvents: 'none',
           zIndex: 2,
