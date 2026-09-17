@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Health AI — Production Launch (Proseth Solutions)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Kantumruy+Pro:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --proseth-teal: #07464a;
+      --proseth-green: #009b5a;
+      --proseth-green-light: #22c55e;
+      --accent-blue: #0284c7;
+      --warning-amber: #d97706;
+      --text-dark: #0f172a;
+      --text-body: #334155;
+      --text-muted: #64748b;
+      --bg-white: #ffffff;
+      --card-bg: #f8fafc;
+      --card-border: #cbd5e1;
+      --font-main: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      --font-kh: 'Kantumruy Pro', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: #042528;
+      color: var(--text-dark);
+      font-family: var(--font-main);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      user-select: none;
+    }
+
+    .deck-container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .slide {
+      position: absolute;
+      width: 92vw;
+      max-width: 1360px;
+      height: 86vh;
+      max-height: 820px;
+      background: #ffffff;
+      border-radius: 20px;
+      padding: 3rem 4rem 3.5rem 4rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      opacity: 0;
+      pointer-events: none;
+      transform: scale(0.96) translateY(20px);
+      transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.5);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .slide.active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: scale(1) translateY(0);
+      z-index: 10;
+    }
+
+    /* Proseth Green Footer Bar on all content slides */
+    .slide::after {
+      content: "Copyright ©2025 All Rights Reserved | Proseth Solutions";
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 38px;
+      background: linear-gradient(90deg, #00754a 0%, #009b5a 50%, #22c55e 100%);
+      color: #ffffff;
+      font-size: 0.78rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      padding-left: 3rem;
+      letter-spacing: 0.02em;
+    }
+
+    /* Slide 1 Cover Styling */
+    .slide#slide-1 {
+      background: linear-gradient(135deg, #034550 0%, #062f36 60%, #042528 100%);
+      color: #ffffff;
+    }
+
+    .slide#slide-1::after {
+      display: none;
+    }
+
+    .cover-footer {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 42px;
+      background: #009b5a;
+      color: #ffffff;
+      font-size: 0.82rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      padding-left: 3.5rem;
+    }
+
+    /* Slide Header */
+    .slide-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1.25rem;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 1rem;
+    }
+
+    .slide-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0.3rem 0.85rem;
+      border-radius: 9999px;
+      background: #e6f4ea;
+      border: 1px solid rgba(0, 155, 90, 0.35);
+      color: var(--proseth-green);
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.4rem;
+    }
+
+    .slide-title {
+      font-size: 2.1rem;
+      font-weight: 800;
+      line-height: 1.2;
+      color: var(--proseth-teal);
+    }
+
+    .slide-subtitle {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      margin-top: 0.3rem;
+      font-weight: 400;
+    }
+
+    .brand-mark {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--proseth-green);
+      background: #f1f5f9;
+      padding: 0.35rem 0.8rem;
+      border-radius: 8px;
+      font-weight: 700;
+    }
+
+    /* Slide Body */
+    .slide-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 1.15rem;
+      padding-bottom: 1.5rem;
+    }
+
+    /* Grids */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      align-items: stretch;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.35rem;
+      align-items: stretch;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.15rem;
+      align-items: stretch;
+    }
+
+    .grid-5 {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 0.95rem;
+      align-items: stretch;
+    }
+
+    /* Cards */
+    .feature-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 1.35rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .feature-card:hover {
+      border-color: var(--proseth-green);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+      transform: translateY(-2px);
+    }
+
+    .card-icon {
+      font-size: 1.5rem;
+      margin-bottom: 0.2rem;
+    }
+
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-dark);
+    }
+
+    .card-desc {
+      font-size: 0.92rem;
+      color: var(--text-body);
+      line-height: 1.5;
+    }
+
+    .card-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      margin-top: 0.35rem;
+    }
+
+    .card-list li {
+      font-size: 0.9rem;
+      color: var(--text-body);
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      line-height: 1.4;
+    }
+
+    .card-list.check li::before {
+      content: "✔";
+      color: var(--proseth-green);
+      font-weight: 700;
+      font-size: 0.8rem;
+    }
+
+    /* Key Message Callout Banner */
+    .key-message-box {
+      background: #ecfdf5;
+      border: 1px solid rgba(0, 155, 90, 0.3);
+      border-left: 5px solid var(--proseth-green);
+      border-radius: 10px;
+      padding: 0.85rem 1.3rem;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .key-message-box.warning {
+      background: #fffbeb;
+      border-color: rgba(217, 119, 6, 0.3);
+      border-left-color: var(--warning-amber);
+    }
+
+    .key-message-label {
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--proseth-green);
+    }
+
+    .key-message-box.warning .key-message-label {
+      color: var(--warning-amber);
+    }
+
+    .key-message-text {
+      font-size: 1.02rem;
+      font-weight: 600;
+      color: var(--text-dark);
+    }
+
+    /* Journey track */
+    .journey-track {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin: 1.25rem 0;
+    }
+
+    .journey-step {
+      flex: 1;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 1.25rem 0.8rem;
+      text-align: center;
+      transition: all 0.2s;
+    }
+
+    .journey-step.active-step {
+      background: #f0fdf4;
+      border-color: var(--proseth-green);
+      box-shadow: 0 4px 12px rgba(0, 155, 90, 0.12);
+    }
+
+    .step-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #e2e8f0;
+      color: var(--proseth-teal);
+      font-weight: 800;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 0.5rem auto;
+    }
+
+    .journey-step.active-step .step-num {
+      background: var(--proseth-green);
+      color: #ffffff;
+    }
+
+    .step-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-dark);
+      line-height: 1.3;
+    }
+
+    .step-tag {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-top: 0.35rem;
+      color: var(--proseth-green);
+    }
+
+    .journey-arrow {
+      color: var(--proseth-green);
+      font-size: 1.3rem;
+      font-weight: 800;
+    }
+
+    /* Controls */
+    .controls {
+      position: fixed;
+      bottom: 20px;
+      right: 36px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 100;
+      background: rgba(7, 70, 74, 0.92);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(12px);
+      padding: 0.4rem 0.8rem;
+      border-radius: 9999px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    .btn-nav {
+      background: rgba(255, 255, 255, 0.15);
+      border: none;
+      color: #ffffff;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 0.95rem;
+      transition: all 0.2s;
+    }
+
+    .btn-nav:hover {
+      background: var(--proseth-green);
+      color: #ffffff;
+    }
+
+    .slide-counter {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: #ffffff;
+      min-width: 60px;
+      text-align: center;
+    }
+
+    .progress-bar-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      z-index: 1000;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #009b5a, #22c55e);
+      width: 9.09%;
+      transition: width 0.3s ease;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Progress Bar -->
+  <div class="progress-bar-container">
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
+
+  <div class="deck-container">
+
+    <!-- SLIDE 1: Title -->
+    <div class="slide active" id="slide-1">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="font-size: 1.5rem; font-weight: 800; color: #ffffff; letter-spacing: -0.02em;">
+            Proseth Solutions
+          </div>
+          <span style="font-size: 0.85rem; color: #cbd5e1; border-left: 1px solid rgba(255,255,255,0.3); padding-left: 12px;">Your Trusted Advisor</span>
+        </div>
+        <div class="brand-mark" style="background: rgba(255,255,255,0.1); color: #5ee9b5;">
+          medbot.bcietech.com
+        </div>
+      </div>
+
+      <div class="slide-body" style="justify-content: center; gap: 2rem;">
+        <div>
+          <h1 style="font-size: 3.5rem; font-weight: 800; color: #ffffff; line-height: 1.15; margin-bottom: 0.5rem;">
+            Health AI
+          </h1>
+          <p style="font-size: 1.6rem; font-weight: 700; color: #5ee9b5; margin-bottom: 1rem;">
+            AI-Powered Healthcare Assistant
+          </p>
+          <p style="font-size: 1.2rem; color: #e2e8f0; max-width: 750px; line-height: 1.55;">
+            Making healthcare information easier to access, understand, and navigate.
+          </p>
+        </div>
+
+        <div style="border-top: 1px solid rgba(255,255,255,0.15); padding-top: 1.5rem; display: flex; flex-direction: column; gap: 0.4rem;">
+          <div style="font-size: 1.15rem; font-weight: 700; color: #ffffff;">Prepared By PHALLY MAKARA</div>
+          <div style="font-size: 1.05rem; font-weight: 600; color: #cbd5e1;">Position AI Internship</div>
+          <div style="font-size: 0.95rem; color: #94a3b8;">Production Launch: September 18, 2026</div>
+        </div>
+      </div>
+      <div class="cover-footer">
+        Copyright ©2025 All Rights Reserved | Proseth Solutions
+      </div>
+    </div>
+
+    <!-- SLIDE 2: The Challenge -->
+    <div class="slide" id="slide-2">
+      <div class="slide-header">
+        <div>
+          <div class="slide-badge">The Problem</div>
+          <h2 class="slide-title">The Challenge</h2>
+          <p class="slide-subtitle">Healthcare Information Should Be Easier to Access</p>
+        </div>
+        <div class="brand-mark">medbot.bcietech.com</div>
+      </div>
+      <div class="slide-body">
+        <p style="font-size: 1.05rem; color: var(--text-body);">Patients routinely encounter major friction when trying to get basic healthcare answers:</p>
+        <div class="grid-3">
+          <div class="feature-card" style="border-top: 3px solid var(--proseth-teal);">
+            <div class="card-icon">🔍</div>
+            <div class="card-title">Search Across Different Sources</div>
+            <div class="card-desc">Information is scattered across unverified social media, outdated websites, and word of mouth.</div>
+          </div>
+          <div class="feature-card" style="border-top: 3px solid var(--proseth-teal);">
+            <div class="card-icon">🏥</div>
+            <div class="card-title">Find the Right Hospital or Dept</div>
+            <div class="card-desc">Patients struggle to identify which facility or specialty handles their specific symptom or condition.</div>
+          </div>
+          <div class="feature-card" style="border-top: 3px solid var(--proseth-teal);">
+            <div class="card-icon">🩺</div>
+            <div class="card-title">Understand Healthcare Services</div>
+            <div class="card-desc">Complex medical terminology makes it difficult for patients to know what care is actually needed.</div>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="feature-card">
+            <div class="card-title">Common Healthcare Questions</div>
+            <div class="card-desc">Lack of a trusted 24/7 channel for preliminary, everyday healthcare guidance.</div>
+          </div>
+          <div class="feature-card">
+            <div class="card-title">Time Spent Contacting Staff</div>
+            <div class="card-desc">Reaching busy clinic reception lines just to confirm basic hours or locations wastes time.</div>
+          </div>
+        </div>
+        <div class="key-message-box">
+          <span class="key-message-label">Key Message</span>
+          <span class="key-message-text">Finding the right healthcare information can take time and effort.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 3: Our Solution -->
+    <div class="slide" id="slide-3">
+      <div class="slide-header">
+        <div>
+          <div class="slide-badge">The Solution</div>
+          <h2 class="slide-title">Introducing Health AI</h2>
+          <p class="slide-subtitle">An AI-Powered Healthcare Assistant for Everyone</p>
+        </div>
+        <div class="brand-mark">medbot.bcietech.com</div>
+      </div>
+      <div class="slide-body">
+        <p style="font-size: 1.05rem; color: var(--text-body);">Health AI is an intelligent healthcare assistant that empowers users to:</p>
+        <div class="grid-3">
+          <div class="feature-card" style="border-top: 3px solid var(--proseth-green);">
+            <div class="card-icon">💬</div>
+            <div class="card-title">Ask Healthcare Questions</div>
+            <div class="card-desc">Clear, conversational answers for symptoms, preventive advice, and wellness inquiries.</div>
+          </div>
+          <div class="feature-card" style="border-top: 3px solid var(--accent-blue);">
+            <div class="card-icon">📍</div>
+            <div class="card-title">Find Hospital Information</div>
+            <div class="card-desc">Locate verified facilities, operational hours, direct phone numbers, and emergency hotlines.</div>
+          </div>
+          <div class="feature-card" style="border-top: 3px solid var(--warning-amber);">
+            <div class="card-icon">🏢</div>
+            <div class="card-title">Explore Departments & Services</div>
+            <div class="card-desc">Discover which medical specialties are available and navigate directly to the right department.</div>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="feature-card">
+            <div class="card-title">Understand Healthcare Information</div>
+            <div class="card-desc">Translates medical jargon into plain, digestible guidance that anyone can understand.</div>
+          </div>
+          <div class="feature-card">
+            <div class="card-title">Khmer & English Fluency</div>
+            <div class="card-desc">Communicate naturally in native Khmer script and English with seamless language switching.</div>
+          </div>
+        </div>
+        <div class="key-message-box">
+          <span class="key-message-label">Key Message</span>
+          <span class="key-message-text">Ask your question. Get the information you need.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 4: What Can Health AI Help With? -->
+    <div class="slide" id="slide-4">
+      <div class="slide-header">
+        <div>
+          <div class="slide-badge">Core Capabilities</div>
+          <h2 class="slide-title">What Can Health AI Help With?</h2>
+          <p class="slide-subtitle">Healthcare Information at Your Fingertips</p>
+        </div>
+        <div class="brand-mark">Ask • Discover • Understand</div>
+      </div>
+      <div class="slide-body">
+        <div class="grid-3">
+          <div class="feature-card" style="padding: 1.8rem; border-top: 4px solid var(--proseth-green);">
+            <div style="font-size: 1.5rem; font-weight: 800; color: var(--proseth-green); margin-bottom: 0.3rem;">ASK</div>
+            <div style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1rem;">Direct Conversational Guidance</div>
+            <ul class="card-list check" style="gap: 0.8rem;">
+              <li><strong>Ask healthcare questions</strong> about symptoms</li>
+              <li><strong>Ask follow-up questions</strong> contextually</li>
+              <li><strong>Use Khmer or English</strong> naturally</li>
+            </ul>
+          </div>
+          <div class="feature-card" style="padding: 1.8rem; border-top: 4px solid var(--accent-blue);">
+            <div style="font-size: 1.5rem; font-weight: 800; color: var(--accent-blue); margin-bottom: 0.3rem;">DISCOVER</div>
+            <div style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1rem;">Facility & Department Finder</div>
+            <ul class="card-list check" style="gap: 0.8rem;">
+              <li><strong>Explore hospitals</strong> and health centers</li>
+              <li><strong>Find departments</strong> suited to condition</li>
+              <li><strong>Explore services</strong> offered by facilities</li>
+            </ul>
+          </div>
+          <div class="feature-card" style="padding: 1.8rem; border-top: 4px solid var(--proseth-teal);">
+            <div style="font-size: 1.5rem; font-weight: 800; color: var(--proseth-teal); margin-bottom: 0.3rem;">UNDERSTAND</div>
+            <div style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1rem;">Actionable Patient Clarity</div>
+            <ul class="card-list check" style="gap: 0.8rem;">
+              <li><strong>Get relevant information</strong> quickly</li>
+              <li><strong>Understand services</strong> and procedures</li>
+              <li><strong>Navigate healthcare</strong> with confidence</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 5: Current Phase -->
+    <div class="slide" id="slide-5">
+      <div class="slide-header">
+        <div>
+          <div class="slide-badge">Section 2 • Current Phase</div>
+          <h2 class="slide-title">Phase 1 — AI Healthcare Assistant</h2>
+          <p class="slide-subtitle">Available Today in Production</p>
+        </div>
+        <div class="brand-mark">Phase 1 Live</div>
+      </div>
+      <div class="slide-body">
+        <div class="grid-4">
+          <div class="feature-card">
+            <div class="card-icon">🤖</div>
+            <div class="card-title">AI Assistant</div>
+            <ul class="card-list check">
+              <li>Healthcare Q&A</li>
+              <li>Khmer & English</li>
+              <li>Follow-up context</li>
+            </ul>
+          </div>
+          <div class="feature-card">
+            <div class="card-icon">🏥</div>
+            <div class="card-title">Hospital Info</div>
+            <ul class="card-list check">
+              <li>Hospital profiles</li>
+              <li>Departments</li>
+              <li>Services & contact</li>
+            </ul>
+          </div>
+          <div class="feature-card">
+            <div class="card-icon">🔍</div>
+            <div class="card-title">Healthcare Discovery</div>
+            <ul class="card-list check">
+              <li>Explore services</li>
+              <li>Find departments</li>
+              <li>Verified locations</li>
+            </ul>
+          </div>
+          <div class="feature-card">
+            <div class="card-icon">🛡️</div>
+            <div class="card-title">Trusted Info</div>
+            <ul class="card-list check">
+              <li>Continuously reviewed</li>
+              <li>Expanding coverage</li>
+              <li>Verified sources</li>
+            </ul>
+          </div>
+        </div>
+        <div class="key-message-box">
+          <span class="key-message-label">Key Message</span>
+          <span class="key-message-text">Today, Health AI focuses on helping users find and understand healthcare information.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 6: Current Limitations -->
+    <div class="slide" id="slide-6">
+      <div class="slide-header">
+        <div>
+          <div class="slide-badge" style="background: #fffbeb; color: var(--warning-amber); border-color: rgba(217, 119, 6, 0.3);">Scope Transparency</div>
+          <h2 class="slide-title">Current Limitations</h2>
+          <p class="slide-subtitle">What Is Not Available Yet</p>
+        </div>
+        <div class="brand-mark">Future Scope</div>
+      </div>
+      <div class="slide-body">
+        <p style="font-size: 1.05rem; color: var(--text-body);">Health AI is currently focused on information and discovery. The following capabilities are planned for future phases:</p>
+        <div class="grid-3">
+          <div class="feature-card" style="background: #fffbeb; border-color: #fde68a;">
+            <div class="card-title" style="color: var(--warning-amber);">1. Hospital Registration</div>
+            <div class="card-desc">Direct patient profile creation with partner hospitals.</div>
+          </div>
+          <div class="feature-card" style="background: #fffbeb; border-color: #fde68a;">
+            <div class="card-title" style="color: var(--warning-amber);">2. Queue / Ticket Booking</div>
+            <div class="card-desc">Getting queue tickets before visiting facilities.</div>
+          </div>
+          <div class="feature-card" style="background: #fffbeb; border-color: #fde68a;">
+            <div class="card-title" style="color: var(--warning-amber);">3. Doctor Search</div>
+            <div class="card-desc">Finding doctors based on specialty and schedule.</div>
+          </div>
+          <div class="feature-card" style="background: #fffbeb; border-color: #fde68a;">
+            <div class="card-title" style="color: var(--warning-amber);">4. Appointment Booking</div>
+            <div class="card-desc">Scheduling clinical outpatient appointments.</div>
+          </div>
+          <div class="feature-card" style="background: #fffbeb; border-color: #fde68a;">
+            <div class="card-title" style="color: var(--warning-amber);">5. Patient History</div>
+            <div class="card-desc">Accessing past interaction and visit history.</div>
+          </div>
+          <div class="feature-card" style="background: #fffbeb; border-color: #fde68a;">
+            <div class="card-title" style="color: var(--warning-amber);">6. End-to-End Service</div>
+            <div class="card-desc">Prescription fulfillment, insurance, and billing.</div>
+          </div>
+        </div>
+        <div class="key-message-box warning">
+          <span class="key-message-label">Key Message</span>
+          <span class="key-message-text">We are starting with information assistance and gradually expanding toward healthcare services.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 7: What's Coming Next? -->
+    <div class="slide" id="slide-7">
+      <div class="slide-header">
+        <div>
+          <div class="slide-badge">Section 3 • Next Phase</div>
+          <h2 class="slide-title">What's Coming Next?</h2>
+          <p class="slide-subtitle">Phase 2 — From Information to Action</p>
+        </div>
+        <div class="brand-mark">Phase 2 Roadmap</div>
+      </div>
+      <div class="slide-body">
+        <p style="font-size: 1.05rem; color: var(--text-body);">The next phase will allow users to move from finding information to accessing healthcare services directly:</p>
+        <div class="grid-5">
+          <div class="feature-card" style="border-top: 3px solid var(--proseth-green);">
+            <div class="card-icon">📝</div>
+            <div class="card-title">Hospital Registration</div>
+            <div class="card-desc">Register with participating hospitals online.</div>
+          </div>
+          <div class="feature-card" style="border-top: 3px solid var(--accent-blue);">
+            <div class="card-icon">🎟️</div>
+            <div class="card-title">Book Queue Ticket</div>
+            <div class="card-desc">Get a queue ticket before visiting the hospital.</div>
+          </div>
+          <div class="feature-card" style="border-top: 3px solid var(--warning-amber);">
+            <div class="card-icon">👨‍⚕️</div>
+            <div class="card-title">Doctor Search</div>
+            <div class="card-desc">Find doctors by specialty and service.</div>
+          </div>
+          <div class="feature-card" style="border-top: 3px solid var(--proseth-teal);">
+            <div class="card-icon">📅</div>
+            <div class="card-title">Appointment Booking</div>
+            <div class="card-desc">Schedule clinical healthcare visits.</div>
+          </div>
+          <div class="feature-card" style="border-top: 3px solid #7c3aed;">
+            <div class="card-icon">📜</div>
+            <div class="card-title">View History</div>
+            <div class="card-desc">Access past interaction logs.</div>
+          </div>
+        </div>
+        <div class="key-message-box">
+          <span class="key-message-label">Action Oriented</span>
+          <span class="key-message-text">Transforming conversational answers into tangible clinic actions and confirmed visits.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 8: The Future Healthcare Journey -->
+    <div class="slide" id="slide-8">
+      <div class="slide-header">
+        <div>
+          <div class="slide-badge">The Vision</div>
+          <h2 class="slide-title">The Future Healthcare Journey</h2>
+          <p class="slide-subtitle">From Asking to Taking Action</p>
+        </div>
+        <div class="brand-mark">End-to-End Flow</div>
+      </div>
+      <div class="slide-body">
+        <p style="font-size: 1.05rem; color: var(--text-body);">A connected, seamless patient experience linking discovery directly to clinical care:</p>
+        <div class="journey-track">
+          <div class="journey-step active-step">
+            <div class="step-num">1</div>
+            <div class="step-title">Ask</div>
+            <div class="step-tag">Phase 1 (Live)</div>
+          </div>
+          <div class="journey-arrow">→</div>
+          <div class="journey-step active-step">
+            <div class="step-num">2</div>
+            <div class="step-title">Discover</div>
+            <div class="step-tag">Phase 1 (Live)</div>
+          </div>
+          <div class="journey-arrow">→</div>
+          <div class="journey-step">
+            <div class="step-num">3</div>
+            <div class="step-title">Register</div>
+            <div class="step-tag" style="color: var(--accent-blue);">Phase 2</div>
+          </div>
+          <div class="journey-arrow">→</div>
+          <div class="journey-step">
+            <div class="step-num">4</div>
+            <div class="step-title">Find Doctor</div>
+            <div class="step-tag" style="color: var(--accent-blue);">Phase 2</div>
+          </div>
+          <div class="journey-arrow">→</div>
+          <div class="journey-step">
+            <div class="step-num">5</div>
+            <div class="step-title">Book Ticket</div>
+            <div class="step-tag" style="color: var(--accent-blue);">Phase 2</div>
+          </div>
+          <div class="journey-arrow">→</div>
+          <div class="journey-step">
+            <div class="step-num">6</div>
+            <div class="step-title">Visit</div>
+            <div class="step-tag" style="color: var(--warning-amber);">Hospital</div>
+          </div>
+          <div class="journey-arrow">→</div>
+          <div class="journey-step">
+            <div class="step-num">7</div>
+            <div class="step-title">View History</div>
+            <div class="step-tag" style="color: #7c3aed;">Phase 2</div>
+          </div>
+        </div>
+        <div class="key-message-box">
+          <span class="key-message-label">Key Message</span>
+          <span class="key-message-text">Our goal is to make the healthcare journey simpler from discovery to service.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 9: Continuous Improvement -->
+    <div class="slide" id="slide-9">
+      <div class="slide-header">
+        <div>
+          <div class="slide-badge">Operational Excellence</div>
+          <h2 class="slide-title">Continuous Improvement</h2>
+          <p class="slide-subtitle">Production Launch Is the Beginning</p>
+        </div>
+        <div class="brand-mark">Iterative Growth</div>
+      </div>
+      <div class="slide-body">
+        <p style="font-size: 1.05rem; color: var(--text-body);">After launch, we will continuously cycle through five operational pillars:</p>
+        <div class="grid-5">
+          <div class="feature-card">
+            <div class="card-icon">👂</div>
+            <div class="card-title">Listen</div>
+            <div class="card-desc">Understand what users and patients need.</div>
+          </div>
+          <div class="feature-card">
+            <div class="card-icon">🧠</div>
+            <div class="card-title">Learn</div>
+            <div class="card-desc">Identify common questions and gaps.</div>
+          </div>
+          <div class="feature-card">
+            <div class="card-icon">⚡</div>
+            <div class="card-title">Improve</div>
+            <div class="card-desc">Refine information and user experience.</div>
+          </div>
+          <div class="feature-card">
+            <div class="card-icon">📈</div>
+            <div class="card-title">Expand</div>
+            <div class="card-desc">Add more services and hospital partners.</div>
+          </div>
+          <div class="feature-card">
+            <div class="card-icon">📊</div>
+            <div class="card-title">Measure</div>
+            <div class="card-desc">Monitor service quality and accuracy.</div>
+          </div>
+        </div>
+        <div style="background: #f0fdf4; border: 1px solid var(--proseth-green); border-radius: 12px; padding: 0.85rem; text-align: center; font-weight: 700; color: var(--proseth-teal);">
+          Improvement Cycle: &nbsp; User &nbsp; → &nbsp; Feedback &nbsp; → &nbsp; Improvement &nbsp; → &nbsp; Better Experience
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 10: Live Demo -->
+    <div class="slide" id="slide-10">
+      <div class="slide-header">
+        <div>
+          <div class="slide-badge">Section 4 • Real Product</div>
+          <h2 class="slide-title">Live Product Demo</h2>
+          <p class="slide-subtitle">Let's Experience Health AI</p>
+        </div>
+        <div class="brand-mark">medbot.bcietech.com</div>
+      </div>
+      <div class="slide-body">
+        <div class="grid-2">
+          <div class="feature-card" style="padding: 1.5rem;">
+            <div style="font-size: 0.85rem; font-weight: 800; color: var(--proseth-green); text-transform: uppercase; margin-bottom: 0.5rem;">Demo Journey Steps</div>
+            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+              <div>1. Open Health AI (<strong>medbot.bcietech.com</strong>)</div>
+              <div>2. Ask a healthcare question</div>
+              <div>3. Ask about a hospital</div>
+              <div>4. Explore a department</div>
+              <div>5. Ask about a healthcare service</div>
+              <div>6. Ask a follow-up question</div>
+              <div style="color: var(--proseth-green); font-weight: 700;">7. Demonstrate Khmer (ភាសាខ្មែរ)</div>
+              <div style="color: var(--accent-blue); font-weight: 700;">8. Demonstrate English</div>
+            </div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 1rem;">
+            <div class="feature-card" style="background: #f0f9ff; border-color: #bae6fd;">
+              <div style="font-size: 0.78rem; font-weight: 800; color: var(--accent-blue); text-transform: uppercase; margin-bottom: 0.3rem;">Speaker Transition Cue</div>
+              <p style="font-size: 1.1rem; color: var(--proseth-teal); font-style: italic; font-weight: 700;">
+                "Now that we've seen what Health AI can do, let me show you the actual experience."
+              </p>
+            </div>
+            <div class="feature-card">
+              <div style="font-size: 0.78rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.3rem;">Demo Principle</div>
+              <p style="font-size: 0.95rem; color: var(--text-body);">
+                Don't explain the technology. Perform the live interaction naturally so the audience experiences the simplicity, speed, and helpfulness firsthand.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 11: Production Launch -->
+    <div class="slide" id="slide-11">
+      <div class="slide-header">
+        <div>
+          <div class="slide-badge">Production Launch</div>
+          <h2 class="slide-title">Health AI Is Ready for Production</h2>
+          <p class="slide-subtitle">18 September 2026</p>
+        </div>
+        <div class="brand-mark">Officially Live</div>
+      </div>
+      <div class="slide-body" style="text-align: center; align-items: center; justify-content: center; gap: 1.5rem;">
+        <div style="font-size: 3rem;">🚀 🏥</div>
+        <p style="font-size: 1.4rem; font-weight: 700; color: var(--proseth-teal); max-width: 850px; line-height: 1.5;">
+          Today marks the beginning of Health AI's journey from an AI information assistant toward a connected digital healthcare experience.
+        </p>
+        <div style="background: #ecfdf5; border: 2px solid var(--proseth-green); border-radius: 16px; padding: 1.2rem 3rem; display: flex; flex-direction: column; gap: 0.3rem;">
+          <div style="font-size: 0.85rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Try Health AI Live Today</div>
+          <a href="https://medbot.bcietech.com" target="_blank" style="font-size: 2rem; font-weight: 800; color: var(--proseth-green); text-decoration: none; font-family: var(--font-mono);">
+            medbot.bcietech.com
+          </a>
+        </div>
+        <p style="font-size: 1rem; color: var(--text-muted);">
+          Thank you! Questions, feedback, and partnership discussion.
+        </p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- On-Screen Navigation Controls -->
+  <div class="controls">
+    <button class="btn-nav" id="prevBtn" title="Previous Slide (Left Arrow)">❮</button>
+    <span class="slide-counter" id="slideCounter">1 / 11</span>
+    <button class="btn-nav" id="nextBtn" title="Next Slide (Right Arrow or Space)">❯</button>
+    <button class="btn-nav" id="fullscreenBtn" title="Toggle Fullscreen (F)">⛶</button>
+    <button class="btn-nav" id="printBtn" title="Print to PDF (Ctrl+P)" style="font-size: 0.85rem;">🖨️</button>
+  </div>
+
+  <script>
+    let currentSlide = 1;
+    const totalSlides = 11;
+
+    const slides = document.querySelectorAll('.slide');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const slideCounter = document.getElementById('slideCounter');
+    const progressBar = document.getElementById('progressBar');
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
+    const printBtn = document.getElementById('printBtn');
+
+    function showSlide(index) {
+      if (index < 1) index = 1;
+      if (index > totalSlides) index = totalSlides;
+      currentSlide = index;
+
+      slides.forEach((slide, i) => {
+        slide.classList.toggle('active', i + 1 === currentSlide);
+      });
+
+      slideCounter.textContent = `${currentSlide} / ${totalSlides}`;
+      progressBar.style.width = `${(currentSlide / totalSlides) * 100}%`;
+    }
+
+    prevBtn.addEventListener('click', () => showSlide(currentSlide - 1));
+    nextBtn.addEventListener('click', () => showSlide(currentSlide + 1));
+
+    fullscreenBtn.addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+    });
+
+    printBtn.addEventListener('click', () => {
+      window.print();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+        e.preventDefault();
+        showSlide(currentSlide + 1);
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        e.preventDefault();
+        showSlide(currentSlide - 1);
+      } else if (e.key === 'Home') {
+        e.preventDefault();
+        showSlide(1);
+      } else if (e.key === 'End') {
+        e.preventDefault();
+        showSlide(totalSlides);
+      } else if (e.key === 'f' || e.key === 'F') {
+        fullscreenBtn.click();
+      } else if (e.key === 'p' || e.key === 'P') {
+        if (e.ctrlKey || e.metaKey) {
+          window.print();
+        }
+      }
+    });
+
+    let touchStartX = 0;
+    document.addEventListener('touchstart', (e) => {
+      touchStartX = e.changedTouches[0].screenX;
+    }, { passive: true });
+
+    document.addEventListener('touchend', (e) => {
+      const touchEndX = e.changedTouches[0].screenX;
+      if (touchStartX - touchEndX > 50) {
+        showSlide(currentSlide + 1);
+      } else if (touchEndX - touchStartX > 50) {
+        showSlide(currentSlide - 1);
+      }
+    }, { passive: true });
+  </script>
+</body>
+</html>
