@@ -4,7 +4,6 @@ import { Sidebar, NavTab } from './components/Sidebar';
 import { AuthModal } from './components/AuthModal';
 import { NotificationBanner } from './components/NotificationBanner';
 import { MaintenanceBanner } from './components/MaintenanceBanner';
-import { PWAInstallBanner } from './components/PWAInstallBanner';
 import { ServerConfigModal } from './components/ServerConfigModal';
 import { useLanguage } from './context/LanguageContext';
 import { AuthService, UserProfile } from './services/auth';
@@ -458,8 +457,6 @@ export const App: React.FC = () => {
           }
         }}
       />
-
-      <PWAInstallBanner />
 
       <ServerConfigModal
         isOpen={serverConfigOpen}
