@@ -13,13 +13,19 @@ interface LandingPageProps {
   onOpenAuth: () => void;
   currentUser?: UserProfile | null;
   onSelectTab?: (tab: NavTab) => void;
+  onStartChatWithQuery?: (query: string) => void;
 }
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth, currentUser, onSelectTab }) => {
+export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth, currentUser, onSelectTab, onStartChatWithQuery }) => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', width: '100%', margin: 0, padding: 0, background: '#ffffff' }}>
       {/* Full-width Hero Section */}
-      <HeroSection onOpenAuth={onOpenAuth} currentUser={currentUser} onSelectTab={onSelectTab} />
+      <HeroSection
+        onOpenAuth={onOpenAuth}
+        currentUser={currentUser}
+        onSelectTab={onSelectTab}
+        onStartChatWithQuery={onStartChatWithQuery}
+      />
 
       {/* Full-width Patient Experience Section with Emerald Gradient */}
       <PatientFeatures />

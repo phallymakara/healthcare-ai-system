@@ -46,7 +46,7 @@ export const en = {
   appt_cancel_btn: "Cancel Booking",
   appt_cancel_confirm: "Are you sure you want to cancel this scheduled appointment? Your time slot will be released.",
   appt_cancel_success: "Appointment successfully cancelled.",
-  appt_lookup_placeholder: "Enter Ticket Code (e.g. CARD-001) or Phone...",
+  appt_lookup_placeholder: "Search ticket code or phone...",
   appt_lookup_btn: "Search",
   appt_no_active_title: "No Scheduled Appointments",
   appt_no_active_desc: "You do not have an active clinic appointment scheduled. Book a time slot with a verified hospital or consult our AI medical triage.",
@@ -61,7 +61,7 @@ export const en = {
   history_tab_title: "Visit & Consultation History",
   history_tab_desc: "Review your past completed consultations, doctor clinical notes, digital prescriptions, and payment receipts.",
   history_back_to_list: "Back to Visit History",
-  history_search_placeholder: "Search by doctor, hospital, diagnosis, or ticket number...",
+  history_search_placeholder: "Search records or hospital...",
   history_filter_all: "All Records",
   history_filter_completed: "Completed Visits",
   history_filter_cancelled: "Missed",
@@ -189,7 +189,7 @@ export const en = {
 
   // Chat Page
   chat_welcome: "Hello! I am your AI Health Assistant.",
-  chat_placeholder: "Ask any question, search doctors or clinics, check wait times...",
+  chat_placeholder: "Ask symptoms, health advice...",
   chat_send: "Send",
   chat_processing: "Processing...",
   you: "You",
@@ -230,7 +230,7 @@ export const en = {
   recommended_dept: "Recommended Department",
 
   // Discovery Page
-  discovery_search_placeholder: "Search hospitals, clinics, doctors, or medical services...",
+  discovery_search_placeholder: "Search hospital or doctor...",
   hotline_contact: "Hotline Contact:",
   location_label: "Location:",
   cat_all: "All Facilities",
@@ -246,6 +246,11 @@ export const en = {
   take_ticket: "Book Queue Ticket",
   active_departments: "Active Departments",
   services_offered: "Available Medical Services",
+  filter_nearby: "📍 Nearby",
+  distance_km_away: "km away",
+  btn_use_location: "Use My Location",
+  locating: "Locating...",
+  location_enabled: "Location Active",
   close: "Close",
 
   // History Page
@@ -667,18 +672,18 @@ export const en = {
   admin_err_user_conn: "Connection issue updating user status.",
 
   // Landing Page - Hero Section
-  hero_title_1: "Skip the waiting room.",
-  hero_title_2: "Track your queue in real time.",
-  hero_subtitle: "Health AI Assistant lets patients reserve queue tickets from home, view live estimated wait times, and receive alerts when their turn is near. Clinics and doctors easily manage patient flow from a simple counter console.",
+  hero_title_1: "With Healthcare Assistant,",
+  hero_title_2: "You can quickly find specialized hospitals near you.",
   hero_live_wait_title: "Live Wait Times",
-  hero_live_wait_desc: "Accurate time estimates updated as doctors consult.",
+  hero_live_wait_desc: "Coming Soon",
   hero_remote_ticket_title: "Remote Tickets",
-  hero_remote_ticket_desc: "Take your place in line before leaving your home.",
+  hero_remote_ticket_desc: "Coming Soon",
+  hero_coming_soon: "Coming Soon",
   hero_clinic_network_title: "Clinic Network",
   hero_clinic_network_desc: "Compare waiting times across multiple hospitals.",
 
   // Landing Page - Patient Features
-  pf_section_title: "Healthcare visits with total peace of mind, free from stress",
+  pf_section_title: "Convenient and effortless healthcare access",
   pf_section_subtitle: "Spend less time in crowded waiting rooms and more time where you feel comfortable and at ease.",
   pf_card1_title: "Remote Queue Booking",
   pf_card1_desc: "Reserve your consultation queue ticket for any department or doctor with your phone before leaving home.",
@@ -694,8 +699,7 @@ export const en = {
   pf_card4_tag: "Direct AI Interaction",
 
   // Landing Page - Hospital Operations Features
-  hf_section_title: "Streamline daily clinic operations",
-  hf_section_subtitle: "Eliminate paper queue bottlenecks, organize counter desks, and synchronize patient flow effortlessly.",
+  hf_section_title: "Enhance daily operations for hospitals and clinics",
   hf_card1_title: "Doctor Specialists & Rosters",
   hf_card1_desc: "Doctors and staff organize consultation schedules and specialty room assignments efficiently.",
   hf_card1_bullet1: "✓ Live doctor attendance and shift synchronization",
@@ -746,19 +750,22 @@ export const en = {
   cta_desc_user: "Quickly access hospital queues, manage appointments, or monitor live counter progress.",
   cta_btn_portal: "Go to My Portal",
   cta_btn_guest: "Sign In / Register",
-  cta_input_placeholder: "Join with AI • Enter your email for health updates",
+  cta_input_placeholder: "Enter your email address...",
   cta_btn_start: "Get Started Now",
 
   // Mockup Nav & Hero Keys
   nav_clinics_dept: "Clinics & Dept",
-  nav_features_why: "Features",
-  nav_case_studies: "Case Studies",
+  nav_features_why: "Services",
+  nav_case_studies: "How It Works",
   nav_ai_assistant: "AI Assistant",
   nav_register_signin: "Sign In",
-  hero_quick_search_placeholder: "Quick search for a location...",
+  nav_chat_with_ai: "Chat with AI",
+  nav_sign_in: "Sign In",
+  nav_home: "Home",
+  hero_quick_search_placeholder: "Search hospital or clinic...",
   hero_get_started: "Get Started",
   hero_card_ai_clinic_title: "AI & Clinic Workflow",
-  hero_card_ai_clinic_desc: "Intelligent system to streamline patient queues and staff workflows.",
+  hero_card_ai_clinic_desc: "Intelligent system to streamline workflow and find hospitals quickly.",
 
   // Landing Page - Footer
   footer_contact: "Contact",
@@ -777,6 +784,26 @@ export const en = {
   pwa_ios_step2: "Scroll down in the menu and tap \"Add to Home Screen\".",
   pwa_ios_step3: "Tap \"Add\" in the top right corner.",
   pwa_ios_got_it: "Got it",
+
+  // Coming Soon Tab & View Keys (Phase 1)
+  tab_coming_soon_badge: "Soon",
+  phase1_badge: "Phase 1 • Coming Soon",
+  coming_soon_title: "Coming Soon",
+  coming_soon_desc: "This feature will be released soon in the next phase.",
+  ticket_coming_soon_title: "Live Queue Tickets",
+  ticket_coming_soon_desc: "Live queue ticket reservation and real-time tracking will be available in the upcoming phase. You can currently enjoy full access to AI health consultations and hospital discovery.",
+  history_coming_soon_title: "Medical & Consultation History",
+  history_coming_soon_desc: "Digital medical history, consultation records, and e-prescription archives will be available in the upcoming phase.",
+  coming_soon_btn_chat: "Chat with AI",
+  coming_soon_btn_explore: "Explore Clinics & Hospitals",
+
+  // Guest Chat Limit Keys
+  chat_guest_limit_notice: "You have reached the conversation limit. Please log in to continue chatting.",
+  chat_guest_limit_btn: "Log In",
+  chat_guest_limit_placeholder: "Please log in to continue chatting...",
+
+  // Medical Disclaimer Alert
+  chat_medical_disclaimer: "Disclaimer: AI advice is for informational purposes only and does not replace professional medical diagnosis. Consult a qualified doctor for serious conditions or emergencies.",
 };
 
 export type TranslationKey = keyof typeof en;

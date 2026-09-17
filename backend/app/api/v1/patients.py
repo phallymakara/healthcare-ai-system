@@ -29,6 +29,7 @@ from app.models import (
 )
 from app.schemas.queue import TicketDetailResponse, TicketResponse
 from app.services.wait_time_calculator import WaitTimeCalculator
+from app.core.geo_utils import calculate_distance_km
 
 router = APIRouter(prefix="/patients", tags=["Patient Platform"])
 
@@ -83,6 +84,7 @@ class HospitalDiscoveryResponse(BaseModel):
     emergency_service_available: bool = True
     departments: List[DepartmentDiscoveryItem] = []
     services: List[ServiceDiscoveryItem] = []
+    distance_km: Optional[float] = None
 
     model_config = {"from_attributes": True}
 
@@ -128,6 +130,9 @@ class PatientProfileResponse(BaseModel):
 async def search_hospitals(
     q: Optional[str] = Query(None, description="Search query for hospital name, city, or specialty"),
     category: Optional[str] = Query(None, description="Category filter (e.g. Hospital, Clinic, Animal)"),
+    lat: Optional[float] = Query(None, description="User latitude for distance calculation"),
+    lng: Optional[float] = Query(None, description="User longitude for distance calculation"),
+    sort_by_distance: bool = Query(False, description="Sort hospitals by proximity to user"),
     db: AsyncSession = Depends(get_db),
 ):
     """Public search and discovery of verified hospitals, branches, and live department queues"""
@@ -240,6 +245,8 @@ async def search_hospitals(
             if s.is_active
         ]
 
+        dist_km = calculate_distance_km(lat, lng, h.latitude, h.longitude)
+
         result.append(
             HospitalDiscoveryResponse(
                 id=h.id,
@@ -255,8 +262,12 @@ async def search_hospitals(
                 emergency_service_available=h.emergency_service_available,
                 departments=dept_items,
                 services=service_items,
+                distance_km=dist_km,
             )
         )
+
+    if (sort_by_distance or (lat is not None and lng is not None)) and lat is not None and lng is not None:
+        result.sort(key=lambda x: (x.distance_km is None, x.distance_km if x.distance_km is not None else 99999))
 
     return result
 

@@ -9,11 +9,15 @@ interface FacilityCardListProps {
   loading: boolean;
   searchQuery: string;
   setSearchQuery: (val: string) => void;
-  selectedCategory: 'All' | 'Hospital' | 'Medical Clinic' | 'Animal Clinic';
-  setSelectedCategory: (cat: 'All' | 'Hospital' | 'Medical Clinic' | 'Animal Clinic') => void;
+  selectedCategory: 'All' | 'Nearby' | 'Hospital' | 'Medical Clinic' | 'Animal Clinic';
+  setSelectedCategory: (cat: 'All' | 'Nearby' | 'Hospital' | 'Medical Clinic' | 'Animal Clinic') => void;
   onSearchSubmit: (e: React.FormEvent) => void;
   onClearSearch: () => void;
   onSelectFacility: (facility: any) => void;
+  onRequestLocation?: () => void;
+  hasLocation?: boolean;
+  locationLoading?: boolean;
+  userLocation?: { latitude: number; longitude: number } | null;
 }
 
 export const FacilityCardList: React.FC<FacilityCardListProps> = ({
@@ -26,6 +30,10 @@ export const FacilityCardList: React.FC<FacilityCardListProps> = ({
   onSearchSubmit,
   onClearSearch,
   onSelectFacility,
+  onRequestLocation,
+  hasLocation,
+  locationLoading,
+  userLocation,
 }) => {
   const { language, t } = useLanguage();
   const kmFont = language === 'km' ? 'var(--font-khmer)' : 'inherit';
@@ -123,6 +131,7 @@ export const FacilityCardList: React.FC<FacilityCardListProps> = ({
         <div style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap', alignItems: 'center' }}>
           {[
             { label: t('cat_all'), value: 'All' },
+            { label: t('filter_nearby'), value: 'Nearby' },
             { label: t('cat_hospitals'), value: 'Hospital' },
             { label: t('cat_medical_clinics'), value: 'Medical Clinic' },
             { label: t('cat_animal_clinics'), value: 'Animal Clinic' },
@@ -130,7 +139,12 @@ export const FacilityCardList: React.FC<FacilityCardListProps> = ({
             <button
               type="button"
               key={cat.value}
-              onClick={() => setSelectedCategory(cat.value as any)}
+              onClick={() => {
+                if (cat.value === 'Nearby' && !hasLocation) {
+                  onRequestLocation?.();
+                }
+                setSelectedCategory(cat.value as any);
+              }}
               className={`category-filter-pill ${selectedCategory === cat.value ? 'active' : ''}`}
               style={{
                 fontWeight: selectedCategory === cat.value ? 700 : 500,
@@ -138,13 +152,77 @@ export const FacilityCardList: React.FC<FacilityCardListProps> = ({
                 border: selectedCategory === cat.value ? '1px solid var(--accent-primary)' : '1px solid var(--border-color)',
                 color: selectedCategory === cat.value ? '#ffffff' : 'var(--text-muted)',
                 fontFamily: kmFont,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
               }}
             >
-              {cat.label}
+              <span>{cat.label}</span>
+              {cat.value === 'Nearby' && locationLoading && (
+                <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>...</span>
+              )}
             </button>
           ))}
         </div>
       </div>
+
+      {/* Nearby Location Status Indicator */}
+      {selectedCategory === 'Nearby' && (
+        <div
+          style={{
+            marginBottom: '1rem',
+            padding: '0.65rem 1rem',
+            borderRadius: '12px',
+            background: hasLocation ? 'rgba(5, 150, 105, 0.07)' : 'rgba(2, 132, 199, 0.07)',
+            border: hasLocation ? '1px solid rgba(5, 150, 105, 0.2)' : '1px solid rgba(2, 132, 199, 0.2)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '0.6rem',
+            fontSize: '0.88rem',
+            fontFamily: kmFont,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: hasLocation ? '#059669' : '#0284c7' }}>
+            <span>📍</span>
+            <span>
+              {locationLoading
+                ? (language === 'km' ? 'កំពុងកំណត់ទីតាំង GPS របស់អ្នក...' : 'Detecting your GPS location...')
+                : hasLocation
+                ? (language === 'km'
+                    ? `បានរកឃើញទីតាំងរបស់អ្នក (${userLocation?.latitude.toFixed(3)}, ${userLocation?.longitude.toFixed(3)}) — រៀបតាមចម្ងាយជិតបំផុត`
+                    : `Location detected (${userLocation?.latitude.toFixed(3)}, ${userLocation?.longitude.toFixed(3)}) — Sorted by nearest distance`)
+                : (language === 'km'
+                    ? 'មិនទាន់បានកំណត់ទីតាំងនៅឡើយទេ។ សូមអនុញ្ញាតការកំណត់ទីតាំងដើម្បីបង្ហាញមន្ទីរពេទ្យនៅជិតអ្នក'
+                    : 'Location not detected yet. Enable GPS to view hospitals closest to you.')}
+            </span>
+          </div>
+
+          {!hasLocation && onRequestLocation && (
+            <button
+              type="button"
+              onClick={onRequestLocation}
+              disabled={locationLoading}
+              style={{
+                padding: '0.3rem 0.85rem',
+                fontSize: '0.82rem',
+                fontWeight: 600,
+                background: '#0284c7',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: 'var(--radius-full)',
+                cursor: 'pointer',
+                fontFamily: kmFont,
+              }}
+            >
+              {locationLoading
+                ? (language === 'km' ? 'កំពុងស្វែងរក...' : 'Detecting...')
+                : (language === 'km' ? 'កំណត់ទីតាំងខ្ញុំ' : 'Detect My Location')}
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Facility 2-Column Grid List */}
       {loading ? (
@@ -177,6 +255,12 @@ export const FacilityCardList: React.FC<FacilityCardListProps> = ({
               key={hosp.id}
               className="hospital-facility-card"
               onClick={() => onSelectFacility(hosp)}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.zIndex = '35';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.zIndex = '1';
+              }}
               style={{
                 display: 'flex',
                 alignItems: 'flex-start',
@@ -189,26 +273,48 @@ export const FacilityCardList: React.FC<FacilityCardListProps> = ({
                 border: '1px solid var(--border-color)',
                 borderRadius: '16px',
                 cursor: 'pointer',
-                boxShadow: 'none',
                 minWidth: 0,
                 boxSizing: 'border-box',
+                position: 'relative',
               }}
             >
               <SimulatedHospitalLogo name={hosp.name} logoUrl={hosp.logo_url} size={54} />
               <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
-                <div
-                  style={{
-                    fontSize: '1.08rem',
-                    fontWeight: 600,
-                    color: 'var(--text-main)',
-                    lineHeight: 1.35,
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    fontFamily: kmFont,
-                  }}
-                >
-                  {formatFacilityName(hosp.name, language)}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <div
+                    title={formatFacilityName(hosp.name, language)}
+                    style={{
+                      fontSize: '1.08rem',
+                      fontWeight: 600,
+                      color: 'var(--text-main)',
+                      lineHeight: 1.35,
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      fontFamily: kmFont,
+                      flex: 1,
+                      minWidth: '150px',
+                    }}
+                  >
+                    {formatFacilityName(hosp.name, language)}
+                  </div>
+                  {hosp.distance_km !== undefined && hosp.distance_km !== null && (
+                    <span
+                      style={{
+                        fontSize: '0.78rem',
+                        fontWeight: 600,
+                        color: '#059669',
+                        background: 'rgba(5, 150, 105, 0.08)',
+                        border: '1px solid rgba(5, 150, 105, 0.22)',
+                        padding: '0.12rem 0.55rem',
+                        borderRadius: 'var(--radius-full)',
+                        whiteSpace: 'nowrap',
+                        fontFamily: kmFont,
+                      }}
+                    >
+                      📍 ~{hosp.distance_km} {language === 'km' ? 'គ.ម' : 'km away'}
+                    </span>
+                  )}
                 </div>
 
                 <div
@@ -248,3 +354,4 @@ export const FacilityCardList: React.FC<FacilityCardListProps> = ({
     </div>
   );
 };
+

@@ -1,5 +1,4 @@
 import React from 'react';
-import { Smartphone, Clock, Users, CheckCircle2 } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 
 import patientCommuteImg from '../../assets/patient_commute_relax.jpg';
@@ -16,7 +15,7 @@ export const PatientFeatures: React.FC = () => {
       style={{
         width: '100%',
         position: 'relative',
-        background: 'linear-gradient(180deg, #11402e 0%, #134734 7%, #1c664b 16%, #358869 26%, #64b290 38%, #a8dec6 50%, #def3e9 62%, #ffffff 72%, #ffffff 100%)',
+        background: 'linear-gradient(180deg, #11402e 0%, #154c37 5%, #257053 11%, #55a383 18%, #a0dcbe 26%, #e6f6ee 33%, #ffffff 38%, #ffffff 100%)',
         color: '#ffffff',
         padding: '4.5rem 1.5rem 3rem 1.5rem',
         overflow: 'hidden',
@@ -95,7 +94,7 @@ export const PatientFeatures: React.FC = () => {
             gap: '1.75rem',
           }}
         >
-          {/* Card 1: Remote Queue Booking (Woman in Train) */}
+          {/* Card 1: Remote Queue Booking (Woman in Train) — Coming Soon */}
           <div
             className="patient-feature-card"
             style={{
@@ -106,7 +105,7 @@ export const PatientFeatures: React.FC = () => {
               border: '1px solid rgba(255, 255, 255, 0.2)',
               boxShadow: '0 12px 32px rgba(0, 0, 0, 0.2)',
               display: 'flex',
-              alignItems: 'center',
+              alignItems: 'flex-start',
               transition: 'transform 0.25s ease, box-shadow 0.25s ease',
             }}
             onMouseEnter={(e) => {
@@ -131,19 +130,43 @@ export const PatientFeatures: React.FC = () => {
                 objectFit: 'cover',
                 objectPosition: 'right center',
                 zIndex: 0,
+                opacity: 0.72,
               }}
             />
 
-            {/* Gradient Overlay: Deep color over text for a bit, then gradients to reveal image appearance */}
+            {/* Gradient Overlay: Deep color over text, slightly stronger to signal unavailable */}
             <div
               style={{
                 position: 'absolute',
                 inset: 0,
-                background: 'linear-gradient(to right, #0d382c 0%, #0d382c 42%, rgba(13, 56, 44, 0.92) 56%, rgba(13, 56, 44, 0.4) 74%, rgba(13, 56, 44, 0) 90%)',
+                background: 'linear-gradient(to right, #0d382c 0%, #0d382c 20%, rgba(13, 56, 44, 0.88) 38%, rgba(13, 56, 44, 0.35) 52%, rgba(13, 56, 44, 0.12) 62%)',
                 zIndex: 1,
                 pointerEvents: 'none',
               }}
             />
+
+            {/* Coming Soon Badge — Top Right */}
+            <div
+              style={{
+                position: 'absolute',
+                top: '1rem',
+                right: '1rem',
+                zIndex: 5,
+                background: 'rgba(255, 255, 255, 0.15)',
+                backdropFilter: 'blur(8px)',
+                border: '1px solid rgba(255, 255, 255, 0.35)',
+                borderRadius: '100px',
+                padding: '0.28rem 0.78rem',
+                fontSize: language === 'km' ? '0.82rem' : '0.75rem',
+                fontWeight: 600,
+                color: '#ffffff',
+                letterSpacing: '0.02em',
+                fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {t('coming_soon_title')}
+            </div>
 
             {/* Text Content */}
             <div
@@ -156,26 +179,9 @@ export const PatientFeatures: React.FC = () => {
                 padding: '1.75rem 1.65rem',
                 display: 'flex',
                 flexDirection: 'column',
-                justifyContent: 'center',
+                justifyContent: 'flex-start',
               }}
             >
-              {/* Outline icon badge with no filled background */}
-              <div
-                style={{
-                  width: '38px',
-                  height: '38px',
-                  borderRadius: '10px',
-                  background: 'transparent',
-                  border: '1.5px solid rgba(255, 255, 255, 0.5)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: '0.85rem',
-                }}
-              >
-                <Smartphone size={20} color="#ffffff" />
-              </div>
-
               <h3
                 className="text-truncate"
                 style={{
@@ -193,17 +199,29 @@ export const PatientFeatures: React.FC = () => {
                 className="text-clamp-3"
                 style={{
                   fontSize: language === 'km' ? '0.98rem' : '0.92rem',
-                  color: 'rgba(255, 255, 255, 0.92)',
+                  color: 'rgba(255, 255, 255, 0.85)',
                   lineHeight: language === 'km' ? 1.65 : 1.55,
                   margin: 0,
                 }}
               >
                 {t('pf_card1_desc')}
               </p>
+              <span
+                style={{
+                  display: 'inline-block',
+                  marginTop: '0.7rem',
+                  fontSize: language === 'km' ? '0.84rem' : '0.78rem',
+                  color: 'rgba(255, 255, 255, 0.6)',
+                  fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
+                  fontStyle: 'italic',
+                }}
+              >
+                {language === 'km' ? 'នឹងមកដល់ក្នុងដំណាក់កាលបន្ទាប់' : 'Available in the next phase'}
+              </span>
             </div>
           </div>
 
-          {/* Card 2: Live Queue Tracking (Clinic Clock on Left, Text on Right) */}
+          {/* Card 2: Live Queue Tracking (Clinic Clock on Left, Text on Right) — Coming Soon */}
           <div
             className="patient-feature-card"
             style={{
@@ -214,7 +232,7 @@ export const PatientFeatures: React.FC = () => {
               border: '1px solid rgba(255, 255, 255, 0.2)',
               boxShadow: '0 12px 32px rgba(0, 0, 0, 0.2)',
               display: 'flex',
-              alignItems: 'center',
+              alignItems: 'flex-start',
               transition: 'transform 0.25s ease, box-shadow 0.25s ease',
             }}
             onMouseEnter={(e) => {
@@ -239,19 +257,43 @@ export const PatientFeatures: React.FC = () => {
                 objectFit: 'cover',
                 objectPosition: 'left center',
                 zIndex: 0,
+                opacity: 0.72,
               }}
             />
 
-            {/* Gradient Overlay: Deep color over text on the right, fading left to reveal clock */}
+            {/* Gradient Overlay: Deep color over text on the right, slightly stronger to signal unavailable */}
             <div
               style={{
                 position: 'absolute',
                 inset: 0,
-                background: 'linear-gradient(to left, #124e40 0%, #124e40 42%, rgba(18, 78, 64, 0.92) 56%, rgba(18, 78, 64, 0.4) 74%, rgba(18, 78, 64, 0) 90%)',
+                background: 'linear-gradient(to left, #124e40 0%, #124e40 20%, rgba(18, 78, 64, 0.88) 38%, rgba(18, 78, 64, 0.35) 52%, rgba(18, 78, 64, 0.12) 62%)',
                 zIndex: 1,
                 pointerEvents: 'none',
               }}
             />
+
+            {/* Coming Soon Badge — Top Left */}
+            <div
+              style={{
+                position: 'absolute',
+                top: '1rem',
+                left: '1rem',
+                zIndex: 5,
+                background: 'rgba(255, 255, 255, 0.15)',
+                backdropFilter: 'blur(8px)',
+                border: '1px solid rgba(255, 255, 255, 0.35)',
+                borderRadius: '100px',
+                padding: '0.28rem 0.78rem',
+                fontSize: language === 'km' ? '0.82rem' : '0.75rem',
+                fontWeight: 600,
+                color: '#ffffff',
+                letterSpacing: '0.02em',
+                fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {t('coming_soon_title')}
+            </div>
 
             {/* Text Content on Right */}
             <div
@@ -265,26 +307,9 @@ export const PatientFeatures: React.FC = () => {
                 padding: '1.75rem 1.65rem',
                 display: 'flex',
                 flexDirection: 'column',
-                justifyContent: 'center',
+                justifyContent: 'flex-start',
               }}
             >
-              {/* Outline icon badge with no filled background */}
-              <div
-                style={{
-                  width: '38px',
-                  height: '38px',
-                  borderRadius: '10px',
-                  background: 'transparent',
-                  border: '1.5px solid rgba(255, 255, 255, 0.5)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: '0.85rem',
-                }}
-              >
-                <Clock size={20} color="#ffffff" />
-              </div>
-
               <h3
                 className="text-truncate"
                 style={{
@@ -302,13 +327,25 @@ export const PatientFeatures: React.FC = () => {
                 className="text-clamp-3"
                 style={{
                   fontSize: language === 'km' ? '0.98rem' : '0.92rem',
-                  color: 'rgba(255, 255, 255, 0.92)',
+                  color: 'rgba(255, 255, 255, 0.85)',
                   lineHeight: language === 'km' ? 1.65 : 1.55,
                   margin: 0,
                 }}
               >
                 {t('pf_card2_desc')}
               </p>
+              <span
+                style={{
+                  display: 'inline-block',
+                  marginTop: '0.7rem',
+                  fontSize: language === 'km' ? '0.84rem' : '0.78rem',
+                  color: 'rgba(255, 255, 255, 0.6)',
+                  fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
+                  fontStyle: 'italic',
+                }}
+              >
+                {language === 'km' ? 'នឹងមកដល់ក្នុងដំណាក់កាលបន្ទាប់' : 'Available in the next phase'}
+              </span>
             </div>
           </div>
 
@@ -323,7 +360,7 @@ export const PatientFeatures: React.FC = () => {
               border: '1px solid rgba(255, 255, 255, 0.2)',
               boxShadow: '0 12px 32px rgba(0, 0, 0, 0.2)',
               display: 'flex',
-              alignItems: 'center',
+              alignItems: 'flex-start',
               transition: 'transform 0.25s ease, box-shadow 0.25s ease',
             }}
             onMouseEnter={(e) => {
@@ -348,19 +385,43 @@ export const PatientFeatures: React.FC = () => {
                 objectFit: 'cover',
                 objectPosition: 'right center',
                 zIndex: 0,
+                opacity: 0.72,
               }}
             />
 
-            {/* Gradient Overlay: Deep color on left, fading right to reveal community group */}
+            {/* Gradient Overlay: Deep color on left, matching Card 1 & 2 */}
             <div
               style={{
                 position: 'absolute',
                 inset: 0,
-                background: 'linear-gradient(to right, #0e4436 0%, #0e4436 42%, rgba(14, 68, 54, 0.92) 56%, rgba(14, 68, 54, 0.4) 74%, rgba(14, 68, 54, 0) 90%)',
+                background: 'linear-gradient(to right, #0e4436 0%, #0e4436 20%, rgba(14, 68, 54, 0.88) 38%, rgba(14, 68, 54, 0.35) 52%, rgba(14, 68, 54, 0.12) 62%)',
                 zIndex: 1,
                 pointerEvents: 'none',
               }}
             />
+
+            {/* Coming Soon Badge — Top Right */}
+            <div
+              style={{
+                position: 'absolute',
+                top: '1rem',
+                right: '1rem',
+                zIndex: 5,
+                background: 'rgba(255, 255, 255, 0.15)',
+                backdropFilter: 'blur(8px)',
+                border: '1px solid rgba(255, 255, 255, 0.35)',
+                borderRadius: '100px',
+                padding: '0.28rem 0.78rem',
+                fontSize: language === 'km' ? '0.82rem' : '0.75rem',
+                fontWeight: 600,
+                color: '#ffffff',
+                letterSpacing: '0.02em',
+                fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {t('coming_soon_title')}
+            </div>
 
             {/* Text Content */}
             <div
@@ -373,26 +434,9 @@ export const PatientFeatures: React.FC = () => {
                 padding: '1.75rem 1.65rem',
                 display: 'flex',
                 flexDirection: 'column',
-                justifyContent: 'center',
+                justifyContent: 'flex-start',
               }}
             >
-              {/* Outline icon badge with no filled background */}
-              <div
-                style={{
-                  width: '38px',
-                  height: '38px',
-                  borderRadius: '10px',
-                  background: 'transparent',
-                  border: '1.5px solid rgba(255, 255, 255, 0.5)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: '0.85rem',
-                }}
-              >
-                <Users size={20} color="#ffffff" />
-              </div>
-
               <h3
                 className="text-truncate"
                 style={{
@@ -410,7 +454,7 @@ export const PatientFeatures: React.FC = () => {
                 className="text-clamp-3"
                 style={{
                   fontSize: language === 'km' ? '0.98rem' : '0.92rem',
-                  color: 'rgba(255, 255, 255, 0.92)',
+                  color: 'rgba(255, 255, 255, 0.85)',
                   lineHeight: language === 'km' ? 1.65 : 1.55,
                   margin: 0,
                 }}
@@ -430,6 +474,18 @@ export const PatientFeatures: React.FC = () => {
                   Community & peer support
                 </span>
               )}
+              <span
+                style={{
+                  display: 'inline-block',
+                  marginTop: '0.7rem',
+                  fontSize: language === 'km' ? '0.84rem' : '0.78rem',
+                  color: 'rgba(255, 255, 255, 0.6)',
+                  fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
+                  fontStyle: 'italic',
+                }}
+              >
+                {language === 'km' ? 'នឹងមកដល់ក្នុងដំណាក់កាលបន្ទាប់' : 'Available in the next phase'}
+              </span>
             </div>
           </div>
 
@@ -444,7 +500,7 @@ export const PatientFeatures: React.FC = () => {
               border: '1px solid rgba(255, 255, 255, 0.2)',
               boxShadow: '0 12px 32px rgba(0, 0, 0, 0.2)',
               display: 'flex',
-              alignItems: 'center',
+              alignItems: 'flex-start',
               transition: 'transform 0.25s ease, box-shadow 0.25s ease',
             }}
             onMouseEnter={(e) => {
@@ -472,12 +528,12 @@ export const PatientFeatures: React.FC = () => {
               }}
             />
 
-            {/* Gradient Overlay: Deep dark teal on left, fading right to reveal glowing robot */}
+            {/* Gradient Overlay: Deep dark teal on left, reduced length to reveal glowing robot */}
             <div
               style={{
                 position: 'absolute',
                 inset: 0,
-                background: 'linear-gradient(to right, #0d2634 0%, #0d2634 42%, rgba(13, 38, 52, 0.92) 56%, rgba(13, 38, 52, 0.4) 74%, rgba(13, 38, 52, 0) 90%)',
+                background: 'linear-gradient(to right, #0d2634 0%, #0d2634 16%, rgba(13, 38, 52, 0.82) 32%, rgba(13, 38, 52, 0.2) 46%, rgba(13, 38, 52, 0) 56%)',
                 zIndex: 1,
                 pointerEvents: 'none',
               }}
@@ -494,26 +550,9 @@ export const PatientFeatures: React.FC = () => {
                 padding: '1.75rem 1.65rem',
                 display: 'flex',
                 flexDirection: 'column',
-                justifyContent: 'center',
+                justifyContent: 'flex-start',
               }}
             >
-              {/* Outline icon badge with no filled background */}
-              <div
-                style={{
-                  width: '38px',
-                  height: '38px',
-                  borderRadius: '10px',
-                  background: 'transparent',
-                  border: '1.5px solid rgba(255, 255, 255, 0.5)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: '0.85rem',
-                }}
-              >
-                <CheckCircle2 size={20} color="#ffffff" />
-              </div>
-
               <h3
                 className="text-truncate"
                 style={{

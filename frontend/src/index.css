@@ -1,6 +1,6 @@
 :root {
-  --font-main: 'Kantumruy Pro', 'Kantumruy', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-khmer: 'Kantumruy Pro', 'Kantumruy', sans-serif;
+  --font-main: 'Kantumruy Pro', 'Kantumruy', 'Plus Jakarta Sans', 'Khmer Sangam MN', 'Khmer MN', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-khmer: 'Kantumruy Pro', 'Kantumruy', 'Khmer Sangam MN', 'Khmer MN', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
   /* Clean Flat Modern White UI - No Shadows */
@@ -40,6 +40,14 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+}
+
+html {
+  font-family: var(--font-main);
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Remove default number input up/down stepper/spin buttons */
@@ -86,6 +94,14 @@ input[type="number"] {
   scrollbar-color: #cbd5e1 transparent;
 }
 
+button,
+input,
+optgroup,
+select,
+textarea {
+  font-family: inherit;
+}
+
 body {
   font-family: var(--font-main);
   background-color: var(--bg-primary);
@@ -95,20 +111,23 @@ body {
   overflow-x: hidden;
 }
 
-/* Khmer Language - Kantumruy Pro Typography */
+/* Khmer Language - Kantumruy Pro Universal Typography
+   Forces Kantumruy Pro across EVERY DOM element when Khmer is active,
+   guaranteeing 100% font consistency on iOS Simulator and Mobile Safari */
 html[lang="km"],
+html[lang="km"] *,
 body.lang-km,
-body.lang-km input,
-body.lang-km button,
-body.lang-km select,
-body.lang-km textarea,
-.font-khmer {
-  font-family: 'Kantumruy Pro', 'Kantumruy', sans-serif !important;
+body.lang-km *,
+.font-khmer,
+.font-khmer * {
+  font-family: 'Kantumruy Pro', 'Kantumruy', 'Khmer Sangam MN', sans-serif !important;
 }
 
 body.lang-km {
   line-height: 1.7;
 }
+
+
 
 /* Layout */
 .app-layout {
@@ -495,7 +514,20 @@ body.lang-km {
     align-items: center;
     justify-content: space-around;
     box-shadow: none;
+    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, visibility 0.2s ease;
   }
+
+  .mobile-bottom-nav.keyboard-hidden {
+    transform: translateY(100%) !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+  }
+
+  .app-main-content.keyboard-open {
+    padding-bottom: 0 !important;
+  }
+
 
   .mobile-tab-btn {
     display: flex;
@@ -721,29 +753,27 @@ body.lang-km {
 .hero-highlight-cards {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 1.15rem;
-  margin: 2.25rem auto 2.25rem auto;
+  gap: 1.35rem;
+  margin: 2.35rem auto 2.35rem auto;
   width: 100%;
-  max-width: 840px;
+  max-width: 940px;
   text-align: left;
 }
 
 .hero-glass-card {
-  background: rgba(255, 255, 255, 0.82);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  background: #ffffff;
   border: 1px solid rgba(255, 255, 255, 0.95);
-  border-radius: 18px;
-  padding: 1.15rem 1.15rem;
-  box-shadow: 0 10px 30px rgba(12, 47, 39, 0.08);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border-radius: 20px;
+  padding: 1.45rem 1.6rem;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.13), 0 2px 8px rgba(0, 0, 0, 0.04);
   min-width: 0;
+  min-height: 110px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
   overflow: hidden;
-}
-
-.hero-glass-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 14px 36px rgba(12, 47, 39, 0.12);
+  cursor: default;
+  user-select: text;
 }
 
 .hero-card-title {
@@ -766,19 +796,20 @@ body.lang-km {
   align-items: center;
   background: #ffffff;
   border-radius: var(--radius-full);
-  padding: 6px 8px;
-  max-width: 580px;
+  padding: 7px 10px;
+  max-width: 720px;
   width: 100%;
   margin: 2.25rem auto 1.25rem auto;
-  box-shadow: 0 14px 40px rgba(12, 47, 39, 0.18);
-  border: 1px solid rgba(24, 83, 57, 0.22);
-  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.22);
+  border: none;
+  outline: none;
   box-sizing: border-box;
 }
 
 .hero-search-container:focus-within {
-  border-color: var(--accent-primary);
-  box-shadow: 0 14px 40px rgba(12, 47, 39, 0.2);
+  border: none;
+  outline: none;
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.25);
 }
 
 /* Tablet Breakpoint (641px to 1024px) */
@@ -800,7 +831,7 @@ body.lang-km {
 
   .hero-search-container {
     margin: 2rem auto 1.25rem auto;
-    max-width: 520px;
+    max-width: 640px;
   }
 }
 
@@ -1497,6 +1528,8 @@ select:focus:not(:disabled) {
 
 /* Facility Cards Entrance & Interactive Animations */
 .hospital-facility-card {
+  position: relative;
+  z-index: 1;
   transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1),
     box-shadow 0.24s cubic-bezier(0.16, 1, 0.3, 1),
     border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
@@ -1506,12 +1539,17 @@ select:focus:not(:disabled) {
 }
 
 .hospital-facility-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08) !important;
+  position: relative;
+  z-index: 30 !important;
+  transform: translateY(-5px);
+  box-shadow: 0 16px 36px rgba(12, 47, 39, 0.14), 0 4px 12px rgba(0, 0, 0, 0.06) !important;
   border-color: var(--accent-primary) !important;
+  background-color: #ffffff !important;
 }
 
 .hospital-facility-card:active {
+  position: relative;
+  z-index: 30 !important;
   transform: translateY(-1px) scale(0.985);
   box-shadow: 0 4px 10px rgba(15, 23, 42, 0.06) !important;
 }
@@ -1556,25 +1594,28 @@ select:focus:not(:disabled) {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
-  padding: 0.35rem 0.85rem 0.35rem 0.5rem;
-  border-radius: var(--radius-full) !important;
-  border: 1px solid transparent;
-  background: transparent;
+  padding: 0.2rem 0 !important;
+  border-radius: 0 !important;
+  border: none !important;
+  background: transparent !important;
   color: var(--text-main);
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: color 0.18s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   user-select: none;
+  box-shadow: none !important;
 }
 
 .btn-back-nav:hover {
-  color: var(--accent-primary);
-  background: rgba(24, 83, 57, 0.08);
-  border-color: rgba(24, 83, 57, 0.18);
-  transform: translateX(-4px);
+  color: var(--accent-primary) !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  transform: translateX(-3px);
 }
 
 .btn-back-nav:active {
-  transform: translateX(-2px) scale(0.96);
+  transform: translateX(-2px) scale(0.98);
+  background: transparent !important;
 }
 
 .btn-back-nav .arrow-icon {
@@ -2060,7 +2101,7 @@ textarea.input-error {
   overflow-y: auto;
   flex: 1;
   min-height: 0;
-  padding-bottom: 1rem;
+  padding: 6px 6px 1.25rem 6px;
 }
 
 @media (max-width: 640px) {
@@ -2276,17 +2317,19 @@ textarea.input-error {
 
 /* Back Navigation Button Micro-Animation */
 .btn-back-nav {
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  transition: color 0.18s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
   user-select: none;
 }
 
 .btn-back-nav:hover {
-  transform: translateX(-4px);
+  transform: translateX(-3px);
   color: var(--accent-primary) !important;
+  background: transparent !important;
 }
 
 .btn-back-nav:active {
-  transform: translateX(-6px) scale(0.96);
+  transform: translateX(-2px) scale(0.98);
+  background: transparent !important;
 }
 
 /* Universal Dashboard & KPI Stat Card Animations */
@@ -2526,11 +2569,287 @@ textarea.input-error {
 }
 
 /* ==========================================================================
-   Chumnouykar AI Assistant Widget - Display ONLY on Landing Page
+   AI Chat Assistant Pure Text Loading Animation (Consistent Theme Color, No Color Shift, No Container, No Icon)
    ========================================================================== */
+@keyframes aiTextBreathe {
+
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes aiDotBounce {
+
+  0%,
+  80%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.3;
+  }
+
+  40% {
+    transform: translateY(-3.5px);
+    opacity: 1;
+  }
+}
+
+.ai-loading-text {
+  display: inline-flex;
+  align-items: baseline;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  font-weight: 500;
+  animation: aiTextBreathe 2s ease-in-out infinite;
+  user-select: none;
+}
+
+.ai-dot-wrap {
+  display: inline-flex;
+  align-items: baseline;
+  margin-left: 1px;
+}
+
+.ai-dot {
+  display: inline-block;
+  color: var(--text-muted);
+  animation: aiDotBounce 1.4s infinite ease-in-out both;
+}
+
+.ai-dot:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.ai-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.ai-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
 body:not(.is-landing-page) #aisale-widget-root {
   display: none !important;
   visibility: hidden !important;
   pointer-events: none !important;
   opacity: 0 !important;
+}
+
+/* ==========================================================================
+   MOBILE SCALING — Small Phones (≤ 480px)
+   Scales fonts, padding, and component sizes down ~10–15% so all UI
+   elements are comfortably usable on iPhone SE / compact iOS screens.
+   ========================================================================== */
+@media (max-width: 480px) {
+
+  /* ── Global base font scale ───────────────────────── */
+  html {
+    font-size: 93%;   /* 1rem = ~14.9px instead of 16px */
+  }
+
+  /* ── App inner content padding ───────────────────── */
+  .app-content-inner {
+    padding: 0.75rem 0.85rem 2rem 0.85rem;
+  }
+
+  /* ── Mobile header height ─────────────────────────── */
+  .mobile-header {
+    padding: 0.55rem 0.9rem;
+  }
+
+  /* ── Bottom nav bar ───────────────────────────────── */
+  .mobile-bottom-nav {
+    height: calc(52px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .mobile-tab-label {
+    font-size: 0.72rem;
+  }
+
+  /* ── Buttons ──────────────────────────────────────── */
+  .btn {
+    font-size: 0.82rem;
+    padding: 0.48rem 1.05rem;
+  }
+
+  .btn-primary,
+  .btn-outline {
+    font-size: 0.82rem;
+  }
+
+  /* ── Category filter pills ────────────────────────── */
+  .category-filter-pill {
+    font-size: 0.82rem;
+    padding: 0.38rem 0.85rem;
+  }
+
+  /* ── Discovery facilities grid ────────────────────── */
+  .discovery-facilities-grid {
+    grid-template-columns: 1fr;
+    gap: 0.7rem;
+    padding: 4px 4px 1rem 4px;
+  }
+
+  /* ── Facility / hospital cards ────────────────────── */
+  .hospital-facility-card {
+    padding: 0.9rem 1rem !important;
+    border-radius: 14px !important;
+  }
+
+  /* ── Ticket tracker metric grid ───────────────────── */
+  .responsive-tracker-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.6rem;
+  }
+
+  /* ── Ticket row cards ─────────────────────────────── */
+  .ticket-row-card {
+    padding: 0.95rem 1rem;
+    gap: 0.75rem;
+  }
+
+  /* ── Glass / generic cards ────────────────────────── */
+  .glass-card {
+    padding: 1.1rem;
+    border-radius: var(--radius-md);
+  }
+
+  /* ── Dashboard stat grids ─────────────────────────── */
+  .responsive-stat-grid-3 {
+    grid-template-columns: 1fr;
+    gap: 0.65rem;
+  }
+
+  .responsive-stat-grid-2 {
+    grid-template-columns: 1fr;
+    gap: 0.65rem;
+  }
+
+  /* ── Modal cards ──────────────────────────────────── */
+  .responsive-modal-card {
+    border-radius: 18px;
+    max-height: calc(100dvh - 1.5rem);
+  }
+
+  .responsive-modal-body {
+    padding: 0.9rem 1rem;
+  }
+
+  .responsive-modal-header {
+    padding: 1rem 1.1rem 0.85rem 1.1rem;
+  }
+
+  /* ── AI chat loading text ─────────────────────────── */
+  .ai-loading-text {
+    font-size: 0.88rem;
+  }
+
+  /* ── Landing page patient feature cards ───────────── */
+  .patient-feature-card {
+    min-height: 200px !important;
+    border-radius: 16px !important;
+  }
+
+  /* ── Hero section ─────────────────────────────────── */
+  .hero-wrapper {
+    padding: 1.85rem 0.9rem 1.5rem 0.9rem;
+  }
+
+  .hero-glass-card {
+    padding: 0.85rem 0.9rem;
+    border-radius: 12px;
+    min-height: 90px;
+  }
+
+  .hero-search-container {
+    padding: 4px 5px;
+    margin: 1.15rem auto 0.6rem auto;
+  }
+
+  .hero-search-container button:first-child {
+    padding: 0.52rem 0.95rem !important;
+    font-size: 0.86rem !important;
+    max-width: 120px !important;
+  }
+
+  .hero-search-container input {
+    padding: 0.5rem 0.65rem !important;
+    font-size: 0.88rem !important;
+  }
+
+  /* ── Chat Input Bar on Mobile ─────────────────────── */
+  .chat-input-bar-input {
+    padding-right: 5.5rem !important;
+    padding-left: 1.1rem !important;
+    font-size: 0.92rem !important;
+  }
+
+  .chat-input-send-btn {
+    padding: 0.48rem 1rem !important;
+    font-size: 0.85rem !important;
+  }
+
+  /* ── Input fields ─────────────────────────────────── */
+  input,
+  textarea,
+  select {
+    font-size: 0.9rem !important;
+  }
+}
+
+/* Universal Placeholder Truncation with Ellipsis */
+input::placeholder,
+textarea::placeholder {
+  text-overflow: ellipsis !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+}
+
+input::-webkit-input-placeholder,
+textarea::-webkit-input-placeholder {
+  text-overflow: ellipsis !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+}
+
+/* ==========================================================================
+   MOBILE SCALING — Extra-Compact Phones (≤ 390px)
+   iPhone SE, iPhone 12/13 mini, and similar narrow screens.
+   ========================================================================== */
+@media (max-width: 390px) {
+
+  html {
+    font-size: 89%;   /* 1rem = ~14.2px */
+  }
+
+  .app-content-inner {
+    padding: 0.65rem 0.7rem 2rem 0.7rem;
+  }
+
+  .category-filter-pill {
+    font-size: 0.78rem;
+    padding: 0.32rem 0.72rem;
+  }
+
+  .btn {
+    font-size: 0.78rem;
+    padding: 0.44rem 0.9rem;
+  }
+
+  .mobile-tab-label {
+    font-size: 0.68rem;
+  }
+
+  .ticket-row-card {
+    padding: 0.85rem 0.85rem;
+  }
+
+  .hero-glass-card {
+    padding: 0.75rem 0.8rem;
+    min-height: 80px;
+  }
 }

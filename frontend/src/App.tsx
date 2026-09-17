@@ -12,9 +12,8 @@ import { API_BASE } from './services/api';
 import { RealTimeQueueClient } from './services/websocket';
 import { LandingPage } from './pages/landing/LandingPage';
 import { HospitalDiscovery } from './pages/patient/HospitalDiscovery';
-import { LiveTicketTracker } from './pages/patient/LiveTicketTracker';
-import { PatientHistory } from './pages/patient/PatientHistory';
 import { HealthcareAssistant } from './pages/patient/HealthcareAssistant';
+import { ComingSoonView } from './components/common/ComingSoonView';
 import { PartnerDashboard } from './pages/partner/PartnerDashboard';
 import { QueueManagement } from './pages/partner/QueueManagement';
 import { DoctorManagement } from './pages/partner/DoctorManagement';
@@ -27,6 +26,7 @@ import { isPartnerPortal, getPortalSwitchUrl } from './utils/subdomain';
 import { App as CapApp } from '@capacitor/app';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { SplashScreen } from '@capacitor/splash-screen';
+import { useVisualViewport } from './hooks/useVisualViewport';
 
 const isStandalonePWA = (): boolean => {
   if (typeof window === 'undefined') return false;
@@ -40,10 +40,19 @@ const isStandalonePWA = (): boolean => {
 };
 
 export const App: React.FC = () => {
-  const isPartner = isPartnerPortal();
+  const [isPartner, setIsPartner] = useState<boolean>(() => isPartnerPortal());
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setIsPartner(isPartnerPortal());
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
   const { language } = useLanguage();
   const isKm = language === 'km';
   const storedUser = AuthService.getStoredUser();
+  const { isKeyboardOpen, viewportHeight } = useVisualViewport();
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(storedUser);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [serverConfigOpen, setServerConfigOpen] = useState(false);
@@ -71,6 +80,7 @@ export const App: React.FC = () => {
     return 'landing';
   });
   const [selectedTicketId, setSelectedTicketId] = useState<string | undefined>();
+  const [pendingChatQuery, setPendingChatQuery] = useState<string | undefined>();
 
   const loadNotifications = async () => {
     try {
@@ -241,10 +251,13 @@ export const App: React.FC = () => {
     loadNotifications();
   };
 
+  const handleStartChatWithQuery = (query: string) => {
+    setPendingChatQuery(query);
+    setActiveTab('patient_triage');
+  };
 
   const handleSelectTab = (tab: NavTab) => {
     const protectedTabs: NavTab[] = [
-      'patient_history',
       'partner_dashboard',
       'partner_counter',
       'partner_doctors',
@@ -275,12 +288,23 @@ export const App: React.FC = () => {
         <HospitalPartnerAuth
           onSuccess={handleUserLoginSuccess}
           onSwitchToPatient={() => {
+            setIsPartner(false);
             const url = new URL(window.location.href);
             if (url.searchParams.has('portal')) {
               url.searchParams.delete('portal');
-              window.location.href = url.pathname + (url.search ? url.search : '') + url.hash;
+              const targetUrl = url.pathname + (url.search ? url.search : '') + url.hash;
+              try {
+                window.history.pushState({ portal: 'patient' }, '', targetUrl);
+              } catch {
+                window.location.href = targetUrl;
+              }
             } else {
-              window.location.href = getPortalSwitchUrl('patient');
+              const targetUrl = getPortalSwitchUrl('patient');
+              try {
+                window.history.pushState({ portal: 'patient' }, '', targetUrl);
+              } catch {
+                window.location.href = targetUrl;
+              }
             }
           }}
         />
@@ -316,11 +340,17 @@ export const App: React.FC = () => {
               onOpenAuth={() => setAuthModalOpen(true)}
               currentUser={currentUser}
               onSelectTab={handleSelectTab}
+              onStartChatWithQuery={handleStartChatWithQuery}
             />
           </main>
         </div>
       ) : (
-        <div className="app-layout">
+        <div
+          className="app-layout"
+          style={{
+            height: isKeyboardOpen && viewportHeight > 0 ? `${viewportHeight}px` : undefined,
+          }}
+        >
           {/* Left Sidebar on Desktop / Drawer on Mobile only at User Portal */}
           <Sidebar
             currentUser={currentUser}
@@ -333,7 +363,7 @@ export const App: React.FC = () => {
           />
 
           {/* Main Content Area */}
-          <div className="app-main-content">
+          <div className={`app-main-content ${isKeyboardOpen ? 'keyboard-open' : ''}`}>
             <NotificationBanner
               notification={activeBanner}
               onDismiss={() => setActiveBanner(null)}
@@ -362,24 +392,22 @@ export const App: React.FC = () => {
 
                 {activeTab === 'patient_triage' && (
                   <HealthcareAssistant
+                    initialQuery={pendingChatQuery}
+                    onClearInitialQuery={() => setPendingChatQuery(undefined)}
                     onTicketBooked={handleTicketBooked}
                     onNavigateToDiscovery={() => setActiveTab('patient_discovery')}
                     onNavigateToTracker={() => setActiveTab('patient_live_ticket')}
+                    currentUser={currentUser}
+                    onOpenAuth={() => setAuthModalOpen(true)}
                   />
                 )}
 
                 {activeTab === 'patient_live_ticket' && (
-                  <LiveTicketTracker
-                    initialTicketId={selectedTicketId}
-                    onExploreHospitals={() => setActiveTab('patient_discovery')}
-                    onConsultAi={() => setActiveTab('patient_triage')}
-                  />
+                  <ComingSoonView type="ticket" />
                 )}
 
                 {activeTab === 'patient_history' && (
-                  <PatientHistory
-                    onExploreHospitals={() => setActiveTab('patient_discovery')}
-                  />
+                  <ComingSoonView type="history" />
                 )}
 
                 {activeTab === 'partner_dashboard' && (
@@ -421,7 +449,13 @@ export const App: React.FC = () => {
         onSuccess={handleUserLoginSuccess}
         onOpenHospitalPortal={() => {
           setAuthModalOpen(false);
-          window.location.href = getPortalSwitchUrl('partner');
+          setIsPartner(true);
+          const targetUrl = getPortalSwitchUrl('partner');
+          try {
+            window.history.pushState({ portal: 'partner' }, '', targetUrl);
+          } catch {
+            window.location.href = targetUrl;
+          }
         }}
       />
 

@@ -26,6 +26,7 @@ class TriageHospitalMatch(BaseModel):
     waiting_patients: int
     estimated_wait_minutes: int
     address: Optional[str] = None
+    distance_km: Optional[float] = None
 
 
 class TriageResponse(BaseModel):
@@ -45,6 +46,8 @@ class AssistantChatRequest(BaseModel):
     message: str
     history: Optional[List[ChatHistoryItem]] = []
     language: Optional[str] = "en"
+    user_latitude: Optional[float] = None
+    user_longitude: Optional[float] = None
 
 
 class AssistantChatResponse(BaseModel):
@@ -55,3 +58,4 @@ class AssistantChatResponse(BaseModel):
     booked_ticket: Optional[dict] = None
     suggested_actions: List[str] = []
     detected_language: Optional[str] = None
+

@@ -48,7 +48,7 @@ export const km: Record<TranslationKey, string> = {
   appt_cancel_btn: "លុបចោលការណាត់",
   appt_cancel_confirm: "តើអ្នកពិតជាចង់លុបចោលការណាត់ជួបនេះមែនទេ? ពេលវេលាកក់នឹងត្រូវបើកឡើងវិញសម្រាប់អ្នកជំងឺផ្សេងទៀត។",
   appt_cancel_success: "ការណាត់ជួបត្រូវបានលុបចោលដោយជោគជ័យ។",
-  appt_lookup_placeholder: "បញ្ចូលលេខកូដសំបុត្រ (ឧ. CARD-001) ឬលេខទូរស័ព្ទ...",
+  appt_lookup_placeholder: "ស្វែងរកលេខសំបុត្រ ឬទូរស័ព្ទ...",
   appt_lookup_btn: "ស្វែងរក",
   appt_no_active_title: "មិនទាន់មានការណាត់ជួបនៅឡើយទេ",
   appt_no_active_desc: "អ្នកមិនទាន់មានការណាត់ជួបវេជ្ជបណ្ឌិតដែលកំពុងដំណើរការនៅឡើយទេ។ សូមកក់ម៉ោងណាត់ជួបជាមួយមន្ទីរពេទ្យ ឬពិគ្រោះជាមួយជំនួយការ AI។",
@@ -63,7 +63,7 @@ export const km: Record<TranslationKey, string> = {
   history_tab_title: "ប្រវត្តិការពិនិត្យ & ពិគ្រោះជំងឺ",
   history_tab_desc: "ពិនិត្យមើលការពិគ្រោះដែលបានបញ្ចប់ កំណត់សម្គាល់របស់វេជ្ជបណ្ឌិត វេជ្ជបញ្ជាថ្នាំ និងបង្កាន់ដៃទូទាត់ប្រាក់។",
   history_back_to_list: "ត្រឡប់ទៅប្រវត្តិពិនិត្យជំងឺ",
-  history_search_placeholder: "ស្វែងរកតាមឈ្មោះវេជ្ជបណ្ឌិត មន្ទីរពេទ្យ រោគវិនិច្ឆ័យ ឬលេខសំបុត្រ...",
+  history_search_placeholder: "ស្វែងរកប្រវត្តិ ឬមន្ទីរពេទ្យ...",
   history_filter_all: "កំណត់ត្រាទាំងអស់",
   history_filter_completed: "ការពិនិត្យបានបញ្ចប់",
   history_filter_cancelled: "ខកខាន",
@@ -191,7 +191,7 @@ export const km: Record<TranslationKey, string> = {
 
   // Chat Page
   chat_welcome: "សួស្តី! ខ្ញុំជាជំនួយការសុខភាព AI របស់អ្នក",
-  chat_placeholder: "សួរសំណួររបស់អ្នក ស្វែងរកគ្រូពេទ្យ ឬគ្លីនិក ពិនិត្យមើលជួររង់ចាំ...",
+  chat_placeholder: "សួរសំណួរ ឬពិគ្រោះរោគសញ្ញា...",
   chat_send: "ផ្ញើ",
   chat_processing: "កំពុងដំណើរការ...",
   you: "អ្នក",
@@ -232,7 +232,7 @@ export const km: Record<TranslationKey, string> = {
   recommended_dept: "ផ្នែកវេជ្ជសាស្ត្រដែលបានណែនាំ",
 
   // Discovery Page
-  discovery_search_placeholder: "ស្វែងរកមន្ទីរពេទ្យ គ្លីនិក វេជ្ជបណ្ឌិត ឬសេវាកម្មវេជ្ជសាស្ត្រ...",
+  discovery_search_placeholder: "ស្វែងរកមន្ទីរពេទ្យ ឬវេជ្ជបណ្ឌិត...",
   hotline_contact: "ខ្សែទូរស័ព្ទទាន់ហេតុការណ៍៖",
   location_label: "ទីតាំង៖",
   cat_all: "ទីតាំងទាំងអស់",
@@ -248,6 +248,11 @@ export const km: Record<TranslationKey, string> = {
   take_ticket: "កក់សំបុត្រជួរ",
   active_departments: "ផ្នែកវេជ្ជសាស្ត្រសកម្ម",
   services_offered: "សេវាកម្មវេជ្ជសាស្ត្រ",
+  filter_nearby: "📍 នៅជិតខ្ញុំ",
+  distance_km_away: "គ.ម",
+  btn_use_location: "ប្រើទីតាំងបច្ចុប្បន្ន",
+  locating: "កំពុងកំណត់ទីតាំង...",
+  location_enabled: "ទីតាំងត្រូវបានបើក",
   close: "បិទ",
 
   // History Page
@@ -669,18 +674,18 @@ export const km: Record<TranslationKey, string> = {
   admin_err_user_conn: "បញ្ហាការតភ្ជាប់ក្នុងការកែប្រែស្ថានភាពអ្នកប្រើប្រាស់។",
 
   // Landing Page - Hero Section
-  hero_title_1: "កាត់បន្ថយពេលវេលារង់ចាំ",
-  hero_title_2: "តាមដានលេខរង់ចាំរបស់អ្នកភ្លាមៗ",
-  hero_subtitle: "Health AI Assistant អនុញ្ញាតឱ្យអ្នកជំងឺកក់សំបុត្រលេខរង់ចាំពីផ្ទះ មើលរយៈពេលរង់ចាំប៉ាន់ស្មានផ្ទាល់ និងទទួលបានការជូនដំណឹងនៅពេលជិតដល់វេន។ មន្ទីរពេទ្យ និងវេជ្ជបណ្ឌិតអាចគ្រប់គ្រងលំហូរអ្នកជំងឺយ៉ាងងាយស្រួលតាមផ្ទាំងបញ្ជាកុងទ័រ។",
+  hero_title_1: "ជាមួយជំនួយការសុខភាព",
+  hero_title_2: "អ្នកអាចស្វែងរកមន្ទីរពេទ្យជំនាញនិងនៅជិតអ្នកបានយ៉ាងឆាប់រហ័ស",
   hero_live_wait_title: "រយៈពេលរង់ចាំផ្ទាល់",
-  hero_live_wait_desc: "ការប៉ាន់ស្មានពេលវេលាជាក់លាក់ ធ្វើបច្ចុប្បន្នភាពតាមការពិគ្រោះរបស់វេជ្ជបណ្ឌិត។",
+  hero_live_wait_desc: "នឹងមកដល់ឆាប់ៗនេះ",
   hero_remote_ticket_title: "កក់លេខរង់ចាំពីចម្ងាយ",
-  hero_remote_ticket_desc: "កក់កន្លែងក្នុងជួររង់ចាំមុនពេលអ្នកចាកចេញពីផ្ទះ។",
+  hero_remote_ticket_desc: "នឹងមកដល់ឆាប់ៗនេះ",
+  hero_coming_soon: "នឹងមកដល់ឆាប់ៗនេះ",
   hero_clinic_network_title: "បណ្តាញមន្ទីរពេទ្យ & គ្លីនិក",
   hero_clinic_network_desc: "ប្រៀបធៀបរយៈពេលរង់ចាំរវាងមន្ទីរពេទ្យ និងគ្លីនិកជាច្រើន។",
 
   // Landing Page - Patient Features
-  pf_section_title: "ការទទួលសេវាសុខាភិបាលប្រកបដោយផាសុកភាព ដោយគ្មានភាពតានតឹង",
+  pf_section_title: "ការទទួលសេវាសុខាភិបាលប្រកបដោយភាពងាយស្រួល",
   pf_section_subtitle: "ចំណាយពេលតិចក្នុងបន្ទប់រង់ចាំដែលមានមនុស្សកកកុញ និងមានពេលច្រើននៅកន្លែងដែលអ្នកមានផាសុកភាព",
   pf_card1_title: "ការកក់ផ្លូវនៅពីចម្ងាយ",
   pf_card1_desc: "កក់សំបុត្រលេខរង់ចាំសម្រាប់ផ្នែកពិនិត្យ ឬវេជ្ជបណ្ឌិតណាមួយជាមួយឈ្មោះ និងលេខទូរស័ព្ទរបស់អ្នកមុនពេលមកដល់។",
@@ -696,8 +701,7 @@ export const km: Record<TranslationKey, string> = {
   pf_card4_tag: "Direct AI Interaction",
 
   // Landing Page - Hospital Operations Features
-  hf_section_title: "ពង្រឹងប្រសិទ្ធភាពប្រតិបត្តិការប្រចាំថ្ងៃរបស់គ្លីនិក",
-  hf_section_subtitle: "លុបបំបាត់ការកកស្ទះសំបុត្រក្រដាស រៀបចំតុទទួលភ្ញៀវ និងធ្វើសមកាលកម្មលំហូរអ្នកជំងឺដោយរលូន។",
+  hf_section_title: "បង្កើនប្រសិទ្ធភាពប្រតិបត្តិការប្រចាំថ្ងៃរបស់មន្ទីរពេទ្យ និង គ្លីនិច",
   hf_card1_title: "វេជ្ជបណ្ឌិតជំនាញ",
   hf_card1_desc: "វេជ្ជបណ្ឌិត និងបុគ្គលិក រៀបចំកាលវិភាគពិនិត្យ និងបន្ទប់ពិគ្រោះឱ្យស្របតាមជំនាញ",
   hf_card1_bullet1: "✓ ធ្វើសមកាលកម្មវត្តមានជាក់ស្តែងរបស់វេជ្ជបណ្ឌិត",
@@ -748,19 +752,22 @@ export const km: Record<TranslationKey, string> = {
   cta_desc_user: "ចូលទៅកាន់ជួររង់ចាំមន្ទីរពេទ្យយ៉ាងរហ័ស គ្រប់គ្រងការណាត់ជួប ឬតាមដានវឌ្ឍនភាពកុងទ័រផ្ទាល់។",
   cta_btn_portal: "ទៅកាន់ផ្ទាំងគ្រប់គ្រងរបស់ខ្ញុំ",
   cta_btn_guest: "ចូលប្រើប្រាស់ / បង្កើតគណនី",
-  cta_input_placeholder: "ចូលរួមជាមួយ AI Enter your email for health updates",
+  cta_input_placeholder: "បញ្ចូលអ៊ីមែលរបស់អ្នក...",
   cta_btn_start: "ចាប់ផ្តើមឥឡូវនេះ",
 
   // Mockup Nav & Hero Keys
   nav_clinics_dept: "គ្លីនិក & ផ្នែក",
-  nav_features_why: "មូលហេតុព្រោះ",
-  nav_case_studies: "ករណីសិក្សា",
+  nav_features_why: "សេវាកម្ម",
+  nav_case_studies: "ដំណើរការ",
   nav_ai_assistant: "ជំនួយការ AI",
   nav_register_signin: "ចុះឈ្មោះ",
-  hero_quick_search_placeholder: "ស្វែងរកទីតាំងមន្ទីរពេទ្យ ឬគ្លីនិក...",
+  nav_chat_with_ai: "ជជែកជាមួយ AI",
+  nav_sign_in: "ចូលគណនី",
+  nav_home: "ទំព័រដើម",
+  hero_quick_search_placeholder: "ស្វែងរកមន្ទីរពេទ្យ ឬគ្លីនិក...",
   hero_get_started: "Get Started",
   hero_card_ai_clinic_title: "បញ្ញាសិប្បនិម្មិត & គ្លីនិក",
-  hero_card_ai_clinic_desc: "ប្រព័ន្ធឆ្លាតវៃជួយសម្រួលការងារ និងរៀបចំវេនបានរហ័ស",
+  hero_card_ai_clinic_desc: "ប្រព័ន្ធឆ្លាតវៃជួយសម្រួលការងារ ស្វែងរកមន្ទីរពេទ្យ បានឆាប់រហ័ស",
 
   // Landing Page - Footer
   footer_contact: "ទំនាក់ទំនង",
@@ -779,5 +786,25 @@ export const km: Record<TranslationKey, string> = {
   pwa_ios_step2: "រំកិលចុះក្រោមក្នុងម៉ឺនុយ ហើយចុច \"បន្ថែមទៅអេក្រង់ដើម (Add to Home Screen)\"។",
   pwa_ios_step3: "ចុច \"បន្ថែម (Add)\" នៅជ្រុងខាងស្តាំខាងលើ។",
   pwa_ios_got_it: "យល់ព្រម",
+
+  // Coming Soon Tab & View Keys (Phase 1)
+  tab_coming_soon_badge: "ឆាប់ៗនេះ",
+  phase1_badge: "ដំណាក់កាលទី ១ • នឹងមកដល់ឆាប់ៗនេះ",
+  coming_soon_title: "នឹងមកដល់ឆាប់ៗនេះ",
+  coming_soon_desc: "មុខងារនេះនឹងដាក់ឱ្យដំណើរការឆាប់ៗនៅក្នុងដំណាក់កាលបន្ទាប់។",
+  ticket_coming_soon_title: "ការតាមដានសំបុត្រជួររង់ចាំ (Live Queue)",
+  ticket_coming_soon_desc: "មុខងារកក់សំបុត្រ និងតាមដានលេខរង់ចាំផ្ទាល់ក្នុងជួរ នឹងដំណើរការនៅក្នុងដំណាក់កាលបន្ទាប់។ បច្ចុប្បន្នអ្នកអាចប្រើប្រាស់មុខងារជជែកជាមួយ AI និងស្វែងរកគ្លីនិកបានយ៉ាងពេញលេញ។",
+  history_coming_soon_title: "ប្រវត្តិវេជ្ជសាស្ត្រ & ពិគ្រោះជំងឺ (Medical History)",
+  history_coming_soon_desc: "មុខងាររក្សាទុក និងពិនិត្យប្រវត្តិនៃការពិគ្រោះជំងឺ វេជ្ជបញ្ជាថ្នាំ និងបង្កាន់ដៃឌីជីថល នឹងដំណើរការនៅក្នុងដំណាក់កាលបន្ទាប់។",
+  coming_soon_btn_chat: "ជជែកជាមួយ AI",
+  coming_soon_btn_explore: "ស្វែងរកមន្ទីរពេទ្យ & គ្លីនិក",
+
+  // Guest Chat Limit Keys
+  chat_guest_limit_notice: "អ្នកបានដល់ដែនកំណត់នៃការសន្ទនាហើយ សូមចូលគណនីដើម្បីបន្តការជជែក។",
+  chat_guest_limit_btn: "ចូលគណនី",
+  chat_guest_limit_placeholder: "សូមចូលគណនីដើម្បីបន្តការជជែក...",
+
+  // Medical Disclaimer Alert
+  chat_medical_disclaimer: "សេចក្តីបញ្ជាក់៖ ការផ្តល់យោបល់របស់ AI គឺសម្រាប់តែព័ត៌មានបឋមប៉ុណ្ណោះ និងមិនជំនួសការធ្វើរោគវិនិច្ឆ័យវេជ្ជសាស្ត្រឡើយ។ សូមពិគ្រោះជាមួយគ្រូពេទ្យជំនាញសម្រាប់ករណីធ្ងន់ធ្ងរ ឬបន្ទាន់។",
 };
 

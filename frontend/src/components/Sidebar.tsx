@@ -15,13 +15,13 @@ import {
   Bell, 
   X, 
   Menu,
-  Wifi 
 } from 'lucide-react';
 import { UserProfile, AuthService } from '../services/auth';
 import { useLanguage } from '../context/LanguageContext';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { API_BASE } from '../services/api';
 import prosethLogo from '../assets/ProsethBot.png';
+import { useVisualViewport } from '../hooks/useVisualViewport';
 
 export type NavTab = 
   | 'landing'
@@ -54,13 +54,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onSelectTab,
   onOpenAuth,
   onLogout,
-  onOpenServerConfig,
 }) => {
   const { t } = useLanguage();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showNotifMenu, setShowNotifMenu] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 900);
+  // Track when soft keyboard opens on mobile so the keyboard opens OVER the bottom nav bar
+  const { isKeyboardOpen } = useVisualViewport();
 
   useEffect(() => {
     const handleResize = () => {
@@ -378,7 +379,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* Patient / Public Items */}
           {(!currentUser || (!isPartner && !isAdmin)) && (
             <>
-              <div className="sidebar-section-label">{t('nav_navigation')}</div>
+
               <button
                 onClick={() => handleNavClick('patient_triage')}
                 className={`sidebar-nav-item ${activeTab === 'patient_triage' ? 'active' : ''}`}
@@ -399,16 +400,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onClick={() => handleNavClick('patient_live_ticket')}
                 className={`sidebar-nav-item ${activeTab === 'patient_live_ticket' ? 'active' : ''}`}
               >
-                <Ticket size={20} />
-                <span>{t('nav_live_queue')}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                  <Ticket size={20} />
+                  <span>{t('nav_live_queue')}</span>
+                </div>
               </button>
 
               <button
                 onClick={() => handleNavClick('patient_history')}
                 className={`sidebar-nav-item ${activeTab === 'patient_history' ? 'active' : ''}`}
               >
-                <Clock size={20} />
-                <span>{t('nav_history')}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                  <Clock size={20} />
+                  <span>{t('nav_history')}</span>
+                </div>
               </button>
             </>
           )}
@@ -668,37 +673,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <LogIn size={18} /> {t('sign_in')}
             </button>
           )}
-
-          {onOpenServerConfig && (
-            <button
-              onClick={onOpenServerConfig}
-              title="Server Connection & Network"
-              style={{
-                marginTop: '0.65rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px',
-                width: '100%',
-                padding: '0.4rem 0.5rem',
-                borderRadius: '6px',
-                border: '1px dashed var(--border-color)',
-                background: 'transparent',
-                color: 'var(--text-muted)',
-                fontSize: '0.78rem',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              <Wifi size={13} />
-              <span>Server Connection</span>
-            </button>
-          )}
         </div>
       </aside>
 
-      {/* Mobile Bottom Navigation Tab Bar */}
-      <nav className="mobile-bottom-nav" aria-label="Mobile Navigation">
+      {/* Mobile Bottom Navigation Tab Bar
+           When the mobile keyboard opens, the keyboard opens OVER the tab bar.
+           The tab bar smoothly hides underneath the keyboard, never obscuring inputs. */}
+      <nav
+        className={`mobile-bottom-nav ${isKeyboardOpen ? 'keyboard-hidden' : ''}`}
+        aria-label="Mobile Navigation"
+        style={{
+          transform: isKeyboardOpen ? 'translateY(100%)' : 'translateY(0)',
+          opacity: isKeyboardOpen ? 0 : 1,
+          pointerEvents: isKeyboardOpen ? 'none' : 'auto',
+          visibility: isKeyboardOpen ? 'hidden' : 'visible',
+          transition: 'transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, visibility 0.2s ease',
+        }}
+      >
         {(!currentUser || (!isPartner && !isAdmin)) && (
           <>
             <button

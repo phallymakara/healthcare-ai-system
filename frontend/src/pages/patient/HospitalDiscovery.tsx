@@ -5,6 +5,8 @@ import { API_BASE } from '../../services/api';
 import { BookingModal } from './discovery/BookingModal';
 import { FacilityDetailView } from './discovery/FacilityDetailView';
 import { FacilityCardList } from './discovery/FacilityCardList';
+import { useUserLocation } from '../../hooks/useUserLocation';
+import { calculateDistanceKm } from './discovery/discoveryUtils';
 
 interface HospitalDiscoveryProps {
   onTicketBooked: (ticket: any) => void;
@@ -16,10 +18,11 @@ export const HospitalDiscovery: React.FC<HospitalDiscoveryProps> = ({
   onTicketBooked,
 }) => {
   const { language } = useLanguage();
+  const { location: userLocation, requestLocation, hasLocation, loading: locationLoading } = useUserLocation();
   const [hospitals, setHospitals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<'All' | 'Hospital' | 'Medical Clinic' | 'Animal Clinic'>('All');
+  const [selectedCategory, setSelectedCategory] = useState<'All' | 'Nearby' | 'Hospital' | 'Medical Clinic' | 'Animal Clinic'>('All');
   const [selectedFacility, setSelectedFacility] = useState<any | null>(null);
 
   const TIME_SLOTS = [
@@ -49,16 +52,29 @@ export const HospitalDiscovery: React.FC<HospitalDiscoveryProps> = ({
   const [bookingLoading, setBookingLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const loadHospitals = async (query = '') => {
+  const loadHospitals = async (query = '', loc = userLocation) => {
     setLoading(true);
     try {
-      const url = query
-        ? `${API_BASE}/patients/discovery/hospitals?q=${encodeURIComponent(query)}`
-        : `${API_BASE}/patients/discovery/hospitals`;
+      const params = new URLSearchParams();
+      if (query) params.set('q', query);
+      if (loc?.latitude && loc?.longitude) {
+        params.set('lat', String(loc.latitude));
+        params.set('lng', String(loc.longitude));
+        params.set('sort_by_distance', 'true');
+      }
+      const qs = params.toString();
+      const url = qs ? `${API_BASE}/patients/discovery/hospitals?${qs}` : `${API_BASE}/patients/discovery/hospitals`;
       const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
-        setHospitals(data);
+        const enriched = data.map((h: any) => {
+          let dist = h.distance_km;
+          if (typeof dist !== 'number' && loc?.latitude && loc?.longitude && h.latitude && h.longitude) {
+            dist = calculateDistanceKm(loc.latitude, loc.longitude, h.latitude, h.longitude);
+          }
+          return { ...h, distance_km: dist };
+        });
+        setHospitals(enriched);
       }
     } catch {
       // Graceful fallback
@@ -68,8 +84,8 @@ export const HospitalDiscovery: React.FC<HospitalDiscoveryProps> = ({
   };
 
   useEffect(() => {
-    loadHospitals();
-  }, []);
+    loadHospitals(searchQuery, userLocation);
+  }, [userLocation]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -156,9 +172,17 @@ export const HospitalDiscovery: React.FC<HospitalDiscoveryProps> = ({
     }
   };
 
-  const filteredHospitals = hospitals.filter((hosp) => {
+  let enrichedHospitals = hospitals.map((hosp) => {
+    let dist = hosp.distance_km;
+    if (typeof dist !== 'number' && userLocation?.latitude && userLocation?.longitude && hosp.latitude && hosp.longitude) {
+      dist = calculateDistanceKm(userLocation.latitude, userLocation.longitude, hosp.latitude, hosp.longitude);
+    }
+    return { ...hosp, distance_km: dist };
+  });
+
+  let filteredHospitals = enrichedHospitals.filter((hosp) => {
     // 1. Category Filter
-    if (selectedCategory !== 'All') {
+    if (selectedCategory !== 'All' && selectedCategory !== 'Nearby') {
       if (selectedCategory === 'Hospital') {
         if (hosp.category !== 'General Hospital' && hosp.category !== 'Hospital') {
           return false;
@@ -181,11 +205,20 @@ export const HospitalDiscovery: React.FC<HospitalDiscoveryProps> = ({
     return hospMatch || deptMatch || serviceMatch;
   });
 
+  if (selectedCategory === 'Nearby') {
+    filteredHospitals = [...filteredHospitals].sort((a, b) => {
+      const distA = typeof a.distance_km === 'number' ? a.distance_km : 99999;
+      const distB = typeof b.distance_km === 'number' ? b.distance_km : 99999;
+      return distA - distB;
+    });
+  }
+
   return (
     <>
       {selectedFacility ? (
         <FacilityDetailView
           selectedFacility={selectedFacility}
+          userLocation={userLocation}
           onBack={() => setSelectedFacility(null)}
           onOpenBooking={handleOpenBooking}
         />
@@ -200,9 +233,13 @@ export const HospitalDiscovery: React.FC<HospitalDiscoveryProps> = ({
           onSearchSubmit={handleSearchSubmit}
           onClearSearch={() => {
             setSearchQuery('');
-            loadHospitals('');
+            loadHospitals('', userLocation);
           }}
           onSelectFacility={setSelectedFacility}
+          onRequestLocation={requestLocation}
+          hasLocation={hasLocation}
+          locationLoading={locationLoading}
+          userLocation={userLocation}
         />
       )}
 

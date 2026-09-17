@@ -154,7 +154,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
           border: '1px solid rgba(24, 83, 57, 0.2)'
         }}
       >
-        <div className="responsive-modal-body" style={{ position: 'relative', padding: '1.75rem 1.65rem' }}>
+        <div className="responsive-modal-body" style={{ position: 'relative', padding: '1.75rem 1.65rem', maxHeight: 'calc(100dvh - 3rem)', overflowY: 'auto' }}>
         {/* Close Button */}
         <button
           onClick={handleClose}
@@ -538,11 +538,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
         <div style={{ marginTop: '1rem', textAlign: 'center', borderTop: '1px solid var(--border-color)', paddingTop: '0.85rem' }}>
           <button
             type="button"
-            onClick={() => {
-              onClose();
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
               if (onOpenHospitalPortal) {
                 onOpenHospitalPortal();
               } else {
+                onClose();
                 window.location.href = getPortalSwitchUrl('partner');
               }
             }}
@@ -551,10 +553,20 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
               border: 'none',
               color: 'var(--text-muted)',
               fontSize: '0.84rem',
+              fontWeight: 500,
               cursor: 'pointer',
               textDecoration: 'underline',
-              padding: '2px 6px',
+              textUnderlineOffset: '3px',
+              padding: '0.5rem 0.75rem',
+              display: 'inline-block',
               fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
+              transition: 'color 0.2s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = '#185339';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = 'var(--text-muted)';
             }}
           >
             {language === 'km'

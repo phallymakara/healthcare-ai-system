@@ -1,12 +1,50 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Building2 } from 'lucide-react';
 
+export const calculateDistanceKm = (
+  lat1?: number | null,
+  lon1?: number | null,
+  lat2?: number | null,
+  lon2?: number | null
+): number | null => {
+  if (
+    typeof lat1 !== 'number' ||
+    typeof lon1 !== 'number' ||
+    typeof lat2 !== 'number' ||
+    typeof lon2 !== 'number'
+  ) {
+    return null;
+  }
+  const R = 6371; // Earth's radius in km
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const d = R * c;
+  return Number(d.toFixed(1));
+};
+
 export const getGoogleMapsUrl = (facility: any) => {
   if (facility?.latitude && facility?.longitude) {
     return `https://maps.google.com/?q=${facility.latitude},${facility.longitude}`;
   }
   const query = facility?.address || facility?.name || 'Phnom Penh';
   return `https://maps.google.com/?q=${encodeURIComponent(query)}`;
+};
+
+export const getGoogleMapsDirectionsUrl = (
+  userLocation?: { latitude: number; longitude: number } | null,
+  facility?: any
+) => {
+  if (userLocation?.latitude && userLocation?.longitude && facility?.latitude && facility?.longitude) {
+    return `https://www.google.com/maps/dir/?api=1&origin=${userLocation.latitude},${userLocation.longitude}&destination=${facility.latitude},${facility.longitude}`;
+  }
+  return getGoogleMapsUrl(facility);
 };
 
 export const getGoogleMapsEmbedUrl = (facility: any, isKm: boolean) => {

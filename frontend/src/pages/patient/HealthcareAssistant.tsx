@@ -1,16 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Send, RefreshCw } from 'lucide-react';
-import { AuthService } from '../../services/auth';
+import { AuthService, UserProfile } from '../../services/auth';
 import { useLanguage } from '../../context/LanguageContext';
 import { API_BASE } from '../../services/api';
-import { AppointmentSlotPicker } from '../../components/AppointmentSlotPicker';
-import { useModalClose } from '../../hooks/useModalClose';
+import { useUserLocation } from '../../hooks/useUserLocation';
 
 interface HealthcareAssistantProps {
   onTicketBooked: (ticket: any) => void;
   onNavigateToDiscovery?: () => void;
   onNavigateToTracker?: () => void;
+  initialQuery?: string;
+  onClearInitialQuery?: () => void;
+  currentUser?: UserProfile | null;
+  onOpenAuth?: () => void;
 }
 
 interface ChatMessage {
@@ -32,10 +35,29 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
   onTicketBooked,
   onNavigateToDiscovery,
   onNavigateToTracker,
+  initialQuery,
+  onClearInitialQuery,
+  currentUser,
+  onOpenAuth,
 }) => {
   const { language, t } = useLanguage();
   const isKm = language === 'km';
   const kmFont = isKm ? 'var(--font-khmer)' : 'inherit';
+  const { location: userLocation } = useUserLocation();
+
+  const MAX_GUEST_CHATS = 7;
+  const isGuest = !currentUser && !AuthService.getStoredUser();
+
+  // Guest chat count in this session
+  const [guestChatCount, setGuestChatCount] = useState<number>(() => {
+    try {
+      const stored = sessionStorage.getItem('carequeue_guest_chat_count');
+      return stored ? parseInt(stored, 10) || 0 : 0;
+    } catch {
+      return 0;
+    }
+  });
+
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: 'welcome',
@@ -55,36 +77,24 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
     });
   }, [language, t]);
 
+  // Clear guest count if user is authenticated
+  useEffect(() => {
+    if (!isGuest) {
+      try {
+        sessionStorage.removeItem('carequeue_guest_chat_count');
+      } catch {}
+    }
+  }, [isGuest]);
+
+  const userMessagesInState = messages.filter((m) => m.role === 'user').length;
+  const effectiveUserChatCount = Math.max(guestChatCount, userMessagesInState);
+  const hasReachedLimit = isGuest && effectiveUserChatCount >= MAX_GUEST_CHATS;
+
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
   const [inputError, setInputError] = useState<string | null>(null);
 
-  const TIME_SLOTS = [
-    '08:00 AM - 09:00 AM',
-    '09:00 AM - 10:00 AM',
-    '10:00 AM - 11:00 AM',
-    '11:00 AM - 12:00 PM',
-    '01:30 PM - 02:30 PM',
-    '02:30 PM - 03:30 PM',
-    '03:30 PM - 04:30 PM',
-    '04:30 PM - 05:30 PM',
-  ];
 
-  const getTodayDateStr = () => new Date().toISOString().split('T')[0];
-
-  // Booking Modal State
-  const [bookingModalOpen, setBookingModalOpen] = useState(false);
-  const bookingModal = useModalClose(bookingModalOpen, setBookingModalOpen);
-  const [selectedMatch, setSelectedMatch] = useState<any>(null);
-  const [patientName, setPatientName] = useState('');
-  const [patientPhone, setPatientPhone] = useState('');
-  const [appointmentDate, setAppointmentDate] = useState(getTodayDateStr());
-  const [appointmentTime, setAppointmentTime] = useState(TIME_SLOTS[1]);
-  const [nameError, setNameError] = useState<string | null>(null);
-  const [phoneError, setPhoneError] = useState<string | null>(null);
-  const [dateError, setDateError] = useState<string | null>(null);
-  const [bookingLoading, setBookingLoading] = useState(false);
-  const [bookingFormError, setBookingFormError] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -103,8 +113,21 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
       return;
     }
 
+    if (isGuest && effectiveUserChatCount >= MAX_GUEST_CHATS) {
+      onOpenAuth?.();
+      return;
+    }
+
     setInputError(null);
     setInputText('');
+
+    if (isGuest) {
+      const nextCount = effectiveUserChatCount + 1;
+      setGuestChatCount(nextCount);
+      try {
+        sessionStorage.setItem('carequeue_guest_chat_count', String(nextCount));
+      } catch {}
+    }
 
     // 1. Append User Message
     const userMsg: ChatMessage = {
@@ -132,6 +155,8 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
           message: query,
           history: historyPayload,
           language: isKhmer(query) ? 'km' : (/[a-zA-Z]/.test(query) ? 'en' : language),
+          user_latitude: userLocation?.latitude,
+          user_longitude: userLocation?.longitude,
         }),
       });
 
@@ -152,6 +177,8 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
           timestamp: new Date(),
         };
         setMessages((prev) => [...prev, assistantMsg]);
+      } else if (res.status === 401) {
+        onOpenAuth?.();
       } else {
         const fallbackMsg: ChatMessage = {
           id: String(Date.now() + 1),
@@ -183,7 +210,21 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
     handleSendQuery(inputText);
   };
 
+  // Automatically send initial query if passed from landing hero input
+  useEffect(() => {
+    if (initialQuery && initialQuery.trim()) {
+      const q = initialQuery.trim();
+      onClearInitialQuery?.();
+      handleSendQuery(q);
+    }
+  }, [initialQuery]);
+
   const handleActionClick = (actionText: string, msg?: ChatMessage) => {
+    if (hasReachedLimit) {
+      onOpenAuth?.();
+      return;
+    }
+
     if (actionText === 'View in Live Queue' || actionText === 'View Live Queue' || actionText === 'View Ticket' || actionText === t('view_live_queue')) {
       if (msg?.bookedTicket) {
         onTicketBooked(msg.bookedTicket);
@@ -204,84 +245,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
     handleSendQuery(actionText);
   };
 
-  const handleOpenBooking = (match: any) => {
-    const user = AuthService.getStoredUser();
-    setSelectedMatch(match);
-    setPatientName(user?.full_name || '');
-    setPatientPhone(user?.phone_number || '');
-    setAppointmentDate(getTodayDateStr());
-    setAppointmentTime(TIME_SLOTS[1]);
-    setNameError(null);
-    setPhoneError(null);
-    setDateError(null);
-    setBookingFormError(null);
-    setBookingModalOpen(true);
-  };
 
-  const handleConfirmBooking = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setNameError(null);
-    setPhoneError(null);
-    setDateError(null);
-    setBookingFormError(null);
-
-    let hasErr = false;
-    if (!patientName.trim()) {
-      setNameError(language === 'km' ? 'សូមបញ្ចូលឈ្មោះពេញរបស់អ្នក' : 'Please enter your full name.');
-      hasErr = true;
-    }
-    if (!patientPhone.trim()) {
-      setPhoneError(language === 'km' ? 'សូមបញ្ចូលលេខទូរស័ព្ទរបស់អ្នក' : 'Please enter your phone number.');
-      hasErr = true;
-    } else if (patientPhone.trim().length < 6) {
-      setPhoneError(language === 'km' ? 'សូមបញ្ចូលលេខទូរស័ព្ទត្រឹមត្រូវ' : 'Please enter a valid phone number.');
-      hasErr = true;
-    }
-    if (!appointmentDate) {
-      setDateError(language === 'km' ? 'សូមជ្រើសរើសកាលបរិច្ឆេទ' : 'Please select an appointment date.');
-      hasErr = true;
-    }
-
-    if (hasErr) return;
-
-    setBookingLoading(true);
-    try {
-      const res = await fetch(`${API_BASE}/tickets/book`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...AuthService.getAuthHeaders(),
-        },
-        body: JSON.stringify({
-          hospital_id: selectedMatch.hospital_id,
-          department_id: selectedMatch.department_id,
-          patient_name: patientName.trim(),
-          patient_phone: patientPhone.trim(),
-          appointment_date: appointmentDate,
-          appointment_time: appointmentTime,
-        }),
-      });
-
-      if (!res.ok) {
-        const errData = await res.json().catch(() => null);
-        setBookingFormError(
-          errData?.detail ||
-            (language === 'km'
-              ? 'មិនអាចកក់សំបុត្របានទេនៅពេលនេះ។ សូមព្យាយាមម្តងទៀត។'
-              : 'Unable to reserve ticket right now. Please try again.')
-        );
-        return;
-      }
-
-      const ticket = await res.json();
-      bookingModal.close();
-      onTicketBooked(ticket);
-    } catch {
-      setBookingFormError(language === 'km' ? 'បញ្ហាតភ្ជាប់បណ្តាញ។ សូមពិនិត្យមើលបណ្តាញរបស់អ្នកហើយព្យាយាមម្តងទៀត។' : 'Connection issue. Please check your network and try again.');
-    } finally {
-      setBookingLoading(false);
-    }
-  };
 
   return (
     <div style={{ width: '100%', height: '100%', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, maxWidth: '1060px', margin: '0 auto', fontFamily: kmFont }}>
@@ -295,9 +259,11 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
         gap: '1rem',
         minHeight: 0,
       }}>
-          {messages.map((msg) => {
+          {messages.map((msg, idx) => {
             const isKm = isKhmer(msg.text);
             const isUser = msg.role === 'user';
+            const prevUserMsg = messages.slice(0, idx).reverse().find((m) => m.role === 'user');
+            const isResponseKhmer = isKhmer(msg.text) || (prevUserMsg ? isKhmer(prevUserMsg.text) : language === 'km');
             return (
               <div
                 key={msg.id}
@@ -359,183 +325,67 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
                             {children}
                           </code>
                         ),
+                        a: ({ href, children }) => {
+                          const isMapLink = href?.includes('maps.google') || href?.includes('google.com/maps');
+                          if (isMapLink) {
+                            return (
+                              <a
+                                href={href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '6px',
+                                  padding: '0.35rem 0.85rem',
+                                  margin: '0.35rem 0 0.15rem 0',
+                                  fontSize: '0.8rem',
+                                  fontWeight: 500,
+                                  color: 'var(--text-main)',
+                                  background: '#f8fafc',
+                                  border: '1px solid var(--border-color)',
+                                  borderRadius: 'var(--radius-full)',
+                                  textDecoration: 'none',
+                                  boxShadow: 'none',
+                                  transition: 'all 0.15s ease',
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.borderColor = 'var(--text-main)';
+                                  e.currentTarget.style.background = '#f1f5f9';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.borderColor = 'var(--border-color)';
+                                  e.currentTarget.style.background = '#f8fafc';
+                                }}
+                              >
+                                <span>📍</span>
+                                <span>{children}</span>
+                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>↗</span>
+                              </a>
+                            );
+                          }
+                          return (
+                            <a
+                              href={href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                                color: '#2563eb',
+                                textDecoration: 'underline',
+                                fontWeight: 500,
+                              }}
+                            >
+                              {children}
+                            </a>
+                          );
+                        },
                       }}
                     >
                       {msg.text}
                     </ReactMarkdown>
                   </div>
 
-                  {/* Direct AI Booked Ticket Card */}
-                  {msg.bookedTicket && (
-                    <div style={{
-                      marginTop: '0.85rem',
-                      padding: '1rem 1.25rem',
-                      border: '1px solid var(--text-main)',
-                      borderRadius: '4px',
-                      background: '#ffffff',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      flexWrap: 'wrap',
-                      gap: '1rem',
-                    }}>
-                      <div>
-                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>
-                          Digital Queue Ticket Reserved
-                        </div>
-                        <div style={{ fontSize: '1.65rem', fontWeight: 400, fontFamily: 'monospace', color: 'var(--text-main)', marginTop: '2px' }}>
-                          {msg.bookedTicket.ticket_number}
-                        </div>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                          {msg.bookedTicket.hospital_name} • {msg.bookedTicket.department_name} • {msg.bookedTicket.room_number || 'Room 201'}
-                        </div>
-                      </div>
 
-                      <button
-                        onClick={() => onTicketBooked(msg.bookedTicket)}
-                        style={{
-                          padding: '0.45rem 1rem',
-                          fontSize: '0.8rem',
-                          fontWeight: 600,
-                          background: 'transparent',
-                          border: '1px solid var(--text-main)',
-                          borderRadius: 'var(--radius-full)',
-                          color: 'var(--text-main)',
-                          cursor: 'pointer',
-                          boxShadow: 'none',
-                        }}
-                      >
-                        {t('view_live_queue')} →
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Triage Evaluation Card if attached */}
-                  {msg.triage && (
-                    <div style={{
-                      marginTop: '0.75rem',
-                      paddingTop: '0.75rem',
-                      borderTop: '1px solid var(--border-color)',
-                    }}>
-                      {/* Urgency & Recommended Department */}
-                      <div style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        flexWrap: 'wrap',
-                        gap: '0.5rem',
-                        marginBottom: '0.5rem',
-                      }}>
-                        <div>
-                          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>
-                            Recommended Department
-                          </div>
-                          <div style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-main)' }}>
-                            {msg.triage.recommended_specialty}
-                          </div>
-                        </div>
-
-                        <div>
-                          <span style={{
-                            fontSize: '0.7rem',
-                            padding: '0.2rem 0.5rem',
-                            borderRadius: '3px',
-                            border: msg.triage.urgency_level === 'EMERGENCY'
-                              ? '1px solid #dc2626'
-                              : msg.triage.urgency_level === 'URGENT'
-                                ? '1px solid #d97706'
-                                : '1px solid var(--border-color)',
-                            color: msg.triage.urgency_level === 'EMERGENCY'
-                              ? '#dc2626'
-                              : msg.triage.urgency_level === 'URGENT'
-                                ? '#d97706'
-                                : 'var(--text-main)',
-                            textTransform: 'uppercase',
-                            fontWeight: 500,
-                          }}>
-                            {msg.triage.urgency_level === 'EMERGENCY'
-                              ? 'Emergency Priority'
-                              : msg.triage.urgency_level === 'URGENT'
-                                ? 'Urgent Priority'
-                                : 'Routine Priority'}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Guidance */}
-                      {msg.triage.advice && (
-                        <div style={{
-                          fontSize: '0.85rem',
-                          color: 'var(--text-muted)',
-                          marginBottom: '0.75rem',
-                          lineHeight: 1.5,
-                        }}>
-                          Guidance: {msg.triage.advice}
-                        </div>
-                      )}
-
-                      {/* Matching Clinics */}
-                      {(msg.triage.matching_hospitals || []).length > 0 && (
-                        <div style={{ marginTop: '0.75rem' }}>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, marginBottom: '0.5rem' }}>
-                            Available Clinics with Shortest Wait Times
-                          </div>
-
-                          <div style={{ border: '1px solid var(--border-color)', borderRadius: '4px', overflow: 'hidden' }}>
-                            {msg.triage.matching_hospitals.map((m: any, idx: number) => (
-                              <div
-                                key={m.hospital_id}
-                                style={{
-                                  display: 'flex',
-                                  justifyContent: 'space-between',
-                                  alignItems: 'center',
-                                  flexWrap: 'wrap',
-                                  gap: '0.75rem',
-                                  padding: '0.75rem 1rem',
-                                  borderBottom: idx === msg.triage.matching_hospitals.length - 1 ? 'none' : '1px solid var(--border-color)',
-                                  background: '#ffffff',
-                                }}
-                              >
-                                <div style={{ minWidth: '180px', flex: '1.5' }}>
-                                  <div style={{ fontSize: '0.9rem', fontWeight: 500, color: 'var(--text-main)' }}>
-                                    {m.hospital_name}
-                                  </div>
-                                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                    {m.department_name} • {m.address || 'Phnom Penh'}
-                                  </div>
-                                </div>
-
-                                <div style={{ minWidth: '150px', flex: '1' }}>
-                                  <div style={{ fontSize: '0.8rem', fontWeight: 400, color: 'var(--text-main)' }}>
-                                    {m.waiting_patients} in line • ~{m.estimated_wait_minutes} mins wait
-                                  </div>
-                                </div>
-
-                                <div>
-                                  <button
-                                    onClick={() => handleOpenBooking(m)}
-                                    style={{
-                                      padding: '0.35rem 0.85rem',
-                                      fontSize: '0.75rem',
-                                      fontWeight: 500,
-                                      background: 'transparent',
-                                      border: '1px solid var(--text-main)',
-                                      borderRadius: 'var(--radius-full)',
-                                      color: 'var(--text-main)',
-                                      cursor: 'pointer',
-                                      boxShadow: 'none',
-                                    }}
-                                  >
-                                    Book Digital Ticket
-                                  </button>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
 
                   {/* Contextual Next Action Buttons */}
                   {msg.role === 'assistant' && msg.suggestedActions && msg.suggestedActions.length > 0 && (
@@ -589,14 +439,121 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
                       })}
                     </div>
                   )}
+
+                  {/* Medical Disclaimer Alert on each AI assistant response - Auto-detects Khmer vs English */}
+                  {msg.role === 'assistant' && (
+                    <div
+                      style={{
+                        marginTop: '0.75rem',
+                        paddingTop: '0.55rem',
+                        borderTop: '1px solid var(--border-color)',
+                        fontSize: isResponseKhmer ? '0.78rem' : '0.73rem',
+                        color: '#64748b',
+                        fontFamily: isResponseKhmer ? 'var(--font-khmer)' : 'inherit',
+                        lineHeight: 1.5,
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: '6px',
+                      }}
+                    >
+                      <span style={{ flexShrink: 0, fontSize: '0.85rem', lineHeight: 1.2 }}>⚠️</span>
+                      <span>
+                        {isResponseKhmer
+                          ? 'សេចក្តីបញ្ជាក់៖ ការផ្តល់យោបល់របស់ AI គឺសម្រាប់តែព័ត៌មានបឋមប៉ុណ្ណោះ និងមិនជំនួសការធ្វើរោគវិនិច្ឆ័យវេជ្ជសាស្ត្រឡើយ។ សូមពិគ្រោះជាមួយគ្រូពេទ្យជំនាញសម្រាប់ករណីធ្ងន់ធ្ងរ ឬបន្ទាន់។'
+                          : 'Disclaimer: AI advice is for informational purposes only and does not replace professional medical diagnosis. Consult a qualified doctor for serious conditions or emergencies.'}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             );
           })}
 
-          {loading && (
-            <div style={{ alignSelf: 'flex-start', color: 'var(--text-muted)', fontSize: '0.9rem', padding: '0.5rem 1rem' }}>
-              {t('chat_processing')}
+          {loading && (() => {
+            const lastUserMsg = [...messages].reverse().find((m) => m.role === 'user');
+            const isQuestionKm = lastUserMsg ? isKhmer(lastUserMsg.text) : (language === 'km');
+            const loadingFont = isQuestionKm ? 'var(--font-khmer)' : 'inherit';
+
+            return (
+              <div
+                className="chat-bubble-animate"
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'flex-start',
+                  width: '100%',
+                  padding: '0.2rem 0',
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: '0.75rem',
+                    color: 'var(--text-muted)',
+                    marginBottom: '0.25rem',
+                    fontWeight: 500,
+                    fontFamily: loadingFont,
+                  }}
+                >
+                  {isQuestionKm ? 'ជំនួយការ AI វេជ្ជសាស្ត្រ' : 'Healthcare Assistant'}
+                </div>
+
+                <div
+                  className="ai-loading-text"
+                  style={{
+                    fontFamily: loadingFont,
+                    lineHeight: 1.6,
+                  }}
+                >
+                  <span>{isQuestionKm ? 'កំពុងដំណើរការ' : 'Processing'}</span>
+                  <span className="ai-dot-wrap">
+                    <span className="ai-dot">.</span>
+                    <span className="ai-dot">.</span>
+                    <span className="ai-dot">.</span>
+                  </span>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Guest Chat Limit Reached Notice - Text only, no container, no icon */}
+          {hasReachedLimit && (
+            <div
+              style={{
+                margin: '1.25rem auto 0.5rem auto',
+                textAlign: 'center',
+                maxWidth: '560px',
+                padding: '0.5rem 1rem',
+              }}
+            >
+              <p
+                style={{
+                  fontSize: isKm ? '0.98rem' : '0.92rem',
+                  color: '#475569',
+                  lineHeight: 1.65,
+                  fontFamily: kmFont,
+                  margin: 0,
+                }}
+              >
+                {t('chat_guest_limit_notice')}{' '}
+                <button
+                  type="button"
+                  onClick={onOpenAuth}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    padding: 0,
+                    color: 'var(--accent-primary)',
+                    fontWeight: 700,
+                    fontSize: 'inherit',
+                    fontFamily: kmFont,
+                    textDecoration: 'underline',
+                    cursor: 'pointer',
+                    display: 'inline',
+                  }}
+                >
+                  {t('chat_guest_limit_btn')}
+                </button>
+              </p>
             </div>
           )}
 
@@ -621,49 +578,83 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
             type="text"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
-            placeholder={t('chat_placeholder')}
-            disabled={loading}
-            className="input-search-rounded"
+            placeholder={hasReachedLimit ? t('chat_guest_limit_placeholder') : t('chat_placeholder')}
+            disabled={loading || hasReachedLimit}
+            onClick={() => {
+              if (hasReachedLimit) onOpenAuth?.();
+            }}
+            onFocus={() => {
+              setTimeout(() => {
+                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+              }, 250);
+            }}
+            className="input-search-rounded chat-input-bar-input"
             style={{
               width: '100%',
               padding: '0.84rem 9.6rem 0.84rem 1.45rem',
               fontSize: (language === 'km' || isKhmer(inputText)) ? '1.02rem' : '0.96rem',
               fontFamily: (language === 'km' || isKhmer(inputText)) ? 'var(--font-khmer)' : 'inherit',
-              border: '1px solid var(--border-color)',
+              border: hasReachedLimit ? '1px solid #cbd5e1' : '1px solid var(--border-color)',
               borderRadius: 'var(--radius-full)',
-              background: '#ffffff',
+              background: hasReachedLimit ? '#f8fafc' : '#ffffff',
               color: 'var(--text-main)',
               outline: 'none',
               boxShadow: 'none',
               boxSizing: 'border-box',
+              cursor: hasReachedLimit ? 'pointer' : 'text',
             }}
           />
-          <button
-            type="submit"
-            disabled={loading || !inputText.trim()}
-            className="btn btn-primary"
-            style={{
-              position: 'absolute',
-              right: '6px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              padding: '0.6rem 1.65rem',
-              fontSize: '0.92rem',
-              fontWeight: 600,
-              cursor: (loading || !inputText.trim()) ? 'not-allowed' : 'pointer',
-              opacity: (loading || !inputText.trim()) ? 0.6 : 1,
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '7px',
-              whiteSpace: 'nowrap',
-              borderRadius: 'var(--radius-full)',
-              boxShadow: 'none',
-              fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
-            }}
-          >
-            {loading ? <RefreshCw size={16} className="spin" /> : <Send size={16} />}
-            <span>{t('chat_send')}</span>
-          </button>
+          {hasReachedLimit ? (
+            <button
+              type="button"
+              onClick={onOpenAuth}
+              className="btn btn-primary chat-input-send-btn"
+              style={{
+                position: 'absolute',
+                right: '6px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                padding: '0.6rem 1.4rem',
+                fontSize: '0.88rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                fontFamily: kmFont,
+                borderRadius: 'var(--radius-full)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <span>{t('chat_guest_limit_btn')}</span>
+            </button>
+          ) : (
+            <button
+              type="submit"
+              disabled={loading || !inputText.trim()}
+              className="btn btn-primary chat-input-send-btn"
+              style={{
+                position: 'absolute',
+                right: '6px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                padding: '0.6rem 1.65rem',
+                fontSize: '0.92rem',
+                fontWeight: 600,
+                cursor: (loading || !inputText.trim()) ? 'not-allowed' : 'pointer',
+                opacity: (loading || !inputText.trim()) ? 0.6 : 1,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '7px',
+                whiteSpace: 'nowrap',
+                borderRadius: 'var(--radius-full)',
+                boxShadow: 'none',
+                fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
+              }}
+            >
+              {loading ? <RefreshCw size={16} className="spin" /> : <Send size={16} />}
+              <span>{t('chat_send')}</span>
+            </button>
+          )}
         </form>
 
         {inputError && (
@@ -685,189 +676,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
         </div>
       </div>
 
-      {/* Manual Booking Modal Dialog */}
-      {bookingModal.shouldRender && selectedMatch && (
-        <div className={bookingModal.overlayClass} onClick={(e) => { if (e.target === e.currentTarget) bookingModal.close(); }}>
-          <div className={bookingModal.cardClass} style={{ maxWidth: '520px', fontFamily: kmFont }}>
-            <div className="responsive-modal-body" style={{ padding: '1.6rem 1.75rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                <h3 style={{ fontSize: '1.35rem', fontWeight: 700, color: 'var(--text-main)', margin: 0, fontFamily: kmFont }}>
-                  {t('confirm_booking')}
-                </h3>
-                <button
-                  type="button"
-                  onClick={bookingModal.close}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    fontSize: '1.1rem',
-                    cursor: 'pointer',
-                    color: 'var(--text-muted)',
-                  }}
-                >
-                  ✕
-                </button>
-              </div>
-              <p style={{ fontSize: '0.92rem', color: 'var(--text-muted)', marginBottom: '1.35rem', fontFamily: kmFont }}>
-                {selectedMatch.hospital_name} • {selectedMatch.department_name}
-              </p>
 
-            <form onSubmit={handleConfirmBooking} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '6px', fontFamily: kmFont }}>
-                  {t('patient_full_name')}
-                </label>
-                <input
-                  type="text"
-                  value={patientName}
-                  onChange={(e) => setPatientName(e.target.value)}
-                  placeholder={isKm ? 'បញ្ចូលឈ្មោះពេញ' : 'e.g. Sokha Chhay'}
-                  style={{
-                    width: '100%',
-                    padding: '0.72rem 0.85rem',
-                    fontSize: '0.95rem',
-                    border: nameError ? '1px solid #dc2626' : '1px solid var(--border-color)',
-                    borderRadius: '4px',
-                    boxShadow: 'none',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                    fontFamily: kmFont,
-                  }}
-                />
-                {nameError && (
-                  <div style={{ color: '#dc2626', fontSize: '0.85rem', marginTop: '5px', fontFamily: kmFont }}>
-                    {nameError}
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '6px', fontFamily: kmFont }}>
-                  {t('phone_number')}
-                </label>
-                <input
-                  type="tel"
-                  value={patientPhone}
-                  onChange={(e) => {
-                    setPatientPhone(e.target.value);
-                    setPhoneError(null);
-                  }}
-                  placeholder={isKm ? 'បញ្ចូលលេខទូរស័ព្ទ' : 'e.g. 012888999'}
-                  style={{
-                    width: '100%',
-                    padding: '0.72rem 0.85rem',
-                    fontSize: '0.95rem',
-                    border: phoneError ? '1px solid #dc2626' : '1px solid var(--border-color)',
-                    borderRadius: '4px',
-                    boxShadow: 'none',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                    fontFamily: kmFont,
-                  }}
-                />
-                {phoneError && (
-                  <div style={{ color: '#dc2626', fontSize: '0.85rem', marginTop: '5px', fontFamily: kmFont }}>
-                    {phoneError}
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <div style={{ marginBottom: '1rem' }}>
-                  <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '6px', fontFamily: kmFont }}>
-                    {t('appointment_date')}
-                  </label>
-                  <input
-                    type="date"
-                    min={getTodayDateStr()}
-                    value={appointmentDate}
-                    onChange={(e) => {
-                      setAppointmentDate(e.target.value);
-                      setDateError(null);
-                    }}
-                    style={{
-                      width: '100%',
-                      padding: '0.72rem 0.85rem',
-                      fontSize: '0.95rem',
-                      border: dateError ? '1px solid #dc2626' : '1px solid var(--border-color)',
-                      borderRadius: '4px',
-                      boxShadow: 'none',
-                      outline: 'none',
-                      boxSizing: 'border-box',
-                      background: '#ffffff',
-                      color: 'var(--text-main)',
-                      fontFamily: kmFont,
-                    }}
-                  />
-                  {dateError && (
-                    <div style={{ color: '#dc2626', fontSize: '0.85rem', marginTop: '5px', fontFamily: kmFont }}>
-                      {dateError}
-                    </div>
-                  )}
-                </div>
-
-                {/* Real-time Live Appointment Time Slot Grid */}
-                <AppointmentSlotPicker
-                  hospitalId={selectedMatch.hospital_id}
-                  departmentId={selectedMatch.department_id}
-                  selectedDate={appointmentDate}
-                  selectedSlot={appointmentTime}
-                  onSelectSlot={(slot) => {
-                    setAppointmentTime(slot);
-                    if (bookingFormError) setBookingFormError(null);
-                  }}
-                  onSlotError={(err) => setBookingFormError(err)}
-                />
-              </div>
-
-              {bookingFormError && (
-                <div style={{ color: '#dc2626', fontSize: '0.85rem', fontFamily: kmFont }}>
-                  {bookingFormError}
-                </div>
-              )}
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
-                <button
-                  type="button"
-                  onClick={bookingModal.close}
-                  disabled={bookingLoading}
-                  style={{
-                    padding: '0.65rem 1.25rem',
-                    fontSize: '0.94rem',
-                    fontWeight: 500,
-                    background: 'transparent',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: 'var(--radius-full)',
-                    color: 'var(--text-muted)',
-                    cursor: 'pointer',
-                    boxShadow: 'none',
-                    fontFamily: kmFont,
-                  }}
-                >
-                  {t('cancel')}
-                </button>
-                <button
-                  type="submit"
-                  disabled={bookingLoading}
-                  className="btn btn-primary"
-                  style={{
-                    padding: '0.65rem 1.45rem',
-                    fontSize: '0.94rem',
-                    fontWeight: 600,
-                    borderRadius: 'var(--radius-full)',
-                    cursor: bookingLoading ? 'not-allowed' : 'pointer',
-                    boxShadow: 'none',
-                    fontFamily: kmFont,
-                  }}
-                >
-                  {bookingLoading ? t('chat_booking_saving') : t('confirm_ticket_btn')}
-                </button>
-              </div>
-            </form>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

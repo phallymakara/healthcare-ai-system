@@ -40,6 +40,15 @@ async def assistant_chat(
     current_user: Optional[User] = Depends(get_optional_current_user),
 ):
     """Healthcare guidance, system search (doctors, clinics, wait times), and autonomous booking via LangChain Agent"""
+    # Limit unauthenticated guest chats to 7 user messages per session
+    if not current_user and data.history:
+        guest_user_msg_count = sum(1 for m in data.history if m.role == "user")
+        if guest_user_msg_count >= 7:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Free chat session limit reached (7 messages). Please log in or sign up to continue.",
+            )
+
     user_context = None
     if current_user:
         user_context = {
@@ -54,6 +63,8 @@ async def assistant_chat(
         db=db,
         user_context=user_context,
         language=data.language or "en",
+        user_latitude=data.user_latitude,
+        user_longitude=data.user_longitude,
     )
 
     matching_objs = []

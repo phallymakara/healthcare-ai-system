@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LogIn, LogOut, User, Bell, X, Menu, ArrowRight, Wifi } from 'lucide-react';
+import { LogIn, LogOut, User, Bell, X, Menu } from 'lucide-react';
 import { UserProfile } from '../services/auth';
 import { useLanguage } from '../context/LanguageContext';
 import { LanguageSwitcher } from './LanguageSwitcher';
@@ -36,9 +36,10 @@ export const Header: React.FC<HeaderProps> = ({
   onSelectTab,
   onOpenAuth,
   onLogout,
-  onOpenServerConfig,
 }) => {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
+  const isKm = language === 'km';
+  const kmFont = isKm ? 'var(--font-khmer)' : 'inherit';
   const [showNotifMenu, setShowNotifMenu] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -48,7 +49,7 @@ export const Header: React.FC<HeaderProps> = ({
   const isPatient = currentUser && currentUser.role === 'PATIENT';
 
   return (
-    <header className="header-wrapper">
+    <header className="header-wrapper" style={{ fontFamily: kmFont }}>
       <div className="header-content">
         {/* Brand Logo - Navigates to Landing page (Left) */}
         {/* Brand Logo - Navigates to Landing page (Left) */}
@@ -114,7 +115,8 @@ export const Header: React.FC<HeaderProps> = ({
                   color: 'var(--text-main)',
                   fontWeight: 700,
                   padding: '0.35rem 0.95rem',
-                  fontSize: '1.05rem',
+                  fontSize: isKm ? '0.98rem' : '1.05rem',
+                  fontFamily: kmFont,
                   cursor: 'pointer',
                   transition: 'all 0.15s ease',
                 }}
@@ -142,7 +144,8 @@ export const Header: React.FC<HeaderProps> = ({
                   color: 'var(--text-main)',
                   fontWeight: 700,
                   padding: '0.35rem 0.95rem',
-                  fontSize: '1.05rem',
+                  fontSize: isKm ? '0.98rem' : '1.05rem',
+                  fontFamily: kmFont,
                   cursor: 'pointer',
                   transition: 'all 0.15s ease',
                 }}
@@ -170,7 +173,8 @@ export const Header: React.FC<HeaderProps> = ({
                   color: 'var(--text-main)',
                   fontWeight: 700,
                   padding: '0.35rem 0.95rem',
-                  fontSize: '1.05rem',
+                  fontSize: isKm ? '0.98rem' : '1.05rem',
+                  fontFamily: kmFont,
                   cursor: 'pointer',
                   transition: 'all 0.15s ease',
                 }}
@@ -195,7 +199,8 @@ export const Header: React.FC<HeaderProps> = ({
                   color: 'var(--text-main)',
                   fontWeight: 700,
                   padding: '0.35rem 0.95rem',
-                  fontSize: '1.05rem',
+                  fontSize: isKm ? '0.98rem' : '1.05rem',
+                  fontFamily: kmFont,
                   cursor: 'pointer',
                   transition: 'all 0.15s ease',
                 }}
@@ -258,13 +263,16 @@ export const Header: React.FC<HeaderProps> = ({
                   borderRadius: 'var(--radius-full)',
                   color: activeTab === 'patient_live_ticket' ? '#ffffff' : 'var(--text-muted)',
                   fontWeight: activeTab === 'patient_live_ticket' ? 700 : 500,
-                  padding: '0.45rem 1.05rem',
+                  padding: '0.45rem 1rem',
                   fontSize: '0.96rem',
                   cursor: 'pointer',
                   transition: 'all 0.15s ease',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
                 }}
               >
-                {t('nav_live_queue')}
+                <span>{t('nav_live_queue')}</span>
               </button>
 
               <button
@@ -275,13 +283,16 @@ export const Header: React.FC<HeaderProps> = ({
                   borderRadius: 'var(--radius-full)',
                   color: activeTab === 'patient_history' ? '#ffffff' : 'var(--text-muted)',
                   fontWeight: activeTab === 'patient_history' ? 700 : 500,
-                  padding: '0.45rem 1.05rem',
+                  padding: '0.45rem 1rem',
                   fontSize: '0.96rem',
                   cursor: 'pointer',
                   transition: 'all 0.15s ease',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
                 }}
               >
-                {t('nav_history')}
+                <span>{t('nav_history')}</span>
               </button>
             </>
           )}
@@ -382,27 +393,6 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Right Header Utilities (Right) */}
         <div className="header-actions">
-          {onOpenServerConfig && (
-            <button
-              onClick={onOpenServerConfig}
-              title="Server Connection & Network"
-              aria-label="Server Connection"
-              style={{
-                background: 'transparent',
-                border: 'none',
-                padding: '6px',
-                color: 'var(--text-main)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                borderRadius: '8px',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              <Wifi size={17} />
-            </button>
-          )}
-
           {/* Language Switcher */}
           <LanguageSwitcher />
 
@@ -580,20 +570,29 @@ export const Header: React.FC<HeaderProps> = ({
                 color: '#ffffff',
                 border: 'none',
                 borderRadius: 'var(--radius-full)',
-                padding: '0.45rem 1.25rem',
+                padding: '0.48rem 1.3rem',
                 fontSize: '0.94rem',
                 fontWeight: 600,
+                fontFamily: kmFont,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '6px',
+                gap: '7px',
                 boxShadow: '0 4px 14px rgba(12, 47, 39, 0.2)',
                 transition: 'all 0.2s ease',
                 whiteSpace: 'nowrap',
               }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-1px)';
+                e.currentTarget.style.boxShadow = '0 6px 18px rgba(12, 47, 39, 0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 14px rgba(12, 47, 39, 0.2)';
+              }}
             >
-              <span className="text-truncate" style={{ maxWidth: '140px', display: 'inline-block' }}>{t('nav_register_signin')}</span>
-              <ArrowRight size={16} style={{ flexShrink: 0 }} />
+              <LogIn size={16} />
+              <span className="text-truncate" style={{ maxWidth: '140px', display: 'inline-block' }}>{t('nav_sign_in')}</span>
             </button>
           )}
 
@@ -664,11 +663,12 @@ export const Header: React.FC<HeaderProps> = ({
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '8px',
-                padding: '0.65rem 0.9rem',
+                padding: '0.6rem 0.9rem',
                 borderRadius: '8px',
                 background: 'linear-gradient(135deg, #185339, #059669)',
                 color: '#ffffff',
                 fontWeight: 700,
+                fontFamily: kmFont,
                 border: 'none',
                 cursor: 'pointer',
               }}
@@ -690,6 +690,7 @@ export const Header: React.FC<HeaderProps> = ({
                 background: 'transparent',
                 color: 'var(--text-main)',
                 fontWeight: 600,
+                fontFamily: kmFont,
                 border: '1px solid var(--border-color)',
                 cursor: 'pointer',
               }}
@@ -760,36 +761,14 @@ export const Header: React.FC<HeaderProps> = ({
                 width: '100%',
                 padding: '0.68rem 1.15rem',
                 fontSize: '0.98rem',
-              }}
-            >
-              <LogIn size={18} /> {t('sign_in')}
-            </button>
-          )}
-
-          {onOpenServerConfig && (
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                onOpenServerConfig();
-              }}
-              style={{
+                fontFamily: kmFont,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '8px',
-                width: '100%',
-                padding: '0.65rem 1rem',
-                borderRadius: '8px',
-                border: '1px dashed var(--border-color)',
-                background: 'transparent',
-                color: 'var(--text-muted)',
-                fontSize: '0.85rem',
-                cursor: 'pointer',
-                marginTop: '0.6rem',
               }}
             >
-              <Wifi size={15} />
-              <span>Server Connection</span>
+              <LogIn size={18} /> {t('nav_sign_in')}
             </button>
           )}
         </div>

@@ -56,7 +56,7 @@ export const HospitalFeatures: React.FC = () => {
   return (
     <section id="hospital-features" style={{ width: '100%', padding: '0.5rem 0 1.25rem 0' }}>
       {/* Section Header matching reference */}
-      <div style={{ maxWidth: '860px', marginBottom: '2.85rem' }}>
+      <div style={{ maxWidth: '860px', marginBottom: '2rem' }}>
         <h2
           style={{
             fontSize: 'clamp(1.95rem, 3.4vw, 2.55rem)',
@@ -68,17 +68,6 @@ export const HospitalFeatures: React.FC = () => {
         >
           {t('hf_section_title')}
         </h2>
-        <p
-          style={{
-            color: '#4b5563',
-            fontSize: 'clamp(1.05rem, 1.5vw, 1.2rem)',
-            marginTop: '0.75rem',
-            lineHeight: 1.7,
-            fontWeight: 400,
-          }}
-        >
-          {t('hf_section_subtitle')}
-        </p>
       </div>
 
       {/* 4 Cards Grid (Doctor Profile, Operational Console, Shift Management, Stock Management) */}
@@ -106,7 +95,7 @@ export const HospitalFeatures: React.FC = () => {
             <div
               style={{
                 width: '100%',
-                height: '220px',
+                height: '160px',
                 overflow: 'hidden',
                 position: 'relative',
                 background: '#f8fafc',
@@ -133,7 +122,7 @@ export const HospitalFeatures: React.FC = () => {
             {/* Bottom Content Area */}
             <div
               style={{
-                padding: '1.85rem 1.6rem 2rem 1.6rem',
+                padding: '1.25rem 1.35rem 1.35rem 1.35rem',
                 display: 'flex',
                 flexDirection: 'column',
                 flex: 1,
@@ -144,10 +133,10 @@ export const HospitalFeatures: React.FC = () => {
                 <h3
                   className="text-truncate"
                   style={{
-                    fontSize: '1.42rem',
+                    fontSize: '1.24rem',
                     fontWeight: 700,
                     color: '#0f172a',
-                    marginBottom: '0.75rem',
+                    marginBottom: '0.4rem',
                     lineHeight: 1.35,
                   }}
                 >
@@ -156,10 +145,10 @@ export const HospitalFeatures: React.FC = () => {
                 <p
                   className="text-clamp-3"
                   style={{
-                    fontSize: '1.02rem',
+                    fontSize: '0.94rem',
                     color: '#475569',
-                    lineHeight: 1.65,
-                    marginBottom: '1.35rem',
+                    lineHeight: 1.5,
+                    marginBottom: '0.85rem',
                   }}
                 >
                   {card.desc}
@@ -172,7 +161,7 @@ export const HospitalFeatures: React.FC = () => {
                   listStyle: 'none',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '0.65rem',
+                  gap: '0.45rem',
                   padding: 0,
                   margin: 0,
                 }}
@@ -183,15 +172,15 @@ export const HospitalFeatures: React.FC = () => {
                     style={{
                       display: 'flex',
                       alignItems: 'flex-start',
-                      gap: '0.65rem',
-                      fontSize: '0.98rem',
+                      gap: '0.55rem',
+                      fontSize: '0.9rem',
                       color: '#334155',
-                      lineHeight: 1.5,
+                      lineHeight: 1.45,
                       fontWeight: 500,
                     }}
                   >
                     <Check
-                      size={18}
+                      size={16}
                       strokeWidth={2.5}
                       color="#16a34a"
                       style={{ flexShrink: 0, marginTop: '2px' }}
