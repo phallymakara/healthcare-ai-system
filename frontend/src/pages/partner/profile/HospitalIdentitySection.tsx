@@ -272,7 +272,7 @@ export const HospitalIdentitySection: React.FC<HospitalIdentitySectionProps> = (
               setCity(e.target.value);
               if (cityError) setCityError(null);
             }}
-            placeholder={t('prof_city_placeholder') || 'ឧ. រាជធានីភ្នំពេញ'}
+            placeholder={t('prof_city_placeholder') || (isKm ? 'រាជធានី / ខេត្ត' : 'City or Region')}
             style={{
               width: '100%',
               padding: '0.62rem 1.05rem',

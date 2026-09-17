@@ -268,7 +268,7 @@ export const DoctorModal: React.FC<DoctorModalProps> = ({
               </label>
               <input
                 type="text"
-                placeholder="e.g. MED-CAM-8890"
+                placeholder={isKm ? 'លេខអាជ្ញាប័ណ្ណពេទ្យ' : 'Medical License Number'}
                 value={docLicense}
                 onChange={(e) => setDocLicense(e.target.value)}
                 style={{

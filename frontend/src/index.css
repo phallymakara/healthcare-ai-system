@@ -127,7 +127,8 @@ body.lang-km {
   line-height: 1.7;
 }
 
-input, textarea {
+input,
+textarea {
   scroll-margin-top: 24px;
   scroll-margin-bottom: 24px;
 }
@@ -2651,7 +2652,8 @@ body:not(.is-landing-page) #aisale-widget-root {
 
   /* ── Global base font scale ───────────────────────── */
   html {
-    font-size: 93%;   /* 1rem = ~14.9px instead of 16px */
+    font-size: 93%;
+    /* 1rem = ~14.9px instead of 16px */
   }
 
   /* ── App inner content padding ───────────────────── */
@@ -2826,7 +2828,8 @@ textarea::-webkit-input-placeholder {
 @media (max-width: 390px) {
 
   html {
-    font-size: 89%;   /* 1rem = ~14.2px */
+    font-size: 89%;
+    /* 1rem = ~14.2px */
   }
 
   .app-content-inner {

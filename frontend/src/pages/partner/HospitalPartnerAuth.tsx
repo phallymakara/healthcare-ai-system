@@ -654,7 +654,7 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                         setRegisterErrors((p) => ({ ...p, adminFullName: '' }));
                       }
                     }}
-                    placeholder="e.g. Dr. Dararith"
+                    placeholder={isKm ? 'ឈ្មោះពេញរបស់អ្នកគ្រប់គ្រង' : 'Administrator Full Name'}
                     style={{
                       width: '100%',
                       padding: '0.75rem 1.15rem',

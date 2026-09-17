@@ -205,7 +205,7 @@ export const OnboardingIdentityStep: React.FC<OnboardingIdentityStepProps> = ({
             setHospitalName(e.target.value);
             if (errors.hospitalName) setErrors((p) => ({ ...p, hospitalName: '' }));
           }}
-          placeholder={isKm ? 'ឧ. មន្ទីរពេទ្យរ៉ូយ៉ាល់ ភ្នំពេញ' : 'e.g. Royal City Hospital'}
+          placeholder={isKm ? 'ឈ្មោះមន្ទីរពេទ្យ ឬ គ្លីនិក' : 'Hospital or Clinic Name'}
           style={{
             width: '100%',
             padding: '0.85rem 1.1rem',

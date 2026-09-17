@@ -68,7 +68,7 @@ export const OnboardingLocationStep: React.FC<OnboardingLocationStepProps> = ({
             setAddress(e.target.value);
             if (errors.address) setErrors((p) => ({ ...p, address: '' }));
           }}
-          placeholder={isKm ? 'ឧ. ផ្ទះលេខ ១២៨ មហាវិថីសហព័ន្ធរុស្ស៊ី' : 'e.g. No. 128, Russian Federation Blvd'}
+          placeholder={isKm ? 'អាសយដ្ឋានផ្លូវ' : 'Street Address'}
           style={{
             width: '100%',
             padding: '0.85rem 1.1rem',
