@@ -224,10 +224,12 @@ export const formatCategory = (category: string, lang: Language): string => {
   if (!category) return '';
   if (lang === 'en') {
     if (category === 'Hospital' || category === 'General Hospital') return 'Hospital';
+    if (category === 'Kids') return 'Kids';
     return category;
   }
 
   if (category === 'Hospital' || category === 'General Hospital') return 'មន្ទីរពេទ្យ';
+  if (category === 'Kids') return 'កុមារ';
   if (category === 'Medical Clinic') return 'គ្លីនិកឯកទេស';
   if (category === 'Animal Clinic') return 'គ្លីនិកព្យាបាលសត្វ';
   return category;

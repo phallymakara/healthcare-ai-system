@@ -169,17 +169,23 @@ async def search_hospitals(
         # 1. Animal / Veterinary Clinic
         if "សត្វ" in full_text or re.search(r"\b(animal|animals|vet|veterinary|vets|pet|pets|dog|dogs|canine|feline)\b", full_text):
             cat = "Animal Clinic"
-        # 2. General Hospital (explicit general hospital or hospital in title, not dental/clinic/eye)
+        # 2. Kids / Pediatric Clinic & Hospital
+        elif "កុមារ" in full_text or "ទារក" in full_text or re.search(r"\b(pediatric|pediatrics|children|child|infant|neonatal|newborn|kid|kids|kantha\s+bopha)\b", full_text):
+            cat = "Kids"
+        # 3. General Hospital (explicit general hospital or hospital in title, not dental/clinic/eye)
         elif "hospital" in name_lower and not any(w in name_lower for w in ["dental", "clinic", "eye", "maternity", "polyclinic"]):
             cat = "General Hospital"
-        # 3. Medical / Specialty Clinic
+        # 4. Medical / Specialty Clinic
         elif any(w in full_text for w in ["clinic", "specialty", "dental", "dermatology", "eye", "skin", "maternity", "polyclinic", "institute", "គ្លីនិក", "វិទ្យាស្ថាន"]):
             cat = "Medical Clinic"
         else:
             cat = "General Hospital"
 
         if category and category.lower() not in "all":
-            if category.lower() not in cat.lower():
+            if category.lower() in ("kids", "pediatric", "child", "children", "កុមារ"):
+                if cat != "Kids":
+                    continue
+            elif category.lower() not in cat.lower():
                 continue
 
         dept_items = []

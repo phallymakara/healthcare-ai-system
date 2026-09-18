@@ -237,6 +237,7 @@ export const km: Record<TranslationKey, string> = {
   location_label: "ទីតាំង៖",
   cat_all: "ទីតាំងទាំងអស់",
   cat_hospitals: "មន្ទីរពេទ្យ",
+  cat_kids: "កុមារ",
   cat_medical_clinics: "គ្លីនិកឯកទេស",
   cat_animal_clinics: "គ្លីនិកព្យាបាលសត្វ",
   emergency_247: "សង្គ្រោះបន្ទាន់ 24/7",

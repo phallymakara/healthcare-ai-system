@@ -235,6 +235,7 @@ export const en = {
   location_label: "Location:",
   cat_all: "All Facilities",
   cat_hospitals: "Hospitals",
+  cat_kids: "Kids",
   cat_medical_clinics: "Specialty Clinics",
   cat_animal_clinics: "Animal Clinics",
   emergency_247: "24/7 Emergency",

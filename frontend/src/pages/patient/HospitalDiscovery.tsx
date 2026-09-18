@@ -22,7 +22,7 @@ export const HospitalDiscovery: React.FC<HospitalDiscoveryProps> = ({
   const [hospitals, setHospitals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<'All' | 'Nearby' | 'Hospital' | 'Medical Clinic' | 'Animal Clinic'>('All');
+  const [selectedCategory, setSelectedCategory] = useState<'All' | 'Nearby' | 'Hospital' | 'Kids' | 'Medical Clinic' | 'Animal Clinic'>('All');
   const [selectedFacility, setSelectedFacility] = useState<any | null>(null);
 
   const TIME_SLOTS = [
@@ -185,6 +185,10 @@ export const HospitalDiscovery: React.FC<HospitalDiscoveryProps> = ({
     if (selectedCategory !== 'All' && selectedCategory !== 'Nearby') {
       if (selectedCategory === 'Hospital') {
         if (hosp.category !== 'General Hospital' && hosp.category !== 'Hospital') {
+          return false;
+        }
+      } else if (selectedCategory === 'Kids') {
+        if (hosp.category !== 'Kids') {
           return false;
         }
       } else if (hosp.category !== selectedCategory) {

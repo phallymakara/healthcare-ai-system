@@ -9,8 +9,8 @@ interface FacilityCardListProps {
   loading: boolean;
   searchQuery: string;
   setSearchQuery: (val: string) => void;
-  selectedCategory: 'All' | 'Nearby' | 'Hospital' | 'Medical Clinic' | 'Animal Clinic';
-  setSelectedCategory: (cat: 'All' | 'Nearby' | 'Hospital' | 'Medical Clinic' | 'Animal Clinic') => void;
+  selectedCategory: 'All' | 'Nearby' | 'Hospital' | 'Kids' | 'Medical Clinic' | 'Animal Clinic';
+  setSelectedCategory: (cat: 'All' | 'Nearby' | 'Hospital' | 'Kids' | 'Medical Clinic' | 'Animal Clinic') => void;
   onSearchSubmit: (e: React.FormEvent) => void;
   onClearSearch: () => void;
   onSelectFacility: (facility: any) => void;
@@ -136,6 +136,7 @@ export const FacilityCardList: React.FC<FacilityCardListProps> = ({
             { label: t('cat_all'), value: 'All' },
             { label: t('filter_nearby'), value: 'Nearby' },
             { label: t('cat_hospitals'), value: 'Hospital' },
+            { label: t('cat_kids'), value: 'Kids' },
             { label: t('cat_medical_clinics'), value: 'Medical Clinic' },
             { label: t('cat_animal_clinics'), value: 'Animal Clinic' },
           ].map((cat) => (
