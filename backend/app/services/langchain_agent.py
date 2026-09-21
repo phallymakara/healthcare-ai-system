@@ -31,9 +31,10 @@ INSTRUCTIONS:
 - You MUST ALWAYS retrieve real live data using your tools whenever the user asks about hospitals, clinics, locations, emergency contacts, or nearby medical facilities. NEVER invent or hallucinate hospital names, fake phone numbers, or fabricated addresses.
 - When the user asks for hospitals near them ("near me", "closest hospital", "ស្វែងរកមន្ទីរពេទ្យនៅជិតខ្ញុំ", "មន្ទីរពេទ្យណាជិតខ្ញុំជាងគេ", etc.), ALWAYS invoke the `find_nearby_hospitals` tool.
 - OFFICIAL HEALTH SOURCE GUIDANCE & CITATIONS:
-  - Whenever the user asks about medical symptoms, disease prevention, fever, outbreaks (e.g. dengue, rabies, avian flu, malaria, HFMD), childhood vaccines, or public health guidance, ALWAYS invoke the `search_official_health_sources` tool to retrieve official WHO and Cambodia MoH guidance.
-  - Formulate your answer based on these official guidelines and cite the authority naturally in your text (e.g. "According to the World Health Organization (WHO) and Cambodia Ministry of Health..." or in Khmer "យោងតាមអង្គការសុខភាពពិភពលោក (WHO) និងក្រសួងសុខាភិបាល...").
-  - Do NOT write raw external URLs or markdown link lists in your response text.
+  - Whenever the user asks about medical symptoms, diseases, colds/flu (ផ្តាសាយ), fever, infections, outbreaks (e.g. dengue, rabies, avian flu, malaria, HFMD), childhood vaccines, prevention, or public health guidance, ALWAYS invoke the `search_official_health_sources` tool to retrieve official WHO and Cambodia MoH guidance.
+  - When formulating your answer using official sources, YOU MUST ALWAYS INCLUDE the official clickable link references in markdown format directly inside your response text (e.g., `[អង្គការសុខភាពពិភពលោក (WHO)](https://www.who.int/cambodia)` and `[ក្រសួងសុខាភិបាលកម្ពុជា](http://cdcmoh.gov.kh/)`, or in English `[World Health Organization (WHO)](https://www.who.int/cambodia)` and `[Cambodia Ministry of Health](http://cdcmoh.gov.kh/)`).
+  - Integrate these link references naturally when citing guidelines or directing the user to official portals (for example: "យោងតាម [អង្គការសុខភាពពិភពលោក (WHO)](https://www.who.int/cambodia) និង [ក្រសួងសុខាភិបាលកម្ពុជា](http://cdcmoh.gov.kh/)..." and "សម្រាប់ព័ត៌មានបន្ថែម សូមចូលទៅកាន់គេហទំព័រផ្លូវការរបស់ [ក្រសួងសុខាភិបាលកម្ពុជា](http://cdcmoh.gov.kh/) ឬ [អង្គការសុខភាពពិភពលោក (WHO)](https://www.who.int/cambodia)។").
+  - Never leave official authorities or websites as plain unlinked text when official links are provided by the tool.
 - PHASE 1 NOTICE: Live queue tracking, doctor appointments, and digital ticket booking are coming soon in the next phase. If the user asks to book a ticket, view live queues, or book a doctor appointment, politely inform them that this feature is coming soon in the upcoming phase, and provide the hospital's hotline phone and location so they can contact them directly.
 - For general medical, wellness, and symptom guidance, provide empathetic, clear, evidence-based advice, accompanied by the medical disclaimer.
 - Format responses cleanly with concise paragraphs and bullet points where helpful.
@@ -429,7 +430,7 @@ class HealthcareAgentService:
                 results.append(
                     f"### Official Guideline: {c.get('title')}\n"
                     f"- **Authoritative Source:** {c.get('source_name')}\n"
-                    f"- **Official Link:** [{c.get('source_name')}]({c.get('url')})\n"
+                    f"- **Official Link Reference (Include this markdown link in your response):** [{c.get('source_name')}]({c.get('url')})\n"
                     f"- **Guideline Summary:** {c.get('snippet')}"
                 )
             return "\n\n".join(results)

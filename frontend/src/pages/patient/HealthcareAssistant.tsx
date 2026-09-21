@@ -1017,6 +1017,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
                               color: '#2563eb',
                               textDecoration: 'underline',
                               fontWeight: 500,
+                              wordBreak: 'break-word',
                             }}
                           >
                             {children}
