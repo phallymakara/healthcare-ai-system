@@ -39,11 +39,44 @@ export const FacilityCardList: React.FC<FacilityCardListProps> = ({
 }) => {
   const { language, t } = useLanguage();
   const kmFont = language === 'km' ? 'var(--font-khmer)' : 'inherit';
-  const [visibleCount, setVisibleCount] = React.useState(40);
+  const INITIAL_BATCH = 16;
+  const BATCH_SIZE = 16;
+  const [visibleCount, setVisibleCount] = React.useState(INITIAL_BATCH);
+  const [isLoadingMore, setIsLoadingMore] = React.useState(false);
+  const sentinelRef = React.useRef<HTMLDivElement | null>(null);
 
   React.useEffect(() => {
-    setVisibleCount(40);
+    setVisibleCount(INITIAL_BATCH);
+    setIsLoadingMore(false);
   }, [searchQuery, selectedCategory, hospitals.length]);
+
+  React.useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const first = entries[0];
+        if (first && first.isIntersecting && !isLoadingMore && visibleCount < hospitals.length) {
+          setIsLoadingMore(true);
+          setTimeout(() => {
+            setVisibleCount((prev) => Math.min(prev + BATCH_SIZE, hospitals.length));
+            setIsLoadingMore(false);
+          }, 350);
+        }
+      },
+      {
+        root: null,
+        rootMargin: '100px',
+        threshold: 0.1,
+      }
+    );
+
+    observer.observe(sentinel);
+    return () => {
+      observer.disconnect();
+    };
+  }, [visibleCount, hospitals.length, isLoadingMore]);
 
   return (
     <div className="facility-list-animate" style={{ width: '100%', height: '100%', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
@@ -402,28 +435,35 @@ export const FacilityCardList: React.FC<FacilityCardListProps> = ({
           </div>
 
           {visibleCount < hospitals.length && (
-            <div style={{ textAlign: 'center', marginTop: '1.5rem', marginBottom: '1rem' }}>
-              <button
-                type="button"
-                onClick={() => setVisibleCount((prev) => prev + 40)}
-                className="btn btn-outline"
+            <div
+              ref={sentinelRef}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.65rem',
+                padding: '1.75rem 1rem 2rem 1rem',
+                color: 'var(--text-muted)',
+                fontSize: '0.88rem',
+                fontWeight: 500,
+                fontFamily: kmFont,
+              }}
+            >
+              <div
                 style={{
-                  padding: '0.58rem 1.65rem',
-                  borderRadius: 'var(--radius-full)',
-                  fontSize: '0.9rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  fontFamily: kmFont,
-                  backgroundColor: '#ffffff',
-                  border: '1px solid var(--border-color)',
-                  color: 'var(--accent-primary)',
-                  transition: 'all 0.2s ease',
+                  width: '18px',
+                  height: '18px',
+                  border: '2px solid var(--border-color)',
+                  borderTopColor: 'var(--accent-primary)',
+                  borderRadius: '50%',
+                  animation: 'spin 0.8s linear infinite',
                 }}
-              >
+              />
+              <span>
                 {language === 'km'
-                  ? `បង្ហាញបន្ថែម (${Math.min(visibleCount, hospitals.length)} នៃ ${hospitals.length})`
-                  : `Load More Facilities (${Math.min(visibleCount, hospitals.length)} of ${hospitals.length})`}
-              </button>
+                  ? 'កំពុងទាញយកទិន្នន័យបន្ថែម...'
+                  : 'Loading more facilities...'}
+              </span>
             </div>
           )}
         </>
