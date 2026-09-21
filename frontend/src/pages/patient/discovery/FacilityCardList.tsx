@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, MapPin, Navigation, RotateCw } from 'lucide-react';
+import { Search, Loader2 } from 'lucide-react';
 import { useLanguage } from '../../../context/LanguageContext';
 import { formatFacilityName } from '../../../i18n/formatters';
 import { SimulatedHospitalLogo } from './discoveryUtils';
@@ -34,13 +34,11 @@ export const FacilityCardList: React.FC<FacilityCardListProps> = ({
   onRequestLocation,
   hasLocation,
   locationLoading,
-  isRealTimeActive,
-  userLocation,
 }) => {
   const { language, t } = useLanguage();
   const kmFont = language === 'km' ? 'var(--font-khmer)' : 'inherit';
-  const INITIAL_BATCH = 16;
-  const BATCH_SIZE = 16;
+  const INITIAL_BATCH = 12;
+  const BATCH_SIZE = 12;
   const [visibleCount, setVisibleCount] = React.useState(INITIAL_BATCH);
   const [isLoadingMore, setIsLoadingMore] = React.useState(false);
   const sentinelRef = React.useRef<HTMLDivElement | null>(null);
@@ -167,138 +165,43 @@ export const FacilityCardList: React.FC<FacilityCardListProps> = ({
           </div>
         </form>
 
-        {/* Real-time Location Indicator & Category Selection Tabs */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap', alignItems: 'center' }}>
-            {[
-              { label: t('cat_all'), value: 'All' },
-              { label: t('filter_nearby'), value: 'Nearby' },
-              { label: t('cat_hospitals'), value: 'Hospital' },
-              { label: t('cat_kids'), value: 'Kids' },
-              { label: t('cat_medical_clinics'), value: 'Medical Clinic' },
-              { label: t('cat_animal_clinics'), value: 'Animal Clinic' },
-            ].map((cat) => (
-              <button
-                type="button"
-                key={cat.value}
-                onClick={() => {
-                  if (cat.value === 'Nearby' && !hasLocation) {
-                    onRequestLocation?.();
-                  }
-                  setSelectedCategory(cat.value as any);
-                }}
-                className={`category-filter-pill ${selectedCategory === cat.value ? 'active' : ''}`}
-                style={{
-                  fontWeight: selectedCategory === cat.value ? 700 : 500,
-                  background: selectedCategory === cat.value ? 'var(--accent-primary)' : 'transparent',
-                  border: selectedCategory === cat.value ? '1px solid var(--accent-primary)' : '1px solid var(--border-color)',
-                  color: selectedCategory === cat.value ? '#ffffff' : 'var(--text-muted)',
-                  fontFamily: kmFont,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                }}
-              >
-                <span>{cat.label}</span>
-                {cat.value === 'Nearby' && locationLoading && (
-                  <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>...</span>
-                )}
-              </button>
-            ))}
-          </div>
-
-          {/* Real-Time Location Live Status Pill */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            {hasLocation ? (
-              <div
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '0.28rem 0.75rem',
-                  borderRadius: 'var(--radius-full)',
-                  background: 'rgba(16, 185, 129, 0.08)',
-                  border: '1px solid rgba(16, 185, 129, 0.25)',
-                  fontSize: '0.78rem',
-                  color: '#059669',
-                  fontWeight: 600,
-                  fontFamily: kmFont,
-                }}
-              >
-                <span
-                  title={userLocation ? `GPS: ${userLocation.latitude}, ${userLocation.longitude}` : undefined}
-                  style={{
-                    width: '7px',
-                    height: '7px',
-                    borderRadius: '50%',
-                    backgroundColor: '#10b981',
-                    boxShadow: '0 0 6px #10b981',
-                    display: 'inline-block',
-                    animation: isRealTimeActive ? 'pulse 2s infinite' : 'none',
-                  }}
-                />
-                <span title={userLocation ? `GPS: ${userLocation.latitude}, ${userLocation.longitude}` : undefined}>
-                  {t('realtime_location_active')}
-                </span>
-                {onRequestLocation && (
-                  <button
-                    type="button"
-                    onClick={onRequestLocation}
-                    title={t('refresh_location')}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      background: 'none',
-                      border: 'none',
-                      padding: 0,
-                      marginLeft: '2px',
-                      color: '#059669',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <RotateCw size={12} className={locationLoading ? 'spin' : ''} />
-                  </button>
-                )}
-              </div>
-            ) : locationLoading ? (
-              <div
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                  fontSize: '0.78rem',
-                  color: 'var(--text-muted)',
-                  fontFamily: kmFont,
-                }}
-              >
-                <RotateCw size={12} className="spin" />
-                <span>{t('detecting_realtime_location')}</span>
-              </div>
-            ) : onRequestLocation ? (
-              <button
-                type="button"
-                onClick={onRequestLocation}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                  padding: '0.28rem 0.7rem',
-                  borderRadius: 'var(--radius-full)',
-                  background: '#f8fafc',
-                  border: '1px solid var(--border-color)',
-                  fontSize: '0.78rem',
-                  color: 'var(--text-muted)',
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                  fontFamily: kmFont,
-                }}
-              >
-                <Navigation size={12} />
-                <span>{t('btn_use_location')}</span>
-              </button>
-            ) : null}
-          </div>
+        {/* Category Selection Tabs */}
+        <div style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap', alignItems: 'center' }}>
+          {[
+            { label: t('cat_all'), value: 'All' },
+            { label: t('filter_nearby'), value: 'Nearby' },
+            { label: t('cat_hospitals'), value: 'Hospital' },
+            { label: t('cat_kids'), value: 'Kids' },
+            { label: t('cat_medical_clinics'), value: 'Medical Clinic' },
+            { label: t('cat_animal_clinics'), value: 'Animal Clinic' },
+          ].map((cat) => (
+            <button
+              type="button"
+              key={cat.value}
+              onClick={() => {
+                if (cat.value === 'Nearby' && !hasLocation) {
+                  onRequestLocation?.();
+                }
+                setSelectedCategory(cat.value as any);
+              }}
+              className={`category-filter-pill ${selectedCategory === cat.value ? 'active' : ''}`}
+              style={{
+                fontWeight: selectedCategory === cat.value ? 700 : 500,
+                background: selectedCategory === cat.value ? 'var(--accent-primary)' : 'transparent',
+                border: selectedCategory === cat.value ? '1px solid var(--accent-primary)' : '1px solid var(--border-color)',
+                color: selectedCategory === cat.value ? '#ffffff' : 'var(--text-muted)',
+                fontFamily: kmFont,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+              }}
+            >
+              <span>{cat.label}</span>
+              {cat.value === 'Nearby' && locationLoading && (
+                <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>...</span>
+              )}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -359,7 +262,7 @@ export const FacilityCardList: React.FC<FacilityCardListProps> = ({
               >
                 <SimulatedHospitalLogo name={hosp.name} logoUrl={hosp.logo_url} size={54} />
                 <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
                     <div
                       title={formatFacilityName(hosp.name, language)}
                       style={{
@@ -372,32 +275,10 @@ export const FacilityCardList: React.FC<FacilityCardListProps> = ({
                         textOverflow: 'ellipsis',
                         fontFamily: kmFont,
                         flex: 1,
-                        minWidth: '150px',
                       }}
                     >
                       {formatFacilityName(hosp.name, language)}
                     </div>
-                    {typeof hosp.distance_km === 'number' && (
-                      <span
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '3px',
-                          fontSize: '0.8rem',
-                          fontWeight: 600,
-                          color: '#0284c7',
-                          backgroundColor: '#f0f9ff',
-                          border: '1px solid #bae6fd',
-                          padding: '0.15rem 0.55rem',
-                          borderRadius: 'var(--radius-full)',
-                          whiteSpace: 'nowrap',
-                          fontFamily: kmFont,
-                        }}
-                      >
-                        <MapPin size={12} />
-                        <span>{hosp.distance_km} {t('distance_km_away')}</span>
-                      </span>
-                    )}
                   </div>
 
                   <div
@@ -432,40 +313,30 @@ export const FacilityCardList: React.FC<FacilityCardListProps> = ({
                 </div>
               </button>
             ))}
-          </div>
-
-          {visibleCount < hospitals.length && (
-            <div
-              ref={sentinelRef}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.65rem',
-                padding: '1.75rem 1rem 2rem 1rem',
-                color: 'var(--text-muted)',
-                fontSize: '0.88rem',
-                fontWeight: 500,
-                fontFamily: kmFont,
-              }}
-            >
+            {visibleCount < hospitals.length && (
               <div
+                ref={sentinelRef}
                 style={{
-                  width: '18px',
-                  height: '18px',
-                  border: '2px solid var(--border-color)',
-                  borderTopColor: 'var(--accent-primary)',
-                  borderRadius: '50%',
-                  animation: 'spin 0.8s linear infinite',
+                  gridColumn: '1 / -1',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '0.5rem 0 0.25rem 0',
+                  margin: 0,
+                  background: 'transparent',
                 }}
-              />
-              <span>
-                {language === 'km'
-                  ? 'កំពុងទាញយកទិន្នន័យបន្ថែម...'
-                  : 'Loading more facilities...'}
-              </span>
-            </div>
-          )}
+              >
+                <Loader2
+                  size={22}
+                  className="spin"
+                  style={{
+                    color: 'var(--accent-primary)',
+                    background: 'transparent',
+                  }}
+                />
+              </div>
+            )}
+          </div>
         </>
       )}
     </div>

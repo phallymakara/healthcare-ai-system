@@ -95,7 +95,10 @@ export const HospitalDiscovery: React.FC<HospitalDiscoveryProps> = ({
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    loadHospitals(searchQuery);
+    if (!hasLocation) {
+      requestLocation();
+    }
+    loadHospitals(searchQuery, userLocation);
   };
 
   const handleOpenBooking = (hosp: any, dept: any) => {

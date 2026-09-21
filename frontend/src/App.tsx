@@ -26,6 +26,7 @@ import { App as CapApp } from '@capacitor/app';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { SplashScreen } from '@capacitor/splash-screen';
 import { useVisualViewport } from './hooks/useVisualViewport';
+import { useUserLocation } from './hooks/useUserLocation';
 
 const isStandalonePWA = (): boolean => {
   if (typeof window === 'undefined') return false;
@@ -39,6 +40,8 @@ const isStandalonePWA = (): boolean => {
 };
 
 export const App: React.FC = () => {
+  // Automatically check and detect user location on system visit
+  useUserLocation();
   const [isPartner, setIsPartner] = useState<boolean>(() => isPartnerPortal());
 
   useEffect(() => {
