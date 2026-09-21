@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { Plus, Mic, ArrowUp, X, Image as ImageIcon, Pencil, Trash2, Check, Globe, ExternalLink } from 'lucide-react';
+import { Plus, Mic, ArrowUp, X, Image as ImageIcon, Pencil, Trash2, Check } from 'lucide-react';
 import {
   getUserConversations,
   saveUserConversation,
@@ -1031,105 +1031,6 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
                     <span className="streaming-cursor" aria-hidden="true" />
                   )}
                 </div>
-
-                {/* Official Government & WHO Sources Reference Section */}
-                {msg.role === 'assistant' && msg.citedSources && msg.citedSources.length > 0 && (
-                  <div
-                    style={{
-                      marginTop: '0.85rem',
-                      padding: '0.65rem 0.85rem',
-                      background: '#ffffff',
-                      border: '1px solid var(--border-color)',
-                      borderRadius: '8px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '0.5rem',
-                      maxWidth: '100%',
-                      boxShadow: 'none',
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        fontSize: isResponseKhmer ? '0.82rem' : '0.78rem',
-                        fontWeight: 600,
-                        color: 'var(--text-muted)',
-                        fontFamily: isResponseKhmer ? 'var(--font-khmer)' : 'inherit',
-                      }}
-                    >
-                      <Globe size={14} aria-hidden="true" />
-                      <span>{isResponseKhmer ? 'ប្រភពឯកសារផ្លូវការ (Official Sources)' : 'Official Sources'}</span>
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                      {msg.citedSources.map((source, sIdx) => (
-                        <a
-                          key={sIdx}
-                          href={source.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            gap: '0.75rem',
-                            padding: '0.45rem 0.65rem',
-                            borderRadius: '6px',
-                            border: '1px solid var(--border-color)',
-                            background: '#f9fafb',
-                            color: 'var(--text-main)',
-                            textDecoration: 'none',
-                            fontSize: isResponseKhmer ? '0.86rem' : '0.8rem',
-                            fontFamily: isResponseKhmer ? 'var(--font-khmer)' : 'inherit',
-                            transition: 'all 0.15s ease',
-                            boxShadow: 'none',
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.borderColor = 'var(--text-main)';
-                            e.currentTarget.style.background = '#ffffff';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.borderColor = 'var(--border-color)';
-                            e.currentTarget.style.background = '#f9fafb';
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-                            <span
-                              style={{
-                                display: 'inline-block',
-                                padding: '1px 6px',
-                                fontSize: '0.68rem',
-                                fontWeight: 600,
-                                borderRadius: '4px',
-                                background: '#e0f2fe',
-                                color: '#0369a1',
-                                whiteSpace: 'nowrap',
-                                flexShrink: 0,
-                              }}
-                            >
-                              {source.source_name || source.domain || 'Official'}
-                            </span>
-                            <span
-                              style={{
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                                fontWeight: 500,
-                                color: 'var(--text-main)',
-                              }}
-                              title={source.title}
-                            >
-                              {source.title}
-                            </span>
-                          </div>
-                          <ExternalLink size={13} style={{ flexShrink: 0, color: 'var(--text-muted)' }} aria-hidden="true" />
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                )}
 
 
 
