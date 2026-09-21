@@ -50,8 +50,15 @@ SUGGESTED_ACTIONS:
 RULES:
 - Each action MUST be a concrete, clickable request the user can send (e.g. "Find Hospitals Near Me", "Check Calmette Hospital", "Search Animal Clinics").
 - NEVER generate generic or useless actions like "Ask Another Question", "Ask a question", "None", or "Other".
-- NEVER suggest booking queue tickets or appointments in Phase 1 (ticket reservation and live queue tracking are deferred to Phase 2).
 - If no natural follow-up action is appropriate, omit the SUGGESTED_ACTIONS section entirely.
+
+DISCLAIMER REQUIREMENT:
+At the very end of your message, append:
+REQUIRES_DISCLAIMER: YES
+or
+REQUIRES_DISCLAIMER: NO
+- Output 'REQUIRES_DISCLAIMER: YES' if your response provides medical advice, symptom guidance, health diagnosis, treatments, medications, clinical explanations, or discusses medical facilities.
+- Output 'REQUIRES_DISCLAIMER: NO' if your response is a simple greeting (e.g. 'hi', 'hello'), bot self-introduction, polite pleasantry, or general non-clinical reply.
 
 MAP LINKS & DIRECTIONS:
 - Whenever you display, list, or provide details for any hospital or clinic facility, you MUST always include the Google Maps location link for that facility (e.g. `[Open in Google Maps](https://maps.google.com/?q=...)` or in Khmer `[បើកមើលក្នុង Google Maps](https://maps.google.com/?q=...)`).
@@ -463,7 +470,29 @@ class HealthcareAgentService:
         )
 
     @classmethod
-    def _parse_suggested_actions(cls, final_reply: str, detected_lang: str) -> Tuple[str, List[str]]:
+    def _parse_reply_metadata(
+        cls, final_reply: str, detected_lang: str, has_tool_calls: bool = False
+    ) -> Tuple[str, List[str], bool]:
+        # 1. Parse REQUIRES_DISCLAIMER tag
+        requires_disclaimer = False
+        disclaimer_match = re.search(
+            r"REQUIRES_DISCLAIMER:\s*(YES|NO|TRUE|FALSE)",
+            final_reply,
+            re.IGNORECASE,
+        )
+        if disclaimer_match:
+            val = disclaimer_match.group(1).upper()
+            requires_disclaimer = val in ("YES", "TRUE")
+            final_reply = (
+                final_reply[: disclaimer_match.start()]
+                + final_reply[disclaimer_match.end() :]
+            ).strip()
+
+        # If tools were invoked (hospital/facility search, etc.), disclaimer is definitely required
+        if has_tool_calls:
+            requires_disclaimer = True
+
+        # 2. Parse SUGGESTED_ACTIONS
         extracted_actions: List[str] = []
         action_match = re.search(
             r"SUGGESTED_ACTIONS:\s*((\n\s*[-*•\d.]+\s*[^\n]+)+)",
@@ -524,7 +553,12 @@ class HealthcareAgentService:
                 ]
             )
         ]
-        return final_reply, suggested_actions
+        return final_reply.strip(), suggested_actions, requires_disclaimer
+
+    @classmethod
+    def _parse_suggested_actions(cls, final_reply: str, detected_lang: str) -> Tuple[str, List[str]]:
+        reply, actions, _ = cls._parse_reply_metadata(final_reply, detected_lang)
+        return reply, actions
 
     @classmethod
     async def run_agent(
@@ -571,16 +605,17 @@ class HealthcareAgentService:
                     "Explore Hospital Directory",
                 ],
                 "detected_language": detected_lang,
+                "requires_disclaimer": False,
             }
 
         try:
             for _ in range(4):
                 ai_res: AIMessage = await llm_with_tools.ainvoke(messages)
-                messages.append(ai_res)
-
                 if not ai_res.tool_calls:
+                    final_reply = ai_res.content
                     break
 
+                messages.append(ai_res)
                 for tc in ai_res.tool_calls:
                     t_name = tc["name"]
                     t_args = tc.get("args", {})
@@ -599,12 +634,10 @@ class HealthcareAgentService:
                     messages.append(
                         ToolMessage(content=str(t_output), tool_call_id=t_id)
                     )
+            else:
+                ai_res = await llm.ainvoke(messages)
+                final_reply = ai_res.content
 
-            final_reply = (
-                messages[-1].content
-                if messages
-                else "I am ready to help you with your health and hospital inquiries."
-            )
         except Exception as llm_err:
             logger.error(f"AI Agent execution error: {llm_err}")
             if detected_lang == "km":
@@ -617,7 +650,10 @@ class HealthcareAgentService:
                 [str(c) for c in final_reply if isinstance(c, str)]
             )
 
-        final_reply, suggested_actions = cls._parse_suggested_actions(final_reply, detected_lang)
+        has_tool_calls = bool(matching_hospitals_data)
+        final_reply, suggested_actions, requires_disclaimer = cls._parse_reply_metadata(
+            final_reply, detected_lang, has_tool_calls=has_tool_calls
+        )
 
         return {
             "reply": final_reply,
@@ -625,6 +661,7 @@ class HealthcareAgentService:
             "matching_hospitals": matching_hospitals_data,
             "suggested_actions": suggested_actions,
             "detected_language": detected_lang,
+            "requires_disclaimer": requires_disclaimer,
         }
 
     @classmethod
@@ -642,7 +679,7 @@ class HealthcareAgentService:
         Yields:
           {"type": "token", "delta": "..."}
         And upon completion:
-          {"type": "metadata", "reply": "...", "matching_hospitals": [...], "suggested_actions": [...], "detected_language": "..."}
+          {"type": "metadata", "reply": "...", "matching_hospitals": [...], "suggested_actions": [...], "detected_language": "...", "requires_disclaimer": bool}
         """
         (
             llm,
@@ -684,6 +721,7 @@ class HealthcareAgentService:
                 "matching_hospitals": [],
                 "suggested_actions": actions,
                 "detected_language": detected_lang,
+                "requires_disclaimer": False,
             }
             return
 
@@ -722,16 +760,16 @@ class HealthcareAgentService:
 
                 full_text_buffer += content
 
-                if "SUGGESTED_ACTIONS:" in full_text_buffer:
+                if "SUGGESTED_ACTIONS:" in full_text_buffer or "REQUIRES_DISCLAIMER:" in full_text_buffer:
                     action_buffering = True
 
                 if not action_buffering:
-                    marker = "SUGGESTED_ACTIONS:"
+                    markers = ["SUGGESTED_ACTIONS:", "REQUIRES_DISCLAIMER:"]
                     prefix_len = 0
-                    for i in range(1, len(marker)):
-                        if full_text_buffer.endswith(marker[:i]):
-                            prefix_len = i
-                            break
+                    for m in markers:
+                        for i in range(1, len(m)):
+                            if full_text_buffer.endswith(m[:i]):
+                                prefix_len = max(prefix_len, i)
                     if prefix_len > 0:
                         safe = content[:-prefix_len] if len(content) >= prefix_len else ""
                         if safe:
@@ -750,7 +788,10 @@ class HealthcareAgentService:
             yield {"type": "token", "delta": fallback}
             final_reply = fallback
 
-        final_reply, suggested_actions = cls._parse_suggested_actions(final_reply, detected_lang)
+        has_tool_calls = bool(matching_hospitals_data)
+        final_reply, suggested_actions, requires_disclaimer = cls._parse_reply_metadata(
+            final_reply, detected_lang, has_tool_calls=has_tool_calls
+        )
 
         yield {
             "type": "metadata",
@@ -759,4 +800,5 @@ class HealthcareAgentService:
             "matching_hospitals": matching_hospitals_data,
             "suggested_actions": suggested_actions,
             "detected_language": detected_lang,
+            "requires_disclaimer": requires_disclaimer,
         }

@@ -16,6 +16,7 @@ export interface StoredMessage {
   triage?: any;
   bookedTicket?: any;
   suggestedActions?: string[];
+  requiresDisclaimer?: boolean;
   timestamp: string; // ISO string
 }
 
@@ -179,6 +180,7 @@ export const fetchConversationDetailAPI = async (convId: string): Promise<Conver
         triage: m.triage_data,
         bookedTicket: m.booked_ticket,
         suggestedActions: m.suggested_actions,
+        requiresDisclaimer: Boolean(m.triage_data?.requires_disclaimer),
         timestamp: m.created_at,
       })),
     };
@@ -281,55 +283,56 @@ export const syncUserConversations = async (userId: string = 'guest'): Promise<C
 };
 
 /**
- * Calculate human-readable duration of the conversation and how long ago it occurred.
- * Format: "Chatted for 12m • 2h ago" or "ជជែកបាន 12 នាទី • 2 ម៉ោងមុន"
+ * Calculate human-readable timestamp of when the chat occurred.
+ * Format: "Chatted 58m ago" or if > 1h: "Chatted 1h 25m ago"
+ * Khmer: "ជជែក 58 នាទីមុន" or if > 1h: "ជជែក 1 ម៉ោង 25 នាទីមុន"
  */
 export const formatChatDuration = (
   conv: ConversationItem,
   language: string = 'en'
 ): string => {
   const isKm = language === 'km';
-  const start = new Date(conv.createdAt).getTime();
-  const end = new Date(conv.updatedAt).getTime();
+  const end = new Date(conv.updatedAt || conv.createdAt).getTime();
   const now = Date.now();
 
-  // Duration between first message and last message
-  const durationMs = Math.max(0, end - start);
-  const durationMins = Math.round(durationMs / 60000);
-  const durationHours = Math.floor(durationMins / 60);
-
-  // How long ago the conversation concluded/had activity
   const agoMs = Math.max(0, now - end);
   const agoMins = Math.floor(agoMs / 60000);
   const agoHours = Math.floor(agoMins / 60);
+  const remMins = agoMins % 60;
   const agoDays = Math.floor(agoHours / 24);
 
-  // Duration label
-  let durationStr = '';
-  if (durationMins < 1) {
-    durationStr = isKm ? 'ជជែក < ១ នាទី' : 'Chatted < 1m';
-  } else if (durationHours < 1) {
-    durationStr = isKm ? `ជជែកបាន ${durationMins} នាទី` : `Chatted for ${durationMins}m`;
-  } else {
-    const remMins = durationMins % 60;
-    durationStr = isKm
-      ? `ជជែកបាន ${durationHours} ម៉ោង`
-      : `Chatted for ${durationHours}h ${remMins > 0 ? `${remMins}m` : ''}`.trim();
+  if (isKm) {
+    if (agoMins < 1) {
+      return 'ជជែកអម្បាញ់មិញ';
+    }
+    if (agoHours < 1) {
+      return `ជជែក ${agoMins} នាទីមុន`;
+    }
+    if (agoDays < 1) {
+      return remMins > 0
+        ? `ជជែក ${agoHours} ម៉ោង ${remMins} នាទីមុន`
+        : `ជជែក ${agoHours} ម៉ោងមុន`;
+    }
+    if (agoDays === 1) {
+      return 'ជជែកម្សិលមិញ';
+    }
+    return `ជជែក ${agoDays} ថ្ងៃមុន`;
   }
 
-  // Time ago label
-  let agoStr = '';
-  if (agoMins < 2) {
-    agoStr = isKm ? 'អម្បាញ់មិញ' : 'Just now';
-  } else if (agoHours < 1) {
-    agoStr = isKm ? `${agoMins} នាទីមុន` : `${agoMins}m ago`;
-  } else if (agoDays < 1) {
-    agoStr = isKm ? `${agoHours} ម៉ោងមុន` : `${agoHours}h ago`;
-  } else if (agoDays === 1) {
-    agoStr = isKm ? 'ម្សិលមិញ' : 'Yesterday';
-  } else {
-    agoStr = isKm ? `${agoDays} ថ្ងៃមុន` : `${agoDays}d ago`;
+  // English:
+  if (agoMins < 1) {
+    return 'Chatted just now';
   }
-
-  return `${durationStr} • ${agoStr}`;
+  if (agoHours < 1) {
+    return `Chatted ${agoMins}m ago`;
+  }
+  if (agoDays < 1) {
+    return remMins > 0
+      ? `Chatted ${agoHours}h ${remMins}m ago`
+      : `Chatted ${agoHours}h ago`;
+  }
+  if (agoDays === 1) {
+    return `Chatted 1d ${agoHours % 24 > 0 ? `${agoHours % 24}h ` : ''}ago`;
+  }
+  return `Chatted ${agoDays}d ago`;
 };

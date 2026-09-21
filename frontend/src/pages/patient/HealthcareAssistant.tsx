@@ -40,6 +40,7 @@ interface ChatMessage {
   triage?: any;
   bookedTicket?: any;
   suggestedActions?: string[];
+  requiresDisclaimer?: boolean;
   timestamp: Date;
 }
 
@@ -51,6 +52,7 @@ const serializeMessage = (m: ChatMessage): StoredMessage => ({
   triage: m.triage,
   bookedTicket: m.bookedTicket,
   suggestedActions: m.suggestedActions,
+  requiresDisclaimer: m.requiresDisclaimer,
   timestamp: m.timestamp instanceof Date ? m.timestamp.toISOString() : new Date(m.timestamp).toISOString(),
 });
 
@@ -62,6 +64,7 @@ const deserializeMessage = (m: StoredMessage): ChatMessage => ({
   triage: m.triage,
   bookedTicket: m.bookedTicket,
   suggestedActions: m.suggestedActions,
+  requiresDisclaimer: m.requiresDisclaimer ?? Boolean(m.triage?.requires_disclaimer),
   timestamp: new Date(m.timestamp),
 });
 
@@ -70,68 +73,55 @@ const isKhmer = (text?: string): boolean => {
   return /[\u1780-\u17FF]/.test(text);
 };
 
-const shouldShowMedicalDisclaimer = (msg: ChatMessage, prevUserMsg?: ChatMessage): boolean => {
+const shouldShowMedicalDisclaimer = (msg: ChatMessage, userQuestion?: string): boolean => {
   if (msg.role !== 'assistant' || msg.id === 'welcome') {
     return false;
   }
 
-  // Always show if structured triage, hospital matches, or urgency level is present
-  if (msg.triage && (msg.triage.matching_hospitals?.length > 0 || msg.triage.urgency_level)) {
+  // 1. Structured triage, hospital matches, or booked ticket always requires disclaimer
+  if (
+    (msg.triage && (msg.triage.matching_hospitals?.length > 0 || msg.triage.urgency_level || msg.triage.requires_disclaimer)) ||
+    msg.bookedTicket
+  ) {
     return true;
   }
 
-  const text = (msg.text || '').toLowerCase();
-  const userText = (prevUserMsg?.text || '').toLowerCase().trim();
-
-  // Pure greeting / pleasantry patterns for user prompt
-  const isUserGreetingOnly =
-    /^(hi|hello|hey|greetings|good\s*(morning|afternoon|evening|night)|thanks|thank\s*you|thx|ty|ok|okay|k|cool|great|awesome|got\s*it|sure|alright|fine|yes|no|bye|goodbye|who\s*are\s*you|what\s*is\s*your\s*name|how\s*are\s*you)[\s!.,?]*$/i.test(userText) ||
-    /^(សួស្តី|ជំរាបសួរ|សួស្ដី|ជម្រាបសួរ|អរគុណ|អរគុណច្រើន|មិនអីទេ|បាទ|ចាស|យល់ព្រម|អូខេ|លាហើយ|សុខសប្បាយទេ|អ្នកសុខសប្បាយជាទេ|តើអ្នកជាអ្នកណា|តើអ្នកឈ្មោះអ្វី|តើអ្នកសុខសប្បាយទេ)[\s!.,?]*$/u.test(userText);
-
-  // Pure greeting / pleasantry patterns for assistant reply
-  const isPurePleasantryReply =
-    /^(hello|hi|hey|you('re| are) welcome|glad to help|my pleasure|happy to help|have a (great|good|wonderful) day|let me know if you need anything else)[\s!.,?]*$/i.test(text) ||
-    /^(សួស្តី|ជំរាបសួរ|មិនអីទេ|ដោយក្តីរីករាយ|សូមស្វាគមន៍|រីករាយដែលបានជួយ|សូមជូនពរឱ្យមានសុខភាពល្អ|តើខ្ញុំអាចជួយអ្វីបាន|ខ្ញុំនៅទីនេះដើម្បីជួយ)[\s!.,?]*$/u.test(text);
-
-  if (isPurePleasantryReply) {
+  // 2. Guardrail security/programming refusals never require medical disclaimer
+  const resp = (msg.text || '').toLowerCase();
+  if (
+    resp.includes('i can only assist with healthcare') ||
+    resp.includes('only assist with healthcare, medical') ||
+    resp.includes('ខ្ញុំអាចជួយផ្ដល់ព័ត៌មានបានតែលើប្រធានបទសុខភាព') ||
+    resp.includes('សេវាកម្មវេជ្ជសាស្ត្រតែប៉ុណ្ណោះ')
+  ) {
     return false;
   }
 
-  // Keywords that denote medical symptoms, facilities, treatment, clinical advice, or guidance
-  const medicalOrSuggestionKeywords = [
-    // English keywords
-    'doctor', 'hospital', 'clinic', 'physician', 'specialist',
-    'symptom', 'treatment', 'treat', 'diagnos', 'prescri', 'medicine', 'medication', 'pill', 'dose',
-    'pain', 'ache', 'fever', 'cough', 'cold', 'flu', 'headache', 'infection', 'bleed', 'wound', 'injury',
-    'emergency', 'urgent', 'condition', 'disease', 'illness', 'therapy', 'consult', 'consultation',
-    'advise', 'advice', 'recommend', 'suggestion', 'remedy', 'rest', 'hydrate', 'hydration',
-    'blood pressure', 'heart', 'chest', 'stomach', 'allergy', 'allergic',
-    // Khmer keywords
-    'វេជ្ជបណ្ឌិត', 'គ្រូពេទ្យ', 'មន្ទីរពេទ្យ', 'គ្លីនិក', 'សង្គ្រោះបន្ទាន់', 'បន្ទាន់',
-    'រោគសញ្ញា', 'អាការៈ', 'ព្យាបាល', 'រោគវិនិច្ឆ័យ', 'ថ្នាំ', 'លេបថ្នាំ', 'ចាក់ថ្នាំ',
-    'ឈឺ', 'ឈឺក្បាល', 'ក្តៅខ្លួន', 'ក្អក', 'ផ្តាសាយ', 'រាគ', 'ក្អួត', 'វិលមុខ', 'ហត់', 'ដង្ហើម',
-    'របួស', 'ហើម', 'សម្ពាធឈាម', 'បេះដូង', 'ក្រពះ', 'ជំងឺ', 'ពិគ្រោះ', 'ពិនិត្យ',
-    'ណែនាំ', 'យោបល់', 'ការថែទាំ', 'សម្រាក', 'ផឹកទឹក', 'ជាតិទឹក', 'អាហារ'
-  ];
+  // 3. If explicitly declared by the backend LLM metadata, honor it
+  if (typeof msg.requiresDisclaimer === 'boolean') {
+    return msg.requiresDisclaimer;
+  }
 
-  const hasMedicalContent = medicalOrSuggestionKeywords.some((kw) => text.includes(kw));
+  // 4. Evaluate the chat question asked by the user (covers restored chat history)
+  const question = (userQuestion || '').toLowerCase().trim();
+  const isGreetingOrIntro =
+    /^(hi|hello|hey|greetings|good\s*(morning|afternoon|evening|night)|thanks|thank\s*you|ok|okay|bye|goodbye|who\s*are\s*you|what\s*can\s*you\s*do|how\s*are\s*you)[\s!.,?]*$/i.test(question) ||
+    /^(សួស្តី|ជំរាបសួរ|សួស្ដី|ជម្រាបសួរ|អរគុណ|មិនអីទេ|បាទ|ចាស|យល់ព្រម|អូខេ|លាហើយ|សុខសប្បាយទេ|តើអ្នកជាអ្នកណា|តើអ្នកអាចធ្វើអ្វីបាន)[\s!.,?]*$/u.test(question);
 
-  // If user only gave a greeting/pleasantry and assistant didn't give medical advice, do not show
-  if (isUserGreetingOnly && !hasMedicalContent) {
+  if (isGreetingOrIntro) {
     return false;
   }
 
-  // If message provides actionable advice, symptom guidance, or medical keywords
-  if (hasMedicalContent) {
-    return true;
-  }
+  // 5. If the chat question or assistant response discusses health, symptoms, clinics, or treatments
+  const isHealthQuestion =
+    /(symptom|doctor|hospital|clinic|pain|ache|fever|cough|sick|ill|disease|treatment|medicine|pill|infection|hurt|injury|bleed|emergency|specialist|health|medical|consult|care)/i.test(question) ||
+    /(ឈឺ|គ្រូពេទ្យ|ពេទ្យ|មន្ទីរពេទ្យ|គ្លីនិក|ក្អក|ក្តៅខ្លួន|រោគសញ្ញា|អាការៈ|ព្យាបាល|ថ្នាំ|របួស|ជំងឺ|សុខភាព|ពិគ្រោះ|ពិនិត្យ)/u.test(question);
 
-  // Check if response contains structured lists or advice steps
-  if (/(^|\n)\s*[-*•\d.]+\s+/m.test(msg.text)) {
-    return true;
-  }
+  const isHealthResponse =
+    /(symptom|doctor|hospital|clinic|treatment|diagnos|prescri|medication|fever|cough|pain|infection|blood pressure|heart|disease|injury|wound|dose|emergency)/i.test(resp) ||
+    /(ឈឺ|គ្រូពេទ្យ|ពេទ្យ|មន្ទីរពេទ្យ|គ្លីនិក|ក្អក|ក្តៅខ្លួន|រោគសញ្ញា|អាការៈ|ព្យាបាល|ថ្នាំ|រាគ|ក្អួត|វិលមុខ|ដង្ហើម|របួស|សម្ពាធឈាម|បេះដូង|ជំងឺ)/u.test(resp);
 
-  return false;
+  return isHealthQuestion || isHealthResponse;
 };
 
 
@@ -749,9 +739,11 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
           urgency_level: metadata?.urgency_level || 'STANDARD',
           recommended_specialty: metadata?.recommended_specialty || 'General Care',
           matching_hospitals: metadata.matching_hospitals,
-        } : undefined,
+          requires_disclaimer: Boolean(metadata?.requires_disclaimer),
+        } : (metadata?.requires_disclaimer ? { requires_disclaimer: true } : undefined),
         bookedTicket: metadata?.booked_ticket || undefined,
         suggestedActions: metadata?.suggested_actions || [],
+        requiresDisclaimer: Boolean(metadata?.requires_disclaimer),
         timestamp: new Date(),
       };
       persistAssistantReply(finalAssistantMsg);
@@ -1077,7 +1069,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
                 )}
 
                 {/* Medical Disclaimer Alert on each AI assistant response - Only when suggesting/answering healthcare guidance */}
-                {shouldShowMedicalDisclaimer(msg, prevUserMsg) && (
+                {shouldShowMedicalDisclaimer(msg, prevUserMsg?.text) && (
                   <div
                     style={{
                       marginTop: '0.75rem',

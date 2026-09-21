@@ -64,6 +64,7 @@ class AssistantChatResponse(BaseModel):
     suggested_actions: List[str] = []
     detected_language: Optional[str] = None
     conversation_id: Optional[uuid.UUID] = None
+    requires_disclaimer: bool = False
 
 
 class ChatMessageResponse(BaseModel):
