@@ -164,7 +164,17 @@ class TriageAssistantService:
         history: List[Any],
         db: AsyncSession,
     ) -> AssistantChatResponse:
+        from app.services.guardrail_service import GuardrailService
         from app.services.llm_service import LLMService
+
+        guardrail_violation = GuardrailService.evaluate_query(message)
+        if guardrail_violation:
+            refusal_reply, _ = guardrail_violation
+            return AssistantChatResponse(
+                reply=refusal_reply,
+                matching_hospitals=[],
+                suggested_actions=["Find Hospitals Near Me", "Explore Hospital Directory"],
+            )
 
         # Prepare messages for LLM
         formatted_messages = []
