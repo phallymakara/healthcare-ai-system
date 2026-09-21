@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search } from 'lucide-react';
+import { Search, MapPin, Navigation, RotateCw } from 'lucide-react';
 import { useLanguage } from '../../../context/LanguageContext';
 import { formatFacilityName } from '../../../i18n/formatters';
 import { SimulatedHospitalLogo } from './discoveryUtils';
@@ -17,6 +17,8 @@ interface FacilityCardListProps {
   onRequestLocation?: () => void;
   hasLocation?: boolean;
   locationLoading?: boolean;
+  isRealTimeActive?: boolean;
+  userLocation?: { latitude: number; longitude: number } | null;
 }
 
 export const FacilityCardList: React.FC<FacilityCardListProps> = ({
@@ -32,6 +34,8 @@ export const FacilityCardList: React.FC<FacilityCardListProps> = ({
   onRequestLocation,
   hasLocation,
   locationLoading,
+  isRealTimeActive,
+  userLocation,
 }) => {
   const { language, t } = useLanguage();
   const kmFont = language === 'km' ? 'var(--font-khmer)' : 'inherit';
@@ -130,43 +134,138 @@ export const FacilityCardList: React.FC<FacilityCardListProps> = ({
           </div>
         </form>
 
-        {/* Category Selection Tabs */}
-        <div style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap', alignItems: 'center' }}>
-          {[
-            { label: t('cat_all'), value: 'All' },
-            { label: t('filter_nearby'), value: 'Nearby' },
-            { label: t('cat_hospitals'), value: 'Hospital' },
-            { label: t('cat_kids'), value: 'Kids' },
-            { label: t('cat_medical_clinics'), value: 'Medical Clinic' },
-            { label: t('cat_animal_clinics'), value: 'Animal Clinic' },
-          ].map((cat) => (
-            <button
-              type="button"
-              key={cat.value}
-              onClick={() => {
-                if (cat.value === 'Nearby' && !hasLocation) {
-                  onRequestLocation?.();
-                }
-                setSelectedCategory(cat.value as any);
-              }}
-              className={`category-filter-pill ${selectedCategory === cat.value ? 'active' : ''}`}
-              style={{
-                fontWeight: selectedCategory === cat.value ? 700 : 500,
-                background: selectedCategory === cat.value ? 'var(--accent-primary)' : 'transparent',
-                border: selectedCategory === cat.value ? '1px solid var(--accent-primary)' : '1px solid var(--border-color)',
-                color: selectedCategory === cat.value ? '#ffffff' : 'var(--text-muted)',
-                fontFamily: kmFont,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px',
-              }}
-            >
-              <span>{cat.label}</span>
-              {cat.value === 'Nearby' && locationLoading && (
-                <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>...</span>
-              )}
-            </button>
-          ))}
+        {/* Real-time Location Indicator & Category Selection Tabs */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap', alignItems: 'center' }}>
+            {[
+              { label: t('cat_all'), value: 'All' },
+              { label: t('filter_nearby'), value: 'Nearby' },
+              { label: t('cat_hospitals'), value: 'Hospital' },
+              { label: t('cat_kids'), value: 'Kids' },
+              { label: t('cat_medical_clinics'), value: 'Medical Clinic' },
+              { label: t('cat_animal_clinics'), value: 'Animal Clinic' },
+            ].map((cat) => (
+              <button
+                type="button"
+                key={cat.value}
+                onClick={() => {
+                  if (cat.value === 'Nearby' && !hasLocation) {
+                    onRequestLocation?.();
+                  }
+                  setSelectedCategory(cat.value as any);
+                }}
+                className={`category-filter-pill ${selectedCategory === cat.value ? 'active' : ''}`}
+                style={{
+                  fontWeight: selectedCategory === cat.value ? 700 : 500,
+                  background: selectedCategory === cat.value ? 'var(--accent-primary)' : 'transparent',
+                  border: selectedCategory === cat.value ? '1px solid var(--accent-primary)' : '1px solid var(--border-color)',
+                  color: selectedCategory === cat.value ? '#ffffff' : 'var(--text-muted)',
+                  fontFamily: kmFont,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                }}
+              >
+                <span>{cat.label}</span>
+                {cat.value === 'Nearby' && locationLoading && (
+                  <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>...</span>
+                )}
+              </button>
+            ))}
+          </div>
+
+          {/* Real-Time Location Live Status Pill */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {hasLocation ? (
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '0.28rem 0.75rem',
+                  borderRadius: 'var(--radius-full)',
+                  background: 'rgba(16, 185, 129, 0.08)',
+                  border: '1px solid rgba(16, 185, 129, 0.25)',
+                  fontSize: '0.78rem',
+                  color: '#059669',
+                  fontWeight: 600,
+                  fontFamily: kmFont,
+                }}
+              >
+                <span
+                  title={userLocation ? `GPS: ${userLocation.latitude}, ${userLocation.longitude}` : undefined}
+                  style={{
+                    width: '7px',
+                    height: '7px',
+                    borderRadius: '50%',
+                    backgroundColor: '#10b981',
+                    boxShadow: '0 0 6px #10b981',
+                    display: 'inline-block',
+                    animation: isRealTimeActive ? 'pulse 2s infinite' : 'none',
+                  }}
+                />
+                <span title={userLocation ? `GPS: ${userLocation.latitude}, ${userLocation.longitude}` : undefined}>
+                  {t('realtime_location_active')}
+                </span>
+                {onRequestLocation && (
+                  <button
+                    type="button"
+                    onClick={onRequestLocation}
+                    title={t('refresh_location')}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      background: 'none',
+                      border: 'none',
+                      padding: 0,
+                      marginLeft: '2px',
+                      color: '#059669',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <RotateCw size={12} className={locationLoading ? 'spin' : ''} />
+                  </button>
+                )}
+              </div>
+            ) : locationLoading ? (
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  fontSize: '0.78rem',
+                  color: 'var(--text-muted)',
+                  fontFamily: kmFont,
+                }}
+              >
+                <RotateCw size={12} className="spin" />
+                <span>{t('detecting_realtime_location')}</span>
+              </div>
+            ) : onRequestLocation ? (
+              <button
+                type="button"
+                onClick={onRequestLocation}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  padding: '0.28rem 0.7rem',
+                  borderRadius: 'var(--radius-full)',
+                  background: '#f8fafc',
+                  border: '1px solid var(--border-color)',
+                  fontSize: '0.78rem',
+                  color: 'var(--text-muted)',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  fontFamily: kmFont,
+                }}
+              >
+                <Navigation size={12} />
+                <span>{t('btn_use_location')}</span>
+              </button>
+            ) : null}
+          </div>
         </div>
       </div>
 
@@ -245,6 +344,27 @@ export const FacilityCardList: React.FC<FacilityCardListProps> = ({
                     >
                       {formatFacilityName(hosp.name, language)}
                     </div>
+                    {typeof hosp.distance_km === 'number' && (
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '3px',
+                          fontSize: '0.8rem',
+                          fontWeight: 600,
+                          color: '#0284c7',
+                          backgroundColor: '#f0f9ff',
+                          border: '1px solid #bae6fd',
+                          padding: '0.15rem 0.55rem',
+                          borderRadius: 'var(--radius-full)',
+                          whiteSpace: 'nowrap',
+                          fontFamily: kmFont,
+                        }}
+                      >
+                        <MapPin size={12} />
+                        <span>{hosp.distance_km} {t('distance_km_away')}</span>
+                      </span>
+                    )}
                   </div>
 
                   <div

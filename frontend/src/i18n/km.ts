@@ -254,6 +254,10 @@ export const km: Record<TranslationKey, string> = {
   btn_use_location: "ប្រើទីតាំងបច្ចុប្បន្ន",
   locating: "កំពុងកំណត់ទីតាំង...",
   location_enabled: "ទីតាំងត្រូវបានបើក",
+  realtime_location_active: "ទីតាំងពេលវេលាជាក់ស្តែងសកម្ម",
+  detecting_realtime_location: "កំពុងកំណត់ទីតាំង GPS ជាក់ស្តែង...",
+  refresh_location: "ធ្វើបច្ចុប្បន្នភាពទីតាំង",
+  from_your_location: "ពីទីតាំងរបស់អ្នក",
   close: "បិទ",
 
   // History Page

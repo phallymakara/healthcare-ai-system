@@ -18,7 +18,13 @@ export const HospitalDiscovery: React.FC<HospitalDiscoveryProps> = ({
   onTicketBooked,
 }) => {
   const { language } = useLanguage();
-  const { location: userLocation, requestLocation, hasLocation, loading: locationLoading } = useUserLocation();
+  const {
+    location: userLocation,
+    requestLocation,
+    hasLocation,
+    loading: locationLoading,
+    isRealTimeActive,
+  } = useUserLocation();
   const [hospitals, setHospitals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -172,11 +178,11 @@ export const HospitalDiscovery: React.FC<HospitalDiscoveryProps> = ({
     }
   };
 
-  let enrichedHospitals = hospitals.map((hosp) => {
-    let dist = hosp.distance_km;
-    if (typeof dist !== 'number' && userLocation?.latitude && userLocation?.longitude && hosp.latitude && hosp.longitude) {
-      dist = calculateDistanceKm(userLocation.latitude, userLocation.longitude, hosp.latitude, hosp.longitude);
-    }
+  const enrichedHospitals = hospitals.map((hosp) => {
+    const dist =
+      userLocation?.latitude && userLocation?.longitude && hosp.latitude && hosp.longitude
+        ? calculateDistanceKm(userLocation.latitude, userLocation.longitude, hosp.latitude, hosp.longitude)
+        : hosp.distance_km;
     return { ...hosp, distance_km: dist };
   });
 
@@ -243,6 +249,8 @@ export const HospitalDiscovery: React.FC<HospitalDiscoveryProps> = ({
           onRequestLocation={requestLocation}
           hasLocation={hasLocation}
           locationLoading={locationLoading}
+          isRealTimeActive={isRealTimeActive}
+          userLocation={userLocation}
         />
       )}
 

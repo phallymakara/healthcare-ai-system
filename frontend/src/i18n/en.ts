@@ -252,6 +252,10 @@ export const en = {
   btn_use_location: "Use My Location",
   locating: "Locating...",
   location_enabled: "Location Active",
+  realtime_location_active: "Real-Time Location Active",
+  detecting_realtime_location: "Detecting real-time GPS...",
+  refresh_location: "Refresh Location",
+  from_your_location: "from your location",
   close: "Close",
 
   // History Page

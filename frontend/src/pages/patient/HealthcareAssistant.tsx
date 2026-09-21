@@ -108,7 +108,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
   const { language, t } = useLanguage();
   const isKm = language === 'km';
   const kmFont = isKm ? 'var(--font-khmer)' : 'inherit';
-  const { location: userLocation } = useUserLocation();
+  const { location: userLocation, hasLocation, requestLocation } = useUserLocation();
 
   const MAX_GUEST_CHATS = 7;
   const isGuest = !currentUser && !AuthService.getStoredUser();
@@ -627,12 +627,60 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
 
       {/* Bottom Chat Input Form Area */}
       <div style={{
-        padding: '0.75rem 0 0.35rem 0',
+        padding: '0.45rem 0 0.35rem 0',
         background: 'var(--bg-primary, #f6faf6)',
         position: 'sticky',
         bottom: 0,
         zIndex: 30,
       }}>
+        {/* Real-time GPS status indicator */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.35rem', padding: '0 0.5rem' }}>
+          {hasLocation ? (
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                fontSize: '0.74rem',
+                color: '#059669',
+                fontWeight: 500,
+                fontFamily: kmFont,
+              }}
+            >
+              <span
+                style={{
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  backgroundColor: '#10b981',
+                  boxShadow: '0 0 5px #10b981',
+                  display: 'inline-block',
+                }}
+              />
+              <span>{t('realtime_location_active')}</span>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={requestLocation}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                background: 'none',
+                border: 'none',
+                fontSize: '0.74rem',
+                color: 'var(--text-muted)',
+                cursor: 'pointer',
+                fontFamily: kmFont,
+                padding: 0,
+              }}
+            >
+              <span>📍 {t('btn_use_location')}</span>
+            </button>
+          )}
+        </div>
+
         <form
           onSubmit={handleSendMessage}
           style={{
