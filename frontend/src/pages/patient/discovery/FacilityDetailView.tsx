@@ -35,31 +35,31 @@ export const FacilityDetailView: React.FC<FacilityDetailViewProps> = ({
 
   return (
     <div className="facility-detail-animate" style={{ width: '100%', height: '100%', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, maxWidth: '1060px', margin: '0 auto' }}>
-      {/* Back Navigation Bar */}
-      <div style={{ marginBottom: '1.25rem' }}>
-        <button
-          type="button"
-          onClick={onBack}
-          className="btn-back-nav"
-          style={{
-            padding: '0.2rem 0',
-            fontSize: '0.95rem',
-            fontWeight: 600,
-            background: 'none',
-            border: 'none',
-            color: 'var(--text-main)',
-            cursor: 'pointer',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.45rem',
-            boxShadow: 'none',
-            fontFamily: kmFont,
-          }}
-        >
-          <span className="arrow-icon" style={{ fontSize: '1.1rem' }}>←</span>
-          <span>{language === 'km' ? 'ត្រឡប់ទៅបញ្ជីមន្ទីរពេទ្យ & គ្លីនិក' : 'Back to Facilities'}</span>
-        </button>
-      </div>
+      {/* Back Navigation Button (direct, no outer container) */}
+      <button
+        type="button"
+        onClick={onBack}
+        className="btn-back-nav"
+        style={{
+          padding: '0.2rem 0',
+          fontSize: '0.95rem',
+          fontWeight: 600,
+          background: 'none',
+          border: 'none',
+          color: 'var(--text-main)',
+          cursor: 'pointer',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '0.45rem',
+          boxShadow: 'none',
+          marginBottom: '1.25rem',
+          alignSelf: 'flex-start',
+          fontFamily: kmFont,
+        }}
+      >
+        <span className="arrow-icon" style={{ fontSize: '1.1rem' }}>←</span>
+        <span>{language === 'km' ? 'ត្រឡប់ទៅបញ្ជីមន្ទីរពេទ្យ & គ្លីនិក' : 'Back to Facilities'}</span>
+      </button>
 
       <div
         style={{

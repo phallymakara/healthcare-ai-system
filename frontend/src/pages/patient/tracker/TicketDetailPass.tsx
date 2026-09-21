@@ -116,38 +116,29 @@ export const TicketDetailPass: React.FC<TicketDetailPassProps> = ({
 
   return (
     <div>
-      {/* Top Back Navigation Bar */}
-      <div
+      {/* Top Back Navigation Button (direct, no outer container) */}
+      <button
+        onClick={onBack}
+        className="btn-back-nav"
         style={{
-          display: 'flex',
-          justifyContent: 'space-between',
+          padding: '0.2rem 0',
+          fontSize: '0.925rem',
+          fontWeight: 600,
+          background: 'none',
+          border: 'none',
+          color: 'var(--text-main)',
+          cursor: 'pointer',
+          display: 'inline-flex',
           alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '0.75rem',
+          gap: '6px',
+          boxShadow: 'none',
           marginBottom: '1.25rem',
+          fontFamily: kmFont,
         }}
       >
-        <button
-          onClick={onBack}
-          className="btn-back-nav"
-          style={{
-            padding: '0.2rem 0',
-            fontSize: '0.925rem',
-            fontWeight: 600,
-            background: 'none',
-            border: 'none',
-            color: 'var(--text-main)',
-            cursor: 'pointer',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            boxShadow: 'none',
-            fontFamily: kmFont,
-          }}
-        >
-          <span>{t('appt_back_to_list')}</span>
-        </button>
-      </div>
+        <span className="arrow-icon" style={{ fontSize: '1.1rem' }}>←</span>
+        <span>{t('appt_back_to_list')}</span>
+      </button>
 
       {/* Active Scheduled Appointment Pass Card */}
       <div

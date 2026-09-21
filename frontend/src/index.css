@@ -29,6 +29,13 @@
   --radius-lg: 10px;
   --radius-full: 9999px;
 
+  /* Smooth Animation & Motion System */
+  --ease-smooth: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-smooth-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-fast: 0.16s var(--ease-smooth);
+  --transition-base: 0.26s var(--ease-smooth);
+  --transition-smooth: 0.36s var(--ease-smooth);
+
   /* Safe Area Insets for Mobile / PWA Notch & Home Indicator */
   --safe-area-top: env(safe-area-inset-top, 0px);
   --safe-area-bottom: env(safe-area-inset-bottom, 0px);
@@ -154,6 +161,7 @@ textarea {
   flex-direction: column;
   z-index: 40;
   overflow-y: auto;
+  transition: transform var(--transition-smooth), width var(--transition-smooth);
 }
 
 .sidebar-header {
@@ -179,16 +187,14 @@ textarea {
 }
 
 /* Sidebar Navigation Micro-Animations */
-@keyframes sidebarActivePop {
+@keyframes sidebarActiveFade {
   0% {
-    transform: scale(0.96);
-  }
-
-  50% {
-    transform: scale(1.02);
+    opacity: 0.88;
+    transform: scale(0.98);
   }
 
   100% {
+    opacity: 1;
     transform: scale(1);
   }
 }
@@ -206,10 +212,9 @@ textarea {
   font-weight: 500;
   cursor: pointer;
   text-align: left;
-  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
-    background-color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
-    color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform var(--transition-base),
+    background-color var(--transition-base),
+    color var(--transition-base);
   width: 100%;
   position: relative;
   overflow: hidden;
@@ -217,7 +222,7 @@ textarea {
 }
 
 .sidebar-nav-item svg {
-  transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform var(--transition-base), color var(--transition-base);
   flex-shrink: 0;
 }
 
@@ -228,11 +233,11 @@ textarea {
 }
 
 .sidebar-nav-item:hover:not(.active) svg {
-  transform: scale(1.14) rotate(-3deg);
+  transform: scale(1.1);
 }
 
 .sidebar-nav-item:active {
-  transform: scale(0.97) translateX(2px);
+  transform: scale(0.98) translateX(2px);
 }
 
 .sidebar-nav-item.active {
@@ -241,14 +246,14 @@ textarea {
   font-weight: 700;
   border-left: none !important;
   border-radius: var(--radius-full) !important;
-  box-shadow: 0 4px 14px rgba(24, 83, 57, 0.22);
-  animation: sidebarActivePop 0.26s cubic-bezier(0.16, 1, 0.3, 1) both;
+  box-shadow: none !important;
+  animation: sidebarActiveFade var(--transition-base) both;
 }
 
 .sidebar-nav-item.active svg {
   color: #ffffff !important;
   stroke: #ffffff !important;
-  transform: scale(1.08);
+  transform: scale(1.04);
 }
 
 /* Sidebar Brand Header Hover Micro-Animation */
@@ -438,18 +443,20 @@ textarea {
   .sidebar-container {
     position: fixed;
     top: 0;
-    left: -305px;
+    left: 0;
     bottom: 0;
     width: 280px;
     height: 100vh;
     z-index: 100;
-    transition: left 0.32s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.32s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: none;
+    transform: translateX(-100%);
+    transition: transform var(--transition-smooth);
+    will-change: transform;
+    box-shadow: none !important;
   }
 
   .sidebar-container.open {
-    left: 0;
-    box-shadow: 14px 0 38px rgba(12, 47, 39, 0.22);
+    transform: translateX(0);
+    box-shadow: none !important;
   }
 
   /* Mobile Sidebar Drawer: remove page switch items because bottom tab bar handles it */
@@ -497,11 +504,11 @@ textarea {
     display: block;
     position: fixed;
     inset: 0;
-    background: rgba(12, 47, 39, 0.45);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
+    background: rgba(12, 47, 39, 0.4);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
     z-index: 90;
-    animation: sidebarBackdropFade 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: sidebarBackdropFade var(--transition-base) both;
   }
 
   .mobile-bottom-nav {
@@ -518,7 +525,7 @@ textarea {
     align-items: center;
     justify-content: space-around;
     box-shadow: none;
-    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, visibility 0.2s ease;
+    transition: transform var(--transition-base), opacity var(--transition-base), visibility var(--transition-base);
   }
 
   .mobile-bottom-nav.keyboard-hidden {
@@ -546,7 +553,7 @@ textarea {
     cursor: pointer;
     padding: 5px 2px 3px 2px;
     gap: 3px;
-    transition: color 0.18s cubic-bezier(0.16, 1, 0.3, 1), transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: color var(--transition-fast), transform var(--transition-fast);
     text-decoration: none;
     -webkit-tap-highlight-color: transparent;
   }
@@ -556,11 +563,11 @@ textarea {
   }
 
   .mobile-tab-btn:active {
-    transform: scale(0.92);
+    transform: scale(0.96);
   }
 
   .mobile-tab-btn svg {
-    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: transform var(--transition-fast);
   }
 
   .mobile-tab-btn.active {
@@ -569,7 +576,7 @@ textarea {
   }
 
   .mobile-tab-btn.active svg {
-    transform: scale(1.12);
+    transform: scale(1.08);
   }
 
   .mobile-tab-label {
@@ -1416,10 +1423,10 @@ select:hover:not(:disabled) {
 }
 
 input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="button"]):not([type="submit"]):focus:not(:disabled),
-textarea:focus:not(:disabled),
+textarea:not(.chat-ai-textarea):focus:not(:disabled),
 select:focus:not(:disabled) {
   border-color: var(--accent-primary) !important;
-  box-shadow: 0 0 0 3.5px rgba(24, 83, 57, 0.14) !important;
+  box-shadow: none !important;
   transform: translateY(-1px);
 }
 
@@ -1593,10 +1600,11 @@ select:focus:not(:disabled) {
   will-change: transform, opacity;
 }
 
-/* Back Navigation Button */
+/* Back Navigation Button (frameless, direct, no outer container) */
 .btn-back-nav {
   display: inline-flex;
   align-items: center;
+  align-self: flex-start;
   gap: 0.45rem;
   padding: 0.2rem 0 !important;
   border-radius: 0 !important;
@@ -1604,9 +1612,10 @@ select:focus:not(:disabled) {
   background: transparent !important;
   color: var(--text-main);
   cursor: pointer;
-  transition: color 0.18s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: color var(--transition-fast), transform var(--transition-fast);
   user-select: none;
   box-shadow: none !important;
+  outline: none;
 }
 
 .btn-back-nav:hover {
@@ -1620,10 +1629,13 @@ select:focus:not(:disabled) {
 .btn-back-nav:active {
   transform: translateX(-2px) scale(0.98);
   background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 .btn-back-nav .arrow-icon {
-  transition: transform 0.2s ease;
+  display: inline-block;
+  transition: transform var(--transition-fast);
 }
 
 .btn-back-nav:hover .arrow-icon {
@@ -1985,9 +1997,9 @@ input[type="search"] {
 
 input:focus,
 select:focus,
-textarea:focus {
+textarea:not(.chat-ai-textarea):focus {
   border-color: var(--accent-primary, #185339) !important;
-  box-shadow: 0 0 0 3.5px rgba(24, 83, 57, 0.14) !important;
+  box-shadow: none !important;
   transform: translateY(-1px);
 }
 
@@ -2316,40 +2328,23 @@ textarea.input-error {
 }
 
 .history-filter-pill.active {
-  box-shadow: 0 3px 10px rgba(24, 83, 57, 0.24);
-}
-
-/* Back Navigation Button Micro-Animation */
-.btn-back-nav {
-  transition: color 0.18s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
-  user-select: none;
-}
-
-.btn-back-nav:hover {
-  transform: translateX(-3px);
-  color: var(--accent-primary) !important;
-  background: transparent !important;
-}
-
-.btn-back-nav:active {
-  transform: translateX(-2px) scale(0.98);
-  background: transparent !important;
+  box-shadow: none !important;
 }
 
 /* Universal Dashboard & KPI Stat Card Animations */
 .dashboard-card,
 .kpi-stat-card {
-  transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 0.24s cubic-bezier(0.16, 1, 0.3, 1),
-    border-color 0.24s cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: transform, box-shadow;
+  transition: transform var(--transition-base),
+    border-color var(--transition-base);
+  will-change: transform;
+  box-shadow: none !important;
 }
 
 .dashboard-card:hover,
 .kpi-stat-card:hover {
   transform: translateY(-3px);
-  border-color: rgba(24, 83, 57, 0.35) !important;
-  box-shadow: 0 10px 28px rgba(12, 47, 39, 0.09) !important;
+  border-color: var(--accent-primary) !important;
+  box-shadow: none !important;
 }
 
 .kpi-stat-card svg {
@@ -2502,6 +2497,43 @@ textarea.input-error {
 
 .action-popup-item:hover {
   background: #f1f5f9;
+}
+
+@keyframes attachMenuPopUp {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.chat-attach-popup-menu {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 10px);
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 165px;
+  z-index: 9999 !important;
+  box-shadow: none !important;
+  animation: attachMenuPopUp 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transform-origin: bottom left;
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-attach-popup-menu {
+    animation: none !important;
+  }
 }
 
 .action-popup-item:active {
@@ -2871,4 +2903,126 @@ textarea::-webkit-input-placeholder {
 
 .spin {
   animation: spin 0.85s linear infinite;
+}
+
+/* ==========================================================================
+   GLOBAL SMOOTH ANIMATION SYSTEM & ACCESSIBILITY
+   ========================================================================== */
+
+/* Universal Interactive Smooth Transitions */
+button,
+a,
+input,
+select,
+textarea {
+  transition: background-color var(--transition-base),
+              border-color var(--transition-base),
+              color var(--transition-base),
+              transform var(--transition-fast);
+}
+
+.btn {
+  transition: background-color var(--transition-base),
+              border-color var(--transition-base),
+              color var(--transition-base),
+              transform var(--transition-fast) !important;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+.btn:active {
+  transform: scale(0.98) !important;
+}
+
+.category-filter-pill {
+  transition: background-color var(--transition-base),
+              border-color var(--transition-base),
+              color var(--transition-base),
+              transform var(--transition-fast) !important;
+}
+
+.category-filter-pill:hover {
+  transform: translateY(-1px);
+}
+
+.category-filter-pill:active {
+  transform: scale(0.96);
+}
+
+.hospital-facility-card {
+  transition: transform var(--transition-base),
+              border-color var(--transition-base),
+              background-color var(--transition-base) !important;
+}
+
+.hospital-facility-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent-primary) !important;
+}
+
+.hospital-facility-card:active {
+  transform: scale(0.99);
+}
+
+.ticket-row-card {
+  transition: transform var(--transition-base),
+              border-color var(--transition-base),
+              background-color var(--transition-base) !important;
+}
+
+.ticket-row-card:hover {
+  transform: translateY(-1.5px);
+  border-color: var(--accent-primary) !important;
+}
+
+/* AI Chat Input Box: Borderless inner text input, retaining only outer container border with zero colored focus border */
+.chat-ai-input-form,
+.chat-ai-input-form:focus,
+.chat-ai-input-form:focus-within,
+.chat-ai-input-form:hover,
+.chat-ai-input-form:active {
+  border: 1px solid var(--border-color) !important;
+  border-color: var(--border-color) !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.chat-ai-textarea,
+.chat-ai-textarea:focus,
+.chat-ai-textarea:focus-visible,
+.chat-ai-textarea:hover,
+.chat-ai-textarea:active,
+.chat-ai-input-form textarea,
+.chat-ai-input-form textarea:focus,
+.chat-ai-input-form textarea:focus-visible,
+.chat-ai-input-form textarea:hover,
+.chat-ai-input-form textarea:active {
+  border: none !important;
+  border-width: 0 !important;
+  border-style: none !important;
+  border-color: transparent !important;
+  outline: none !important;
+  outline-width: 0 !important;
+  outline-color: transparent !important;
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  transform: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+  background: transparent !important;
+}
+
+/* Global Prefers Reduced Motion Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

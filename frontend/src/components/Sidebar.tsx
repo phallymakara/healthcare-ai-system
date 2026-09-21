@@ -548,7 +548,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     borderRadius: '8px',
                     zIndex: 200,
                     padding: '0.85rem',
-                    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.08)',
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.65rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.45rem' }}>

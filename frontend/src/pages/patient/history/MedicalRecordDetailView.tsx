@@ -35,31 +35,30 @@ export const MedicalRecordDetailView: React.FC<MedicalRecordDetailViewProps> = (
 
   return (
     <div>
-      {/* Back Navigation Bar */}
-      <div style={{ marginBottom: '1.25rem' }}>
-        <button
-          type="button"
-          onClick={onBack}
-          className="btn-back-nav"
-          style={{
-            padding: '0.2rem 0',
-            fontSize: '0.925rem',
-            fontWeight: 600,
-            background: 'none',
-            border: 'none',
-            color: 'var(--text-main)',
-            cursor: 'pointer',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            boxShadow: 'none',
-            fontFamily: kmFont,
-          }}
-        >
-          <ArrowLeft size={16} />
-          <span>{t('history_back_to_list')}</span>
-        </button>
-      </div>
+      {/* Back Navigation Button (direct, no outer container) */}
+      <button
+        type="button"
+        onClick={onBack}
+        className="btn-back-nav"
+        style={{
+          padding: '0.2rem 0',
+          fontSize: '0.925rem',
+          fontWeight: 600,
+          background: 'none',
+          border: 'none',
+          color: 'var(--text-main)',
+          cursor: 'pointer',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '6px',
+          boxShadow: 'none',
+          marginBottom: '1.25rem',
+          fontFamily: kmFont,
+        }}
+      >
+        <ArrowLeft size={16} className="arrow-icon" />
+        <span>{t('history_back_to_list')}</span>
+      </button>
 
       {/* Medical Summary Pass Card */}
       <div
