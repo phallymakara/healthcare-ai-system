@@ -1,8 +1,12 @@
 /**
  * Chat History Service
  * Stores and manages AI consultation conversations per user (guest or authenticated user ID).
- * Tracks message history, timestamps, and conversation duration.
+ * Synchronizes with PostgreSQL backend via REST API for authenticated users and maintains
+ * an offline-first localStorage backup.
  */
+
+import { API_BASE } from './api';
+import { AuthService } from './auth';
 
 export interface StoredMessage {
   id: string;
@@ -28,7 +32,7 @@ export interface ConversationItem {
 const STORAGE_PREFIX = 'carequeue_chat_convs_';
 
 /**
- * Retrieve all saved conversations for a specific user ID, sorted by most recent activity.
+ * Retrieve all saved conversations from localStorage for a specific user ID.
  */
 export const getUserConversations = (userId: string = 'guest'): ConversationItem[] => {
   try {
@@ -46,7 +50,7 @@ export const getUserConversations = (userId: string = 'guest'): ConversationItem
 };
 
 /**
- * Save or update a conversation for a specific user.
+ * Save or update a conversation in localStorage.
  */
 export const saveUserConversation = (
   userId: string = 'guest',
@@ -69,7 +73,7 @@ export const saveUserConversation = (
 };
 
 /**
- * Remove a specific conversation.
+ * Remove a specific conversation from localStorage.
  */
 export const deleteUserConversation = (
   userId: string = 'guest',
@@ -79,8 +83,160 @@ export const deleteUserConversation = (
     const list = getUserConversations(userId).filter((c) => c.id !== convId);
     localStorage.setItem(`${STORAGE_PREFIX}${userId}`, JSON.stringify(list));
   } catch (err) {
-    console.error('Failed to delete conversation:', err);
+    console.error('Failed to delete conversation from storage:', err);
   }
+};
+
+const ACTIVE_CONV_KEY = 'carequeue_active_conv_';
+
+/**
+ * Get last active conversation ID for a user.
+ */
+export const getActiveConversationId = (userId: string = 'guest'): string | null => {
+  try {
+    return localStorage.getItem(`${ACTIVE_CONV_KEY}${userId}`);
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * Set or clear the active conversation ID for a user.
+ */
+export const setActiveConversationId = (userId: string = 'guest', convId: string | null): void => {
+  try {
+    if (convId) {
+      localStorage.setItem(`${ACTIVE_CONV_KEY}${userId}`, convId);
+    } else {
+      localStorage.removeItem(`${ACTIVE_CONV_KEY}${userId}`);
+    }
+  } catch {}
+};
+
+// ---------------------------------------------------------------------------
+// Backend Database API Synchronization
+// ---------------------------------------------------------------------------
+
+/**
+ * Fetch conversation list from backend API for logged-in user.
+ */
+export const fetchUserConversationsAPI = async (): Promise<ConversationItem[]> => {
+  const token = AuthService.getAccessToken();
+  if (!token) return [];
+
+  try {
+    const res = await fetch(`${API_BASE}/assistant/conversations`, {
+      headers: {
+        ...AuthService.getAuthHeaders(),
+      },
+    });
+    if (!res.ok) return [];
+
+    const data = await res.json();
+    return (data || []).map((item: any) => ({
+      id: item.id,
+      userId: AuthService.getStoredUser()?.id || '',
+      title: item.title,
+      createdAt: item.created_at,
+      updatedAt: item.updated_at,
+      messageCount: item.message_count || 0,
+      messages: [],
+    }));
+  } catch (err) {
+    console.warn('Could not fetch conversations from backend API, using local storage:', err);
+    return [];
+  }
+};
+
+/**
+ * Fetch full conversation with messages from backend API.
+ */
+export const fetchConversationDetailAPI = async (convId: string): Promise<ConversationItem | null> => {
+  const token = AuthService.getAccessToken();
+  if (!token) return null;
+
+  try {
+    const res = await fetch(`${API_BASE}/assistant/conversations/${convId}`, {
+      headers: {
+        ...AuthService.getAuthHeaders(),
+      },
+    });
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    return {
+      id: data.id,
+      userId: AuthService.getStoredUser()?.id || '',
+      title: data.title,
+      createdAt: data.created_at,
+      updatedAt: data.updated_at,
+      messageCount: data.messages?.length || 0,
+      messages: (data.messages || []).map((m: any) => ({
+        id: m.id,
+        role: m.role,
+        text: m.content,
+        imageUrl: m.image_url,
+        triage: m.triage_data,
+        bookedTicket: m.booked_ticket,
+        suggestedActions: m.suggested_actions,
+        timestamp: m.created_at,
+      })),
+    };
+  } catch (err) {
+    console.warn('Could not fetch conversation detail from API:', err);
+    return null;
+  }
+};
+
+/**
+ * Delete conversation on backend API.
+ */
+export const deleteConversationAPI = async (convId: string): Promise<boolean> => {
+  const token = AuthService.getAccessToken();
+  if (!token) return false;
+
+  try {
+    const res = await fetch(`${API_BASE}/assistant/conversations/${convId}`, {
+      method: 'DELETE',
+      headers: {
+        ...AuthService.getAuthHeaders(),
+      },
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * Unified loader: Fetches from backend API if authenticated, else returns local storage.
+ */
+export const syncUserConversations = async (userId: string = 'guest'): Promise<ConversationItem[]> => {
+  if (userId !== 'guest' && !!AuthService.getAccessToken()) {
+    const apiList = await fetchUserConversationsAPI();
+    if (apiList.length > 0) {
+      // Merge with local list
+      const localList = getUserConversations(userId);
+      const mergedMap = new Map<string, ConversationItem>();
+      localList.forEach((c) => mergedMap.set(c.id, c));
+      apiList.forEach((c) => {
+        const existing = mergedMap.get(c.id);
+        mergedMap.set(c.id, {
+          ...c,
+          messages: existing?.messages || [],
+        });
+      });
+      const mergedList = Array.from(mergedMap.values()).sort(
+        (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+      );
+      try {
+        localStorage.setItem(`${STORAGE_PREFIX}${userId}`, JSON.stringify(mergedList));
+      } catch {}
+      return mergedList;
+    }
+  }
+
+  return getUserConversations(userId);
 };
 
 /**

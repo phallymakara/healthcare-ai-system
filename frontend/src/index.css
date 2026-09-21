@@ -2226,6 +2226,43 @@ textarea.input-error {
   will-change: transform, opacity;
 }
 
+/* Subtle Streaming Caret Indicator */
+@keyframes streamCursorPulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.15;
+  }
+}
+
+.streaming-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1.05em;
+  background-color: var(--text-main);
+  margin-left: 3px;
+  vertical-align: -0.15em;
+  border-radius: 1px;
+  animation: streamCursorPulse 0.75s ease-in-out infinite;
+  will-change: opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .streaming-cursor {
+    animation: none !important;
+    opacity: 1 !important;
+  }
+}
+
+/* Chat Input Send Button - No animation */
+.chat-send-btn,
+.chat-send-btn * {
+  transition: none !important;
+  animation: none !important;
+  transform: none !important;
+}
+
 /* Global Notification Dropdown Alert Banner Animation */
 @keyframes bannerSlideDown {
   0% {

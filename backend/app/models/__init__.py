@@ -11,6 +11,7 @@ from app.models.user import User, PatientProfile
 from app.models.hospital import Hospital, HospitalBranch, Department, Service
 from app.models.doctor import Doctor, DoctorSchedule, ScheduleOverride
 from app.models.queue import QueueSession, Ticket, TicketLog
+from app.models.chat import ChatConversation, ChatMessage
 
 __all__ = [
     "Base",
@@ -32,4 +33,6 @@ __all__ = [
     "QueueSession",
     "Ticket",
     "TicketLog",
+    "ChatConversation",
+    "ChatMessage",
 ]

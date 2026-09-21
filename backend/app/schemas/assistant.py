@@ -1,7 +1,7 @@
 import uuid
 import enum
 from typing import Optional, List
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class UrgencyLevel(str, enum.Enum):
@@ -37,6 +37,9 @@ class TriageResponse(BaseModel):
     matching_hospitals: List[TriageHospitalMatch] = []
 
 
+from datetime import datetime
+
+
 class ChatHistoryItem(BaseModel):
     role: str  # "user" or "assistant"
     content: str
@@ -48,6 +51,8 @@ class AssistantChatRequest(BaseModel):
     language: Optional[str] = "en"
     user_latitude: Optional[float] = None
     user_longitude: Optional[float] = None
+    conversation_id: Optional[uuid.UUID] = None
+    image_url: Optional[str] = None
 
 
 class AssistantChatResponse(BaseModel):
@@ -58,4 +63,49 @@ class AssistantChatResponse(BaseModel):
     booked_ticket: Optional[dict] = None
     suggested_actions: List[str] = []
     detected_language: Optional[str] = None
+    conversation_id: Optional[uuid.UUID] = None
+
+
+class ChatMessageResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    conversation_id: uuid.UUID
+    role: str
+    content: str
+    image_url: Optional[str] = None
+    triage_data: Optional[dict] = None
+    booked_ticket: Optional[dict] = None
+    suggested_actions: Optional[List[str]] = None
+    created_at: datetime
+
+
+class ConversationSummaryResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    title: str
+    created_at: datetime
+    updated_at: datetime
+    message_count: int = 0
+    last_message: Optional[str] = None
+
+
+class ConversationDetailResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    title: str
+    created_at: datetime
+    updated_at: datetime
+    messages: List[ChatMessageResponse] = []
+
+
+class CreateConversationRequest(BaseModel):
+    title: Optional[str] = None
+
+
+class UpdateConversationRequest(BaseModel):
+    title: str
+
 

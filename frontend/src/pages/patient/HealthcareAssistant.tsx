@@ -1,10 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { RefreshCw, Plus, Mic, ArrowUp, X, Image as ImageIcon } from 'lucide-react';
+import { Plus, Mic, ArrowUp, X, Image as ImageIcon } from 'lucide-react';
 import {
   getUserConversations,
   saveUserConversation,
   formatChatDuration,
+  syncUserConversations,
+  fetchConversationDetailAPI,
+  getActiveConversationId,
+  setActiveConversationId,
   ConversationItem,
   StoredMessage,
 } from '../../services/chatHistoryService';
@@ -33,6 +37,28 @@ interface ChatMessage {
   suggestedActions?: string[];
   timestamp: Date;
 }
+
+const serializeMessage = (m: ChatMessage): StoredMessage => ({
+  id: m.id,
+  role: m.role,
+  text: m.text,
+  imageUrl: m.imageUrl,
+  triage: m.triage,
+  bookedTicket: m.bookedTicket,
+  suggestedActions: m.suggestedActions,
+  timestamp: m.timestamp instanceof Date ? m.timestamp.toISOString() : new Date(m.timestamp).toISOString(),
+});
+
+const deserializeMessage = (m: StoredMessage): ChatMessage => ({
+  id: m.id,
+  role: m.role,
+  text: m.text,
+  imageUrl: m.imageUrl,
+  triage: m.triage,
+  bookedTicket: m.bookedTicket,
+  suggestedActions: m.suggestedActions,
+  timestamp: new Date(m.timestamp),
+});
 
 const isKhmer = (text?: string): boolean => {
   if (!text) return false;
@@ -131,14 +157,56 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
     }
   });
 
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: 'welcome',
-      role: 'assistant',
-      text: t('chat_welcome'),
-      timestamp: new Date(),
-    },
-  ]);
+  // Per-user conversation history state
+  const activeUserId = currentUser?.id || 'guest';
+
+  // Restore the last conversation state on component mount (e.g. returning from another page)
+  const [messages, setMessages] = useState<ChatMessage[]>(() => {
+    try {
+      const lastActiveId = getActiveConversationId(activeUserId);
+      if (lastActiveId === 'new') {
+        return [
+          {
+            id: 'welcome',
+            role: 'assistant',
+            text: t('chat_welcome'),
+            timestamp: new Date(),
+          },
+        ];
+      }
+      const localConvs = getUserConversations(activeUserId);
+      const targetConv = lastActiveId
+        ? localConvs.find((c) => c.id === lastActiveId) || localConvs[0]
+        : localConvs[0];
+      if (targetConv && targetConv.messages && targetConv.messages.length > 0) {
+        return targetConv.messages.map(deserializeMessage);
+      }
+    } catch (err) {
+      console.warn('Could not restore last active conversation:', err);
+    }
+    return [
+      {
+        id: 'welcome',
+        role: 'assistant',
+        text: t('chat_welcome'),
+        timestamp: new Date(),
+      },
+    ];
+  });
+
+  const [currentConversationId, setCurrentConversationId] = useState<string | null>(() => {
+    try {
+      const lastActiveId = getActiveConversationId(activeUserId);
+      if (lastActiveId === 'new') return null;
+      const localConvs = getUserConversations(activeUserId);
+      const targetConv = lastActiveId
+        ? localConvs.find((c) => c.id === lastActiveId) || localConvs[0]
+        : localConvs[0];
+      return targetConv ? targetConv.id : null;
+    } catch {
+      return null;
+    }
+  });
 
   // Sync welcome message on language switch
   useEffect(() => {
@@ -165,6 +233,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
 
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
+  const [streamingMsgId, setStreamingMsgId] = useState<string | null>(null);
   const [inputError, setInputError] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
@@ -173,39 +242,54 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const attachMenuRef = useRef<HTMLDivElement>(null);
 
-  // Per-user conversation history state
-  const activeUserId = currentUser?.id || 'guest';
-  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const [conversationList, setConversationList] = useState<ConversationItem[]>([]);
   const [slashSelectedIndex, setSlashSelectedIndex] = useState(0);
   const slashListRef = useRef<HTMLDivElement>(null);
 
-  // Sync conversation list when active user changes or mounts
+  // Sync conversation list from backend API (authenticated) or localStorage (guest/offline)
+  // and load latest conversation if returning from another page
   useEffect(() => {
-    setConversationList(getUserConversations(activeUserId));
+    let isMounted = true;
+    syncUserConversations(activeUserId).then(async (list) => {
+      if (!isMounted) return;
+      setConversationList(list);
+
+      const lastActiveId = getActiveConversationId(activeUserId);
+      if (lastActiveId === 'new') {
+        return;
+      }
+
+      const targetConv = lastActiveId
+        ? list.find((c) => c.id === lastActiveId) || list[0]
+        : list[0];
+
+      if (targetConv) {
+        let msgs = targetConv.messages;
+        if (!msgs || msgs.length === 0) {
+          const detail = await fetchConversationDetailAPI(targetConv.id);
+          if (detail && detail.messages && detail.messages.length > 0) {
+            msgs = detail.messages;
+          }
+        }
+        if (msgs && msgs.length > 0 && isMounted) {
+          setMessages(msgs.map(deserializeMessage));
+          setCurrentConversationId(targetConv.id);
+          setActiveConversationId(activeUserId, targetConv.id);
+        }
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
   }, [activeUserId]);
 
-  const serializeMessage = (m: ChatMessage): StoredMessage => ({
-    id: m.id,
-    role: m.role,
-    text: m.text,
-    imageUrl: m.imageUrl,
-    triage: m.triage,
-    bookedTicket: m.bookedTicket,
-    suggestedActions: m.suggestedActions,
-    timestamp: m.timestamp instanceof Date ? m.timestamp.toISOString() : new Date(m.timestamp).toISOString(),
-  });
-
-  const deserializeMessage = (m: StoredMessage): ChatMessage => ({
-    id: m.id,
-    role: m.role,
-    text: m.text,
-    imageUrl: m.imageUrl,
-    triage: m.triage,
-    bookedTicket: m.bookedTicket,
-    suggestedActions: m.suggestedActions,
-    timestamp: new Date(m.timestamp),
-  });
+  // Handle external initial query if passed (e.g., from search)
+  useEffect(() => {
+    if (initialQuery && initialQuery.trim()) {
+      handleSendQuery(initialQuery);
+      onClearInitialQuery?.();
+    }
+  }, [initialQuery]);
 
   const isSlashActive = inputText.startsWith('/');
   const slashQuery = isSlashActive ? inputText.slice(1).trim().toLowerCase() : '';
@@ -221,8 +305,15 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
     setSlashSelectedIndex(0);
   }, [slashQuery, isSlashActive]);
 
-  const handleSelectConversation = (conv: ConversationItem) => {
-    const restored = conv.messages.map(deserializeMessage);
+  const handleSelectConversation = async (conv: ConversationItem) => {
+    let messagesToRestore = conv.messages;
+    if (!messagesToRestore || messagesToRestore.length === 0) {
+      const detail = await fetchConversationDetailAPI(conv.id);
+      if (detail && detail.messages && detail.messages.length > 0) {
+        messagesToRestore = detail.messages;
+      }
+    }
+    const restored = (messagesToRestore || []).map(deserializeMessage);
     setMessages(
       restored.length > 0
         ? restored
@@ -236,6 +327,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
           ]
     );
     setCurrentConversationId(conv.id);
+    setActiveConversationId(activeUserId, conv.id);
     setInputText('');
     setSlashSelectedIndex(0);
     setTimeout(() => {
@@ -253,6 +345,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
       },
     ]);
     setCurrentConversationId(null);
+    setActiveConversationId(activeUserId, 'new');
     setInputText('');
     setSlashSelectedIndex(0);
   };
@@ -336,7 +429,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: loading ? 'auto' : 'smooth' });
   };
 
   useEffect(() => {
@@ -383,6 +476,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
     if (!currentConversationId) {
       setCurrentConversationId(convId);
     }
+    setActiveConversationId(activeUserId, convId);
     const existingConv = conversationList.find((c) => c.id === convId);
     const convTitle =
       existingConv?.title ||
@@ -399,6 +493,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
       messages: nextMessages.map(serializeMessage),
     };
     saveUserConversation(activeUserId, baseConvItem);
+    setActiveConversationId(activeUserId, baseConvItem.id);
     setConversationList(getUserConversations(activeUserId));
 
     const persistAssistantReply = (assistantMsg: ChatMessage) => {
@@ -411,6 +506,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
         messages: finalMessages.map(serializeMessage),
       };
       saveUserConversation(activeUserId, updatedConv);
+      setActiveConversationId(activeUserId, updatedConv.id);
       setConversationList(getUserConversations(activeUserId));
     };
 
@@ -418,13 +514,16 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
       requestLocation();
     }
 
+    const streamMsgId = String(Date.now() + 1);
+    setStreamingMsgId(streamMsgId);
+
     try {
       const historyPayload = messages.slice(-6).map((m) => ({
         role: m.role,
         content: m.text,
       }));
 
-      const res = await fetch(`${API_BASE}/assistant/chat`, {
+      const res = await fetch(`${API_BASE}/assistant/chat/stream`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -436,31 +535,19 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
           language: isKhmer(query) ? 'km' : (/[a-zA-Z]/.test(query) ? 'en' : language),
           user_latitude: userLocation?.latitude,
           user_longitude: userLocation?.longitude,
+          conversation_id: (currentConversationId && !currentConversationId.startsWith('conv_')) ? currentConversationId : undefined,
+          image_url: attachedImageUrl || undefined,
         }),
       });
 
-      if (res.ok) {
-        const chatData = await res.json();
-        const hasMatchingHospitals = chatData.matching_hospitals && chatData.matching_hospitals.length > 0;
-        const assistantMsg: ChatMessage = {
-          id: String(Date.now() + 1),
-          role: 'assistant',
-          text: chatData.reply || (isKhmer(query) ? 'ខ្ញុំនៅទីនេះដើម្បីជួយសម្រួលការសាកសួរសុខភាពរបស់អ្នក។' : 'I am here to assist with your healthcare inquiries.'),
-          triage: hasMatchingHospitals ? {
-            urgency_level: chatData.urgency_level || 'STANDARD',
-            recommended_specialty: chatData.recommended_specialty || 'General Care',
-            matching_hospitals: chatData.matching_hospitals,
-          } : undefined,
-          bookedTicket: chatData.booked_ticket || undefined,
-          suggestedActions: chatData.suggested_actions || [],
-          timestamp: new Date(),
-        };
-        persistAssistantReply(assistantMsg);
-      } else if (res.status === 401) {
+      if (res.status === 401) {
         onOpenAuth?.();
-      } else {
+        return;
+      }
+
+      if (!res.ok || !res.body) {
         const fallbackMsg: ChatMessage = {
-          id: String(Date.now() + 1),
+          id: streamMsgId,
           role: 'assistant',
           text: isKhmer(query)
             ? 'សូមអភ័យទោស ខ្ញុំមិនអាចទាក់ទងជំនួយការវេជ្ជសាស្ត្របានជាបណ្តោះអាសន្នទេ។ សូមពិនិត្យមើលបណ្តាញរបស់អ្នក ឬព្យាយាមម្តងទៀតនៅបន្តិចក្រោយ។'
@@ -468,10 +555,168 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
           timestamp: new Date(),
         };
         persistAssistantReply(fallbackMsg);
+        return;
       }
+
+      // Read SSE stream with smooth progressive display queue
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let rawTargetText = '';
+      let displayedText = '';
+      let streamStarted = false;
+      let metadata: any = null;
+      let tickerInterval: any = null;
+
+      const prefersReducedMotion =
+        typeof window !== 'undefined' &&
+        window.matchMedia &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      // 60fps smooth progressive ticker advancing displayedText towards rawTargetText
+      tickerInterval = setInterval(() => {
+        const diff = rawTargetText.length - displayedText.length;
+        if (diff > 0) {
+          if (!streamStarted) {
+            streamStarted = true;
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: streamMsgId,
+                role: 'assistant',
+                text: '',
+                timestamp: new Date(),
+              },
+            ]);
+          }
+
+          if (prefersReducedMotion) {
+            displayedText = rawTargetText;
+          } else {
+            // Adaptive cadence step size:
+            // diff <= 4: advance 1 char for natural smooth reading flow
+            // diff 5-14: advance 2 chars
+            // diff 15-30: advance 3-4 chars
+            // diff > 30: catch up smoothly with diff / 5
+            let step = 1;
+            if (diff > 40) {
+              step = Math.ceil(diff / 5);
+            } else if (diff > 20) {
+              step = 4;
+            } else if (diff > 10) {
+              step = 2;
+            } else {
+              step = 1;
+            }
+            displayedText = rawTargetText.slice(0, displayedText.length + step);
+          }
+
+          setMessages((prev) =>
+            prev.map((m) => (m.id === streamMsgId ? { ...m, text: displayedText } : m))
+          );
+          messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+        }
+      }, 18);
+
+      const processEvent = (eventType: string, dataStr: string) => {
+        try {
+          const parsed = JSON.parse(dataStr);
+          if (eventType === 'token') {
+            const delta = parsed.delta || '';
+            rawTargetText += delta;
+          } else if (eventType === 'metadata') {
+            metadata = parsed;
+          }
+        } catch (e) {
+          console.warn('SSE event parse error:', e);
+        }
+      };
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+
+          const parts = buffer.split(/\r?\n\r?\n/);
+          buffer = parts.pop() || '';
+
+          for (const part of parts) {
+            if (!part.trim()) continue;
+            let eventType = 'message';
+            let dataStr = '';
+            const lines = part.split(/\r?\n/);
+            for (const line of lines) {
+              if (line.startsWith('event:')) {
+                eventType = line.slice(6).trim();
+              } else if (line.startsWith('data:')) {
+                dataStr += (dataStr ? '\n' : '') + line.slice(5).trim();
+              }
+            }
+            if (dataStr) {
+              processEvent(eventType, dataStr);
+            }
+          }
+        }
+
+        if (buffer.trim()) {
+          const lines = buffer.split(/\r?\n/);
+          let eventType = 'message';
+          let dataStr = '';
+          for (const line of lines) {
+            if (line.startsWith('event:')) {
+              eventType = line.slice(6).trim();
+            } else if (line.startsWith('data:')) {
+              dataStr += (dataStr ? '\n' : '') + line.slice(5).trim();
+            }
+          }
+          if (dataStr) {
+            processEvent(eventType, dataStr);
+          }
+        }
+
+        // Wait for smooth display ticker to catch up to the full response
+        await new Promise<void>((resolve) => {
+          const checkDone = setInterval(() => {
+            if (displayedText.length >= rawTargetText.length) {
+              clearInterval(checkDone);
+              if (tickerInterval) clearInterval(tickerInterval);
+              displayedText = rawTargetText;
+              resolve();
+            }
+          }, 18);
+        });
+      } finally {
+        if (tickerInterval) clearInterval(tickerInterval);
+      }
+
+      // Stream completed - finalize conversation state and metadata
+      setStreamingMsgId(null);
+
+      if (metadata?.conversation_id) {
+        setCurrentConversationId(metadata.conversation_id);
+        baseConvItem.id = metadata.conversation_id;
+        setActiveConversationId(activeUserId, metadata.conversation_id);
+      }
+
+      const hasMatchingHospitals = metadata?.matching_hospitals && metadata.matching_hospitals.length > 0;
+      const finalAssistantMsg: ChatMessage = {
+        id: streamMsgId,
+        role: 'assistant',
+        text: displayedText || rawTargetText || (isKhmer(query) ? 'ខ្ញុំនៅទីនេះដើម្បីជួយសម្រួលការសាកសួរសុខភាពរបស់អ្នក។' : 'I am here to assist with your healthcare inquiries.'),
+        triage: hasMatchingHospitals ? {
+          urgency_level: metadata?.urgency_level || 'STANDARD',
+          recommended_specialty: metadata?.recommended_specialty || 'General Care',
+          matching_hospitals: metadata.matching_hospitals,
+        } : undefined,
+        bookedTicket: metadata?.booked_ticket || undefined,
+        suggestedActions: metadata?.suggested_actions || [],
+        timestamp: new Date(),
+      };
+      persistAssistantReply(finalAssistantMsg);
     } catch {
       const errorMsg: ChatMessage = {
-        id: String(Date.now() + 1),
+        id: streamMsgId,
         role: 'assistant',
         text: isKhmer(query)
           ? 'បញ្ហាតភ្ជាប់បណ្តាញពេលដំណើរការសាររបស់អ្នក។ សូមពិនិត្យមើលបណ្តាញរបស់អ្នក ហើយព្យាយាមម្តងទៀត។'
@@ -481,10 +726,12 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
       persistAssistantReply(errorMsg);
     } finally {
       setLoading(false);
+      setStreamingMsgId(null);
     }
   };
 
   const handleSendMessage = (e?: React.FormEvent) => {
+    if (loading) return;
     if (e) e.preventDefault();
     if (hasReachedLimit) {
       onOpenAuth?.();
@@ -728,6 +975,9 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
                   >
                     {msg.text}
                   </ReactMarkdown>
+                  {streamingMsgId === msg.id && (
+                    <span className="streaming-cursor" aria-hidden="true" />
+                  )}
                 </div>
 
 
@@ -814,7 +1064,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
           );
         })}
 
-        {loading && (() => {
+        {loading && (!streamingMsgId || !messages.some((m) => m.id === streamingMsgId)) && (() => {
           const lastUserMsg = [...messages].reverse().find((m) => m.role === 'user');
           const isQuestionKm = lastUserMsg ? isKhmer(lastUserMsg.text) : (language === 'km');
           const loadingFont = isQuestionKm ? 'var(--font-khmer)' : 'inherit';
@@ -913,33 +1163,37 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
         bottom: 0,
         zIndex: 30,
       }}>
-        {/* Slash Command / Conversation History List (Direct list, NO outer container/card/shadow) */}
+        {/* Slash Command / Conversation History List (ONE single main container) */}
         {isSlashActive && (
           <div
             ref={slashListRef}
             style={{
               width: '100%',
-              maxHeight: '220px',
+              maxHeight: '280px',
               overflowY: 'auto',
-              background: 'transparent',
-              border: 'none',
+              background: '#ffffff',
+              border: '1px solid var(--border-color)',
+              borderRadius: '12px',
               boxShadow: 'none',
-              padding: '0.2rem 0.3rem',
-              marginBottom: '0.45rem',
+              padding: '5px',
+              marginBottom: '0.6rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '2px',
+              boxSizing: 'border-box',
             }}
           >
-            {/* Direct Option: New consultation */}
+            {/* Action 1: New Chat */}
             <button
               type="button"
               onClick={handleStartNewChat}
               style={{
                 width: '100%',
-                background: slashSelectedIndex === 0 ? 'rgba(0, 0, 0, 0.04)' : 'transparent',
+                background: slashSelectedIndex === 0 ? 'var(--bg-hover, #f1f5f9)' : 'transparent',
                 border: 'none',
-                borderBottom: '1px solid var(--border-color)',
-                borderRadius: '4px',
+                borderRadius: '8px',
                 boxShadow: 'none',
-                padding: '0.55rem 0.4rem',
+                padding: '0.6rem 0.8rem',
                 cursor: 'pointer',
                 textAlign: 'left',
                 display: 'flex',
@@ -953,13 +1207,18 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
               }}
               onMouseEnter={() => setSlashSelectedIndex(0)}
             >
-              <span>+ {language === 'km' ? 'ការពិគ្រោះថ្មី' : 'New consultation'}</span>
+              <span>+ {language === 'km' ? 'ការជជែកថ្មី' : 'New chat'}</span>
             </button>
 
+            {filteredConversations.length > 0 && (
+              <div style={{ height: '1px', background: 'var(--border-color)', margin: '2px 4px' }} />
+            )}
+
+            {/* Conversation History List Rows (No separate containers) */}
             {filteredConversations.length === 0 ? (
               <div
                 style={{
-                  padding: '0.6rem 0.4rem',
+                  padding: '0.6rem 0.8rem',
                   fontSize: '0.84rem',
                   color: 'var(--text-muted)',
                   fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
@@ -977,12 +1236,11 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
                     onClick={() => handleSelectConversation(conv)}
                     style={{
                       width: '100%',
-                      background: isSelected ? 'rgba(0, 0, 0, 0.04)' : 'transparent',
+                      background: isSelected ? 'var(--bg-hover, #f1f5f9)' : 'transparent',
                       border: 'none',
-                      borderBottom: '1px solid var(--border-color)',
-                      borderRadius: '4px',
+                      borderRadius: '8px',
                       boxShadow: 'none',
-                      padding: '0.55rem 0.4rem',
+                      padding: '0.55rem 0.8rem',
                       cursor: 'pointer',
                       textAlign: 'left',
                       display: 'flex',
@@ -997,7 +1255,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
                       <div
                         style={{
                           fontSize: '0.9rem',
-                          fontWeight: 600,
+                          fontWeight: 500,
                           color: 'var(--text-main)',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
@@ -1297,6 +1555,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
                 <button
                   type="submit"
                   disabled={loading || (!inputText.trim() && !selectedImage)}
+                  className="chat-send-btn"
                   style={{
                     width: '34px',
                     height: '34px',
@@ -1312,18 +1571,15 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
                       ? '#ffffff'
                       : '#94a3b8',
                     cursor: (loading || (!inputText.trim() && !selectedImage)) ? 'not-allowed' : 'pointer',
-                    transition: 'all var(--transition-fast)',
+                    transition: 'none',
+                    animation: 'none',
                     padding: 0,
                     boxShadow: 'none',
                   }}
                   aria-label={t('chat_send')}
                   title={t('chat_send')}
                 >
-                  {loading ? (
-                    <RefreshCw size={15} className="spin" />
-                  ) : (
-                    <ArrowUp size={17} strokeWidth={2.4} />
-                  )}
+                  <ArrowUp size={17} strokeWidth={2.4} />
                 </button>
               )}
             </div>

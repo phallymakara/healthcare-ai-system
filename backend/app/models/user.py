@@ -11,6 +11,7 @@ from app.models.enums import UserRole
 if TYPE_CHECKING:
     from app.models.doctor import Doctor
     from app.models.queue import Ticket
+    from app.models.chat import ChatConversation
 
 
 class User(Base):
@@ -53,6 +54,9 @@ class User(Base):
     )
     tickets: Mapped[List["Ticket"]] = relationship(
         "Ticket", back_populates="patient", cascade="all, delete-orphan"
+    )
+    conversations: Mapped[List["ChatConversation"]] = relationship(
+        "ChatConversation", back_populates="user", cascade="all, delete-orphan"
     )
 
 

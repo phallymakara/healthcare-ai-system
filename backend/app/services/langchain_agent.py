@@ -1,8 +1,9 @@
+import asyncio
 import logging
 import uuid
 import re
 from urllib.parse import quote_plus
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Optional, Any, Tuple
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -156,7 +157,7 @@ def normalize_khmer_query(text: str) -> str:
 
 class HealthcareAgentService:
     @classmethod
-    async def run_agent(
+    def _setup_agent_context(
         cls,
         message: str,
         history: List[Any],
@@ -165,9 +166,7 @@ class HealthcareAgentService:
         language: str = "en",
         user_latitude: Optional[float] = None,
         user_longitude: Optional[float] = None,
-    ) -> Dict[str, Any]:
-        """Runs the LangChain agent to retrieve real hospital data and calculate nearby hospital proximity"""
-
+    ):
         matching_hospitals_data: List[Dict[str, Any]] = []
         detected_lang = detect_query_language(message, fallback_lang=language or "en")
 
@@ -195,7 +194,7 @@ class HealthcareAgentService:
                 dist = calculate_distance_km(ref_lat, ref_lon, h.latitude, h.longitude)
                 hosp_with_dist.append((h, dist))
 
-            hosp_with_dist.sort(key=lambda x: (x[1] is None, x[1] if x[1] is not None else 99999))
+            hosp_with_dist.sort(key=lambda x: (x[1] is None, x[1] if x[1] is not None else 9999))
 
             cat_q = category.strip().lower()
             if cat_q not in ["all", ""]:
@@ -264,8 +263,8 @@ class HealthcareAgentService:
             return "\n\n".join(results)
 
         @tool
-        async def search_hospitals_and_clinics(query: str = "") -> str:
-            """Search verified hospitals, medical specialty clinics, and animal veterinary clinics across the system database by facility name, specialty, or keyword."""
+        async def search_hospitals_and_clinics(query: str = "All") -> str:
+            """Search hospitals, medical specialty clinics, and animal veterinary clinics across the system database."""
             stmt = (
                 select(Hospital)
                 .where(Hospital.is_active == True)
@@ -277,60 +276,67 @@ class HealthcareAgentService:
             res = await db.execute(stmt)
             hospitals = res.scalars().all()
 
+            q_raw = query.strip().lower()
+            q = normalize_khmer_query(q_raw)
+            if q in ["all", "none", "", "all hospitals", "hospital"]:
+                matched = hospitals[:5]
+            else:
+                tokens = [t for t in q.split() if len(t) > 1]
+                matched = []
+                for h in hospitals:
+                    searchable = (
+                        f"{h.name} {h.description or ''} {h.address or ''} "
+                        + " ".join([d.name for d in h.departments])
+                        + " "
+                        + " ".join([s.name for s in h.services])
+                    ).lower()
+
+                    if any(t in searchable for t in tokens) or q in searchable:
+                        matched.append(h)
+
+                if not matched:
+                    is_animal_query = any(
+                        w in q
+                        for w in [
+                            "animal",
+                            "pet",
+                            "dog",
+                            "cat",
+                            "puppy",
+                            "kitten",
+                            "vet",
+                            "veterinary",
+                        ]
+                    )
+                    if is_animal_query:
+                        for h in hospitals:
+                            searchable = (
+                                f"{h.name} {h.description or ''} "
+                                + " ".join([d.name for d in h.departments])
+                            ).lower()
+                            if any(
+                                w in searchable
+                                for w in ["animal", "pet", "vet", "agro"]
+                            ):
+                                matched.append(h)
+
+            if not matched:
+                return (
+                    f"No hospitals or clinics matched the search query '{query}' in our system database. "
+                    "You may suggest general hospitals such as Calmette Hospital, Khmer-Soviet Friendship Hospital, or Kantha Bopha Children's Hospital."
+                )
+
+            results = []
             ref_lat = user_latitude if user_latitude is not None else 11.5564
             ref_lon = user_longitude if user_longitude is not None else 104.9282
 
-            q = normalize_khmer_query(query)
-            if q:
-                tokens = [
-                    w
-                    for w in q.split()
-                    if w
-                    not in [
-                        "at",
-                        "in",
-                        "for",
-                        "the",
-                        "a",
-                        "an",
-                        "hospital",
-                        "clinic",
-                        "center",
-                        "where",
-                        "is",
-                        "about",
-                        "info",
-                    ]
-                ]
-                if not tokens:
-                    tokens = [q]
-                hospitals = [
-                    h
-                    for h in hospitals
-                    if any(
-                        t in h.name.lower()
-                        or t in (h.description or "").lower()
-                        or any(t in d.name.lower() for d in h.departments)
-                        or any(t in s.name.lower() for s in h.services)
-                        for t in tokens
-                    )
-                ]
-
-            if not hospitals:
-                return f"No hospital or clinic facilities found matching '{query}' in our verified database."
-
-            results = []
-            for h in hospitals[:5]:
+            for h in matched[:5]:
                 dist = calculate_distance_km(
                     ref_lat, ref_lon, h.latitude, h.longitude
                 )
-                dist_str = (
-                    f" | Proximity: 📍 ~{dist} km"
-                    if (dist is not None and user_latitude is not None)
-                    else ""
-                )
+                dist_str = f" (📍 ~{dist} km away)" if dist is not None else ""
                 emer_str = (
-                    "Available 24/7"
+                    "24/7 Emergency Service Available"
                     if h.emergency_service_available
                     else "Standard Operating Hours"
                 )
@@ -386,25 +392,7 @@ class HealthcareAgentService:
 
         # 3. Build message list
         system_text = SYSTEM_PROMPT
-        detected_lang = detect_query_language(message, fallback_lang=language or "en")
-
-        # Guardrail pre-filter check (prompt injection, technical skills, machine mechanics)
         guardrail_violation = GuardrailService.evaluate_query(message, language=detected_lang)
-        if guardrail_violation:
-            refusal_reply, violation_category = guardrail_violation
-            return {
-                "reply": refusal_reply,
-                "booked_ticket": None,
-                "matching_hospitals": [],
-                "suggested_actions": [
-                    "ស្វែងរកមន្ទីរពេទ្យនៅជិតខ្ញុំ",
-                    "មើលបញ្ជីមន្ទីរពេទ្យ",
-                ] if detected_lang == "km" else [
-                    "Find Hospitals Near Me",
-                    "Explore Hospital Directory",
-                ],
-                "detected_language": detected_lang,
-            }
 
         if user_latitude is not None and user_longitude is not None:
             system_text += (
@@ -463,7 +451,128 @@ class HealthcareAgentService:
 
         messages.append(HumanMessage(content=message))
 
-        # 4. Agent tool execution loop
+        return (
+            llm,
+            llm_with_tools,
+            tools,
+            tool_map,
+            messages,
+            matching_hospitals_data,
+            detected_lang,
+            guardrail_violation,
+        )
+
+    @classmethod
+    def _parse_suggested_actions(cls, final_reply: str, detected_lang: str) -> Tuple[str, List[str]]:
+        extracted_actions: List[str] = []
+        action_match = re.search(
+            r"SUGGESTED_ACTIONS:\s*((\n\s*[-*•\d.]+\s*[^\n]+)+)",
+            final_reply,
+            re.IGNORECASE,
+        )
+        if action_match:
+            raw_block = action_match.group(1)
+            final_reply = final_reply[: action_match.start()].strip()
+            lines = [
+                line.strip() for line in raw_block.split("\n") if line.strip()
+            ]
+            for line in lines:
+                cleaned = re.sub(r"^[-*•\d.]+\s*", "", line).strip()
+                cleaned = cleaned.strip("[]'\"").strip()
+                if cleaned and not any(
+                    bad in cleaned.lower()
+                    for bad in [
+                        "ask another question",
+                        "ask a question",
+                        "none",
+                        "n/a",
+                        "other",
+                    ]
+                ):
+                    extracted_actions.append(cleaned)
+
+        suggested_actions = extracted_actions
+        if not suggested_actions:
+            if detected_lang == "km":
+                suggested_actions = [
+                    "ស្វែងរកមន្ទីរពេទ្យនៅជិតខ្ញុំ",
+                    "មើលបញ្ជីមន្ទីរពេទ្យ",
+                ]
+            else:
+                suggested_actions = [
+                    "Find Hospitals Near Me",
+                    "Explore Hospital Directory",
+                ]
+
+        suggested_actions = [
+            a
+            for a in suggested_actions
+            if not any(
+                bad in a.lower()
+                for bad in [
+                    "ask another question",
+                    "ask a question",
+                    "none",
+                    "n/a",
+                    "book ticket",
+                    "book a ticket",
+                    "book appointment",
+                    "reserve ticket",
+                    "queue ticket",
+                    "កក់សំបុត្រ",
+                    "កក់",
+                ]
+            )
+        ]
+        return final_reply, suggested_actions
+
+    @classmethod
+    async def run_agent(
+        cls,
+        message: str,
+        history: List[Any],
+        db: AsyncSession,
+        user_context: Optional[Dict[str, str]] = None,
+        language: str = "en",
+        user_latitude: Optional[float] = None,
+        user_longitude: Optional[float] = None,
+    ) -> Dict[str, Any]:
+        """Runs the LangChain agent synchronously (without streaming)."""
+        (
+            llm,
+            llm_with_tools,
+            tools,
+            tool_map,
+            messages,
+            matching_hospitals_data,
+            detected_lang,
+            guardrail_violation,
+        ) = cls._setup_agent_context(
+            message=message,
+            history=history,
+            db=db,
+            user_context=user_context,
+            language=language,
+            user_latitude=user_latitude,
+            user_longitude=user_longitude,
+        )
+
+        if guardrail_violation:
+            refusal_reply, _ = guardrail_violation
+            return {
+                "reply": refusal_reply,
+                "booked_ticket": None,
+                "matching_hospitals": [],
+                "suggested_actions": [
+                    "ស្វែងរកមន្ទីរពេទ្យនៅជិតខ្ញុំ",
+                    "មើលបញ្ជីមន្ទីរពេទ្យ",
+                ] if detected_lang == "km" else [
+                    "Find Hospitals Near Me",
+                    "Explore Hospital Directory",
+                ],
+                "detected_language": detected_lang,
+            }
+
         try:
             for _ in range(4):
                 ai_res: AIMessage = await llm_with_tools.ainvoke(messages)
@@ -508,70 +617,143 @@ class HealthcareAgentService:
                 [str(c) for c in final_reply if isinstance(c, str)]
             )
 
-        # Parse SUGGESTED_ACTIONS: from LLM response
-        extracted_actions: List[str] = []
-        action_match = re.search(
-            r"SUGGESTED_ACTIONS:\s*((\n\s*[-*•\d.]+\s*[^\n]+)+)",
-            final_reply,
-            re.IGNORECASE,
-        )
-        if action_match:
-            raw_block = action_match.group(1)
-            final_reply = final_reply[: action_match.start()].strip()
-            lines = [
-                line.strip() for line in raw_block.split("\n") if line.strip()
-            ]
-            for line in lines:
-                cleaned = re.sub(r"^[-*•\d.]+\s*", "", line).strip()
-                cleaned = cleaned.strip("[]'\"").strip()
-                if cleaned and not any(
-                    bad in cleaned.lower()
-                    for bad in [
-                        "ask another question",
-                        "ask a question",
-                        "none",
-                        "n/a",
-                        "other",
-                    ]
-                ):
-                    extracted_actions.append(cleaned)
-
-        # Fallback contextual actions
-        suggested_actions: List[str] = extracted_actions
-        if not suggested_actions:
-            if detected_lang == "km":
-                suggested_actions = [
-                    "ស្វែងរកមន្ទីរពេទ្យនៅជិតខ្ញុំ",
-                    "មើលបញ្ជីមន្ទីរពេទ្យ",
-                ]
-            else:
-                suggested_actions = [
-                    "Find Hospitals Near Me",
-                    "Explore Hospital Directory",
-                ]
-
-        suggested_actions = [
-            a
-            for a in suggested_actions
-            if not any(
-                bad in a.lower()
-                for bad in [
-                    "ask another question",
-                    "ask a question",
-                    "none",
-                    "n/a",
-                    "book ticket",
-                    "book a ticket",
-                    "book appointment",
-                    "reserve ticket",
-                    "queue ticket",
-                    "កក់សំបុត្រ",
-                    "កក់",
-                ]
-            )
-        ]
+        final_reply, suggested_actions = cls._parse_suggested_actions(final_reply, detected_lang)
 
         return {
+            "reply": final_reply,
+            "booked_ticket": None,
+            "matching_hospitals": matching_hospitals_data,
+            "suggested_actions": suggested_actions,
+            "detected_language": detected_lang,
+        }
+
+    @classmethod
+    async def stream_agent(
+        cls,
+        message: str,
+        history: List[Any],
+        db: AsyncSession,
+        user_context: Optional[Dict[str, str]] = None,
+        language: str = "en",
+        user_latitude: Optional[float] = None,
+        user_longitude: Optional[float] = None,
+    ):
+        """Streams the AI agent response token-by-token.
+        Yields:
+          {"type": "token", "delta": "..."}
+        And upon completion:
+          {"type": "metadata", "reply": "...", "matching_hospitals": [...], "suggested_actions": [...], "detected_language": "..."}
+        """
+        (
+            llm,
+            llm_with_tools,
+            tools,
+            tool_map,
+            messages,
+            matching_hospitals_data,
+            detected_lang,
+            guardrail_violation,
+        ) = cls._setup_agent_context(
+            message=message,
+            history=history,
+            db=db,
+            user_context=user_context,
+            language=language,
+            user_latitude=user_latitude,
+            user_longitude=user_longitude,
+        )
+
+        if guardrail_violation:
+            refusal_reply, _ = guardrail_violation
+            words = refusal_reply.split(" ")
+            for i, w in enumerate(words):
+                token = w if i == len(words) - 1 else w + " "
+                yield {"type": "token", "delta": token}
+                await asyncio.sleep(0.02)
+            actions = [
+                "ស្វែងរកមន្ទីរពេទ្យនៅជិតខ្ញុំ",
+                "មើលបញ្ជីមន្ទីរពេទ្យ",
+            ] if detected_lang == "km" else [
+                "Find Hospitals Near Me",
+                "Explore Hospital Directory",
+            ]
+            yield {
+                "type": "metadata",
+                "reply": refusal_reply,
+                "booked_ticket": None,
+                "matching_hospitals": [],
+                "suggested_actions": actions,
+                "detected_language": detected_lang,
+            }
+            return
+
+        try:
+            # 1. Resolve tool calls if any
+            for _ in range(4):
+                ai_res: AIMessage = await llm_with_tools.ainvoke(messages)
+                if not ai_res.tool_calls:
+                    break
+
+                messages.append(ai_res)
+                for tc in ai_res.tool_calls:
+                    t_name = tc["name"]
+                    t_args = tc.get("args", {})
+                    t_id = tc.get("id", str(uuid.uuid4()))
+
+                    tool_fn = tool_map.get(t_name)
+                    if tool_fn:
+                        try:
+                            t_output = await tool_fn.ainvoke(t_args)
+                        except Exception as err:
+                            logger.error(f"Error executing tool {t_name}: {err}")
+                            t_output = f"Error executing tool {t_name}: {str(err)}"
+                    else:
+                        t_output = f"Tool {t_name} is not available in Phase 1."
+
+                    messages.append(ToolMessage(content=str(t_output), tool_call_id=t_id))
+
+            # 2. Stream the final response with llm.astream
+            full_text_buffer = ""
+            action_buffering = False
+            async for chunk in llm.astream(messages):
+                content = chunk.content if isinstance(chunk.content, str) else ""
+                if not content:
+                    continue
+
+                full_text_buffer += content
+
+                if "SUGGESTED_ACTIONS:" in full_text_buffer:
+                    action_buffering = True
+
+                if not action_buffering:
+                    marker = "SUGGESTED_ACTIONS:"
+                    prefix_len = 0
+                    for i in range(1, len(marker)):
+                        if full_text_buffer.endswith(marker[:i]):
+                            prefix_len = i
+                            break
+                    if prefix_len > 0:
+                        safe = content[:-prefix_len] if len(content) >= prefix_len else ""
+                        if safe:
+                            yield {"type": "token", "delta": safe}
+                    else:
+                        yield {"type": "token", "delta": content}
+
+            final_reply = full_text_buffer
+        except Exception as llm_err:
+            logger.error(f"AI Agent streaming error: {llm_err}")
+            fallback = (
+                "សួស្តី! ប្រព័ន្ធជំនួយការសុខភាព AI កំពុងដំណើរការជាធម្មតា។ អ្នកអាចស្វែងរកមន្ទីរពេទ្យ និងស្វែងរកទីតាំងមន្ទីរពេទ្យដែលនៅជិតអ្នកបាន។"
+                if detected_lang == "km"
+                else "Hello! I am your Healthcare AI Assistant. You can search hospitals and clinics, view locations, and find nearby medical facilities directly on the platform."
+            )
+            yield {"type": "token", "delta": fallback}
+            final_reply = fallback
+
+        final_reply, suggested_actions = cls._parse_suggested_actions(final_reply, detected_lang)
+
+        yield {
+            "type": "metadata",
             "reply": final_reply,
             "booked_ticket": None,
             "matching_hospitals": matching_hospitals_data,
