@@ -8,6 +8,13 @@
 import { API_BASE } from './api';
 import { AuthService } from './auth';
 
+export interface CitedSource {
+  title: string;
+  url: string;
+  source_name: string;
+  domain?: string;
+}
+
 export interface StoredMessage {
   id: string;
   role: 'user' | 'assistant';
@@ -16,6 +23,7 @@ export interface StoredMessage {
   triage?: any;
   bookedTicket?: any;
   suggestedActions?: string[];
+  citedSources?: CitedSource[];
   requiresDisclaimer?: boolean;
   timestamp: string; // ISO string
 }
@@ -180,6 +188,7 @@ export const fetchConversationDetailAPI = async (convId: string): Promise<Conver
         triage: m.triage_data,
         bookedTicket: m.booked_ticket,
         suggestedActions: m.suggested_actions,
+        citedSources: m.triage_data?.cited_sources || [],
         requiresDisclaimer: Boolean(m.triage_data?.requires_disclaimer),
         timestamp: m.created_at,
       })),

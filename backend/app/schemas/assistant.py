@@ -62,6 +62,7 @@ class AssistantChatResponse(BaseModel):
     matching_hospitals: List[TriageHospitalMatch] = []
     booked_ticket: Optional[dict] = None
     suggested_actions: List[str] = []
+    cited_sources: Optional[List[dict]] = []
     detected_language: Optional[str] = None
     conversation_id: Optional[uuid.UUID] = None
     requires_disclaimer: bool = False

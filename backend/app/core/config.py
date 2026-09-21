@@ -76,6 +76,11 @@ class Settings(BaseSettings):
     AZURE_STORAGE_ACCOUNT_NAME: str = ""
     AZURE_STORAGE_ACCOUNT_KEY: str = ""
 
+    # Web Search Configuration (optional API keys, fallback engine available)
+    TAVILY_API_KEY: Optional[str] = None
+    BING_SEARCH_API_KEY: Optional[str] = None
+    SERPER_API_KEY: Optional[str] = None
+
     @model_validator(mode="after")
     def assemble_urls(self):
         """Dynamically build and normalize URLs across local and production environments."""

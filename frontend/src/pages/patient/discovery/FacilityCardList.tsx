@@ -82,6 +82,7 @@ export const FacilityCardList: React.FC<FacilityCardListProps> = ({
       <div style={{ marginBottom: '1.25rem' }}>
         <form
           onSubmit={onSearchSubmit}
+          className="facility-search-form"
           style={{
             position: 'relative',
             display: 'flex',

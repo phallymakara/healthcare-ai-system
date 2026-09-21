@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { Plus, Mic, ArrowUp, X, Image as ImageIcon, Pencil, Trash2, Check } from 'lucide-react';
+import { Plus, Mic, ArrowUp, X, Image as ImageIcon, Pencil, Trash2, Check, Globe, ExternalLink } from 'lucide-react';
 import {
   getUserConversations,
   saveUserConversation,
@@ -15,6 +15,7 @@ import {
   setActiveConversationId,
   ConversationItem,
   StoredMessage,
+  CitedSource,
 } from '../../services/chatHistoryService';
 import { AuthService, UserProfile } from '../../services/auth';
 import { useLanguage } from '../../context/LanguageContext';
@@ -40,6 +41,7 @@ interface ChatMessage {
   triage?: any;
   bookedTicket?: any;
   suggestedActions?: string[];
+  citedSources?: CitedSource[];
   requiresDisclaimer?: boolean;
   timestamp: Date;
 }
@@ -52,6 +54,7 @@ const serializeMessage = (m: ChatMessage): StoredMessage => ({
   triage: m.triage,
   bookedTicket: m.bookedTicket,
   suggestedActions: m.suggestedActions,
+  citedSources: m.citedSources,
   requiresDisclaimer: m.requiresDisclaimer,
   timestamp: m.timestamp instanceof Date ? m.timestamp.toISOString() : new Date(m.timestamp).toISOString(),
 });
@@ -64,6 +67,7 @@ const deserializeMessage = (m: StoredMessage): ChatMessage => ({
   triage: m.triage,
   bookedTicket: m.bookedTicket,
   suggestedActions: m.suggestedActions,
+  citedSources: m.citedSources || m.triage?.cited_sources || [],
   requiresDisclaimer: m.requiresDisclaimer ?? Boolean(m.triage?.requires_disclaimer),
   timestamp: new Date(m.timestamp),
 });
@@ -73,14 +77,20 @@ const isKhmer = (text?: string): boolean => {
   return /[\u1780-\u17FF]/.test(text);
 };
 
+const getDefaultWelcomeActions = (isKm: boolean): string[] =>
+  isKm
+    ? ['ពិគ្រោះរោគសញ្ញាជំងឺ', 'ស្វែងរកមន្ទីរពេទ្យនៅជិតខ្ញុំ', 'សេវាសង្គ្រោះបន្ទាន់ ២៤/៧']
+    : ['Check My Symptoms', 'Find Hospitals Near Me', '24/7 Emergency Services'];
+
 const shouldShowMedicalDisclaimer = (msg: ChatMessage, userQuestion?: string): boolean => {
   if (msg.role !== 'assistant' || msg.id === 'welcome') {
     return false;
   }
 
-  // 1. Structured triage, hospital matches, or booked ticket always requires disclaimer
+  // 1. Structured triage, hospital matches, cited official sources, or booked ticket always requires disclaimer
   if (
     (msg.triage && (msg.triage.matching_hospitals?.length > 0 || msg.triage.urgency_level || msg.triage.requires_disclaimer)) ||
+    (msg.citedSources && msg.citedSources.length > 0) ||
     msg.bookedTicket
   ) {
     return true;
@@ -154,6 +164,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
             id: 'welcome',
             role: 'assistant',
             text: t('chat_welcome'),
+            suggestedActions: getDefaultWelcomeActions(language === 'km'),
             timestamp: new Date(),
           },
         ];
@@ -173,6 +184,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
         id: 'welcome',
         role: 'assistant',
         text: t('chat_welcome'),
+        suggestedActions: getDefaultWelcomeActions(language === 'km'),
         timestamp: new Date(),
       },
     ];
@@ -196,7 +208,11 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
   useEffect(() => {
     setMessages((prev) => {
       if (prev.length === 1 && prev[0].id === 'welcome') {
-        return [{ ...prev[0], text: t('chat_welcome') }];
+        return [{
+          ...prev[0],
+          text: t('chat_welcome'),
+          suggestedActions: getDefaultWelcomeActions(language === 'km'),
+        }];
       }
       return prev;
     });
@@ -304,6 +320,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
             id: 'welcome',
             role: 'assistant',
             text: t('chat_welcome'),
+            suggestedActions: getDefaultWelcomeActions(language === 'km'),
             timestamp: new Date(),
           },
         ]
@@ -323,6 +340,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
         id: 'welcome',
         role: 'assistant',
         text: t('chat_welcome'),
+        suggestedActions: getDefaultWelcomeActions(language === 'km'),
         timestamp: new Date(),
       },
     ]);
@@ -743,7 +761,8 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
         } : (metadata?.requires_disclaimer ? { requires_disclaimer: true } : undefined),
         bookedTicket: metadata?.booked_ticket || undefined,
         suggestedActions: metadata?.suggested_actions || [],
-        requiresDisclaimer: Boolean(metadata?.requires_disclaimer),
+        citedSources: metadata?.cited_sources || [],
+        requiresDisclaimer: Boolean(metadata?.requires_disclaimer) || (metadata?.cited_sources && metadata.cited_sources.length > 0),
         timestamp: new Date(),
       };
       persistAssistantReply(finalAssistantMsg);
@@ -1013,6 +1032,105 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
                   )}
                 </div>
 
+                {/* Official Government & WHO Sources Reference Section */}
+                {msg.role === 'assistant' && msg.citedSources && msg.citedSources.length > 0 && (
+                  <div
+                    style={{
+                      marginTop: '0.85rem',
+                      padding: '0.65rem 0.85rem',
+                      background: '#ffffff',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: '8px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.5rem',
+                      maxWidth: '100%',
+                      boxShadow: 'none',
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        fontSize: isResponseKhmer ? '0.82rem' : '0.78rem',
+                        fontWeight: 600,
+                        color: 'var(--text-muted)',
+                        fontFamily: isResponseKhmer ? 'var(--font-khmer)' : 'inherit',
+                      }}
+                    >
+                      <Globe size={14} aria-hidden="true" />
+                      <span>{isResponseKhmer ? 'ប្រភពឯកសារផ្លូវការ (Official Sources)' : 'Official Sources'}</span>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                      {msg.citedSources.map((source, sIdx) => (
+                        <a
+                          key={sIdx}
+                          href={source.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: '0.75rem',
+                            padding: '0.45rem 0.65rem',
+                            borderRadius: '6px',
+                            border: '1px solid var(--border-color)',
+                            background: '#f9fafb',
+                            color: 'var(--text-main)',
+                            textDecoration: 'none',
+                            fontSize: isResponseKhmer ? '0.86rem' : '0.8rem',
+                            fontFamily: isResponseKhmer ? 'var(--font-khmer)' : 'inherit',
+                            transition: 'all 0.15s ease',
+                            boxShadow: 'none',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.borderColor = 'var(--text-main)';
+                            e.currentTarget.style.background = '#ffffff';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.borderColor = 'var(--border-color)';
+                            e.currentTarget.style.background = '#f9fafb';
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                            <span
+                              style={{
+                                display: 'inline-block',
+                                padding: '1px 6px',
+                                fontSize: '0.68rem',
+                                fontWeight: 600,
+                                borderRadius: '4px',
+                                background: '#e0f2fe',
+                                color: '#0369a1',
+                                whiteSpace: 'nowrap',
+                                flexShrink: 0,
+                              }}
+                            >
+                              {source.source_name || source.domain || 'Official'}
+                            </span>
+                            <span
+                              style={{
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                fontWeight: 500,
+                                color: 'var(--text-main)',
+                              }}
+                              title={source.title}
+                            >
+                              {source.title}
+                            </span>
+                          </div>
+                          <ExternalLink size={13} style={{ flexShrink: 0, color: 'var(--text-muted)' }} aria-hidden="true" />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
 
 
                 {/* Contextual Next Action Buttons */}
@@ -1195,13 +1313,16 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
       </div>
 
       {/* Bottom Chat Input Form Area */}
-      <div style={{
-        padding: '0.5rem 0 0.35rem 0',
-        background: 'var(--bg-primary, #f6faf6)',
-        position: 'sticky',
-        bottom: 0,
-        zIndex: 30,
-      }}>
+      <div
+        className="chat-bottom-input-container"
+        style={{
+          padding: '0.5rem 0 0.35rem 0',
+          background: 'var(--bg-primary, #f6faf6)',
+          position: 'sticky',
+          bottom: 0,
+          zIndex: 30,
+        }}
+      >
         {/* Slash Command / Conversation History List (ONE single main container) */}
         {isSlashActive && (
           <div
@@ -1824,14 +1945,17 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
         )}
 
         {/* AI Medical Disclaimer */}
-        <div style={{
-          fontSize: '0.78rem',
-          color: 'var(--text-muted)',
-          textAlign: 'center',
-          marginTop: '0.55rem',
-          lineHeight: 1.4,
-          fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
-        }}>
+        <div
+          className="chat-disclaimer-text"
+          style={{
+            fontSize: '0.78rem',
+            color: 'var(--text-muted)',
+            textAlign: 'center',
+            marginTop: '0.55rem',
+            lineHeight: 1.4,
+            fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
+          }}
+        >
           {t('ai_disclaimer')}
         </div>
       </div>

@@ -313,6 +313,7 @@ async def assistant_chat(
             pass
 
     requires_disc = bool(agent_result.get("requires_disclaimer"))
+    cited_srcs = agent_result.get("cited_sources", [])
     # If authenticated, persist assistant message and update conversation timestamp
     if current_user and active_conversation:
         assistant_db_msg = ChatMessage(
@@ -323,8 +324,9 @@ async def assistant_chat(
                 "urgency_level": agent_result.get("urgency_level"),
                 "recommended_specialty": agent_result.get("recommended_specialty"),
                 "matching_hospitals": agent_result.get("matching_hospitals", []),
+                "cited_sources": cited_srcs,
                 "requires_disclaimer": requires_disc,
-            } if (agent_result.get("matching_hospitals") or requires_disc) else None,
+            } if (agent_result.get("matching_hospitals") or requires_disc or cited_srcs) else None,
             booked_ticket=agent_result.get("booked_ticket"),
             suggested_actions=agent_result.get("suggested_actions", []),
             created_at=datetime.utcnow(),
@@ -338,6 +340,7 @@ async def assistant_chat(
         booked_ticket=agent_result.get("booked_ticket"),
         matching_hospitals=matching_objs,
         suggested_actions=agent_result.get("suggested_actions", []),
+        cited_sources=cited_srcs,
         detected_language=agent_result.get("detected_language", "en"),
         conversation_id=active_conversation.id if active_conversation else None,
         requires_disclaimer=requires_disc,
@@ -436,6 +439,7 @@ async def chat_assistant_stream(
             if current_user and active_conversation:
                 assistant_text = final_meta.get("reply", full_reply) if final_meta else full_reply
                 matching_hosp = final_meta.get("matching_hospitals", []) if final_meta else []
+                stream_cited_srcs = final_meta.get("cited_sources", []) if final_meta else []
                 stream_requires_disc = bool(final_meta.get("requires_disclaimer", False)) if final_meta else False
                 assistant_db_msg = ChatMessage(
                     conversation_id=active_conversation.id,
@@ -445,8 +449,9 @@ async def chat_assistant_stream(
                         "urgency_level": final_meta.get("urgency_level") if final_meta else None,
                         "recommended_specialty": final_meta.get("recommended_specialty") if final_meta else None,
                         "matching_hospitals": matching_hosp,
+                        "cited_sources": stream_cited_srcs,
                         "requires_disclaimer": stream_requires_disc,
-                    } if (matching_hosp or stream_requires_disc) else None,
+                    } if (matching_hosp or stream_requires_disc or stream_cited_srcs) else None,
                     booked_ticket=final_meta.get("booked_ticket") if final_meta else None,
                     suggested_actions=final_meta.get("suggested_actions", []) if final_meta else [],
                     created_at=datetime.utcnow(),
@@ -460,6 +465,7 @@ async def chat_assistant_stream(
                 "conversation_id": str(active_conversation.id) if active_conversation else None,
                 "reply": final_meta.get("reply", full_reply) if final_meta else full_reply,
                 "matching_hospitals": final_meta.get("matching_hospitals", []) if final_meta else [],
+                "cited_sources": final_meta.get("cited_sources", []) if final_meta else [],
                 "suggested_actions": final_meta.get("suggested_actions", []) if final_meta else [],
                 "detected_language": final_meta.get("detected_language", "en") if final_meta else "en",
                 "requires_disclaimer": bool(final_meta.get("requires_disclaimer", False)) if final_meta else False,

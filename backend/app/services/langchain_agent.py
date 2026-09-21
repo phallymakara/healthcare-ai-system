@@ -16,18 +16,24 @@ from app.core.config import settings
 from app.core.geo_utils import calculate_distance_km
 from app.models.hospital import Hospital, Department, Service
 from app.services.guardrail_service import GuardrailService
+from app.services.web_search_service import WebSearchService
 
 logger = logging.getLogger(__name__)
 
-SYSTEM_PROMPT = """You are the official Healthcare AI Assistant equipped with real-time tools to retrieve verified hospital and clinic information from the system database, and find nearby medical facilities for patients in Cambodia.
+SYSTEM_PROMPT = """You are the official Healthcare AI Assistant equipped with real-time tools to retrieve verified hospital and clinic information from the system database, and search official Cambodia government and World Health Organization (WHO) medical guidelines.
 
-You have access to the following real-time database tools:
+You have access to the following real-time tools:
 1. `search_hospitals_and_clinics`: Search hospitals, medical specialty clinics, and animal veterinary clinics across the system database with verified facility names, addresses, phone hotlines, and 24/7 emergency availability.
 2. `find_nearby_hospitals`: Find real hospitals and clinics closest to the user's current GPS location, sorted by physical distance in kilometers.
+3. `search_official_health_sources`: Search verified, authoritative medical guidelines, disease advisories, vaccination protocols, and public health guidelines from the World Health Organization (WHO) and Cambodia Ministry of Health (MoH / CDC).
 
 INSTRUCTIONS:
 - You MUST ALWAYS retrieve real live data using your tools whenever the user asks about hospitals, clinics, locations, emergency contacts, or nearby medical facilities. NEVER invent or hallucinate hospital names, fake phone numbers, or fabricated addresses.
 - When the user asks for hospitals near them ("near me", "closest hospital", "ស្វែងរកមន្ទីរពេទ្យនៅជិតខ្ញុំ", "មន្ទីរពេទ្យណាជិតខ្ញុំជាងគេ", etc.), ALWAYS invoke the `find_nearby_hospitals` tool.
+- OFFICIAL HEALTH SOURCE GUIDANCE & CITATIONS:
+  - Whenever the user asks about medical symptoms, disease prevention, fever, outbreaks (e.g. dengue, rabies, avian flu, malaria, HFMD), childhood vaccines, or public health guidance, ALWAYS invoke the `search_official_health_sources` tool to retrieve official WHO and Cambodia MoH guidance.
+  - Formulate your answer based on these official guidelines and cite the authority naturally in your text (e.g. "According to the World Health Organization (WHO) and Cambodia Ministry of Health..." or in Khmer "យោងតាមអង្គការសុខភាពពិភពលោក (WHO) និងក្រសួងសុខាភិបាល...").
+  - Do NOT write raw external URLs directly in your text paragraphs; the system automatically renders clean, clickable official source references beneath your message.
 - PHASE 1 NOTICE: Live queue tracking, doctor appointments, and digital ticket booking are coming soon in the next phase. If the user asks to book a ticket, view live queues, or book a doctor appointment, politely inform them that this feature is coming soon in the upcoming phase, and provide the hospital's hotline phone and location so they can contact them directly.
 - For general medical, wellness, and symptom guidance, provide empathetic, clear, evidence-based advice, accompanied by the medical disclaimer.
 - Format responses cleanly with concise paragraphs and bullet points where helpful.
@@ -48,6 +54,17 @@ SUGGESTED_ACTIONS:
 - [Another short, specific action button text]
 
 RULES:
+- When responding to general greetings (e.g. 'hello', 'hi', 'សួស្តី') or open-ended welcomes, you MUST provide these 3 core triage action buttons:
+  If Khmer:
+  SUGGESTED_ACTIONS:
+  - ពិគ្រោះរោគសញ្ញាជំងឺ
+  - ស្វែងរកមន្ទីរពេទ្យនៅជិតខ្ញុំ
+  - សេវាសង្គ្រោះបន្ទាន់ ២៤/៧
+  If English:
+  SUGGESTED_ACTIONS:
+  - Check My Symptoms
+  - Find Hospitals Near Me
+  - 24/7 Emergency Services
 - Each action MUST be a concrete, clickable request the user can send (e.g. "Find Hospitals Near Me", "Check Calmette Hospital", "Search Animal Clinics").
 - NEVER generate generic or useless actions like "Ask Another Question", "Ask a question", "None", or "Other".
 - If no natural follow-up action is appropriate, omit the SUGGESTED_ACTIONS section entirely.
@@ -175,6 +192,7 @@ class HealthcareAgentService:
         user_longitude: Optional[float] = None,
     ):
         matching_hospitals_data: List[Dict[str, Any]] = []
+        cited_sources_data: List[Dict[str, Any]] = []
         detected_lang = detect_query_language(message, fallback_lang=language or "en")
 
         # 1. Define async tool implementations closing over db, session, and coordinates
@@ -384,7 +402,39 @@ class HealthcareAgentService:
 
             return "\n\n".join(results)
 
-        tools = [search_hospitals_and_clinics, find_nearby_hospitals]
+        @tool
+        async def search_official_health_sources(query: str = "") -> str:
+            """Search authoritative official health guidelines, disease alerts, vaccination schedules, and public health advisories from the World Health Organization (WHO) and Cambodia Ministry of Health (MoH / CDC).
+            Invoke this tool whenever the user asks about symptoms, medical facts, outbreaks (dengue, rabies, avian flu, malaria), vaccines, treatment protocols, or disease prevention.
+            """
+            search_term = query.strip() if query else message
+            citations = await WebSearchService.search_official_sources(
+                query=search_term,
+                language=detected_lang,
+                max_results=3,
+            )
+            if not citations:
+                return "No specific official health documents matched your search query."
+
+            results = []
+            for c in citations:
+                if not any(existing.get("url") == c.get("url") for existing in cited_sources_data):
+                    cited_sources_data.append({
+                        "title": c.get("title"),
+                        "url": c.get("url"),
+                        "source_name": c.get("source_name"),
+                        "domain": c.get("domain"),
+                    })
+
+                results.append(
+                    f"### Official Guideline: {c.get('title')}\n"
+                    f"- **Authoritative Source:** {c.get('source_name')}\n"
+                    f"- **Official Link:** [{c.get('source_name')}]({c.get('url')})\n"
+                    f"- **Guideline Summary:** {c.get('snippet')}"
+                )
+            return "\n\n".join(results)
+
+        tools = [search_hospitals_and_clinics, find_nearby_hospitals, search_official_health_sources]
         tool_map = {t.name: t for t in tools}
 
         # 2. Setup LangChain ChatOpenAI model
@@ -465,6 +515,7 @@ class HealthcareAgentService:
             tool_map,
             messages,
             matching_hospitals_data,
+            cited_sources_data,
             detected_lang,
             guardrail_violation,
         )
@@ -524,13 +575,15 @@ class HealthcareAgentService:
         if not suggested_actions:
             if detected_lang == "km":
                 suggested_actions = [
+                    "ពិគ្រោះរោគសញ្ញាជំងឺ",
                     "ស្វែងរកមន្ទីរពេទ្យនៅជិតខ្ញុំ",
-                    "មើលបញ្ជីមន្ទីរពេទ្យ",
+                    "សេវាសង្គ្រោះបន្ទាន់ ២៤/៧",
                 ]
             else:
                 suggested_actions = [
+                    "Check My Symptoms",
                     "Find Hospitals Near Me",
-                    "Explore Hospital Directory",
+                    "24/7 Emergency Services",
                 ]
 
         suggested_actions = [
@@ -579,6 +632,7 @@ class HealthcareAgentService:
             tool_map,
             messages,
             matching_hospitals_data,
+            cited_sources_data,
             detected_lang,
             guardrail_violation,
         ) = cls._setup_agent_context(
@@ -597,12 +651,15 @@ class HealthcareAgentService:
                 "reply": refusal_reply,
                 "booked_ticket": None,
                 "matching_hospitals": [],
+                "cited_sources": [],
                 "suggested_actions": [
+                    "ពិគ្រោះរោគសញ្ញាជំងឺ",
                     "ស្វែងរកមន្ទីរពេទ្យនៅជិតខ្ញុំ",
-                    "មើលបញ្ជីមន្ទីរពេទ្យ",
+                    "សេវាសង្គ្រោះបន្ទាន់ ២៤/៧",
                 ] if detected_lang == "km" else [
+                    "Check My Symptoms",
                     "Find Hospitals Near Me",
-                    "Explore Hospital Directory",
+                    "24/7 Emergency Services",
                 ],
                 "detected_language": detected_lang,
                 "requires_disclaimer": False,
@@ -650,7 +707,7 @@ class HealthcareAgentService:
                 [str(c) for c in final_reply if isinstance(c, str)]
             )
 
-        has_tool_calls = bool(matching_hospitals_data)
+        has_tool_calls = bool(matching_hospitals_data or cited_sources_data)
         final_reply, suggested_actions, requires_disclaimer = cls._parse_reply_metadata(
             final_reply, detected_lang, has_tool_calls=has_tool_calls
         )
@@ -659,9 +716,10 @@ class HealthcareAgentService:
             "reply": final_reply,
             "booked_ticket": None,
             "matching_hospitals": matching_hospitals_data,
+            "cited_sources": cited_sources_data,
             "suggested_actions": suggested_actions,
             "detected_language": detected_lang,
-            "requires_disclaimer": requires_disclaimer,
+            "requires_disclaimer": requires_disclaimer or bool(cited_sources_data),
         }
 
     @classmethod
@@ -688,6 +746,7 @@ class HealthcareAgentService:
             tool_map,
             messages,
             matching_hospitals_data,
+            cited_sources_data,
             detected_lang,
             guardrail_violation,
         ) = cls._setup_agent_context(
@@ -708,17 +767,20 @@ class HealthcareAgentService:
                 yield {"type": "token", "delta": token}
                 await asyncio.sleep(0.02)
             actions = [
+                "ពិគ្រោះរោគសញ្ញាជំងឺ",
                 "ស្វែងរកមន្ទីរពេទ្យនៅជិតខ្ញុំ",
-                "មើលបញ្ជីមន្ទីរពេទ្យ",
+                "សេវាសង្គ្រោះបន្ទាន់ ២៤/៧",
             ] if detected_lang == "km" else [
+                "Check My Symptoms",
                 "Find Hospitals Near Me",
-                "Explore Hospital Directory",
+                "24/7 Emergency Services",
             ]
             yield {
                 "type": "metadata",
                 "reply": refusal_reply,
                 "booked_ticket": None,
                 "matching_hospitals": [],
+                "cited_sources": [],
                 "suggested_actions": actions,
                 "detected_language": detected_lang,
                 "requires_disclaimer": False,
@@ -788,7 +850,7 @@ class HealthcareAgentService:
             yield {"type": "token", "delta": fallback}
             final_reply = fallback
 
-        has_tool_calls = bool(matching_hospitals_data)
+        has_tool_calls = bool(matching_hospitals_data or cited_sources_data)
         final_reply, suggested_actions, requires_disclaimer = cls._parse_reply_metadata(
             final_reply, detected_lang, has_tool_calls=has_tool_calls
         )
@@ -798,7 +860,8 @@ class HealthcareAgentService:
             "reply": final_reply,
             "booked_ticket": None,
             "matching_hospitals": matching_hospitals_data,
+            "cited_sources": cited_sources_data,
             "suggested_actions": suggested_actions,
             "detected_language": detected_lang,
-            "requires_disclaimer": requires_disclaimer,
+            "requires_disclaimer": requires_disclaimer or bool(cited_sources_data),
         }
