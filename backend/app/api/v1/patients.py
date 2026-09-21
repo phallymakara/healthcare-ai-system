@@ -29,7 +29,7 @@ from app.models import (
 )
 from app.schemas.queue import TicketDetailResponse, TicketResponse
 from app.services.wait_time_calculator import WaitTimeCalculator
-from app.core.geo_utils import calculate_distance_km
+from app.core.geo_utils import calculate_distance_km, calculate_driving_distances_batch
 
 router = APIRouter(prefix="/patients", tags=["Patient Platform"])
 
@@ -85,6 +85,8 @@ class HospitalDiscoveryResponse(BaseModel):
     departments: List[DepartmentDiscoveryItem] = []
     services: List[ServiceDiscoveryItem] = []
     distance_km: Optional[float] = None
+    duration_minutes: Optional[int] = None
+    is_driving_distance: bool = False
 
     model_config = {"from_attributes": True}
 
@@ -273,7 +275,28 @@ async def search_hospitals(
             )
         )
 
-    if (sort_by_distance or (lat is not None and lng is not None)) and lat is not None and lng is not None:
+    if lat is not None and lng is not None and result:
+        # 1. Initial fast sort by straight-line Haversine proximity
+        result.sort(key=lambda x: (x.distance_km is None, x.distance_km if x.distance_km is not None else 99999))
+
+        # 2. Batch calculate real OSRM driving distance and duration for top candidates
+        top_count = min(len(result), 15)
+        top_candidates = result[:top_count]
+        dest_coords = [(h.latitude, h.longitude) for h in top_candidates]
+        driving_infos = await calculate_driving_distances_batch(lat, lng, dest_coords, timeout_seconds=1.8)
+
+        for idx, h_resp in enumerate(top_candidates):
+            d_info = driving_infos[idx] if idx < len(driving_infos) else None
+            if d_info and d_info.get("distance_km") is not None:
+                h_resp.distance_km = d_info["distance_km"]
+                h_resp.duration_minutes = d_info.get("duration_minutes")
+                h_resp.is_driving_distance = True
+
+        # Re-sort top candidates by real driving distance
+        if sort_by_distance:
+            top_candidates.sort(key=lambda x: (x.distance_km is None, x.distance_km if x.distance_km is not None else 99999))
+            result[:top_count] = top_candidates
+    elif sort_by_distance:
         result.sort(key=lambda x: (x.distance_km is None, x.distance_km if x.distance_km is not None else 99999))
 
     return result[:limit]

@@ -13,7 +13,7 @@ from langchain_core.messages import HumanMessage, AIMessage, SystemMessage, Tool
 from langchain_core.tools import tool
 
 from app.core.config import settings
-from app.core.geo_utils import calculate_distance_km
+from app.core.geo_utils import calculate_distance_km, calculate_driving_distances_batch
 from app.models.hospital import Hospital, Department, Service
 from app.services.guardrail_service import GuardrailService
 from app.services.web_search_service import WebSearchService
@@ -257,10 +257,36 @@ class HealthcareAgentService:
                 f"Verified nearby healthcare facilities (calculated from {loc_label}):\n"
             )
 
-            for h, dist in hosp_with_dist[:5]:
-                dist_str = (
-                    f"~{dist} km away" if dist is not None else "Distance unavailable"
-                )
+            # Two-Stage Pipeline: Calculate actual driving distance & duration for top 5 candidates via OSRM
+            top_candidates = hosp_with_dist[:5]
+            dest_coords = [(h.latitude, h.longitude) for h, _ in top_candidates]
+            driving_infos = await calculate_driving_distances_batch(
+                ref_lat, ref_lon, dest_coords, timeout_seconds=1.8
+            )
+
+            enriched = []
+            for (h, straight_dist), d_info in zip(top_candidates, driving_infos):
+                driving_km = d_info.get("distance_km") if d_info else None
+                duration_mins = d_info.get("duration_minutes") if d_info else None
+                sort_metric = driving_km if driving_km is not None else straight_dist
+                enriched.append((h, straight_dist, driving_km, duration_mins, sort_metric))
+
+            # Re-sort top candidates by actual driving route distance
+            enriched.sort(key=lambda x: (x[4] is None, x[4] if x[4] is not None else 9999))
+
+            for h, straight_dist, driving_km, duration_mins, sort_metric in enriched:
+                if driving_km is not None and duration_mins is not None:
+                    if detected_lang == "km":
+                        dist_str = f"~{driving_km} km (ផ្លូវបើកបរ ធ្វើដំណើរ ~{duration_mins} នាទី)"
+                    else:
+                        dist_str = f"~{driving_km} km (driving route, ~{duration_mins} mins)"
+                elif driving_km is not None:
+                    dist_str = f"~{driving_km} km (driving route)"
+                elif straight_dist is not None:
+                    dist_str = f"~{straight_dist} km away"
+                else:
+                    dist_str = "Distance unavailable"
+
                 emer_str = (
                     "Available 24/7"
                     if h.emergency_service_available
@@ -298,7 +324,9 @@ class HealthcareAgentService:
                         "waiting_patients": 0,
                         "estimated_wait_minutes": 0,
                         "address": h.address,
-                        "distance_km": dist,
+                        "distance_km": sort_metric,
+                        "driving_distance_km": driving_km,
+                        "duration_minutes": duration_mins,
                     }
                 )
 
@@ -372,11 +400,26 @@ class HealthcareAgentService:
             ref_lat = user_latitude if user_latitude is not None else 11.5564
             ref_lon = user_longitude if user_longitude is not None else 104.9282
 
-            for h in matched[:5]:
-                dist = calculate_distance_km(
-                    ref_lat, ref_lon, h.latitude, h.longitude
-                )
-                dist_str = f" (📍 ~{dist} km away)" if dist is not None else ""
+            matched_top = matched[:5]
+            dest_coords = [(h.latitude, h.longitude) for h in matched_top]
+            driving_infos = await calculate_driving_distances_batch(
+                ref_lat, ref_lon, dest_coords, timeout_seconds=1.8
+            )
+
+            for idx, h in enumerate(matched_top):
+                d_info = driving_infos[idx] if idx < len(driving_infos) else None
+                driving_km = d_info.get("distance_km") if d_info else None
+                dur_mins = d_info.get("duration_minutes") if d_info else None
+
+                if driving_km is not None and dur_mins is not None:
+                    if detected_lang == "km":
+                        dist_str = f" (📍 ផ្លូវបើកបរ ~{driving_km} km • ធ្វើដំណើរ ~{dur_mins} នាទី)"
+                    else:
+                        dist_str = f" (📍 driving ~{driving_km} km • ~{dur_mins} mins)"
+                else:
+                    dist = calculate_distance_km(ref_lat, ref_lon, h.latitude, h.longitude)
+                    dist_str = f" (📍 ~{dist} km away)" if dist is not None else ""
+
                 emer_str = (
                     "24/7 Emergency Service Available"
                     if h.emergency_service_available

@@ -58,14 +58,18 @@ export const HospitalDiscovery: React.FC<HospitalDiscoveryProps> = ({
   const [bookingLoading, setBookingLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const loadHospitals = async (query = '', loc = userLocation) => {
+  const loadHospitals = async (query = '', loc = userLocation, forceNearby = false) => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
       if (query) params.set('q', query);
-      if (loc?.latitude && loc?.longitude) {
-        params.set('lat', String(loc.latitude));
-        params.set('lng', String(loc.longitude));
+      const effectiveLoc = (loc?.latitude && loc?.longitude)
+        ? loc
+        : (forceNearby || selectedCategory === 'Nearby' ? { latitude: 11.5564, longitude: 104.9282 } : null);
+
+      if (effectiveLoc?.latitude && effectiveLoc?.longitude) {
+        params.set('lat', String(effectiveLoc.latitude));
+        params.set('lng', String(effectiveLoc.longitude));
         params.set('sort_by_distance', 'true');
       }
       const qs = params.toString();
@@ -73,14 +77,7 @@ export const HospitalDiscovery: React.FC<HospitalDiscoveryProps> = ({
       const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
-        const enriched = data.map((h: any) => {
-          let dist = h.distance_km;
-          if (typeof dist !== 'number' && loc?.latitude && loc?.longitude && h.latitude && h.longitude) {
-            dist = calculateDistanceKm(loc.latitude, loc.longitude, h.latitude, h.longitude);
-          }
-          return { ...h, distance_km: dist };
-        });
-        setHospitals(enriched);
+        setHospitals(data);
       }
     } catch {
       // Graceful fallback
@@ -90,8 +87,8 @@ export const HospitalDiscovery: React.FC<HospitalDiscoveryProps> = ({
   };
 
   useEffect(() => {
-    loadHospitals(searchQuery, userLocation);
-  }, [userLocation]);
+    loadHospitals(searchQuery, userLocation, selectedCategory === 'Nearby');
+  }, [userLocation, selectedCategory]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -183,9 +180,11 @@ export const HospitalDiscovery: React.FC<HospitalDiscoveryProps> = ({
 
   const enrichedHospitals = hospitals.map((hosp) => {
     const dist =
-      userLocation?.latitude && userLocation?.longitude && hosp.latitude && hosp.longitude
-        ? calculateDistanceKm(userLocation.latitude, userLocation.longitude, hosp.latitude, hosp.longitude)
-        : hosp.distance_km;
+      typeof hosp.distance_km === 'number'
+        ? hosp.distance_km
+        : (userLocation?.latitude && userLocation?.longitude && hosp.latitude && hosp.longitude
+            ? calculateDistanceKm(userLocation.latitude, userLocation.longitude, hosp.latitude, hosp.longitude)
+            : null);
     return { ...hosp, distance_km: dist };
   });
 

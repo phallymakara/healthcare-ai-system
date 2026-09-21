@@ -280,6 +280,25 @@ export const FacilityCardList: React.FC<FacilityCardListProps> = ({
                     >
                       {formatFacilityName(hosp.name, language)}
                     </div>
+                    {typeof hosp.distance_km === 'number' && (
+                      <span
+                        style={{
+                          fontSize: '0.76rem',
+                          fontWeight: 600,
+                          color: '#0369a1',
+                          background: '#f0f9ff',
+                          border: '1px solid #bae6fd',
+                          padding: '2px 7px',
+                          borderRadius: '6px',
+                          whiteSpace: 'nowrap',
+                          flexShrink: 0,
+                          fontFamily: kmFont,
+                          boxShadow: 'none',
+                        }}
+                      >
+                        ~{hosp.distance_km} {language === 'km' ? 'គ.ម' : 'km'}{hosp.duration_minutes ? ` • ~${hosp.duration_minutes} ${language === 'km' ? 'នាទី' : 'mins'}` : ''}
+                      </span>
+                    )}
                   </div>
 
                   <div

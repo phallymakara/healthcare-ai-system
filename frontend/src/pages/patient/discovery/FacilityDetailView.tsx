@@ -26,12 +26,15 @@ export const FacilityDetailView: React.FC<FacilityDetailViewProps> = ({
   const isKm = language === 'km';
   const kmFont = isKm ? 'var(--font-khmer)' : 'inherit';
 
-  const liveDistance = calculateDistanceKm(
-    userLocation?.latitude,
-    userLocation?.longitude,
-    selectedFacility?.latitude,
-    selectedFacility?.longitude
-  ) ?? (typeof selectedFacility?.distance_km === 'number' ? selectedFacility.distance_km : null);
+  const liveDistance =
+    typeof selectedFacility?.distance_km === 'number'
+      ? selectedFacility.distance_km
+      : calculateDistanceKm(
+          userLocation?.latitude,
+          userLocation?.longitude,
+          selectedFacility?.latitude,
+          selectedFacility?.longitude
+        );
 
   return (
     <div className="facility-detail-animate" style={{ width: '100%', height: '100%', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, maxWidth: '1060px', margin: '0 auto' }}>
@@ -119,7 +122,12 @@ export const FacilityDetailView: React.FC<FacilityDetailViewProps> = ({
               {typeof liveDistance === 'number' && (
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.92rem', color: '#0284c7', fontWeight: 600, fontFamily: kmFont }}>
                   <MapPin size={15} />
-                  <span>{liveDistance} {t('distance_km_away')} ({t('from_your_location')})</span>
+                  <span>
+                    ~{liveDistance} {t('distance_km_away')}
+                    {selectedFacility?.duration_minutes
+                      ? ` (${isKm ? `ផ្លូវបើកបរ ធ្វើដំណើរ ~${selectedFacility.duration_minutes} នាទី` : `driving route, ~${selectedFacility.duration_minutes} mins`})`
+                      : ` (${t('from_your_location')})`}
+                  </span>
                 </div>
               )}
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', fontSize: '0.98rem', color: 'var(--text-muted)', fontFamily: kmFont }}>
