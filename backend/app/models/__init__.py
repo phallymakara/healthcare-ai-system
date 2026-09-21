@@ -12,6 +12,7 @@ from app.models.hospital import Hospital, HospitalBranch, Department, Service
 from app.models.doctor import Doctor, DoctorSchedule, ScheduleOverride
 from app.models.queue import QueueSession, Ticket, TicketLog
 from app.models.chat import ChatConversation, ChatMessage
+from app.models.guest_rate_limit import GuestRateLimit
 
 __all__ = [
     "Base",
@@ -35,4 +36,5 @@ __all__ = [
     "TicketLog",
     "ChatConversation",
     "ChatMessage",
+    "GuestRateLimit",
 ]

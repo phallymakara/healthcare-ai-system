@@ -3,7 +3,7 @@ import logging
 import uuid
 from datetime import datetime, timezone
 from typing import Optional, List
-from fastapi import APIRouter, Depends, status, HTTPException
+from fastapi import APIRouter, Depends, status, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc
@@ -13,6 +13,7 @@ from app.core.database import get_db
 from app.core.deps import get_optional_current_user, get_current_user
 from app.models.user import User
 from app.models.chat import ChatConversation, ChatMessage
+from app.services.guest_limit_service import GuestLimitService
 from app.services.langchain_agent import HealthcareAgentService
 from app.services.triage_assistant import TriageAssistantService
 from app.schemas.assistant import (
@@ -178,22 +179,75 @@ async def delete_user_conversation(
     return {"message": "Conversation deleted successfully"}
 
 
+@router.patch("/conversations/{conversation_id}", response_model=ConversationSummaryResponse)
+async def update_user_conversation(
+    conversation_id: uuid.UUID,
+    data: UpdateConversationRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Update an AI consultation thread title for the authenticated user"""
+    stmt = (
+        select(ChatConversation)
+        .where(
+            ChatConversation.id == conversation_id,
+            ChatConversation.user_id == current_user.id,
+        )
+        .options(selectinload(ChatConversation.messages))
+    )
+    result = await db.execute(stmt)
+    conv = result.scalar_one_or_none()
+    if not conv:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Conversation not found",
+        )
+
+    clean_title = (data.title or "").strip()
+    if not clean_title:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Title cannot be empty",
+        )
+
+    conv.title = clean_title
+    conv.updated_at = datetime.utcnow()
+    await db.commit()
+    await db.refresh(conv)
+
+    msgs = conv.messages or []
+    last_msg = msgs[-1].content if msgs else None
+    return ConversationSummaryResponse(
+        id=conv.id,
+        title=conv.title,
+        created_at=conv.created_at,
+        updated_at=conv.updated_at,
+        message_count=len(msgs),
+        last_message=last_msg[:120] if last_msg else None,
+    )
+
+
 @router.post("/chat", response_model=AssistantChatResponse)
 async def assistant_chat(
     data: AssistantChatRequest,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: Optional[User] = Depends(get_optional_current_user),
 ):
     """Healthcare guidance, system search (doctors, clinics, wait times), and autonomous booking via LangChain Agent.
     Automatically persists prompt & assistant reply into the database when user is authenticated.
     """
-    # Limit unauthenticated guest chats to 7 user messages per session
-    if not current_user and data.history:
-        guest_user_msg_count = sum(1 for m in data.history if m.role == "user")
-        if guest_user_msg_count >= 7:
+    # Database-backed rate limit check for unauthenticated guests (7 messages/hour)
+    if not current_user:
+        is_allowed, _, mins_remaining = await GuestLimitService.check_and_increment(request, db)
+        if not is_allowed:
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Free chat session limit reached (7 messages). Please log in or sign up to continue.",
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail={
+                    "code": "GUEST_LIMIT_REACHED",
+                    "message": f"Free chat limit reached (7 messages/hour). Please log in or try again in {mins_remaining} minutes.",
+                    "minutes_remaining": mins_remaining,
+                },
             )
 
     user_context = None
@@ -290,19 +344,24 @@ async def assistant_chat(
 @router.post("/chat/stream", summary="Real-time end-to-end streaming AI conversation response")
 async def chat_assistant_stream(
     data: AssistantChatRequest,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: Optional[User] = Depends(get_optional_current_user),
 ):
     """Healthcare guidance with end-to-end token streaming via Server-Sent Events (SSE).
     Persists user message upfront and saves completed assistant message upon stream finish.
     """
-    # Limit unauthenticated guest chats to 7 user messages per session
-    if not current_user and data.history:
-        guest_user_msg_count = sum(1 for m in data.history if m.role == "user")
-        if guest_user_msg_count >= 7:
+    # Database-backed rate limit check for unauthenticated guests (7 messages/hour)
+    if not current_user:
+        is_allowed, _, mins_remaining = await GuestLimitService.check_and_increment(request, db)
+        if not is_allowed:
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Free chat session limit reached (7 messages). Please log in or sign up to continue.",
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail={
+                    "code": "GUEST_LIMIT_REACHED",
+                    "message": f"Free chat limit reached (7 messages/hour). Please log in or try again in {mins_remaining} minutes.",
+                    "minutes_remaining": mins_remaining,
+                },
             )
 
     user_context = None

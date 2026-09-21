@@ -1,9 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { Plus, Mic, ArrowUp, X, Image as ImageIcon } from 'lucide-react';
+import { Plus, Mic, ArrowUp, X, Image as ImageIcon, Pencil, Trash2, Check } from 'lucide-react';
 import {
   getUserConversations,
   saveUserConversation,
+  deleteUserConversation,
+  updateUserConversationTitle,
+  updateConversationTitleAPI,
+  deleteConversationAPI,
   formatChatDuration,
   syncUserConversations,
   fetchConversationDetailAPI,
@@ -16,6 +20,7 @@ import { AuthService, UserProfile } from '../../services/auth';
 import { useLanguage } from '../../context/LanguageContext';
 import { API_BASE } from '../../services/api';
 import { useUserLocation } from '../../hooks/useUserLocation';
+import { getDeviceHeaders } from '../../services/deviceFingerprint';
 
 interface HealthcareAssistantProps {
   onTicketBooked: (ticket: any) => void;
@@ -144,18 +149,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
   const kmFont = isKm ? 'var(--font-khmer)' : 'inherit';
   const { location: userLocation, hasLocation, requestLocation } = useUserLocation();
 
-  const MAX_GUEST_CHATS = 7;
   const isGuest = !currentUser && !AuthService.getStoredUser();
-
-  // Guest chat count in this session
-  const [guestChatCount, setGuestChatCount] = useState<number>(() => {
-    try {
-      const stored = sessionStorage.getItem('carequeue_guest_chat_count');
-      return stored ? parseInt(stored, 10) || 0 : 0;
-    } catch {
-      return 0;
-    }
-  });
 
   // Per-user conversation history state
   const activeUserId = currentUser?.id || 'guest';
@@ -218,18 +212,16 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
     });
   }, [language, t]);
 
-  // Clear guest count if user is authenticated
+  // Guest rate limit state tracked directly by backend database
+  const [guestLimitDetails, setGuestLimitDetails] = useState<{ reached: boolean; minutesRemaining?: number }>({ reached: false });
+  const hasReachedLimit = isGuest && guestLimitDetails.reached;
+
+  // Clear guest limit details if user logs in
   useEffect(() => {
     if (!isGuest) {
-      try {
-        sessionStorage.removeItem('carequeue_guest_chat_count');
-      } catch { }
+      setGuestLimitDetails({ reached: false });
     }
   }, [isGuest]);
-
-  const userMessagesInState = messages.filter((m) => m.role === 'user').length;
-  const effectiveUserChatCount = Math.max(guestChatCount, userMessagesInState);
-  const hasReachedLimit = isGuest && effectiveUserChatCount >= MAX_GUEST_CHATS;
 
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
@@ -318,13 +310,13 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
       restored.length > 0
         ? restored
         : [
-            {
-              id: 'welcome',
-              role: 'assistant',
-              text: t('chat_welcome'),
-              timestamp: new Date(),
-            },
-          ]
+          {
+            id: 'welcome',
+            role: 'assistant',
+            text: t('chat_welcome'),
+            timestamp: new Date(),
+          },
+        ]
     );
     setCurrentConversationId(conv.id);
     setActiveConversationId(activeUserId, conv.id);
@@ -348,6 +340,54 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
     setActiveConversationId(activeUserId, 'new');
     setInputText('');
     setSlashSelectedIndex(0);
+  };
+
+  // Inline editing state for conversation titles
+  const [editingConvId, setEditingConvId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState('');
+
+  const handleStartEdit = (conv: ConversationItem, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setEditingConvId(conv.id);
+    setEditingTitle(conv.title);
+  };
+
+  const handleCancelEdit = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setEditingConvId(null);
+  };
+
+  const handleSaveEdit = async (convId: string, e?: React.MouseEvent | React.FormEvent) => {
+    e?.stopPropagation();
+    if (e) e.preventDefault();
+    const clean = editingTitle.trim();
+    if (!clean) {
+      setEditingConvId(null);
+      return;
+    }
+
+    updateUserConversationTitle(activeUserId, convId, clean);
+    if (!isGuest) {
+      updateConversationTitleAPI(convId, clean).catch(() => { });
+    }
+
+    setConversationList((prev) =>
+      prev.map((c) => (c.id === convId ? { ...c, title: clean } : c))
+    );
+    setEditingConvId(null);
+  };
+
+  const handleDeleteConversation = async (convId: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    deleteUserConversation(activeUserId, convId);
+    if (!isGuest) {
+      deleteConversationAPI(convId).catch(() => { });
+    }
+    setConversationList((prev) => prev.filter((c) => c.id !== convId));
+
+    if (currentConversationId === convId) {
+      handleStartNewChat();
+    }
   };
 
   // Close attachment popup menu when clicking outside or pressing Escape
@@ -443,21 +483,13 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
       return;
     }
 
-    if (isGuest && effectiveUserChatCount >= MAX_GUEST_CHATS) {
+    if (hasReachedLimit) {
       onOpenAuth?.();
       return;
     }
 
     setInputError(null);
     setInputText('');
-
-    if (isGuest) {
-      const nextCount = effectiveUserChatCount + 1;
-      setGuestChatCount(nextCount);
-      try {
-        sessionStorage.setItem('carequeue_guest_chat_count', String(nextCount));
-      } catch { }
-    }
 
     // 1. Append User Message
     const userMsg: ChatMessage = {
@@ -528,6 +560,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
         headers: {
           'Content-Type': 'application/json',
           ...AuthService.getAuthHeaders(),
+          ...getDeviceHeaders(),
         },
         body: JSON.stringify({
           message: query,
@@ -541,6 +574,14 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
       });
 
       if (res.status === 401) {
+        onOpenAuth?.();
+        return;
+      }
+
+      if (res.status === 429) {
+        const errJson = await res.json().catch(() => null);
+        const minsLeft = errJson?.detail?.minutes_remaining || 60;
+        setGuestLimitDetails({ reached: true, minutesRemaining: minsLeft });
         onOpenAuth?.();
         return;
       }
@@ -1129,7 +1170,13 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
                 margin: 0,
               }}
             >
-              {t('chat_guest_limit_notice')}{' '}
+              {guestLimitDetails.minutesRemaining ? (
+                isKm
+                  ? `អ្នកបានដល់ដែនកំណត់នៃការពិគ្រោះឥតគិតថ្លៃ (៧ សារ/ម៉ោង)។ នឹងកំណត់ឡើងវិញក្នុងរយៈពេល ${guestLimitDetails.minutesRemaining} នាទី។ `
+                  : `You have reached the free consultation limit (7 messages/hour). Resets in ${guestLimitDetails.minutesRemaining} min. `
+              ) : (
+                `${t('chat_guest_limit_notice')} `
+              )}
               <button
                 type="button"
                 onClick={onOpenAuth}
@@ -1214,7 +1261,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
               <div style={{ height: '1px', background: 'var(--border-color)', margin: '2px 4px' }} />
             )}
 
-            {/* Conversation History List Rows (No separate containers) */}
+            {/* Conversation History List Rows (with inline edit & delete actions) */}
             {filteredConversations.length === 0 ? (
               <div
                 style={{
@@ -1229,29 +1276,154 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
             ) : (
               filteredConversations.map((conv, idx) => {
                 const isSelected = slashSelectedIndex === idx + 1;
+                const isEditingThis = editingConvId === conv.id;
+
+                if (isEditingThis) {
+                  return (
+                    <div
+                      key={conv.id}
+                      style={{
+                        width: '100%',
+                        borderRadius: '8px',
+                        background: 'var(--bg-hover, #f1f5f9)',
+                        border: 'none',
+                        boxShadow: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '0.45rem 0.8rem',
+                        gap: '0.5rem',
+                        boxSizing: 'border-box',
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center' }}>
+                        <input
+                          type="text"
+                          value={editingTitle}
+                          onChange={(e) => setEditingTitle(e.target.value)}
+                          onKeyDown={(e) => {
+                            e.stopPropagation();
+                            if (e.key === 'Enter') handleSaveEdit(conv.id, e);
+                            if (e.key === 'Escape') handleCancelEdit(e as any);
+                          }}
+                          autoFocus
+                          style={{
+                            width: '100%',
+                            fontSize: '0.9rem',
+                            fontWeight: 500,
+                            padding: '2px 0',
+                            border: 'none',
+                            outline: 'none',
+                            boxShadow: 'none',
+                            background: 'transparent',
+                            color: 'var(--text-main)',
+                            fontFamily: (language === 'km' || isKhmer(editingTitle)) ? 'var(--font-khmer)' : 'inherit',
+                          }}
+                        />
+                      </div>
+                      <div
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '2px',
+                          flexShrink: 0,
+                        }}
+                      >
+                        <button
+                          type="button"
+                          onClick={(e) => handleSaveEdit(conv.id, e)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            boxShadow: 'none',
+                            padding: '4px',
+                            cursor: 'pointer',
+                            color: 'var(--accent-primary)',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            borderRadius: '4px',
+                            transition: 'background var(--transition-fast)',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = '#e2e8f0';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'none';
+                          }}
+                          title={language === 'km' ? 'រក្សាទុក' : 'Save'}
+                          aria-label="Save"
+                        >
+                          <Check size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleCancelEdit}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            boxShadow: 'none',
+                            padding: '4px',
+                            cursor: 'pointer',
+                            color: '#64748b',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            borderRadius: '4px',
+                            transition: 'background var(--transition-fast)',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = '#e2e8f0';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'none';
+                          }}
+                          title={language === 'km' ? 'បោះបង់' : 'Cancel'}
+                          aria-label="Cancel"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                }
+
                 return (
-                  <button
-                    type="button"
+                  <div
                     key={conv.id}
-                    onClick={() => handleSelectConversation(conv)}
                     style={{
                       width: '100%',
-                      background: isSelected ? 'var(--bg-hover, #f1f5f9)' : 'transparent',
-                      border: 'none',
                       borderRadius: '8px',
-                      boxShadow: 'none',
-                      padding: '0.55rem 0.8rem',
-                      cursor: 'pointer',
-                      textAlign: 'left',
+                      background: isSelected ? 'var(--bg-hover, #f1f5f9)' : 'transparent',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
-                      gap: '0.75rem',
+                      padding: '0.45rem 0.8rem',
+                      gap: '0.5rem',
                       transition: 'background var(--transition-fast)',
+                      boxSizing: 'border-box',
                     }}
                     onMouseEnter={() => setSlashSelectedIndex(idx + 1)}
                   >
-                    <div style={{ minWidth: 0, flex: 1 }}>
+                    {/* Clickable Area for Selecting Conversation */}
+                    <button
+                      type="button"
+                      onClick={() => handleSelectConversation(conv)}
+                      style={{
+                        flex: 1,
+                        minWidth: 0,
+                        background: 'none',
+                        border: 'none',
+                        padding: 0,
+                        margin: 0,
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '2px',
+                      }}
+                    >
                       <div
                         style={{
                           fontSize: '0.9rem',
@@ -1265,18 +1437,85 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
                       >
                         {conv.title}
                       </div>
-                    </div>
+                      <div
+                        style={{
+                          fontSize: '0.74rem',
+                          color: 'var(--text-muted)',
+                          fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
+                        }}
+                      >
+                        {formatChatDuration(conv, language)}
+                      </div>
+                    </button>
+
+                    {/* Action Buttons: Edit and Delete */}
                     <div
                       style={{
-                        fontSize: '0.78rem',
-                        color: 'var(--text-muted)',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '2px',
                         flexShrink: 0,
-                        fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
                       }}
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      {formatChatDuration(conv, language)}
+                      <button
+                        type="button"
+                        onClick={(e) => handleStartEdit(conv, e)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          padding: '4px',
+                          cursor: 'pointer',
+                          color: '#64748b',
+                          borderRadius: '4px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'color var(--transition-fast), background var(--transition-fast)',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.color = 'var(--text-main)';
+                          e.currentTarget.style.background = '#e2e8f0';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.color = '#64748b';
+                          e.currentTarget.style.background = 'none';
+                        }}
+                        title={language === 'km' ? 'កែសម្រួលឈ្មោះ' : 'Rename'}
+                        aria-label="Rename"
+                      >
+                        <Pencil size={13} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => handleDeleteConversation(conv.id, e)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          padding: '4px',
+                          cursor: 'pointer',
+                          color: '#64748b',
+                          borderRadius: '4px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'color var(--transition-fast), background var(--transition-fast)',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.color = '#dc2626';
+                          e.currentTarget.style.background = '#fee2e2';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.color = '#64748b';
+                          e.currentTarget.style.background = 'none';
+                        }}
+                        title={language === 'km' ? 'លុបការសន្ទនា' : 'Delete'}
+                        aria-label="Delete"
+                      >
+                        <Trash2 size={13} />
+                      </button>
                     </div>
-                  </button>
+                  </div>
                 );
               })
             )}
@@ -1291,7 +1530,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
             border: hasReachedLimit ? '1px solid #cbd5e1' : '1px solid var(--border-color)',
             borderRadius: 'var(--radius-full)',
             padding: '12px 14px 11px 14px',
-            boxShadow: 'none',
+            boxShadow: '0 1px 4px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03)',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: imagePreviewUrl ? 'flex-start' : 'center',

@@ -209,6 +209,47 @@ export const deleteConversationAPI = async (convId: string): Promise<boolean> =>
 };
 
 /**
+ * Update conversation title on backend API.
+ */
+export const updateConversationTitleAPI = async (convId: string, title: string): Promise<boolean> => {
+  const token = AuthService.getAccessToken();
+  if (!token) return false;
+
+  try {
+    const res = await fetch(`${API_BASE}/assistant/conversations/${convId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        ...AuthService.getAuthHeaders(),
+      },
+      body: JSON.stringify({ title: title.trim() }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * Update conversation title in local storage.
+ */
+export const updateUserConversationTitle = (
+  userId: string = 'guest',
+  convId: string,
+  newTitle: string
+): void => {
+  try {
+    const list = getUserConversations(userId);
+    const updated = list.map((c) =>
+      c.id === convId ? { ...c, title: newTitle.trim(), updatedAt: new Date().toISOString() } : c
+    );
+    localStorage.setItem(`${STORAGE_PREFIX}${userId}`, JSON.stringify(updated));
+  } catch (err) {
+    console.error('Failed to update conversation title in storage:', err);
+  }
+};
+
+/**
  * Unified loader: Fetches from backend API if authenticated, else returns local storage.
  */
 export const syncUserConversations = async (userId: string = 'guest'): Promise<ConversationItem[]> => {

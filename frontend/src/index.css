@@ -3014,15 +3014,28 @@ textarea {
   border-color: var(--accent-primary) !important;
 }
 
-/* AI Chat Input Box: Borderless inner text input, retaining only outer container border with zero colored focus border */
-.chat-ai-input-form,
-.chat-ai-input-form:focus,
-.chat-ai-input-form:focus-within,
+/* AI Chat Input Box: Borderless inner text input with subtle elevation */
+.chat-ai-input-form {
+  border: 1px solid var(--border-color) !important;
+  border-color: var(--border-color) !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+  outline: none !important;
+  transition: box-shadow var(--transition-fast), border-color var(--transition-fast) !important;
+}
+
 .chat-ai-input-form:hover,
+.chat-ai-input-form:focus,
+.chat-ai-input-form:focus-within {
+  border: 1px solid var(--border-color) !important;
+  border-color: var(--border-color) !important;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.07), 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+  outline: none !important;
+}
+
 .chat-ai-input-form:active {
   border: 1px solid var(--border-color) !important;
   border-color: var(--border-color) !important;
-  box-shadow: none !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06) !important;
   outline: none !important;
 }
 

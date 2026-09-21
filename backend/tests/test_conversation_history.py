@@ -154,6 +154,15 @@ async def test_conversation_multiturn_auto_persistence_and_cascade_delete():
 
         assert detail["messages"][3]["role"] == "assistant"
 
+        # Verify renaming conversation title via PATCH
+        patch_res = await client.patch(
+            f"/api/v1/assistant/conversations/{conv_id}",
+            json={"title": "Renamed Dizziness Consultation"},
+            headers=headers,
+        )
+        assert patch_res.status_code == 200
+        assert patch_res.json()["title"] == "Renamed Dizziness Consultation"
+
         # Verify cascade deletion from database
         del_res = await client.delete(f"/api/v1/assistant/conversations/{conv_id}", headers=headers)
         assert del_res.status_code == 200
