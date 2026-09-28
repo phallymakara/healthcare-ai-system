@@ -2722,13 +2722,6 @@ textarea.input-error {
   animation-delay: 0.4s;
 }
 
-body:not(.is-landing-page) #aisale-widget-root {
-  display: none !important;
-  visibility: hidden !important;
-  pointer-events: none !important;
-  opacity: 0 !important;
-}
-
 /* ==========================================================================
    MOBILE SCALING — Small Phones (≤ 480px)
    Scales fonts, padding, and component sizes down ~10–15% so all UI

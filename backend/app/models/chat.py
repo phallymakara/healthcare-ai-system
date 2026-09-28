@@ -48,7 +48,7 @@ class ChatMessage(Base):
     )
     role: Mapped[str] = mapped_column(String(32), nullable=False)  # "user" or "assistant"
     content: Mapped[str] = mapped_column(Text, nullable=False)
-    image_url: Mapped[Optional[str]] = mapped_column(String(1024), nullable=True)
+    image_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     triage_data: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
     booked_ticket: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
     suggested_actions: Mapped[Optional[list]] = mapped_column(JSON, nullable=True)

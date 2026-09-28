@@ -111,3 +111,18 @@ class UpdateConversationRequest(BaseModel):
     title: str
 
 
+class UploadImageResponse(BaseModel):
+    image_url: str
+    blob_name: str
+    predicted_questions: List[str] = []
+
+
+class PredictImageQuestionsRequest(BaseModel):
+    image_url: str
+    language: Optional[str] = "km"
+
+
+class PredictImageQuestionsResponse(BaseModel):
+    predicted_questions: List[str]
+
+

@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import { Search } from 'lucide-react';
+import React from 'react';
 import { useLanguage } from '../../context/LanguageContext';
 import { UserProfile } from '../../services/auth';
 
@@ -12,18 +11,8 @@ interface HeroSectionProps {
   onStartChatWithQuery?: (query: string) => void;
 }
 
-export const HeroSection: React.FC<HeroSectionProps> = ({ onSelectTab, onStartChatWithQuery }) => {
+export const HeroSection: React.FC<HeroSectionProps> = () => {
   const { t, language } = useLanguage();
-  const [searchQuery, setSearchQuery] = useState('');
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (onStartChatWithQuery) {
-      onStartChatWithQuery(searchQuery);
-    } else if (onSelectTab) {
-      onSelectTab('patient_triage');
-    }
-  };
 
   return (
     <section
@@ -192,75 +181,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSelectTab, onStartCh
             </div>
           </div>
         </div>
-
-        {/* Quick Search Location Pill Bar */}
-        <form
-          onSubmit={handleSearchSubmit}
-          className="hero-search-container"
-        >
-          <button
-            type="submit"
-            className="text-truncate"
-            style={{
-              background: '#0c2f27',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: 'var(--radius-full)',
-              padding: '0.7rem 1.6rem',
-              fontWeight: 700,
-              fontSize: '0.96rem',
-              cursor: 'pointer',
-              flexShrink: 0,
-              fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
-              boxShadow: '0 2px 8px rgba(12, 47, 39, 0.2)',
-              transition: 'all 0.15s ease',
-              maxWidth: '160px',
-            }}
-          >
-            {t('hero_get_started')}
-          </button>
-
-          <input
-            type="text"
-            className="text-truncate"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={t('hero_quick_search_placeholder')}
-            style={{
-              flex: 1,
-              minWidth: 0,
-              border: 'none',
-              outline: 'none',
-              padding: '0.75rem 1.25rem',
-              fontSize: '1.02rem',
-              color: 'var(--text-main)',
-              background: 'transparent',
-              fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
-            }}
-          />
-
-          <button
-            type="submit"
-            aria-label="Direct to AI Chat"
-            style={{
-              width: '42px',
-              height: '42px',
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, #0c2f27 0%, #185339 100%)',
-              color: '#ffffff',
-              border: 'none',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              flexShrink: 0,
-              boxShadow: '0 4px 12px rgba(12, 47, 39, 0.25)',
-              transition: 'transform 0.15s ease',
-            }}
-          >
-            <Search size={18} />
-          </button>
-        </form>
       </div>
     </section>
   );

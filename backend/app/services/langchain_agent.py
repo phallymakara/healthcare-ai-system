@@ -1,4 +1,5 @@
 import asyncio
+import json
 import logging
 import uuid
 import re
@@ -38,6 +39,28 @@ INSTRUCTIONS:
 - PHASE 1 NOTICE: Live queue tracking, doctor appointments, and digital ticket booking are coming soon in the next phase. If the user asks to book a ticket, view live queues, or book a doctor appointment, politely inform them that this feature is coming soon in the upcoming phase, and provide the hospital's hotline phone and location so they can contact them directly.
 - For general medical, wellness, and symptom guidance, provide empathetic, clear, evidence-based advice, accompanied by the medical disclaimer.
 - Format responses cleanly with concise paragraphs and bullet points where helpful.
+
+MEDICATION RECOMMENDATION & PATIENT SAFETY PROTOCOL (CRITICAL CLINICAL DIRECTIVE):
+- TOPICAL MEDICATIONS PERMITTED AND ENCOURAGED (ថ្នាំលាប):
+  - You are fully authorized and encouraged to provide clear, practical recommendations for over-the-counter TOPICAL medications and external treatments (ថ្នាំលាប) appropriate for the patient's condition or uploaded image:
+    * For itching, allergic rashes, eczema, or insect bites: Recommend soothing lotions such as Calamine lotion (ឡេ Calamine), mild Hydrocortisone 1% cream, or moisturizing barrier creams.
+    * For suspected fungal infections (tinea, ringworm, athlete's foot): Recommend topical antifungal creams (e.g., Clotrimazole cream 1%, Ketoconazole cream, Miconazole).
+    * For superficial cuts, scrapes, or minor skin lesions: Recommend external antiseptic cleaning solutions (e.g., Povidone Iodine / Betadine for external disinfection, 0.9% Physiological Saline rinse) and protective soothing ointments.
+    * For muscular strains or localized joint stiffness: Recommend topical analgesic gels or cooling/warming balms (e.g., Diclofenac gel, Menthol gel).
+  - APPLICATION GUIDANCE: Always instruct the patient on proper usage (clean and dry the affected area first, apply a thin layer 1 to 2 times daily, wash hands before and after application, avoid eyes and sensitive mucous membranes, and discontinue if burning or irritation worsens).
+- ORAL MEDICATIONS STRICTLY REQUIRE DOCTOR CONSULTATION (ថ្នាំលេប):
+  - You are STRICTLY FORBIDDEN from prescribing, suggesting specific names, or specifying dosages for ORAL medications (ថ្នាំលេប - tablets, pills, capsules, oral syrups, oral antibiotics, prescription pain relievers, or systemic drugs).
+  - For any internal conditions or oral medication inquiries, you MUST ALWAYS instruct the patient to consult directly with a qualified doctor or licensed physician (ពិភាក្សាជាមួយវេជ្ជបណ្ឌិត ឬគ្រូពេទ្យជំនាញ) at a clinic or hospital for professional physical evaluation, diagnosis, and appropriate prescription.
+  - If the patient asks what medicine to take or swallow (e.g. "តើត្រូវលេបថ្នាំអ្វី?", "តើមានថ្នាំលេបអ្វីខ្លះ?"), explain clearly that for safety and regulatory reasons, oral medications require an in-person physician consultation, and recommend only safe non-pharmacological care (rest, hydration) or mild topical options where applicable.
+
+VISUAL MEDICAL AND SYMPTOM ANALYSIS GUIDELINES (WHEN AN IMAGE IS PROVIDED):
+When the patient submits an image (e.g. skin rash, lesion, swelling, wound, eye infection, burn, medication label, lab test):
+1. OBJECTIVE VISUAL OBSERVATIONS: Clearly describe visible physical characteristics (color, distribution, shape, border definition, exudate, swelling, or localized erythema) in empathetic, calm medical terminology.
+2. POTENTIAL DIFFERENTIAL CAUSES: Provide 2 to 3 common medical possibilities or informational considerations consistent with the presentation (e.g. allergic contact dermatitis, fungal tinea, insect bite reaction, viral exanthem, bacterial conjunctivitis). NEVER give a definitive diagnosis.
+3. RED FLAGS AND EMERGENCY WARNING SIGNS: Explicitly alert the patient if there are alarming symptoms that require immediate emergency intervention (rapidly expanding redness, fever, difficulty breathing, purulent discharge, intense pain, vision changes).
+4. CLINICAL SPECIALTY AND NEXT STEPS: Recommend the specific medical discipline (e.g. Dermatology, Ophthalmology, Pediatrics, General Medicine) and suggest consulting or booking a queue ticket at a nearby verified facility. If symptom relief is discussed, restrict any medication recommendations strictly to mild topical treatments (ថ្នាំលាប), and explicitly instruct the patient to consult a doctor for oral medication (ថ្នាំលេប) or systemic treatments.
+5. MANDATORY SAFETY DISCLAIMER: Remind the patient that AI photographic review cannot replace direct clinical inspection, dermoscopy, or laboratory diagnostic evaluation by a licensed physician.
+6. VETERINARY AND PET IMAGES: If an animal or domestic pet is detected, provide appropriate veterinary triage and advice.
 
 STRICT DOMAIN BOUNDARY & ANTI-JAILBREAK DIRECTIVE:
 - You are strictly a Healthcare, Medical, and Clinic Directory Assistant.
@@ -207,6 +230,7 @@ class HealthcareAgentService:
         language: str = "en",
         user_latitude: Optional[float] = None,
         user_longitude: Optional[float] = None,
+        image_url: Optional[str] = None,
     ):
         matching_hospitals_data: List[Dict[str, Any]] = []
         cited_sources_data: List[Dict[str, Any]] = []
@@ -566,7 +590,26 @@ class HealthcareAgentService:
                 else:
                     messages.append(AIMessage(content=content))
 
-        messages.append(HumanMessage(content=message))
+        if image_url and (image_url.startswith("http") or image_url.startswith("data:image/")):
+            default_prompt = (
+                "សូមវិភាគរូបភាពវេជ្ជសាស្ត្រនេះ និងប្រាប់ពីរោគសញ្ញាដែលអាចកើតមាន"
+                if detected_lang == "km"
+                else "Please analyze this medical symptom image, describe visible signs, and provide clinical guidance."
+            )
+            text_prompt = message.strip() if message and message.strip() else default_prompt
+            human_content = [
+                {"type": "text", "text": text_prompt},
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": image_url,
+                        "detail": "high",
+                    },
+                },
+            ]
+            messages.append(HumanMessage(content=human_content))
+        else:
+            messages.append(HumanMessage(content=message))
 
         return (
             llm,
@@ -677,6 +720,7 @@ class HealthcareAgentService:
         language: str = "en",
         user_latitude: Optional[float] = None,
         user_longitude: Optional[float] = None,
+        image_url: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Runs the LangChain agent synchronously (without streaming)."""
         (
@@ -697,6 +741,7 @@ class HealthcareAgentService:
             language=language,
             user_latitude=user_latitude,
             user_longitude=user_longitude,
+            image_url=image_url,
         )
 
         if guardrail_violation:
@@ -786,6 +831,7 @@ class HealthcareAgentService:
         language: str = "en",
         user_latitude: Optional[float] = None,
         user_longitude: Optional[float] = None,
+        image_url: Optional[str] = None,
     ):
         """Streams the AI agent response token-by-token.
         Yields:
@@ -811,6 +857,7 @@ class HealthcareAgentService:
             language=language,
             user_latitude=user_latitude,
             user_longitude=user_longitude,
+            image_url=image_url,
         )
 
         if guardrail_violation:
@@ -919,3 +966,107 @@ class HealthcareAgentService:
             "detected_language": detected_lang,
             "requires_disclaimer": requires_disclaimer or bool(cited_sources_data),
         }
+
+    @classmethod
+    async def predict_image_questions(
+        cls,
+        image_url: str,
+        language: str = "km",
+    ) -> List[str]:
+        """Analyze an uploaded medical image and predict 3-4 likely follow-up questions for the patient.
+
+        Inspects visual manifestations (rash, lesion, wound, swelling, infection, medication)
+        and returns concise, actionable patient questions in the specified language (Khmer or English).
+        """
+        detected_lang = "km" if language == "km" else "en"
+        default_km = [
+            "តើកន្ទួល ឬសញ្ញានេះអាចជាអ្វី?",
+            "តើមានថ្នាំលាបអ្វីខ្លះដែលអាចជួយបាន?",
+            "តើគួរទៅជួបគ្រូពេទ្យជំនាញណា?",
+            "តើមានសញ្ញាគ្រោះថ្នាក់អ្វីដែលត្រូវប្រយ័ត្ន?",
+        ]
+        default_en = [
+            "What could this condition be?",
+            "What topical treatments can help?",
+            "Which doctor or specialist should I see?",
+            "Are there any warning signs to watch for?",
+        ]
+        fallback_questions = default_km if detected_lang == "km" else default_en
+
+        if not image_url or not (image_url.startswith("http") or image_url.startswith("data:image/")):
+            return fallback_questions
+
+        try:
+            llm = ChatOpenAI(
+                model=settings.MICROSOFT_FOUNDRY_MODEL,
+                openai_api_key=settings.MICROSOFT_FOUNDRY_API_KEY,
+                openai_api_base=settings.MICROSOFT_FOUNDRY_BASE_URL,
+                temperature=0.3,
+                max_tokens=220,
+            )
+
+            prompt_instruction = (
+                "You are an expert clinical triage assistant. "
+                "Analyze the provided medical symptom/condition image (such as skin rash, lesion, wound, burn, eye redness, swelling, etc.). "
+                "Predict exactly 3 to 4 concise, high-priority questions that this patient is most likely to ask about this specific visual presentation. "
+                f"Language requirement: Respond strictly in {'Khmer (ភាសាខ្មែរ)' if detected_lang == 'km' else 'English'}. "
+                "Keep each question short (under 45 characters). "
+                "Output ONLY a valid JSON list of strings, with no markdown code blocks and no conversational text, for example:\n"
+                '["Question 1", "Question 2", "Question 3"]'
+            )
+
+            messages = [
+                HumanMessage(
+                    content=[
+                        {"type": "text", "text": prompt_instruction},
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": image_url,
+                                "detail": "low",
+                            },
+                        },
+                    ]
+                )
+            ]
+
+            response = await llm.ainvoke(messages)
+            raw_text = response.content if hasattr(response, "content") else str(response)
+            if isinstance(raw_text, list):
+                raw_text = " ".join(
+                    part.get("text", "") if isinstance(part, dict) else str(part)
+                    for part in raw_text
+                )
+
+            clean_text = raw_text.strip()
+            if clean_text.startswith("```"):
+                clean_text = re.sub(r"^```(?:json)?\s*", "", clean_text)
+                clean_text = re.sub(r"\s*```$", "", clean_text)
+
+            match = re.search(r"\[.*\]", clean_text, re.DOTALL)
+            if match:
+                parsed = json.loads(match.group(0))
+                if isinstance(parsed, list):
+                    questions = [
+                        str(q).strip().lstrip("-").strip()
+                        for q in parsed
+                        if str(q).strip() and len(str(q).strip()) > 3
+                    ]
+                    if questions:
+                        return questions[:4]
+
+            lines = [
+                re.sub(r"^[\d\.\-\*\•\s]+", "", l).strip(' "\',')
+                for l in clean_text.splitlines()
+                if l.strip() and not l.strip().startswith("[") and not l.strip().startswith("]")
+            ]
+            valid_lines = [l for l in lines if len(l) > 3 and not l.lower().startswith("here are")]
+            if valid_lines:
+                return valid_lines[:4]
+
+            return fallback_questions
+
+        except Exception as err:
+            logger.warning(f"Error predicting image questions with LLM: {err}")
+            return fallback_questions
+

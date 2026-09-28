@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { Plus, Mic, ArrowUp, X, Image as ImageIcon, Pencil, Trash2, Check } from 'lucide-react';
+import { Plus, Mic, ArrowUp, X, Image as ImageIcon, Pencil, Trash2, Check, Sparkles, Loader2 } from 'lucide-react';
 import {
   getUserConversations,
   saveUserConversation,
@@ -235,6 +235,11 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
   const [inputError, setInputError] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  const [hostedImageUrl, setHostedImageUrl] = useState<string | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [imagePredictedQuestions, setImagePredictedQuestions] = useState<string[]>([]);
+  const [isAnalyzingImage, setIsAnalyzingImage] = useState(false);
+  const [enlargedImageUrl, setEnlargedImageUrl] = useState<string | null>(null);
   const [isListening, setIsListening] = useState(false);
   const [isAttachMenuOpen, setIsAttachMenuOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -419,25 +424,130 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
     };
   }, [isAttachMenuOpen]);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const compressImage = (file: File, maxDim: number = 1200, quality: number = 0.85): Promise<string> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          let { width, height } = img;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL('image/jpeg', quality));
+          } else {
+            resolve((e.target?.result as string) || '');
+          }
+        };
+        img.onerror = () => resolve((e.target?.result as string) || '');
+        img.src = (e.target?.result as string) || '';
+      };
+      reader.onerror = () => resolve('');
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const fetchQuestionsForBase64 = async (imgDataUrl: string) => {
+    try {
+      setIsAnalyzingImage(true);
+      const res = await fetch(`${API_BASE}/assistant/predict-image-questions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...AuthService.getAuthHeaders(),
+          ...getDeviceHeaders(),
+        },
+        body: JSON.stringify({
+          image_url: imgDataUrl,
+          language,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.predicted_questions) && data.predicted_questions.length > 0) {
+          setImagePredictedQuestions(data.predicted_questions);
+        }
+      }
+    } catch {
+      // Graceful fallback to default chips
+    } finally {
+      setIsAnalyzingImage(false);
+    }
+  };
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith('image/')) {
       setInputError(language === 'km' ? 'សូមជ្រើសរើសឯកសាររូបភាព (.png, .jpg, .jpeg, .webp)' : 'Please select a valid image file (.png, .jpg, .jpeg, .webp).');
       return;
     }
+    if (file.size > 10 * 1024 * 1024) {
+      setInputError(language === 'km' ? 'ទំហំរូបភាពមិនត្រូវលើសពី 10MB ទេ' : 'Image size cannot exceed 10MB.');
+      return;
+    }
     setSelectedImage(file);
     setInputError(null);
-    const reader = new FileReader();
-    reader.onload = (loadEvt) => {
-      setImagePreviewUrl(loadEvt.target?.result as string);
-    };
-    reader.readAsDataURL(file);
+    setIsAttachMenuOpen(false);
+    setImagePredictedQuestions([]);
+    setIsAnalyzingImage(true);
+
+    // Fast local preview with compression
+    const compressedDataUrl = await compressImage(file, 1200, 0.85);
+    setImagePreviewUrl(compressedDataUrl);
+
+    // Upload to server asynchronously for permanent URL and question prediction
+    setIsUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('language', language);
+      const res = await fetch(`${API_BASE}/assistant/upload-image`, {
+        method: 'POST',
+        headers: {
+          ...AuthService.getAuthHeaders(),
+          ...getDeviceHeaders(),
+        },
+        body: formData,
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setHostedImageUrl(data.image_url);
+        if (Array.isArray(data.predicted_questions) && data.predicted_questions.length > 0) {
+          setImagePredictedQuestions(data.predicted_questions);
+        }
+      } else {
+        // Fallback to predict via compressed preview
+        await fetchQuestionsForBase64(compressedDataUrl);
+      }
+    } catch {
+      // Fallback to local base64 data URL prediction
+      await fetchQuestionsForBase64(compressedDataUrl);
+    } finally {
+      setIsUploadingImage(false);
+      setIsAnalyzingImage(false);
+    }
   };
 
   const removeSelectedImage = () => {
     setSelectedImage(null);
     setImagePreviewUrl(null);
+    setHostedImageUrl(null);
+    setIsUploadingImage(false);
+    setIsAnalyzingImage(false);
+    setImagePredictedQuestions([]);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -503,7 +613,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
     const userMsg: ChatMessage = {
       id: String(Date.now()),
       role: 'user',
-      text: query || (language === 'km' ? 'រូបភាពដែលបានភ្ជាប់' : 'Attached image'),
+      text: query || (language === 'km' ? 'សូមវិភាគរោគសញ្ញារូបភាពនេះ' : 'Please analyze this symptom image'),
       imageUrl: attachedImageUrl,
       timestamp: new Date(),
     };
@@ -783,19 +893,29 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
   };
 
   const handleSendMessage = (e?: React.FormEvent) => {
-    if (loading) return;
+    if (loading || isUploadingImage) return;
     if (e) e.preventDefault();
     if (hasReachedLimit) {
       onOpenAuth?.();
       return;
     }
-    const currentImg = imagePreviewUrl;
-    const textToSend = inputText.trim();
-    if (!textToSend && !currentImg) return;
+    const currentImg = hostedImageUrl || imagePreviewUrl;
+    const rawText = inputText.trim();
+    if (!rawText && !currentImg) return;
+    const textToSend = rawText || (
+      language === 'km'
+        ? 'សូមវិភាគរោគសញ្ញារូបភាពនេះ'
+        : 'Please analyze this symptom image'
+    );
     handleSendQuery(textToSend, currentImg || undefined);
-    setSelectedImage(null);
-    setImagePreviewUrl(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
+    removeSelectedImage();
+  };
+
+  const handleChipClick = (chipText: string) => {
+    if (loading || isUploadingImage) return;
+    const currentImg = hostedImageUrl || imagePreviewUrl;
+    handleSendQuery(chipText, currentImg || undefined);
+    removeSelectedImage();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -932,14 +1052,18 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
                     <img
                       src={msg.imageUrl}
                       alt="Attachment"
+                      onClick={() => setEnlargedImageUrl(msg.imageUrl || null)}
                       style={{
                         maxWidth: '240px',
                         maxHeight: '180px',
-                        borderRadius: '10px',
+                        borderRadius: 'var(--radius-md)',
                         objectFit: 'cover',
                         border: '1px solid var(--border-color)',
                         display: 'block',
+                        cursor: 'pointer',
+                        transition: 'opacity var(--transition-fast)',
                       }}
+                      title={language === 'km' ? 'ចុចដើម្បីមើលរូបធំ' : 'Click to enlarge'}
                     />
                   </div>
                 )}
@@ -1560,50 +1684,169 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
         >
           {/* Selected Image Preview (if present) */}
           {imagePreviewUrl && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 0 2px 2px' }}>
-              <div style={{ position: 'relative', display: 'inline-block' }}>
-                <img
-                  src={imagePreviewUrl}
-                  alt="Preview"
-                  style={{
-                    width: '38px',
-                    height: '38px',
-                    borderRadius: '8px',
-                    objectFit: 'cover',
-                    border: '1px solid var(--border-color)',
-                    display: 'block',
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    removeSelectedImage();
-                  }}
-                  style={{
-                    position: 'absolute',
-                    top: '-5px',
-                    right: '-5px',
-                    width: '16px',
-                    height: '16px',
-                    borderRadius: '50%',
-                    background: '#475569',
-                    color: '#ffffff',
-                    border: 'none',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: 0,
-                  }}
-                  title="Remove image"
-                >
-                  <X size={10} />
-                </button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', padding: '4px 0 2px 2px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ position: 'relative', display: 'inline-block' }}>
+                  <img
+                    src={imagePreviewUrl}
+                    alt="Preview"
+                    style={{
+                      width: '38px',
+                      height: '38px',
+                      borderRadius: '8px',
+                      objectFit: 'cover',
+                      border: '1px solid var(--border-color)',
+                      display: 'block',
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeSelectedImage();
+                    }}
+                    style={{
+                      position: 'absolute',
+                      top: '-5px',
+                      right: '-5px',
+                      width: '16px',
+                      height: '16px',
+                      borderRadius: '50%',
+                      background: '#475569',
+                      color: '#ffffff',
+                      border: 'none',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: 0,
+                    }}
+                    title="Remove image"
+                  >
+                    <X size={10} />
+                  </button>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                    {selectedImage?.name}
+                  </span>
+                  {isUploadingImage && (
+                    <span style={{ fontSize: '0.72rem', color: 'var(--accent-primary)', fontWeight: 500 }}>
+                      {language === 'km' ? 'កំពុងរៀបចំ...' : 'Preparing image...'}
+                    </span>
+                  )}
+                </div>
               </div>
-              <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                {selectedImage?.name}
-              </span>
+
+              {/* Dynamic Image Predicted Questions or Loading Status */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  flexWrap: 'wrap',
+                  paddingTop: '3px',
+                }}
+              >
+                {isAnalyzingImage ? (
+                  <div
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '7px',
+                      padding: '4px 12px',
+                      borderRadius: 'var(--radius-full)',
+                      background: 'rgba(24, 83, 57, 0.08)',
+                      color: 'var(--accent-primary)',
+                      fontSize: '0.78rem',
+                      fontWeight: 600,
+                      fontFamily: kmFont,
+                    }}
+                  >
+                    <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} />
+                    <span>
+                      {language === 'km'
+                        ? 'AI កំពុងវិភាគរូបភាព និងស្វែងរកសំណួរដែលអ្នកចង់សួរ...'
+                        : 'AI analyzing image & predicting questions...'}
+                    </span>
+                  </div>
+                ) : (
+                  <>
+                    <span
+                      style={{
+                        fontSize: '0.72rem',
+                        color: 'var(--text-muted)',
+                        fontWeight: 600,
+                        marginRight: '2px',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                      }}
+                    >
+                      <Sparkles size={11} color="var(--accent-primary)" />
+                      {language === 'km' ? 'សំណួរដែលអ្នកអាចសួរ៖' : 'Suggested questions:'}
+                    </span>
+                    {(imagePredictedQuestions.length > 0
+                      ? imagePredictedQuestions
+                      : (language === 'km'
+                        ? [
+                            'វិភាគរោគសញ្ញារូបភាពនេះ',
+                            'តើកន្ទួលនេះអាចជាអ្វី?',
+                            'តើមានថ្នាំលាបអ្វីដែលអាចជួយបាន?',
+                            'គួរជួបវេជ្ជបណ្ឌិតជំនាញណា?',
+                          ]
+                        : [
+                            'Analyze this symptom image',
+                            'What could this be?',
+                            'What topical treatments can help?',
+                            'Which specialist to see?',
+                          ]
+                        )
+                    ).map((chipText, idx) => (
+                      <div
+                        key={idx}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          borderRadius: 'var(--radius-full)',
+                          border: '1px solid var(--accent-primary)',
+                          background: 'var(--bg-secondary)',
+                          overflow: 'hidden',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => handleChipClick(chipText)}
+                          disabled={loading || isUploadingImage || isAnalyzingImage}
+                          title={language === 'km' ? 'ចុចដើម្បីសួរភ្លាមៗ' : 'Click to ask immediately'}
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            padding: '3px 10px',
+                            fontSize: '0.77rem',
+                            color: 'var(--accent-primary)',
+                            fontWeight: 600,
+                            cursor: (loading || isUploadingImage || isAnalyzingImage) ? 'not-allowed' : 'pointer',
+                            fontFamily: (language === 'km' || isKhmer(chipText)) ? 'var(--font-khmer)' : 'inherit',
+                            whiteSpace: 'nowrap',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.parentElement!.style.background = 'var(--accent-primary)';
+                            e.currentTarget.style.color = '#ffffff';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.parentElement!.style.background = 'var(--bg-secondary)';
+                            e.currentTarget.style.color = 'var(--accent-primary)';
+                          }}
+                        >
+                          {chipText}
+                        </button>
+                      </div>
+                    ))}
+                  </>
+                )}
+              </div>
             </div>
           )}
 
@@ -1862,6 +2105,67 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
         </div>
       </div>
 
+      {/* Lightbox Modal for Fullscreen Image Inspection */}
+      {enlargedImageUrl && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setEnlargedImageUrl(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.75)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1rem',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              position: 'relative',
+              maxWidth: '90vw',
+              maxHeight: '85vh',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+            }}
+          >
+            <button
+              onClick={() => setEnlargedImageUrl(null)}
+              style={{
+                position: 'absolute',
+                top: '-36px',
+                right: '0',
+                background: 'none',
+                border: 'none',
+                color: '#ffffff',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                fontSize: '0.85rem',
+              }}
+              title={language === 'km' ? 'បិទ' : 'Close'}
+            >
+              <X size={20} />
+            </button>
+            <img
+              src={enlargedImageUrl}
+              alt="Enlarged symptom view"
+              style={{
+                maxWidth: '100%',
+                maxHeight: '80vh',
+                borderRadius: 'var(--radius-md)',
+                objectFit: 'contain',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+              }}
+            />
+          </div>
+        </div>
+      )}
 
     </div>
   );

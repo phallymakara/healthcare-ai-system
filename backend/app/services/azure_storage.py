@@ -344,6 +344,11 @@ class AzureBlobStorageService:
     def user_avatar_prefix(user_id: str) -> str:
         return f"users/{user_id}"
 
+    @staticmethod
+    def chat_attachment_prefix(session_or_user_id: str) -> str:
+        """Generate isolated storage prefix path for chat image attachments."""
+        return f"consultations/{session_or_user_id}"
+
 
 # Global Singleton Service
 azure_storage_service = AzureBlobStorageService()

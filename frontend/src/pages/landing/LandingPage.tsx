@@ -2,7 +2,6 @@ import React from 'react';
 import { HeroSection } from './HeroSection';
 import { PatientFeatures } from './PatientFeatures';
 import { HospitalFeatures } from './HospitalFeatures';
-import { TestimonialsSection } from './TestimonialsSection';
 import { HowItWorks } from './HowItWorks';
 import { CtaSection } from './CtaSection';
 import { FooterSection } from './FooterSection';
@@ -33,7 +32,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth, currentUse
       {/* Structured Content Sections in Responsive Centered Container */}
       <div className="landing-inner-container" style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem', marginTop: '0', paddingBottom: '0.75rem', background: '#ffffff' }}>
         <HospitalFeatures />
-        <TestimonialsSection />
         <HowItWorks />
       </div>
 

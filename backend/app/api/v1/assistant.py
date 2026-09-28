@@ -2,8 +2,8 @@ import json
 import logging
 import uuid
 from datetime import datetime, timezone
-from typing import Optional, List
-from fastapi import APIRouter, Depends, status, HTTPException, Request
+from typing import Optional, List, Dict
+from fastapi import APIRouter, Depends, status, HTTPException, Request, UploadFile, File, Form
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc
@@ -14,6 +14,7 @@ from app.core.deps import get_optional_current_user, get_current_user
 from app.models.user import User
 from app.models.chat import ChatConversation, ChatMessage
 from app.services.guest_limit_service import GuestLimitService
+from app.services.azure_storage import azure_storage_service
 from app.services.langchain_agent import HealthcareAgentService
 from app.services.triage_assistant import TriageAssistantService
 from app.schemas.assistant import (
@@ -28,6 +29,9 @@ from app.schemas.assistant import (
     ConversationDetailResponse,
     CreateConversationRequest,
     UpdateConversationRequest,
+    UploadImageResponse,
+    PredictImageQuestionsRequest,
+    PredictImageQuestionsResponse,
 )
 
 router = APIRouter(prefix="/assistant", tags=["AI Healthcare Assistant"])
@@ -46,6 +50,53 @@ async def triage_symptoms(
             detail="Please provide a more detailed symptom description.",
         )
     return await TriageAssistantService.analyze_symptoms(data, db)
+
+
+@router.post("/upload-image", response_model=UploadImageResponse, status_code=status.HTTP_201_CREATED)
+async def upload_assistant_image(
+    file: UploadFile = File(...),
+    language: Optional[str] = Form("km"),
+    current_user: Optional[User] = Depends(get_optional_current_user),
+) -> UploadImageResponse:
+    """Upload a medical symptom image attachment for AI visual analysis.
+
+    Validates file MIME type and size, persists image to Azure Blob Storage,
+    and runs vision analysis to predict 3-4 likely questions for the patient.
+    """
+    owner_id = str(current_user.id) if current_user else f"guest_{uuid.uuid4().hex[:12]}"
+    owner_prefix = azure_storage_service.chat_attachment_prefix(owner_id)
+
+    result = await azure_storage_service.upload_asset(
+        file=file,
+        owner_prefix=owner_prefix,
+        subfolder="symptoms",
+    )
+    image_url = result["url"]
+
+    # Predict high-probability patient questions using vision model
+    predicted_questions = await HealthcareAgentService.predict_image_questions(
+        image_url=image_url,
+        language=language or "km",
+    )
+
+    return UploadImageResponse(
+        image_url=image_url,
+        blob_name=result["blob_name"],
+        predicted_questions=predicted_questions,
+    )
+
+
+@router.post("/predict-image-questions", response_model=PredictImageQuestionsResponse)
+async def predict_image_questions(
+    data: PredictImageQuestionsRequest,
+    current_user: Optional[User] = Depends(get_optional_current_user),
+) -> PredictImageQuestionsResponse:
+    """Analyze an uploaded image or base64 data URL and predict relevant clinical questions."""
+    questions = await HealthcareAgentService.predict_image_questions(
+        image_url=data.image_url,
+        language=data.language or "km",
+    )
+    return PredictImageQuestionsResponse(predicted_questions=questions)
 
 
 @router.get("/conversations", response_model=List[ConversationSummaryResponse])
@@ -303,6 +354,7 @@ async def assistant_chat(
         language=data.language or "en",
         user_latitude=data.user_latitude,
         user_longitude=data.user_longitude,
+        image_url=data.image_url,
     )
 
     matching_objs = []
@@ -425,6 +477,7 @@ async def chat_assistant_stream(
                 language=data.language or "en",
                 user_latitude=data.user_latitude,
                 user_longitude=data.user_longitude,
+                image_url=data.image_url,
             ):
                 chunk_type = chunk.get("type")
                 if chunk_type == "token":
