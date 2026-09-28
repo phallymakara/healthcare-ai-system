@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { Plus, Mic, ArrowUp, X, Image as ImageIcon, Pencil, Trash2, Check, Sparkles, Loader2 } from 'lucide-react';
+import { Plus, Mic, ArrowUp, X, Image as ImageIcon, Pencil, Trash2, Check } from 'lucide-react';
 import {
   getUserConversations,
   saveUserConversation,
@@ -81,6 +81,16 @@ const getDefaultWelcomeActions = (isKm: boolean): string[] =>
   isKm
     ? ['ពិគ្រោះរោគសញ្ញាជំងឺ', 'ស្វែងរកមន្ទីរពេទ្យនៅជិតខ្ញុំ', 'សេវាសង្គ្រោះបន្ទាន់ ២៤/៧']
     : ['Check My Symptoms', 'Find Hospitals Near Me', '24/7 Emergency Services'];
+
+const cleanActionText = (action: string): string => {
+  if (!action) return '';
+  return action
+    .replace(/\[([^\]]+)\](?:\([^)]*\))?/g, '$1')
+    .replace(/\(#[^)]*\)/g, '')
+    .replace(/[\[\]#]/g, '')
+    .replace(/^[-\s*•]+/, '')
+    .trim();
+};
 
 const shouldShowMedicalDisclaimer = (msg: ChatMessage, userQuestion?: string): boolean => {
   if (msg.role !== 'assistant' || msg.id === 'welcome') {
@@ -238,7 +248,6 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
   const [hostedImageUrl, setHostedImageUrl] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [imagePredictedQuestions, setImagePredictedQuestions] = useState<string[]>([]);
-  const [isAnalyzingImage, setIsAnalyzingImage] = useState(false);
   const [enlargedImageUrl, setEnlargedImageUrl] = useState<string | null>(null);
   const [isListening, setIsListening] = useState(false);
   const [isAttachMenuOpen, setIsAttachMenuOpen] = useState(false);
@@ -461,7 +470,6 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
 
   const fetchQuestionsForBase64 = async (imgDataUrl: string) => {
     try {
-      setIsAnalyzingImage(true);
       const res = await fetch(`${API_BASE}/assistant/predict-image-questions`, {
         method: 'POST',
         headers: {
@@ -482,8 +490,6 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
       }
     } catch {
       // Graceful fallback to default chips
-    } finally {
-      setIsAnalyzingImage(false);
     }
   };
 
@@ -502,7 +508,6 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
     setInputError(null);
     setIsAttachMenuOpen(false);
     setImagePredictedQuestions([]);
-    setIsAnalyzingImage(true);
 
     // Fast local preview with compression
     const compressedDataUrl = await compressImage(file, 1200, 0.85);
@@ -537,7 +542,6 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
       await fetchQuestionsForBase64(compressedDataUrl);
     } finally {
       setIsUploadingImage(false);
-      setIsAnalyzingImage(false);
     }
   };
 
@@ -546,7 +550,6 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
     setImagePreviewUrl(null);
     setHostedImageUrl(null);
     setIsUploadingImage(false);
-    setIsAnalyzingImage(false);
     setImagePredictedQuestions([]);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
@@ -722,67 +725,35 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
       const decoder = new TextDecoder();
       let buffer = '';
       let rawTargetText = '';
-      let displayedText = '';
       let streamStarted = false;
       let metadata: any = null;
-      let tickerInterval: any = null;
-
-      const prefersReducedMotion =
-        typeof window !== 'undefined' &&
-        window.matchMedia &&
-        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-      // 60fps smooth progressive ticker advancing displayedText towards rawTargetText
-      tickerInterval = setInterval(() => {
-        const diff = rawTargetText.length - displayedText.length;
-        if (diff > 0) {
-          if (!streamStarted) {
-            streamStarted = true;
-            setMessages((prev) => [
-              ...prev,
-              {
-                id: streamMsgId,
-                role: 'assistant',
-                text: '',
-                timestamp: new Date(),
-              },
-            ]);
-          }
-
-          if (prefersReducedMotion) {
-            displayedText = rawTargetText;
-          } else {
-            // Adaptive cadence step size:
-            // diff <= 4: advance 1 char for natural smooth reading flow
-            // diff 5-14: advance 2 chars
-            // diff 15-30: advance 3-4 chars
-            // diff > 30: catch up smoothly with diff / 5
-            let step = 1;
-            if (diff > 40) {
-              step = Math.ceil(diff / 5);
-            } else if (diff > 20) {
-              step = 4;
-            } else if (diff > 10) {
-              step = 2;
-            } else {
-              step = 1;
-            }
-            displayedText = rawTargetText.slice(0, displayedText.length + step);
-          }
-
-          setMessages((prev) =>
-            prev.map((m) => (m.id === streamMsgId ? { ...m, text: displayedText } : m))
-          );
-          messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
-        }
-      }, 18);
 
       const processEvent = (eventType: string, dataStr: string) => {
         try {
           const parsed = JSON.parse(dataStr);
           if (eventType === 'token') {
             const delta = parsed.delta || '';
-            rawTargetText += delta;
+            if (delta) {
+              rawTargetText += delta;
+              if (!streamStarted) {
+                streamStarted = true;
+                setStreamingMsgId(streamMsgId);
+                setMessages((prev) => [
+                  ...prev,
+                  {
+                    id: streamMsgId,
+                    role: 'assistant',
+                    text: rawTargetText,
+                    timestamp: new Date(),
+                  },
+                ]);
+              } else {
+                setMessages((prev) =>
+                  prev.map((m) => (m.id === streamMsgId ? { ...m, text: rawTargetText } : m))
+                );
+              }
+              messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+            }
           } else if (eventType === 'metadata') {
             metadata = parsed;
           }
@@ -833,20 +804,8 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
             processEvent(eventType, dataStr);
           }
         }
-
-        // Wait for smooth display ticker to catch up to the full response
-        await new Promise<void>((resolve) => {
-          const checkDone = setInterval(() => {
-            if (displayedText.length >= rawTargetText.length) {
-              clearInterval(checkDone);
-              if (tickerInterval) clearInterval(tickerInterval);
-              displayedText = rawTargetText;
-              resolve();
-            }
-          }, 18);
-        });
       } finally {
-        if (tickerInterval) clearInterval(tickerInterval);
+        // Stream reading completed
       }
 
       // Stream completed - finalize conversation state and metadata
@@ -859,10 +818,13 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
       }
 
       const hasMatchingHospitals = metadata?.matching_hospitals && metadata.matching_hospitals.length > 0;
+      const rawActions = (metadata?.suggested_actions || []) as string[];
+      const cleanedActions = rawActions.map(cleanActionText).filter(Boolean);
+
       const finalAssistantMsg: ChatMessage = {
         id: streamMsgId,
         role: 'assistant',
-        text: displayedText || rawTargetText || (isKhmer(query) ? 'ខ្ញុំនៅទីនេះដើម្បីជួយសម្រួលការសាកសួរសុខភាពរបស់អ្នក។' : 'I am here to assist with your healthcare inquiries.'),
+        text: rawTargetText || (isKhmer(query) ? 'ខ្ញុំនៅទីនេះដើម្បីជួយសម្រួលការសាកសួរសុខភាពរបស់អ្នក។' : 'I am here to assist with your healthcare inquiries.'),
         triage: hasMatchingHospitals ? {
           urgency_level: metadata?.urgency_level || 'STANDARD',
           recommended_specialty: metadata?.recommended_specialty || 'General Care',
@@ -870,7 +832,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
           requires_disclaimer: Boolean(metadata?.requires_disclaimer),
         } : (metadata?.requires_disclaimer ? { requires_disclaimer: true } : undefined),
         bookedTicket: metadata?.booked_ticket || undefined,
-        suggestedActions: metadata?.suggested_actions || [],
+        suggestedActions: cleanedActions,
         citedSources: metadata?.cited_sources || [],
         requiresDisclaimer: Boolean(metadata?.requires_disclaimer) || (metadata?.cited_sources && metadata.cited_sources.length > 0),
         timestamp: new Date(),
@@ -971,7 +933,10 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
       return;
     }
 
-    if (actionText === 'View in Live Queue' || actionText === 'View Live Queue' || actionText === 'View Ticket' || actionText === t('view_live_queue')) {
+    const clean = cleanActionText(actionText);
+    if (!clean) return;
+
+    if (clean === 'View in Live Queue' || clean === 'View Live Queue' || clean === 'View Ticket' || clean === t('view_live_queue')) {
       if (msg?.bookedTicket) {
         onTicketBooked(msg.bookedTicket);
       } else if (onNavigateToTracker) {
@@ -980,7 +945,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
       return;
     }
 
-    if (actionText === 'Explore All Facilities' || actionText === 'Explore Hospitals & Clinics' || actionText === 'Find Hospital') {
+    if (clean === 'Explore All Facilities' || clean === 'Explore Hospitals & Clinics' || clean === 'Find Hospital') {
       if (onNavigateToDiscovery) {
         onNavigateToDiscovery();
         return;
@@ -988,7 +953,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
     }
 
     // Trigger the action query directly
-    handleSendQuery(actionText);
+    handleSendQuery(clean);
   };
 
 
@@ -1169,11 +1134,13 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
                     paddingTop: '0.5rem',
                   }}>
                     {msg.suggestedActions.map((action, aIdx) => {
-                      const isActionKm = isKhmer(action);
+                      const cleanAction = cleanActionText(action);
+                      if (!cleanAction) return null;
+                      const isActionKm = isKhmer(cleanAction);
                       return (
                         <button
                           key={aIdx}
-                          onClick={() => handleActionClick(action, msg)}
+                          onClick={() => handleActionClick(cleanAction, msg)}
                           disabled={loading}
                           style={{
                             padding: isActionKm ? '0.4rem 0.85rem' : '0.35rem 0.85rem',
@@ -1205,7 +1172,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
                             }
                           }}
                         >
-                          {action} →
+                          {cleanAction} →
                         </button>
                       );
                     })}
@@ -1660,6 +1627,69 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
             )}
           </div>
         )}
+        {/* Dynamic Image Predicted Question Chips (above normal input bar) */}
+        {imagePreviewUrl && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              flexWrap: 'wrap',
+              marginBottom: '8px',
+              padding: '0 4px',
+            }}
+          >
+            {(imagePredictedQuestions.length > 0
+              ? imagePredictedQuestions
+              : (language === 'km'
+                ? [
+                    'វិភាគរោគសញ្ញារូបភាពនេះ',
+                    'តើកន្ទួលនេះអាចជាអ្វី?',
+                    'តើមានថ្នាំលាបអ្វីដែលអាចជួយបាន?',
+                    'គួរជួបវេជ្ជបណ្ឌិតជំនាញណា?',
+                  ]
+                : [
+                    'Analyze this symptom image',
+                    'What could this be?',
+                    'What topical treatments can help?',
+                    'Which specialist to see?',
+                  ]
+                )
+            ).map((chipText, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => handleChipClick(chipText)}
+                disabled={loading || isUploadingImage}
+                title={language === 'km' ? 'ចុចដើម្បីសួរភ្លាមៗ' : 'Click to ask immediately'}
+                style={{
+                  background: 'var(--bg-secondary)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: 'var(--radius-full)',
+                  padding: '4px 12px',
+                  fontSize: '0.78rem',
+                  color: 'var(--text-main)',
+                  fontWeight: 500,
+                  cursor: (loading || isUploadingImage) ? 'not-allowed' : 'pointer',
+                  fontFamily: (language === 'km' || isKhmer(chipText)) ? 'var(--font-khmer)' : 'inherit',
+                  transition: 'all 0.15s ease',
+                  whiteSpace: 'nowrap',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--accent-primary)';
+                  e.currentTarget.style.color = 'var(--accent-primary)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--border-color)';
+                  e.currentTarget.style.color = 'var(--text-main)';
+                }}
+              >
+                {chipText}
+              </button>
+            ))}
+          </div>
+        )}
+
         <form
           onSubmit={handleSendMessage}
           className="chat-ai-input-form"
@@ -1668,13 +1698,11 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
             background: hasReachedLimit ? '#f8fafc' : '#ffffff',
             border: hasReachedLimit ? '1px solid #cbd5e1' : '1px solid var(--border-color)',
             borderRadius: 'var(--radius-full)',
-            padding: '12px 14px 11px 14px',
+            padding: '8px 14px',
             boxShadow: '0 1px 4px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03)',
             display: 'flex',
-            flexDirection: 'column',
-            justifyContent: imagePreviewUrl ? 'flex-start' : 'center',
-            gap: imagePreviewUrl ? '6px' : 0,
-            minHeight: '58px',
+            alignItems: 'center',
+            gap: '8px',
             boxSizing: 'border-box',
             cursor: hasReachedLimit ? 'pointer' : 'text',
           }}
@@ -1682,186 +1710,93 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
             if (hasReachedLimit) onOpenAuth?.();
           }}
         >
-          {/* Selected Image Preview (if present) */}
-          {imagePreviewUrl && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', padding: '4px 0 2px 2px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{ position: 'relative', display: 'inline-block' }}>
-                  <img
-                    src={imagePreviewUrl}
-                    alt="Preview"
-                    style={{
-                      width: '38px',
-                      height: '38px',
-                      borderRadius: '8px',
-                      objectFit: 'cover',
-                      border: '1px solid var(--border-color)',
-                      display: 'block',
-                    }}
-                  />
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      removeSelectedImage();
-                    }}
-                    style={{
-                      position: 'absolute',
-                      top: '-5px',
-                      right: '-5px',
-                      width: '16px',
-                      height: '16px',
-                      borderRadius: '50%',
-                      background: '#475569',
-                      color: '#ffffff',
-                      border: 'none',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      padding: 0,
-                    }}
-                    title="Remove image"
-                  >
-                    <X size={10} />
-                  </button>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                    {selectedImage?.name}
-                  </span>
-                  {isUploadingImage && (
-                    <span style={{ fontSize: '0.72rem', color: 'var(--accent-primary)', fontWeight: 500 }}>
-                      {language === 'km' ? 'កំពុងរៀបចំ...' : 'Preparing image...'}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Dynamic Image Predicted Questions or Loading Status */}
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  flexWrap: 'wrap',
-                  paddingTop: '3px',
-                }}
-              >
-                {isAnalyzingImage ? (
-                  <div
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '7px',
-                      padding: '4px 12px',
-                      borderRadius: 'var(--radius-full)',
-                      background: 'rgba(24, 83, 57, 0.08)',
-                      color: 'var(--accent-primary)',
-                      fontSize: '0.78rem',
-                      fontWeight: 600,
-                      fontFamily: kmFont,
-                    }}
-                  >
-                    <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} />
-                    <span>
-                      {language === 'km'
-                        ? 'AI កំពុងវិភាគរូបភាព និងស្វែងរកសំណួរដែលអ្នកចង់សួរ...'
-                        : 'AI analyzing image & predicting questions...'}
-                    </span>
-                  </div>
-                ) : (
-                  <>
-                    <span
-                      style={{
-                        fontSize: '0.72rem',
-                        color: 'var(--text-muted)',
-                        fontWeight: 600,
-                        marginRight: '2px',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                      }}
-                    >
-                      <Sparkles size={11} color="var(--accent-primary)" />
-                      {language === 'km' ? 'សំណួរដែលអ្នកអាចសួរ៖' : 'Suggested questions:'}
-                    </span>
-                    {(imagePredictedQuestions.length > 0
-                      ? imagePredictedQuestions
-                      : (language === 'km'
-                        ? [
-                            'វិភាគរោគសញ្ញារូបភាពនេះ',
-                            'តើកន្ទួលនេះអាចជាអ្វី?',
-                            'តើមានថ្នាំលាបអ្វីដែលអាចជួយបាន?',
-                            'គួរជួបវេជ្ជបណ្ឌិតជំនាញណា?',
-                          ]
-                        : [
-                            'Analyze this symptom image',
-                            'What could this be?',
-                            'What topical treatments can help?',
-                            'Which specialist to see?',
-                          ]
-                        )
-                    ).map((chipText, idx) => (
-                      <div
-                        key={idx}
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          borderRadius: 'var(--radius-full)',
-                          border: '1px solid var(--accent-primary)',
-                          background: 'var(--bg-secondary)',
-                          overflow: 'hidden',
-                          transition: 'all 0.15s ease',
-                        }}
-                      >
-                        <button
-                          type="button"
-                          onClick={() => handleChipClick(chipText)}
-                          disabled={loading || isUploadingImage || isAnalyzingImage}
-                          title={language === 'km' ? 'ចុចដើម្បីសួរភ្លាមៗ' : 'Click to ask immediately'}
-                          style={{
-                            background: 'transparent',
-                            border: 'none',
-                            padding: '3px 10px',
-                            fontSize: '0.77rem',
-                            color: 'var(--accent-primary)',
-                            fontWeight: 600,
-                            cursor: (loading || isUploadingImage || isAnalyzingImage) ? 'not-allowed' : 'pointer',
-                            fontFamily: (language === 'km' || isKhmer(chipText)) ? 'var(--font-khmer)' : 'inherit',
-                            whiteSpace: 'nowrap',
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.parentElement!.style.background = 'var(--accent-primary)';
-                            e.currentTarget.style.color = '#ffffff';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.parentElement!.style.background = 'var(--bg-secondary)';
-                            e.currentTarget.style.color = 'var(--accent-primary)';
-                          }}
-                        >
-                          {chipText}
-                        </button>
-                      </div>
-                    ))}
-                  </>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Single-Line Row: Plus Icon, Text Area, Mic & Send Button */}
+          {/* Left: Plus button with attachment popup */}
           <div
+            ref={attachMenuRef}
             style={{
-              display: 'flex',
+              position: 'relative',
+              display: 'inline-flex',
               alignItems: 'center',
-              width: '100%',
-              gap: '8px',
+              flexShrink: 0,
             }}
           >
-            {/* Left: Plus button with attachment popup */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept="image/*"
+              onChange={handleImageChange}
+              style={{ display: 'none' }}
+            />
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (loading || hasReachedLimit) return;
+                setIsAttachMenuOpen((prev) => !prev);
+              }}
+              disabled={loading || hasReachedLimit}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: (loading || hasReachedLimit) ? 'not-allowed' : 'pointer',
+                padding: '4px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: isAttachMenuOpen ? 'var(--accent-primary)' : '#64748b',
+                transition: 'color var(--transition-fast), transform var(--transition-fast)',
+                borderRadius: '4px',
+                flexShrink: 0,
+                transform: isAttachMenuOpen ? 'rotate(45deg)' : 'none',
+              }}
+              onMouseEnter={(e) => {
+                if (!loading && !hasReachedLimit) {
+                  e.currentTarget.style.color = 'var(--accent-primary)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isAttachMenuOpen) {
+                  e.currentTarget.style.color = '#64748b';
+                }
+              }}
+              aria-label={language === 'km' ? 'បន្ថែមឯកសារ ឬរូបភាព' : 'Add attachment'}
+              title={language === 'km' ? 'បន្ថែមឯកសារ ឬរូបភាព' : 'Add attachment'}
+              aria-expanded={isAttachMenuOpen}
+            >
+              <Plus size={20} strokeWidth={2.2} />
+            </button>
+
+            {/* Popup Container: Upload Image Button */}
+            {isAttachMenuOpen && (
+              <div
+                className="chat-attach-popup-menu"
+                role="menu"
+                aria-label="Attachment options"
+              >
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsAttachMenuOpen(false);
+                    fileInputRef.current?.click();
+                  }}
+                  className="action-popup-item"
+                  style={{
+                    fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
+                    gap: '0.6rem',
+                  }}
+                >
+                  <ImageIcon size={18} style={{ color: 'var(--accent-primary)', flexShrink: 0 }} />
+                  <span>{language === 'km' ? 'បញ្ចូលរូបភាព' : 'Upload image'}</span>
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Inline Attached Image Thumbnail (normal height, no expansion) */}
+          {imagePreviewUrl && (
             <div
-              ref={attachMenuRef}
               style={{
                 position: 'relative',
                 display: 'inline-flex',
@@ -1869,79 +1804,49 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
                 flexShrink: 0,
               }}
             >
-              <input
-                type="file"
-                ref={fileInputRef}
-                accept="image/*"
-                onChange={handleImageChange}
-                style={{ display: 'none' }}
+              <img
+                src={imagePreviewUrl}
+                alt="Preview"
+                onClick={() => setEnlargedImageUrl(imagePreviewUrl)}
+                style={{
+                  width: '26px',
+                  height: '26px',
+                  borderRadius: '6px',
+                  objectFit: 'cover',
+                  border: '1px solid var(--border-color)',
+                  display: 'block',
+                  cursor: 'pointer',
+                }}
+                title={language === 'km' ? 'ចុចដើម្បីមើលធំ' : 'Click to enlarge'}
               />
               <button
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (loading || hasReachedLimit) return;
-                  setIsAttachMenuOpen((prev) => !prev);
+                  removeSelectedImage();
                 }}
-                disabled={loading || hasReachedLimit}
                 style={{
-                  background: 'none',
+                  position: 'absolute',
+                  top: '-4px',
+                  right: '-4px',
+                  width: '13px',
+                  height: '13px',
+                  borderRadius: '50%',
+                  background: '#475569',
+                  color: '#ffffff',
                   border: 'none',
-                  cursor: (loading || hasReachedLimit) ? 'not-allowed' : 'pointer',
-                  padding: '4px',
-                  display: 'inline-flex',
+                  cursor: 'pointer',
+                  display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: isAttachMenuOpen ? 'var(--accent-primary)' : '#64748b',
-                  transition: 'color var(--transition-fast), transform var(--transition-fast)',
-                  borderRadius: '4px',
-                  flexShrink: 0,
-                  transform: isAttachMenuOpen ? 'rotate(45deg)' : 'none',
+                  padding: 0,
                 }}
-                onMouseEnter={(e) => {
-                  if (!loading && !hasReachedLimit) {
-                    e.currentTarget.style.color = 'var(--accent-primary)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isAttachMenuOpen) {
-                    e.currentTarget.style.color = '#64748b';
-                  }
-                }}
-                aria-label={language === 'km' ? 'បន្ថែមឯកសារ ឬរូបភាព' : 'Add attachment'}
-                title={language === 'km' ? 'បន្ថែមឯកសារ ឬរូបភាព' : 'Add attachment'}
-                aria-expanded={isAttachMenuOpen}
+                title="Remove image"
               >
-                <Plus size={20} strokeWidth={2.2} />
+                <X size={8} />
               </button>
-
-              {/* Popup Container: Upload Image Button */}
-              {isAttachMenuOpen && (
-                <div
-                  className="chat-attach-popup-menu"
-                  role="menu"
-                  aria-label="Attachment options"
-                >
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsAttachMenuOpen(false);
-                      fileInputRef.current?.click();
-                    }}
-                    className="action-popup-item"
-                    style={{
-                      fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
-                      gap: '0.6rem',
-                    }}
-                  >
-                    <ImageIcon size={18} style={{ color: 'var(--accent-primary)', flexShrink: 0 }} />
-                    <span>{language === 'km' ? 'បញ្ចូលរូបភាព' : 'Upload image'}</span>
-                  </button>
-                </div>
-              )}
             </div>
+          )}
 
             {/* Middle: Textarea in single line */}
             <textarea
@@ -2080,7 +1985,6 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
                 </button>
               )}
             </div>
-          </div>
         </form>
 
         {inputError && (

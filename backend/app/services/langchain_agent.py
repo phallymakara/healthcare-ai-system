@@ -32,10 +32,10 @@ INSTRUCTIONS:
 - You MUST ALWAYS retrieve real live data using your tools whenever the user asks about hospitals, clinics, locations, emergency contacts, or nearby medical facilities. NEVER invent or hallucinate hospital names, fake phone numbers, or fabricated addresses.
 - When the user asks for hospitals near them ("near me", "closest hospital", "ស្វែងរកមន្ទីរពេទ្យនៅជិតខ្ញុំ", "មន្ទីរពេទ្យណាជិតខ្ញុំជាងគេ", etc.), ALWAYS invoke the `find_nearby_hospitals` tool.
 - OFFICIAL HEALTH SOURCE GUIDANCE & CITATIONS:
-  - Whenever the user asks about medical symptoms, diseases, colds/flu (ផ្តាសាយ), fever, infections, outbreaks (e.g. dengue, rabies, avian flu, malaria, HFMD), childhood vaccines, prevention, or public health guidance, ALWAYS invoke the `search_official_health_sources` tool to retrieve official WHO and Cambodia MoH guidance.
+  - When the user asks about broad public health policies, epidemics, disease outbreaks (e.g. dengue, rabies, avian flu, malaria, HFMD), childhood vaccine schedules, or official prevention protocols, invoke the `search_official_health_sources` tool to retrieve verified guidelines.
   - When formulating your answer using official sources, YOU MUST ALWAYS INCLUDE the official clickable link references in markdown format directly inside your response text (e.g., `[អង្គការសុខភាពពិភពលោក (WHO)](https://www.who.int/cambodia)` and `[ក្រសួងសុខាភិបាលកម្ពុជា](http://cdcmoh.gov.kh/)`, or in English `[World Health Organization (WHO)](https://www.who.int/cambodia)` and `[Cambodia Ministry of Health](http://cdcmoh.gov.kh/)`).
-  - Integrate these link references naturally when citing guidelines or directing the user to official portals (for example: "យោងតាម [អង្គការសុខភាពពិភពលោក (WHO)](https://www.who.int/cambodia) និង [ក្រសួងសុខាភិបាលកម្ពុជា](http://cdcmoh.gov.kh/)..." and "សម្រាប់ព័ត៌មានបន្ថែម សូមចូលទៅកាន់គេហទំព័រផ្លូវការរបស់ [ក្រសួងសុខាភិបាលកម្ពុជា](http://cdcmoh.gov.kh/) ឬ [អង្គការសុខភាពពិភពលោក (WHO)](https://www.who.int/cambodia)។").
-  - Never leave official authorities or websites as plain unlinked text when official links are provided by the tool.
+  - Integrate these link references naturally when citing guidelines or directing the user to official portals.
+  - For direct image analysis, visual skin symptoms, or common personal inquiries (like "តើត្រូវប្រើថ្នាំលាបអ្វី?"), answer immediately with clear clinical observations and topical guidance without delaying with generic web searches.
 - PHASE 1 NOTICE: Live queue tracking, doctor appointments, and digital ticket booking are coming soon in the next phase. If the user asks to book a ticket, view live queues, or book a doctor appointment, politely inform them that this feature is coming soon in the upcoming phase, and provide the hospital's hotline phone and location so they can contact them directly.
 - For general medical, wellness, and symptom guidance, provide empathetic, clear, evidence-based advice, accompanied by the medical disclaimer.
 - Format responses cleanly with concise paragraphs and bullet points where helpful.
@@ -76,9 +76,10 @@ At the very end of your response, you MUST ANALYZE the user's specific question,
 You MUST append this section formatted strictly as:
 
 SUGGESTED_ACTIONS:
-- [Predicted Next Follow-Up Question 1]
-- [Predicted Next Follow-Up Question 2]
-- [Predicted Next Follow-Up Question 3]
+- Predicted Next Follow-Up Question 1
+- Predicted Next Follow-Up Question 2
+- Predicted Next Follow-Up Question 3
+(Do NOT use square brackets, markdown links, or dummy URLs like (#) in SUGGESTED_ACTIONS).
 
 ANALYSIS & PREDICTION GUIDELINES:
 1. When the user asks about an illness, disease, cold, flu, fever, or symptom (e.g. ផ្តាសាយ, ក្អក, គ្រុនក្តៅ, dengue, diarrhea, skin rash, headaches, etc.):
@@ -655,7 +656,12 @@ class HealthcareAgentService:
             ]
             for line in lines:
                 cleaned = re.sub(r"^[-*•\d.]+\s*", "", line).strip()
-                cleaned = cleaned.strip("[]'\"").strip()
+                # Strip markdown link syntax: [Question Text](url) or [Question Text](#) -> Question Text
+                cleaned = re.sub(r"\[([^\]]+)\](?:\([^)]*\))?", r"\1", cleaned)
+                # Strip stray dummy anchor URLs or markdown hashes/brackets
+                cleaned = re.sub(r"\(#[^)]*\)", "", cleaned)
+                cleaned = re.sub(r"[\[\]#]", "", cleaned)
+                cleaned = cleaned.strip(" '\"`").strip()
                 if cleaned and not any(
                     bad in cleaned.lower()
                     for bad in [
@@ -1047,11 +1053,13 @@ class HealthcareAgentService:
             if match:
                 parsed = json.loads(match.group(0))
                 if isinstance(parsed, list):
-                    questions = [
-                        str(q).strip().lstrip("-").strip()
-                        for q in parsed
-                        if str(q).strip() and len(str(q).strip()) > 3
-                    ]
+                    questions = []
+                    for q in parsed:
+                        c = re.sub(r"\[([^\]]+)\](?:\([^)]*\))?", r"\1", str(q))
+                        c = re.sub(r"\(#[^)]*\)", "", c)
+                        c = re.sub(r"[\[\]#]", "", c).strip(" '\"`-").strip()
+                        if len(c) > 3:
+                            questions.append(c)
                     if questions:
                         return questions[:4]
 
@@ -1060,7 +1068,13 @@ class HealthcareAgentService:
                 for l in clean_text.splitlines()
                 if l.strip() and not l.strip().startswith("[") and not l.strip().startswith("]")
             ]
-            valid_lines = [l for l in lines if len(l) > 3 and not l.lower().startswith("here are")]
+            valid_lines = []
+            for l in lines:
+                c = re.sub(r"\[([^\]]+)\](?:\([^)]*\))?", r"\1", l)
+                c = re.sub(r"\(#[^)]*\)", "", c)
+                c = re.sub(r"[\[\]#]", "", c).strip(" '\"`-").strip()
+                if len(c) > 3 and not c.lower().startswith("here are"):
+                    valid_lines.append(c)
             if valid_lines:
                 return valid_lines[:4]
 
