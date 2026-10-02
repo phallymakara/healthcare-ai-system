@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { Plus, Mic, ArrowUp, X, Image as ImageIcon, Pencil, Trash2, Check, Clock } from 'lucide-react';
+import { Plus, Mic, ArrowUp, X, Image as ImageIcon, Pencil, Trash2, Check, Clock, Loader2, Sparkles } from 'lucide-react';
 import {
   getUserConversations,
   saveUserConversation,
@@ -144,6 +144,258 @@ const shouldShowMedicalDisclaimer = (msg: ChatMessage, userQuestion?: string): b
   return isHealthQuestion || isHealthResponse;
 };
 
+interface MessageBubbleProps {
+  msg: ChatMessage;
+  idx: number;
+  prevUserMsgText?: string;
+  language: string;
+  streamingMsgId: string | null;
+  loading: boolean;
+  onEnlargeImage: (url: string) => void;
+  onActionClick: (action: string, msg: ChatMessage) => void;
+}
+
+const MessageBubble = React.memo<MessageBubbleProps>(({
+  msg,
+  idx,
+  prevUserMsgText,
+  language,
+  streamingMsgId,
+  loading,
+  onEnlargeImage,
+  onActionClick,
+}) => {
+  const isKm = isKhmer(msg.text);
+  const isUser = msg.role === 'user';
+  const isResponseKhmer = isKm || (prevUserMsgText ? isKhmer(prevUserMsgText) : language === 'km');
+
+  const markdownComponents = useMemo(() => ({
+    p: ({ children }: any) => <p style={{ margin: isUser ? '0' : '0.4rem 0', fontSize: 'inherit', lineHeight: isKm ? 1.75 : 1.6, fontFamily: isKm ? 'var(--font-khmer)' : 'inherit' }}>{children}</p>,
+    h1: ({ children }: any) => <h3 style={{ fontSize: '1.25rem', fontWeight: 600, margin: '0.65rem 0 0.35rem 0', color: 'var(--text-main)', fontFamily: isKm ? 'var(--font-khmer)' : 'inherit' }}>{children}</h3>,
+    h2: ({ children }: any) => <h3 style={{ fontSize: '1.2rem', fontWeight: 600, margin: '0.6rem 0 0.35rem 0', color: 'var(--text-main)', fontFamily: isKm ? 'var(--font-khmer)' : 'inherit' }}>{children}</h3>,
+    h3: ({ children }: any) => <h4 style={{ fontSize: '1.1rem', fontWeight: 600, margin: '0.55rem 0 0.25rem 0', color: 'var(--text-main)', fontFamily: isKm ? 'var(--font-khmer)' : 'inherit' }}>{children}</h4>,
+    h4: ({ children }: any) => <h5 style={{ fontSize: '1rem', fontWeight: 600, margin: '0.5rem 0 0.25rem 0', color: 'var(--text-main)', fontFamily: isKm ? 'var(--font-khmer)' : 'inherit' }}>{children}</h5>,
+    ul: ({ children }: any) => <ul style={{ margin: '0.4rem 0', paddingLeft: '1.25rem' }}>{children}</ul>,
+    ol: ({ children }: any) => <ol style={{ margin: '0.4rem 0', paddingLeft: '1.25rem' }}>{children}</ol>,
+    li: ({ children }: any) => <li style={{ margin: '0.2rem 0', lineHeight: isKm ? 1.75 : 1.6, fontFamily: isKm ? 'var(--font-khmer)' : 'inherit' }}>{children}</li>,
+    strong: ({ children }: any) => <strong style={{ fontWeight: 600 }}>{children}</strong>,
+    code: ({ children }: any) => (
+      <code style={{
+        fontSize: '0.9rem',
+        fontFamily: 'monospace',
+        background: 'rgba(0,0,0,0.04)',
+        padding: '0.15rem 0.35rem',
+        borderRadius: '3px',
+        border: '1px solid var(--border-color)',
+      }}>
+        {children}
+      </code>
+    ),
+    a: ({ href, children }: any) => {
+      const isMapLink = href?.includes('maps.google') || href?.includes('google.com/maps');
+      if (isMapLink) {
+        return (
+          <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '0.35rem 0.85rem',
+              margin: '0.35rem 0 0.15rem 0',
+              fontSize: '0.8rem',
+              fontWeight: 500,
+              color: 'var(--text-main)',
+              background: '#f8fafc',
+              border: '1px solid var(--border-color)',
+              borderRadius: 'var(--radius-full)',
+              textDecoration: 'none',
+              boxShadow: 'none',
+              transition: 'all 0.15s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = 'var(--text-main)';
+              e.currentTarget.style.background = '#f1f5f9';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = 'var(--border-color)';
+              e.currentTarget.style.background = '#f8fafc';
+            }}
+          >
+            <span>📍</span>
+            <span>{children}</span>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>↗</span>
+          </a>
+        );
+      }
+      return (
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            color: '#2563eb',
+            textDecoration: 'underline',
+            fontWeight: 500,
+            wordBreak: 'break-word',
+          }}
+        >
+          {children}
+        </a>
+      );
+    },
+  }), [isUser, isKm]);
+
+  return (
+    <div
+      className="chat-bubble-animate"
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: isUser ? 'flex-end' : 'flex-start',
+        width: '100%',
+      }}
+    >
+      {(isUser || idx > 0) && (
+        <div style={{
+          fontSize: '0.75rem',
+          color: 'var(--text-muted)',
+          marginBottom: '0.25rem',
+          fontWeight: 500,
+          fontFamily: isKm ? 'var(--font-khmer)' : 'inherit',
+        }}>
+          {isUser ? (language === 'km' ? 'អ្នក' : 'You') : (language === 'km' ? 'ជំនួយការ AI វេជ្ជសាស្ត្រ' : 'Healthcare Assistant')}
+        </div>
+      )}
+
+      <div style={{
+        maxWidth: isUser ? '85%' : '100%',
+        padding: isUser ? '0.5rem 0.9rem' : '0.25rem 0',
+        background: isUser ? '#ffffff' : 'transparent',
+        border: isUser ? '1px solid var(--border-color)' : 'none',
+        borderRadius: isUser ? '16px' : '0',
+        boxShadow: 'none',
+        fontSize: isKm ? '1.05rem' : '0.98rem',
+        fontWeight: 400,
+        fontFamily: isKm ? 'var(--font-khmer)' : 'inherit',
+        color: 'var(--text-main)',
+        lineHeight: isKm ? 1.75 : 1.6,
+        wordBreak: 'break-word',
+        boxSizing: 'border-box',
+      }}>
+        {msg.imageUrl && (
+          <div style={{ marginBottom: '0.45rem' }}>
+            <img
+              src={msg.imageUrl}
+              alt="Attachment"
+              onClick={() => onEnlargeImage(msg.imageUrl || '')}
+              style={{
+                maxWidth: '240px',
+                maxHeight: '180px',
+                borderRadius: 'var(--radius-md)',
+                objectFit: 'cover',
+                border: '1px solid var(--border-color)',
+                display: 'block',
+                cursor: 'pointer',
+                transition: 'opacity var(--transition-fast)',
+              }}
+              title={language === 'km' ? 'ចុចដើម្បីមើលរូបធំ' : 'Click to enlarge'}
+            />
+          </div>
+        )}
+
+        <div style={{ color: 'var(--text-main)', lineHeight: isKm ? 1.75 : 1.6, fontFamily: isKm ? 'var(--font-khmer)' : 'inherit' }}>
+          <ReactMarkdown components={markdownComponents}>
+            {msg.text}
+          </ReactMarkdown>
+          {streamingMsgId === msg.id && (
+            <span className="streaming-cursor" aria-hidden="true" />
+          )}
+        </div>
+
+        {msg.role === 'assistant' && msg.suggestedActions && msg.suggestedActions.length > 0 && (
+          <div style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '0.5rem',
+            marginTop: '0.85rem',
+            paddingTop: '0.5rem',
+          }}>
+            {msg.suggestedActions.map((action, aIdx) => {
+              const cleanAction = cleanActionText(action);
+              if (!cleanAction) return null;
+              const isActionKm = isKhmer(cleanAction);
+              return (
+                <button
+                  key={aIdx}
+                  onClick={() => onActionClick(cleanAction, msg)}
+                  disabled={loading}
+                  style={{
+                    padding: isActionKm ? '0.4rem 0.85rem' : '0.35rem 0.85rem',
+                    fontSize: isActionKm ? '0.82rem' : '0.75rem',
+                    fontFamily: isActionKm ? 'var(--font-khmer)' : 'inherit',
+                    fontWeight: 500,
+                    background: 'transparent',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: 'var(--radius-full)',
+                    color: 'var(--text-main)',
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                    boxShadow: 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    opacity: loading ? 0.6 : 1,
+                    transition: 'all 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!loading) {
+                      e.currentTarget.style.borderColor = 'var(--text-main)';
+                      e.currentTarget.style.background = '#f9fafb';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!loading) {
+                      e.currentTarget.style.borderColor = 'var(--border-color)';
+                      e.currentTarget.style.background = 'transparent';
+                    }
+                  }}
+                >
+                  {cleanAction} →
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {shouldShowMedicalDisclaimer(msg, prevUserMsgText) && (
+          <div
+            style={{
+              marginTop: '0.75rem',
+              paddingTop: '0.55rem',
+              borderTop: '1px solid var(--border-color)',
+              fontSize: isResponseKhmer ? '0.78rem' : '0.73rem',
+              color: '#64748b',
+              fontFamily: isResponseKhmer ? 'var(--font-khmer)' : 'inherit',
+              lineHeight: 1.5,
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '6px',
+            }}
+          >
+            <span style={{ flexShrink: 0, fontSize: '0.85rem', lineHeight: 1.2 }}>⚠️</span>
+            <span>
+              {isResponseKhmer
+                ? 'សេចក្តីបញ្ជាក់៖ ការផ្តល់យោបល់របស់ AI គឺសម្រាប់តែព័ត៌មានបឋមប៉ុណ្ណោះ និងមិនជំនួសការធ្វើរោគវិនិច្ឆ័យវេជ្ជសាស្ត្រឡើយ។ សូមពិគ្រោះជាមួយគ្រូពេទ្យជំនាញសម្រាប់ករណីធ្ងន់ធ្ងរ ឬបន្ទាន់។'
+                : 'Disclaimer: AI advice is for informational purposes only and does not replace professional medical diagnosis. Consult a qualified doctor for serious conditions or emergencies.'}
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+});
 
 export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
   onTicketBooked,
@@ -236,6 +488,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [hostedImageUrl, setHostedImageUrl] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isAnalyzingImageQuestions, setIsAnalyzingImageQuestions] = useState(false);
   const [imagePredictedQuestions, setImagePredictedQuestions] = useState<string[]>([]);
   const [enlargedImageUrl, setEnlargedImageUrl] = useState<string | null>(null);
   const [isListening, setIsListening] = useState(false);
@@ -247,6 +500,17 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
   const [slashSelectedIndex, setSlashSelectedIndex] = useState(0);
   const slashListRef = useRef<HTMLDivElement>(null);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const chatInputRef = useRef<HTMLTextAreaElement>(null);
+  const [selectionPopup, setSelectionPopup] = useState<{
+    visible: boolean;
+    text: string;
+    x: number;
+    y: number;
+    placement: 'top' | 'bottom';
+  }>({ visible: false, text: '', x: 0, y: 0, placement: 'top' });
+  const [quotedText, setQuotedText] = useState<string | null>(null);
 
   // Sync conversation list from backend API (authenticated) or localStorage (guest/offline)
   // Only restore an existing conversation if one was explicitly active in the current session
@@ -331,6 +595,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
     setCurrentConversationId(conv.id);
     setActiveConversationId(activeUserId, conv.id);
     setInputText('');
+    setQuotedText(null);
     setSlashSelectedIndex(0);
     setIsHistoryOpen(false);
     setTimeout(() => {
@@ -351,6 +616,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
     setCurrentConversationId(null);
     setActiveConversationId(activeUserId, 'new');
     setInputText('');
+    setQuotedText(null);
     setSlashSelectedIndex(0);
     setIsHistoryOpen(false);
   };
@@ -473,7 +739,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
     });
   };
 
-  const fetchQuestionsForBase64 = async (imgDataUrl: string) => {
+  const fetchQuestionsForBase64 = async (imgDataUrl: string, lang = language) => {
     try {
       const res = await fetch(`${API_BASE}/assistant/predict-image-questions`, {
         method: 'POST',
@@ -484,7 +750,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
         },
         body: JSON.stringify({
           image_url: imgDataUrl,
-          language,
+          language: lang,
         }),
       });
       if (res.ok) {
@@ -494,7 +760,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
         }
       }
     } catch {
-      // Graceful fallback to default chips
+      // LLM unavailable or error - no mock questions
     }
   };
 
@@ -518,8 +784,9 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
     const compressedDataUrl = await compressImage(file, 1200, 0.85);
     setImagePreviewUrl(compressedDataUrl);
 
-    // Upload to server asynchronously for permanent URL and question prediction
+    // Upload to server and run LLM vision analysis to predict real questions
     setIsUploadingImage(true);
+    setIsAnalyzingImageQuestions(true);
     try {
       const formData = new FormData();
       formData.append('file', file);
@@ -537,24 +804,153 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
         setHostedImageUrl(data.image_url);
         if (Array.isArray(data.predicted_questions) && data.predicted_questions.length > 0) {
           setImagePredictedQuestions(data.predicted_questions);
+        } else {
+          // If server didn't run questions or returned empty, query with compressed base64
+          await fetchQuestionsForBase64(compressedDataUrl, language);
         }
       } else {
         // Fallback to predict via compressed preview
-        await fetchQuestionsForBase64(compressedDataUrl);
+        await fetchQuestionsForBase64(compressedDataUrl, language);
       }
     } catch {
       // Fallback to local base64 data URL prediction
-      await fetchQuestionsForBase64(compressedDataUrl);
+      await fetchQuestionsForBase64(compressedDataUrl, language);
     } finally {
       setIsUploadingImage(false);
+      setIsAnalyzingImageQuestions(false);
     }
   };
+
+  // Re-predict questions if language changes while an image is selected
+  useEffect(() => {
+    if (imagePreviewUrl) {
+      setImagePredictedQuestions([]);
+      setIsAnalyzingImageQuestions(true);
+      fetchQuestionsForBase64(imagePreviewUrl, language).finally(() => {
+        setIsAnalyzingImageQuestions(false);
+      });
+    }
+  }, [language]);
+
+  const handleTextSelection = useCallback(() => {
+    requestAnimationFrame(() => {
+      const selection = window.getSelection();
+      if (!selection || selection.isCollapsed) {
+        setSelectionPopup((prev) => (prev.visible ? { ...prev, visible: false } : prev));
+        return;
+      }
+
+      const selectedStr = selection.toString().trim();
+      if (!selectedStr || selectedStr.length < 2) {
+        setSelectionPopup((prev) => (prev.visible ? { ...prev, visible: false } : prev));
+        return;
+      }
+
+      const container = messagesContainerRef.current;
+      if (!container || selection.rangeCount === 0) {
+        setSelectionPopup((prev) => (prev.visible ? { ...prev, visible: false } : prev));
+        return;
+      }
+
+      const range = selection.getRangeAt(0);
+
+      // Verify that selection starts inside the chat messages container
+      const startNode = range.startContainer.nodeType === Node.TEXT_NODE
+        ? range.startContainer.parentElement
+        : (range.startContainer as HTMLElement);
+      if (!startNode || !container.contains(startNode)) {
+        setSelectionPopup((prev) => (prev.visible ? { ...prev, visible: false } : prev));
+        return;
+      }
+
+      // Avoid triggering when selecting inside input fields or interactive buttons
+      if (startNode.closest('button, input, textarea')) {
+        setSelectionPopup((prev) => (prev.visible ? { ...prev, visible: false } : prev));
+        return;
+      }
+
+      // Retrieve precise line-level client rects for first-line top positioning
+      const clientRects = range.getClientRects();
+      const firstRect = clientRects.length > 0 ? clientRects[0] : range.getBoundingClientRect();
+      const entireRect = range.getBoundingClientRect();
+
+      if (firstRect.width === 0 && firstRect.height === 0) {
+        setSelectionPopup((prev) => (prev.visible ? { ...prev, visible: false } : prev));
+        return;
+      }
+
+      const containerRect = container.getBoundingClientRect();
+
+      // If selection is scrolled out of the container's visible bounds, hide
+      if (entireRect.bottom < containerRect.top || entireRect.top > containerRect.bottom) {
+        setSelectionPopup((prev) => (prev.visible ? { ...prev, visible: false } : prev));
+        return;
+      }
+
+      // Determine placement: above the first selected line, or below if too close to top edge
+      const spaceAbove = firstRect.top - containerRect.top;
+      const placement: 'top' | 'bottom' = spaceAbove >= 38 ? 'top' : 'bottom';
+
+      // Precise Y coordinate: 6px gap above top edge (or 6px below bottom edge)
+      const popupY = placement === 'top' ? firstRect.top - 6 : firstRect.bottom + 6;
+
+      // Align horizontally with the beginning of the selected text area, clamped inside chat container
+      const rawStartX = firstRect.left;
+      const popupX = Math.max(containerRect.left + 8, Math.min(containerRect.right - 95, rawStartX));
+
+      setSelectionPopup({
+        visible: true,
+        text: selectedStr,
+        x: popupX,
+        y: popupY,
+        placement,
+      });
+    });
+  }, []);
+
+  const handleAskAboutSelection = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const text = selectionPopup.text;
+    setSelectionPopup({ visible: false, text: '', x: 0, y: 0, placement: 'top' });
+    window.getSelection()?.removeAllRanges();
+
+    setQuotedText(text);
+    if (chatInputRef.current) {
+      chatInputRef.current.focus();
+    }
+  };
+
+  useEffect(() => {
+    const handleDocumentClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.closest('[data-selection-popup="true"]')) {
+        return;
+      }
+      setTimeout(() => {
+        const selection = window.getSelection();
+        if (!selection || selection.isCollapsed) {
+          setSelectionPopup((prev) => (prev.visible ? { ...prev, visible: false } : prev));
+        }
+      }, 30);
+    };
+
+    document.addEventListener('click', handleDocumentClick);
+    document.addEventListener('mouseup', handleTextSelection);
+    document.addEventListener('touchend', handleTextSelection);
+    return () => {
+      document.removeEventListener('click', handleDocumentClick);
+      document.removeEventListener('mouseup', handleTextSelection);
+      document.removeEventListener('touchend', handleTextSelection);
+    };
+  }, [handleTextSelection]);
 
   const removeSelectedImage = () => {
     setSelectedImage(null);
     setImagePreviewUrl(null);
     setHostedImageUrl(null);
     setIsUploadingImage(false);
+    setIsAnalyzingImageQuestions(false);
     setImagePredictedQuestions([]);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
@@ -868,14 +1264,28 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
     }
     const currentImg = hostedImageUrl || imagePreviewUrl;
     const rawText = inputText.trim();
-    if (!rawText && !currentImg) return;
-    const textToSend = rawText || (
-      language === 'km'
-        ? 'សូមវិភាគរោគសញ្ញារូបភាពនេះ'
-        : 'Please analyze this symptom image'
-    );
+    if (!rawText && !currentImg && !quotedText) return;
+
+    let textToSend = '';
+    if (quotedText) {
+      if (rawText) {
+        textToSend = `${rawText}\n\n> "${quotedText}"`;
+      } else {
+        textToSend = language === 'km'
+          ? `សូមពន្យល់បន្ថែមអំពី "${quotedText}"`
+          : `Explain more about "${quotedText}"`;
+      }
+    } else {
+      textToSend = rawText || (
+        language === 'km'
+          ? 'សូមវិភាគរោគសញ្ញារូបភាពនេះ'
+          : 'Please analyze this symptom image'
+      );
+    }
+
     handleSendQuery(textToSend, currentImg || undefined);
     removeSelectedImage();
+    setQuotedText(null);
   };
 
   const handleChipClick = (chipText: string) => {
@@ -932,7 +1342,11 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
     }
   }, [initialQuery]);
 
-  const handleActionClick = (actionText: string, msg?: ChatMessage) => {
+  const handleEnlargeImage = useCallback((url: string) => {
+    setEnlargedImageUrl(url);
+  }, []);
+
+  const handleActionClick = useCallback((actionText: string, msg?: ChatMessage) => {
     if (hasReachedLimit) {
       onOpenAuth?.();
       return;
@@ -959,7 +1373,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
 
     // Trigger the action query directly
     handleSendQuery(clean);
-  };
+  }, [hasReachedLimit, onOpenAuth, onTicketBooked, onNavigateToTracker, onNavigateToDiscovery, t, handleSendQuery]);
 
 
 
@@ -1022,253 +1436,37 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
       </div>
 
       {/* Messages Scroll Area */}
-      <div style={{
-        flex: 1,
-        overflowY: 'auto',
-        padding: '0.15rem 0',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '0.85rem',
-        minHeight: 0,
-      }}>
+      <div
+        ref={messagesContainerRef}
+        className="chat-messages-scroll-area"
+        onMouseUp={handleTextSelection}
+        onTouchEnd={handleTextSelection}
+        onKeyUp={handleTextSelection}
+        onScroll={handleTextSelection}
+        style={{
+          flex: 1,
+          overflowY: 'auto',
+          padding: '0.15rem 0',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.85rem',
+          minHeight: 0,
+        }}
+      >
         {messages.map((msg, idx) => {
-          const isKm = isKhmer(msg.text);
-          const isUser = msg.role === 'user';
           const prevUserMsg = messages.slice(0, idx).reverse().find((m) => m.role === 'user');
-          const isResponseKhmer = isKhmer(msg.text) || (prevUserMsg ? isKhmer(prevUserMsg.text) : language === 'km');
           return (
-            <div
+            <MessageBubble
               key={msg.id}
-              className="chat-bubble-animate"
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: isUser ? 'flex-end' : 'flex-start',
-                width: '100%',
-              }}
-            >
-              {/* Sender Label: Show for user or subsequent assistant messages */}
-              {(isUser || idx > 0) && (
-                <div style={{
-                  fontSize: '0.75rem',
-                  color: 'var(--text-muted)',
-                  marginBottom: '0.25rem',
-                  fontWeight: 500,
-                  fontFamily: isKm ? 'var(--font-khmer)' : 'inherit',
-                }}>
-                  {isUser ? (language === 'km' ? 'អ្នក' : 'You') : (language === 'km' ? 'ជំនួយការ AI វេជ្ជសាស្ត្រ' : 'Healthcare Assistant')}
-                </div>
-              )}
-
-              <div style={{
-                maxWidth: isUser ? '85%' : '100%',
-                padding: isUser ? '0.5rem 0.9rem' : '0.25rem 0',
-                background: isUser ? '#ffffff' : 'transparent',
-                border: isUser ? '1px solid var(--border-color)' : 'none',
-                borderRadius: isUser ? '16px' : '0',
-                boxShadow: 'none',
-                fontSize: isKm ? '1.05rem' : '0.98rem',
-                fontWeight: 400,
-                fontFamily: isKm ? 'var(--font-khmer)' : 'inherit',
-                color: 'var(--text-main)',
-                lineHeight: isKm ? 1.75 : 1.6,
-                wordBreak: 'break-word',
-                boxSizing: 'border-box',
-              }}>
-                {/* Uploaded Image Attachment in User Message */}
-                {msg.imageUrl && (
-                  <div style={{ marginBottom: '0.45rem' }}>
-                    <img
-                      src={msg.imageUrl}
-                      alt="Attachment"
-                      onClick={() => setEnlargedImageUrl(msg.imageUrl || null)}
-                      style={{
-                        maxWidth: '240px',
-                        maxHeight: '180px',
-                        borderRadius: 'var(--radius-md)',
-                        objectFit: 'cover',
-                        border: '1px solid var(--border-color)',
-                        display: 'block',
-                        cursor: 'pointer',
-                        transition: 'opacity var(--transition-fast)',
-                      }}
-                      title={language === 'km' ? 'ចុចដើម្បីមើលរូបធំ' : 'Click to enlarge'}
-                    />
-                  </div>
-                )}
-
-                {/* Markdown Formatted Text */}
-                <div style={{ color: 'var(--text-main)', lineHeight: isKm ? 1.75 : 1.6, fontFamily: isKm ? 'var(--font-khmer)' : 'inherit' }}>
-                  <ReactMarkdown
-                    components={{
-                      p: ({ children }) => <p style={{ margin: isUser ? '0' : '0.4rem 0', fontSize: 'inherit', lineHeight: isKm ? 1.75 : 1.6, fontFamily: isKm ? 'var(--font-khmer)' : 'inherit' }}>{children}</p>,
-                      h1: ({ children }) => <h3 style={{ fontSize: '1.25rem', fontWeight: 600, margin: '0.65rem 0 0.35rem 0', color: 'var(--text-main)', fontFamily: isKm ? 'var(--font-khmer)' : 'inherit' }}>{children}</h3>,
-                      h2: ({ children }) => <h3 style={{ fontSize: '1.2rem', fontWeight: 600, margin: '0.6rem 0 0.35rem 0', color: 'var(--text-main)', fontFamily: isKm ? 'var(--font-khmer)' : 'inherit' }}>{children}</h3>,
-                      h3: ({ children }) => <h4 style={{ fontSize: '1.1rem', fontWeight: 600, margin: '0.55rem 0 0.25rem 0', color: 'var(--text-main)', fontFamily: isKm ? 'var(--font-khmer)' : 'inherit' }}>{children}</h4>,
-                      h4: ({ children }) => <h5 style={{ fontSize: '1rem', fontWeight: 600, margin: '0.5rem 0 0.25rem 0', color: 'var(--text-main)', fontFamily: isKm ? 'var(--font-khmer)' : 'inherit' }}>{children}</h5>,
-                      ul: ({ children }) => <ul style={{ margin: '0.4rem 0', paddingLeft: '1.25rem' }}>{children}</ul>,
-                      ol: ({ children }) => <ol style={{ margin: '0.4rem 0', paddingLeft: '1.25rem' }}>{children}</ol>,
-                      li: ({ children }) => <li style={{ margin: '0.2rem 0', lineHeight: isKm ? 1.75 : 1.6, fontFamily: isKm ? 'var(--font-khmer)' : 'inherit' }}>{children}</li>,
-                      strong: ({ children }) => <strong style={{ fontWeight: 600 }}>{children}</strong>,
-                      code: ({ children }) => (
-                        <code style={{
-                          fontSize: '0.9rem',
-                          fontFamily: 'monospace',
-                          background: 'rgba(0,0,0,0.04)',
-                          padding: '0.15rem 0.35rem',
-                          borderRadius: '3px',
-                          border: '1px solid var(--border-color)',
-                        }}>
-                          {children}
-                        </code>
-                      ),
-                      a: ({ href, children }) => {
-                        const isMapLink = href?.includes('maps.google') || href?.includes('google.com/maps');
-                        if (isMapLink) {
-                          return (
-                            <a
-                              href={href}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '6px',
-                                padding: '0.35rem 0.85rem',
-                                margin: '0.35rem 0 0.15rem 0',
-                                fontSize: '0.8rem',
-                                fontWeight: 500,
-                                color: 'var(--text-main)',
-                                background: '#f8fafc',
-                                border: '1px solid var(--border-color)',
-                                borderRadius: 'var(--radius-full)',
-                                textDecoration: 'none',
-                                boxShadow: 'none',
-                                transition: 'all 0.15s ease',
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.borderColor = 'var(--text-main)';
-                                e.currentTarget.style.background = '#f1f5f9';
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.borderColor = 'var(--border-color)';
-                                e.currentTarget.style.background = '#f8fafc';
-                              }}
-                            >
-                              <span>📍</span>
-                              <span>{children}</span>
-                              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>↗</span>
-                            </a>
-                          );
-                        }
-                        return (
-                          <a
-                            href={href}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{
-                              color: '#2563eb',
-                              textDecoration: 'underline',
-                              fontWeight: 500,
-                              wordBreak: 'break-word',
-                            }}
-                          >
-                            {children}
-                          </a>
-                        );
-                      },
-                    }}
-                  >
-                    {msg.text}
-                  </ReactMarkdown>
-                  {streamingMsgId === msg.id && (
-                    <span className="streaming-cursor" aria-hidden="true" />
-                  )}
-                </div>
-
-
-
-                {/* Contextual Next Action Buttons */}
-                {msg.role === 'assistant' && msg.suggestedActions && msg.suggestedActions.length > 0 && (
-                  <div style={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: '0.5rem',
-                    marginTop: '0.85rem',
-                    paddingTop: '0.5rem',
-                  }}>
-                    {msg.suggestedActions.map((action, aIdx) => {
-                      const cleanAction = cleanActionText(action);
-                      if (!cleanAction) return null;
-                      const isActionKm = isKhmer(cleanAction);
-                      return (
-                        <button
-                          key={aIdx}
-                          onClick={() => handleActionClick(cleanAction, msg)}
-                          disabled={loading}
-                          style={{
-                            padding: isActionKm ? '0.4rem 0.85rem' : '0.35rem 0.85rem',
-                            fontSize: isActionKm ? '0.82rem' : '0.75rem',
-                            fontFamily: isActionKm ? 'var(--font-khmer)' : 'inherit',
-                            fontWeight: 500,
-                            background: 'transparent',
-                            border: '1px solid var(--border-color)',
-                            borderRadius: 'var(--radius-full)',
-                            color: 'var(--text-main)',
-                            cursor: loading ? 'not-allowed' : 'pointer',
-                            boxShadow: 'none',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            opacity: loading ? 0.6 : 1,
-                            transition: 'all 0.15s ease',
-                          }}
-                          onMouseEnter={(e) => {
-                            if (!loading) {
-                              e.currentTarget.style.borderColor = 'var(--text-main)';
-                              e.currentTarget.style.background = '#f9fafb';
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            if (!loading) {
-                              e.currentTarget.style.borderColor = 'var(--border-color)';
-                              e.currentTarget.style.background = 'transparent';
-                            }
-                          }}
-                        >
-                          {cleanAction} →
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* Medical Disclaimer Alert on each AI assistant response - Only when suggesting/answering healthcare guidance */}
-                {shouldShowMedicalDisclaimer(msg, prevUserMsg?.text) && (
-                  <div
-                    style={{
-                      marginTop: '0.75rem',
-                      paddingTop: '0.55rem',
-                      borderTop: '1px solid var(--border-color)',
-                      fontSize: isResponseKhmer ? '0.78rem' : '0.73rem',
-                      color: '#64748b',
-                      fontFamily: isResponseKhmer ? 'var(--font-khmer)' : 'inherit',
-                      lineHeight: 1.5,
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      gap: '6px',
-                    }}
-                  >
-                    <span style={{ flexShrink: 0, fontSize: '0.85rem', lineHeight: 1.2 }}>⚠️</span>
-                    <span>
-                      {isResponseKhmer
-                        ? 'សេចក្តីបញ្ជាក់៖ ការផ្តល់យោបល់របស់ AI គឺសម្រាប់តែព័ត៌មានបឋមប៉ុណ្ណោះ និងមិនជំនួសការធ្វើរោគវិនិច្ឆ័យវេជ្ជសាស្ត្រឡើយ។ សូមពិគ្រោះជាមួយគ្រូពេទ្យជំនាញសម្រាប់ករណីធ្ងន់ធ្ងរ ឬបន្ទាន់។'
-                        : 'Disclaimer: AI advice is for informational purposes only and does not replace professional medical diagnosis. Consult a qualified doctor for serious conditions or emergencies.'}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
+              msg={msg}
+              idx={idx}
+              prevUserMsgText={prevUserMsg?.text}
+              language={language}
+              streamingMsgId={streamingMsgId}
+              loading={loading}
+              onEnlargeImage={handleEnlargeImage}
+              onActionClick={handleActionClick}
+            />
           );
         })}
 
@@ -1693,64 +1891,144 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
         )}
         {/* Dynamic Image Predicted Question Chips (above normal input bar) */}
         {imagePreviewUrl && (
+          <>
+            {isAnalyzingImageQuestions && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  marginBottom: '8px',
+                  padding: '2px 4px',
+                  fontSize: '0.78rem',
+                  color: 'var(--text-muted)',
+                  fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
+                }}
+              >
+                <Loader2
+                  size={13}
+                  style={{
+                    animation: 'spin 1s linear infinite',
+                    color: 'var(--primary-color)',
+                  }}
+                />
+                <span>
+                  {language === 'km'
+                    ? 'AI កំពុងវិភាគរូបភាព...'
+                    : 'AI is analyzing the image...'}
+                </span>
+              </div>
+            )}
+            {!isAnalyzingImageQuestions && imagePredictedQuestions.length > 0 && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  flexWrap: 'wrap',
+                  marginBottom: '8px',
+                  padding: '0 4px',
+                }}
+              >
+                {imagePredictedQuestions.map((chipText, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => handleChipClick(chipText)}
+                    disabled={loading || isUploadingImage}
+                    title={language === 'km' ? 'ចុចដើម្បីសួរភ្លាមៗ' : 'Click to ask immediately'}
+                    style={{
+                      background: 'var(--bg-secondary)',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: 'var(--radius-full)',
+                      padding: '4px 12px',
+                      fontSize: '0.78rem',
+                      color: 'var(--text-main)',
+                      fontWeight: 500,
+                      cursor: (loading || isUploadingImage) ? 'not-allowed' : 'pointer',
+                      fontFamily: (language === 'km' || isKhmer(chipText)) ? 'var(--font-khmer)' : 'inherit',
+                      transition: 'all 0.15s ease',
+                      whiteSpace: 'nowrap',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!loading && !isUploadingImage) {
+                        e.currentTarget.style.borderColor = 'var(--accent-primary)';
+                        e.currentTarget.style.color = 'var(--accent-primary)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!loading && !isUploadingImage) {
+                        e.currentTarget.style.borderColor = 'var(--border-color)';
+                        e.currentTarget.style.color = 'var(--text-main)';
+                      }
+                    }}
+                  >
+                    {chipText}
+                  </button>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Quoted / Selected Text Reference Chip */}
+        {quotedText && (
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '6px',
-              flexWrap: 'wrap',
+              justifyContent: 'space-between',
+              gap: '8px',
+              background: 'var(--bg-secondary)',
+              border: '1px solid var(--border-color)',
+              borderRadius: 'var(--radius-md, 8px)',
+              padding: '6px 12px',
               marginBottom: '8px',
-              padding: '0 4px',
+              fontSize: '0.8rem',
+              color: 'var(--text-main)',
+              boxShadow: 'none',
             }}
           >
-            {(imagePredictedQuestions.length > 0
-              ? imagePredictedQuestions
-              : (language === 'km'
-                ? [
-                    'វិភាគរោគសញ្ញារូបភាពនេះ',
-                    'តើកន្ទួលនេះអាចជាអ្វី?',
-                    'តើមានថ្នាំលាបអ្វីដែលអាចជួយបាន?',
-                    'គួរជួបវេជ្ជបណ្ឌិតជំនាញណា?',
-                  ]
-                : [
-                    'Analyze this symptom image',
-                    'What could this be?',
-                    'What topical treatments can help?',
-                    'Which specialist to see?',
-                  ]
-                )
-            ).map((chipText, idx) => (
-              <button
-                key={idx}
-                type="button"
-                onClick={() => handleChipClick(chipText)}
-                disabled={loading || isUploadingImage}
-                title={language === 'km' ? 'ចុចដើម្បីសួរភ្លាមៗ' : 'Click to ask immediately'}
+            <div style={{ display: 'flex', alignItems: 'center', minWidth: 0, overflow: 'hidden' }}>
+              <span
                 style={{
-                  background: 'var(--bg-secondary)',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: 'var(--radius-full)',
-                  padding: '4px 12px',
-                  fontSize: '0.78rem',
-                  color: 'var(--text-main)',
-                  fontWeight: 500,
-                  cursor: (loading || isUploadingImage) ? 'not-allowed' : 'pointer',
-                  fontFamily: (language === 'km' || isKhmer(chipText)) ? 'var(--font-khmer)' : 'inherit',
-                  transition: 'all 0.15s ease',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',
+                  fontStyle: 'italic',
+                  fontFamily: (language === 'km' || isKhmer(quotedText)) ? 'var(--font-khmer)' : 'inherit',
                 }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--accent-primary)';
-                  e.currentTarget.style.color = 'var(--accent-primary)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--border-color)';
-                  e.currentTarget.style.color = 'var(--text-main)';
-                }}
+                title={quotedText}
               >
-                {chipText}
-              </button>
-            ))}
+                "{quotedText}"
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setQuotedText(null)}
+              title={language === 'km' ? 'លុបការជ្រើសរើស' : 'Remove reference'}
+              aria-label={language === 'km' ? 'លុបការជ្រើសរើស' : 'Remove reference'}
+              style={{
+                background: 'none',
+                border: 'none',
+                padding: '2px',
+                cursor: 'pointer',
+                color: 'var(--text-muted)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '4px',
+                flexShrink: 0,
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = 'var(--text-main)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = 'var(--text-muted)';
+              }}
+            >
+              <X size={14} />
+            </button>
           </div>
         )}
 
@@ -1914,6 +2192,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
 
             {/* Middle: Textarea in single line */}
             <textarea
+              ref={chatInputRef}
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -2020,7 +2299,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
               ) : (
                 <button
                   type="submit"
-                  disabled={loading || (!inputText.trim() && !selectedImage)}
+                  disabled={loading || (!inputText.trim() && !selectedImage && !quotedText)}
                   className="chat-send-btn"
                   style={{
                     width: '34px',
@@ -2030,13 +2309,13 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
                     display: 'inline-flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    background: (inputText.trim() || selectedImage) && !loading
+                    background: (inputText.trim() || selectedImage || quotedText) && !loading
                       ? 'var(--accent-primary)'
                       : '#e2e8f0',
-                    color: (inputText.trim() || selectedImage) && !loading
+                    color: (inputText.trim() || selectedImage || quotedText) && !loading
                       ? '#ffffff'
                       : '#94a3b8',
-                    cursor: (loading || (!inputText.trim() && !selectedImage)) ? 'not-allowed' : 'pointer',
+                    cursor: (loading || (!inputText.trim() && !selectedImage && !quotedText)) ? 'not-allowed' : 'pointer',
                     transition: 'none',
                     animation: 'none',
                     padding: 0,
@@ -2133,6 +2412,53 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
             />
           </div>
         </div>
+      )}
+
+      {/* Floating Ask AI Button for Highlighted / Selected Text */}
+      {selectionPopup.visible && (
+        <button
+          type="button"
+          data-selection-popup="true"
+          onClick={handleAskAboutSelection}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          title={language === 'km' ? 'សួរ AI អំពីចំណុចដែលបានជ្រើសរើស' : 'Ask AI about selected text'}
+          style={{
+            position: 'fixed',
+            left: `${selectionPopup.x}px`,
+            top: `${selectionPopup.y}px`,
+            transform: selectionPopup.placement === 'top' ? 'translate(0, -100%)' : 'translate(0, 0)',
+            zIndex: 9999,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '5px',
+            background: 'var(--bg-primary, #ffffff)',
+            border: '1px solid var(--border-color)',
+            borderRadius: 'var(--radius-full)',
+            padding: '4px 10px',
+            cursor: 'pointer',
+            boxShadow: 'none',
+            color: 'var(--text-main)',
+            transition: 'border-color var(--transition-fast), color var(--transition-fast)',
+            userSelect: 'none',
+            fontSize: '0.8rem',
+            fontWeight: 500,
+            fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = 'var(--primary-color)';
+            e.currentTarget.style.color = 'var(--primary-color)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = 'var(--border-color)';
+            e.currentTarget.style.color = 'var(--text-main)';
+          }}
+        >
+          <Sparkles size={13} style={{ color: 'var(--primary-color)' }} />
+          <span>{language === 'km' ? 'សួរ AI' : 'Ask AI'}</span>
+        </button>
       )}
 
     </div>

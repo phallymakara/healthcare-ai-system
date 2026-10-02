@@ -973,28 +973,16 @@ class HealthcareAgentService:
         image_url: str,
         language: str = "km",
     ) -> List[str]:
-        """Analyze an uploaded medical image and predict 3-4 likely follow-up questions for the patient.
+        """Analyze an uploaded medical image using LLM vision analysis and predict 3-4 likely follow-up questions for the patient.
 
         Inspects visual manifestations (rash, lesion, wound, swelling, infection, medication)
         and returns concise, actionable patient questions in the specified language (Khmer or English).
+        Returns empty list if image is invalid or LLM analysis produces no results (no mock data).
         """
         detected_lang = "km" if language == "km" else "en"
-        default_km = [
-            "តើកន្ទួល ឬសញ្ញានេះអាចជាអ្វី?",
-            "តើមានថ្នាំលាបអ្វីខ្លះដែលអាចជួយបាន?",
-            "តើគួរទៅជួបគ្រូពេទ្យជំនាញណា?",
-            "តើមានសញ្ញាគ្រោះថ្នាក់អ្វីដែលត្រូវប្រយ័ត្ន?",
-        ]
-        default_en = [
-            "What could this condition be?",
-            "What topical treatments can help?",
-            "Which doctor or specialist should I see?",
-            "Are there any warning signs to watch for?",
-        ]
-        fallback_questions = default_km if detected_lang == "km" else default_en
 
         if not image_url or not (image_url.startswith("http") or image_url.startswith("data:image/")):
-            return fallback_questions
+            return []
 
         try:
             llm = ChatOpenAI(
@@ -1005,15 +993,26 @@ class HealthcareAgentService:
                 max_tokens=220,
             )
 
-            prompt_instruction = (
-                "You are an expert clinical triage assistant. "
-                "Analyze the provided medical symptom/condition image (such as skin rash, lesion, wound, burn, eye redness, swelling, etc.). "
-                "Predict exactly 3 to 4 concise, high-priority questions that this patient is most likely to ask about this specific visual presentation. "
-                f"Language requirement: Respond strictly in {'Khmer (ភាសាខ្មែរ)' if detected_lang == 'km' else 'English'}. "
-                "Keep each question short (under 45 characters). "
-                "Output ONLY a valid JSON list of strings, with no markdown code blocks and no conversational text, for example:\n"
-                '["Question 1", "Question 2", "Question 3"]'
-            )
+            if detected_lang == "km":
+                prompt_instruction = (
+                    "You are an expert clinical triage assistant. "
+                    "Analyze the provided medical symptom/condition image (such as skin rash, lesion, wound, burn, eye redness, swelling, insect bite, medication, etc.). "
+                    "Predict exactly 3 to 4 concise, high-priority questions that this patient is most likely to ask about this specific visual presentation. "
+                    "Language requirement: You MUST respond strictly in Khmer (ភាសាខ្មែរ). All questions must be written in natural, fluent Khmer. "
+                    "Keep each question short (under 45 characters). "
+                    "Output ONLY a valid JSON list of strings, with no markdown code blocks and no conversational text, for example:\n"
+                    '["តើកន្ទួលនេះអាចជាអ្វី?", "តើមានថ្នាំលាបអ្វីជួយបាន?", "តើគួរជួបគ្រូពេទ្យជំនាញណា?"]'
+                )
+            else:
+                prompt_instruction = (
+                    "You are an expert clinical triage assistant. "
+                    "Analyze the provided medical symptom/condition image (such as skin rash, lesion, wound, burn, eye redness, swelling, insect bite, medication, etc.). "
+                    "Predict exactly 3 to 4 concise, high-priority questions that this patient is most likely to ask about this specific visual presentation. "
+                    "Language requirement: You MUST respond strictly in English. "
+                    "Keep each question short (under 45 characters). "
+                    "Output ONLY a valid JSON list of strings, with no markdown code blocks and no conversational text, for example:\n"
+                    '["What could this rash be?", "What topical treatments can soothe this?", "Which specialist should I see?"]'
+                )
 
             messages = [
                 HumanMessage(
@@ -1072,9 +1071,9 @@ class HealthcareAgentService:
             if valid_lines:
                 return valid_lines[:4]
 
-            return fallback_questions
+            return []
 
         except Exception as err:
             logger.warning(f"Error predicting image questions with LLM: {err}")
-            return fallback_questions
+            return []
 

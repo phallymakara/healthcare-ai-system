@@ -2243,6 +2243,13 @@ textarea.input-error {
   will-change: transform, opacity;
 }
 
+/* Clear, persistent text selection in chat interface */
+.chat-messages-scroll-area ::selection,
+.chat-bubble-animate ::selection {
+  background-color: rgba(2, 132, 199, 0.22);
+  color: inherit;
+}
+
 /* Subtle Streaming Caret Indicator */
 @keyframes streamCursorPulse {
   0%, 100% {
