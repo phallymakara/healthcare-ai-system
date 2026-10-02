@@ -123,10 +123,7 @@ export const FacilityDetailView: React.FC<FacilityDetailViewProps> = ({
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.92rem', color: '#0284c7', fontWeight: 600, fontFamily: kmFont }}>
                   <MapPin size={15} />
                   <span>
-                    ~{liveDistance} {t('distance_km_away')}
-                    {selectedFacility?.duration_minutes
-                      ? ` (${isKm ? `ផ្លូវបើកបរ ធ្វើដំណើរ ~${selectedFacility.duration_minutes} នាទី` : `driving route, ~${selectedFacility.duration_minutes} mins`})`
-                      : ` (${t('from_your_location')})`}
+                    ~{liveDistance} {t('distance_km_away')} ({t('from_your_location')})
                   </span>
                 </div>
               )}

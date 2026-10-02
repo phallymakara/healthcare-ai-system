@@ -122,6 +122,10 @@ MAP LINKS & DIRECTIONS:
 - Whenever you display, list, or provide details for any hospital or clinic facility, you MUST always include the Google Maps location link for that facility (e.g. `[Open in Google Maps](https://maps.google.com/?q=...)` or in Khmer `[បើកមើលក្នុង Google Maps](https://maps.google.com/?q=...)`).
 - Never omit the Google Maps link when presenting hospital or clinic information to the user.
 
+DISTANCE & PROXIMITY DIRECTIVE:
+- When listing or referring to hospitals or medical clinics, ALWAYS express location proximity strictly by physical distance in kilometers (e.g. `~1.5 km` or `~3.2 km`).
+- STRICT PROHIBITION: NEVER estimate, mention, or output driving durations, travel times, or arrival minute estimates (such as '(~4 mins drive)', 'driving route, ~4 mins', 'ធ្វើដំណើរ ~4 នាទី', '4 mins drive', or similar travel time approximations) anywhere in your response. Only state distance in kilometers.
+
 AUTOMATIC LANGUAGE DETECTION & MIRRORING:
 - You MUST automatically detect the language of the user's latest question and respond in that EXACT same language.
 - If the user communicates in Khmer (ភាសាខ្មែរ):
@@ -292,21 +296,15 @@ class HealthcareAgentService:
             enriched = []
             for (h, straight_dist), d_info in zip(top_candidates, driving_infos):
                 driving_km = d_info.get("distance_km") if d_info else None
-                duration_mins = d_info.get("duration_minutes") if d_info else None
                 sort_metric = driving_km if driving_km is not None else straight_dist
-                enriched.append((h, straight_dist, driving_km, duration_mins, sort_metric))
+                enriched.append((h, straight_dist, driving_km, sort_metric))
 
             # Re-sort top candidates by actual driving route distance
-            enriched.sort(key=lambda x: (x[4] is None, x[4] if x[4] is not None else 9999))
+            enriched.sort(key=lambda x: (x[3] is None, x[3] if x[3] is not None else 9999))
 
-            for h, straight_dist, driving_km, duration_mins, sort_metric in enriched:
-                if driving_km is not None and duration_mins is not None:
-                    if detected_lang == "km":
-                        dist_str = f"~{driving_km} km (ផ្លូវបើកបរ ធ្វើដំណើរ ~{duration_mins} នាទី)"
-                    else:
-                        dist_str = f"~{driving_km} km (driving route, ~{duration_mins} mins)"
-                elif driving_km is not None:
-                    dist_str = f"~{driving_km} km (driving route)"
+            for h, straight_dist, driving_km, sort_metric in enriched:
+                if driving_km is not None:
+                    dist_str = f"~{driving_km} km"
                 elif straight_dist is not None:
                     dist_str = f"~{straight_dist} km away"
                 else:
@@ -351,7 +349,7 @@ class HealthcareAgentService:
                         "address": h.address,
                         "distance_km": sort_metric,
                         "driving_distance_km": driving_km,
-                        "duration_minutes": duration_mins,
+                        "duration_minutes": None,
                     }
                 )
 
@@ -434,13 +432,9 @@ class HealthcareAgentService:
             for idx, h in enumerate(matched_top):
                 d_info = driving_infos[idx] if idx < len(driving_infos) else None
                 driving_km = d_info.get("distance_km") if d_info else None
-                dur_mins = d_info.get("duration_minutes") if d_info else None
 
-                if driving_km is not None and dur_mins is not None:
-                    if detected_lang == "km":
-                        dist_str = f" (📍 ផ្លូវបើកបរ ~{driving_km} km • ធ្វើដំណើរ ~{dur_mins} នាទី)"
-                    else:
-                        dist_str = f" (📍 driving ~{driving_km} km • ~{dur_mins} mins)"
+                if driving_km is not None:
+                    dist_str = f" (📍 ~{driving_km} km)"
                 else:
                     dist = calculate_distance_km(ref_lat, ref_lon, h.latitude, h.longitude)
                     dist_str = f" (📍 ~{dist} km away)" if dist is not None else ""

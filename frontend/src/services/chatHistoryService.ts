@@ -99,26 +99,38 @@ export const deleteUserConversation = (
 const ACTIVE_CONV_KEY = 'carequeue_active_conv_';
 
 /**
- * Get last active conversation ID for a user.
+ * Get last active conversation ID for a user within the current browser session.
  */
 export const getActiveConversationId = (userId: string = 'guest'): string | null => {
   try {
-    return localStorage.getItem(`${ACTIVE_CONV_KEY}${userId}`);
+    return sessionStorage.getItem(`${ACTIVE_CONV_KEY}${userId}`);
   } catch {
     return null;
   }
 };
 
 /**
- * Set or clear the active conversation ID for a user.
+ * Set or clear the active conversation ID for a user in the current browser session.
  */
 export const setActiveConversationId = (userId: string = 'guest', convId: string | null): void => {
   try {
+    // Clean up any legacy localStorage entry
+    localStorage.removeItem(`${ACTIVE_CONV_KEY}${userId}`);
     if (convId) {
-      localStorage.setItem(`${ACTIVE_CONV_KEY}${userId}`, convId);
+      sessionStorage.setItem(`${ACTIVE_CONV_KEY}${userId}`, convId);
     } else {
-      localStorage.removeItem(`${ACTIVE_CONV_KEY}${userId}`);
+      sessionStorage.removeItem(`${ACTIVE_CONV_KEY}${userId}`);
     }
+  } catch {}
+};
+
+/**
+ * Explicitly clear the active conversation ID for a user across all storages.
+ */
+export const clearActiveConversationId = (userId: string = 'guest'): void => {
+  try {
+    localStorage.removeItem(`${ACTIVE_CONV_KEY}${userId}`);
+    sessionStorage.removeItem(`${ACTIVE_CONV_KEY}${userId}`);
   } catch {}
 };
 

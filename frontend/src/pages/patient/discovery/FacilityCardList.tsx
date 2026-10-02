@@ -291,7 +291,7 @@ export const FacilityCardList: React.FC<FacilityCardListProps> = ({
                           fontFamily: kmFont,
                         }}
                       >
-                        ~{hosp.distance_km} {language === 'km' ? 'គ.ម' : 'km'}{hosp.duration_minutes ? ` • ~${hosp.duration_minutes} ${language === 'km' ? 'នាទី' : 'mins'}` : ''}
+                        ~{hosp.distance_km} {language === 'km' ? 'គ.ម' : 'km'}
                       </span>
                     )}
                   </div>

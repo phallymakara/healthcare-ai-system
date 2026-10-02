@@ -289,7 +289,7 @@ async def search_hospitals(
             d_info = driving_infos[idx] if idx < len(driving_infos) else None
             if d_info and d_info.get("distance_km") is not None:
                 h_resp.distance_km = d_info["distance_km"]
-                h_resp.duration_minutes = d_info.get("duration_minutes")
+                h_resp.duration_minutes = None
                 h_resp.is_driving_distance = True
 
         # Re-sort top candidates by real driving distance
