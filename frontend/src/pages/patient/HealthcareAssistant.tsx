@@ -22,6 +22,7 @@ import { useLanguage } from '../../context/LanguageContext';
 import { API_BASE } from '../../services/api';
 import { useUserLocation } from '../../hooks/useUserLocation';
 import { getDeviceHeaders } from '../../services/deviceFingerprint';
+import apiClient, { ApiError } from '../../services/apiClient';
 
 interface HealthcareAssistantProps {
   onTicketBooked: (ticket: any) => void;
@@ -989,14 +990,39 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
   };
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const isNearBottomRef = useRef(true);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: loading ? 'auto' : 'smooth' });
-  };
+  const scrollToBottom = useCallback((smooth = false) => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    if (smooth) {
+      container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+    } else {
+      container.scrollTop = container.scrollHeight;
+    }
+  }, []);
+
+  const handleContainerScroll = useCallback(() => {
+    const container = messagesContainerRef.current;
+    if (container) {
+      const distance = container.scrollHeight - container.scrollTop - container.clientHeight;
+      isNearBottomRef.current = distance < 80;
+    }
+    // Only verify text selection if not actively streaming
+    if (!streamingMsgId) {
+      const sel = window.getSelection();
+      if (sel && !sel.isCollapsed) {
+        handleTextSelection();
+      }
+    }
+  }, [streamingMsgId, handleTextSelection]);
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, loading]);
+    // Only auto-scroll on new message added or loading state change if near bottom and not actively streaming
+    if (!streamingMsgId && isNearBottomRef.current) {
+      scrollToBottom(false);
+    }
+  }, [messages.length, loading, streamingMsgId, scrollToBottom]);
 
   const handleSendQuery = async (queryText: string, attachedImageUrl?: string) => {
     const query = queryText.trim();
@@ -1077,136 +1103,99 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
         content: m.text,
       }));
 
-      const res = await fetch(`${API_BASE}/assistant/chat/stream`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...AuthService.getAuthHeaders(),
-          ...getDeviceHeaders(),
-        },
-        body: JSON.stringify({
-          message: query,
-          history: historyPayload,
-          language: isKhmer(query) ? 'km' : (/[a-zA-Z]/.test(query) ? 'en' : language),
-          user_latitude: userLocation?.latitude,
-          user_longitude: userLocation?.longitude,
-          conversation_id: (currentConversationId && !currentConversationId.startsWith('conv_')) ? currentConversationId : undefined,
-          image_url: attachedImageUrl || undefined,
-        }),
-      });
-
-      if (res.status === 401) {
-        onOpenAuth?.();
-        return;
-      }
-
-      if (res.status === 429) {
-        const errJson = await res.json().catch(() => null);
-        const minsLeft = errJson?.detail?.minutes_remaining || 60;
-        setGuestLimitDetails({ reached: true, minutesRemaining: minsLeft });
-        onOpenAuth?.();
-        return;
-      }
-
-      if (!res.ok || !res.body) {
-        const fallbackMsg: ChatMessage = {
-          id: streamMsgId,
-          role: 'assistant',
-          text: isKhmer(query)
-            ? 'សូមអភ័យទោស ខ្ញុំមិនអាចទាក់ទងជំនួយការវេជ្ជសាស្ត្របានជាបណ្តោះអាសន្នទេ។ សូមពិនិត្យមើលបណ្តាញរបស់អ្នក ឬព្យាយាមម្តងទៀតនៅបន្តិចក្រោយ។'
-            : 'I apologize, I am temporarily unable to reach the medical assistant. Please check your connection or try again in a moment.',
-          timestamp: new Date(),
-        };
-        persistAssistantReply(fallbackMsg);
-        return;
-      }
-
-      // Read SSE stream with smooth progressive display queue
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
+      // Read SSE stream with smooth progressive display queue via apiClient
       let rawTargetText = '';
+      let displayedText = '';
       let streamStarted = false;
       let metadata: any = null;
+      let isStreamingActive = true;
+      let rafId: number | null = null;
 
-      const processEvent = (eventType: string, dataStr: string) => {
-        try {
-          const parsed = JSON.parse(dataStr);
-          if (eventType === 'token') {
-            const delta = parsed.delta || '';
-            if (delta) {
-              rawTargetText += delta;
-              if (!streamStarted) {
-                streamStarted = true;
-                setStreamingMsgId(streamMsgId);
-                setMessages((prev) => [
-                  ...prev,
-                  {
-                    id: streamMsgId,
-                    role: 'assistant',
-                    text: rawTargetText,
-                    timestamp: new Date(),
-                  },
-                ]);
-              } else {
-                setMessages((prev) =>
-                  prev.map((m) => (m.id === streamMsgId ? { ...m, text: rawTargetText } : m))
-                );
-              }
-              messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
-            }
-          } else if (eventType === 'metadata') {
-            metadata = parsed;
-          }
-        } catch (e) {
-          console.warn('SSE event parse error:', e);
+      // Silky-smooth 60fps progressive text renderer
+      const pumpStream = () => {
+        if (!isStreamingActive && displayedText.length >= rawTargetText.length) {
+          return;
         }
+
+        if (displayedText.length < rawTargetText.length) {
+          // Dynamic adaptive pace: smooth progressive reveal without network burst stutter
+          const gap = rawTargetText.length - displayedText.length;
+          const step = Math.min(gap, Math.max(2, Math.floor(gap / 5) + 1));
+          displayedText = rawTargetText.slice(0, displayedText.length + step);
+
+          if (!streamStarted) {
+            streamStarted = true;
+            setStreamingMsgId(streamMsgId);
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: streamMsgId,
+                role: 'assistant',
+                text: displayedText,
+                timestamp: new Date(),
+              },
+            ]);
+          } else {
+            setMessages((prev) =>
+              prev.map((m) => (m.id === streamMsgId ? { ...m, text: displayedText } : m))
+            );
+          }
+
+          if (isNearBottomRef.current && messagesContainerRef.current) {
+            const container = messagesContainerRef.current;
+            container.scrollTop = container.scrollHeight;
+          }
+        }
+
+        rafId = requestAnimationFrame(pumpStream);
       };
 
+      rafId = requestAnimationFrame(pumpStream);
+
       try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          buffer += decoder.decode(value, { stream: true });
-
-          const parts = buffer.split(/\r?\n\r?\n/);
-          buffer = parts.pop() || '';
-
-          for (const part of parts) {
-            if (!part.trim()) continue;
-            let eventType = 'message';
-            let dataStr = '';
-            const lines = part.split(/\r?\n/);
-            for (const line of lines) {
-              if (line.startsWith('event:')) {
-                eventType = line.slice(6).trim();
-              } else if (line.startsWith('data:')) {
-                dataStr += (dataStr ? '\n' : '') + line.slice(5).trim();
-              }
-            }
-            if (dataStr) {
-              processEvent(eventType, dataStr);
-            }
+        const streamResult = await apiClient.stream(
+          '/assistant/chat/stream',
+          {
+            message: query,
+            history: historyPayload,
+            language: isKhmer(query) ? 'km' : (/[a-zA-Z]/.test(query) ? 'en' : language),
+            user_latitude: userLocation?.latitude,
+            user_longitude: userLocation?.longitude,
+            conversation_id: (currentConversationId && !currentConversationId.startsWith('conv_')) ? currentConversationId : undefined,
+            image_url: attachedImageUrl || undefined,
+          },
+          {
+            onToken: (token) => {
+              rawTargetText += token;
+            },
+            onMetadata: (meta) => {
+              metadata = meta;
+            },
           }
+        );
+
+        if (streamResult.fullText) {
+          rawTargetText = streamResult.fullText;
         }
-
-        if (buffer.trim()) {
-          const lines = buffer.split(/\r?\n/);
-          let eventType = 'message';
-          let dataStr = '';
-          for (const line of lines) {
-            if (line.startsWith('event:')) {
-              eventType = line.slice(6).trim();
-            } else if (line.startsWith('data:')) {
-              dataStr += (dataStr ? '\n' : '') + line.slice(5).trim();
-            }
-          }
-          if (dataStr) {
-            processEvent(eventType, dataStr);
-          }
+        if (streamResult.metadata) {
+          metadata = streamResult.metadata;
         }
       } finally {
-        // Stream reading completed
+        isStreamingActive = false;
+        if (rafId) {
+          cancelAnimationFrame(rafId);
+          rafId = null;
+        }
+        // Ensure final displayed text is synchronized with all received tokens
+        if (rawTargetText && displayedText !== rawTargetText) {
+          displayedText = rawTargetText;
+          setMessages((prev) =>
+            prev.map((m) => (m.id === streamMsgId ? { ...m, text: rawTargetText } : m))
+          );
+          if (isNearBottomRef.current && messagesContainerRef.current) {
+            messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+          }
+        }
       }
 
       // Stream completed - finalize conversation state and metadata
@@ -1239,7 +1228,19 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
         timestamp: new Date(),
       };
       persistAssistantReply(finalAssistantMsg);
-    } catch {
+    } catch (err: any) {
+      if (err instanceof ApiError) {
+        if (err.status === 401) {
+          onOpenAuth?.();
+          return;
+        }
+        if (err.status === 429) {
+          const minsLeft = (err.data as any)?.detail?.minutes_remaining || 60;
+          setGuestLimitDetails({ reached: true, minutesRemaining: minsLeft });
+          onOpenAuth?.();
+          return;
+        }
+      }
       const errorMsg: ChatMessage = {
         id: streamMsgId,
         role: 'assistant',
@@ -1442,7 +1443,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
         onMouseUp={handleTextSelection}
         onTouchEnd={handleTextSelection}
         onKeyUp={handleTextSelection}
-        onScroll={handleTextSelection}
+        onScroll={handleContainerScroll}
         style={{
           flex: 1,
           overflowY: 'auto',

@@ -2238,9 +2238,17 @@ textarea.input-error {
   }
 }
 
+/* Chat Messages Scroll Container Smooth Behavior */
+.chat-messages-scroll-area {
+  overflow-anchor: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+
 .chat-bubble-animate {
-  animation: chatBubbleEnter 0.24s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: chatBubbleEnter 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
   will-change: transform, opacity;
+  contain: layout style;
 }
 
 /* Clear, persistent text selection in chat interface */
