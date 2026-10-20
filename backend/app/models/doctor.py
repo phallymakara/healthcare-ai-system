@@ -34,7 +34,9 @@ class Doctor(Base):
     )
     
     full_name: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    full_name_km: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
     specialty: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    specialty_km: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
     license_number: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     bio: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     photo_url: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)

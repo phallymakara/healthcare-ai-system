@@ -20,6 +20,7 @@ class Hospital(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    name_km: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     slug: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     logo_url: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
@@ -71,6 +72,7 @@ class HospitalBranch(Base):
         UUID(as_uuid=True), ForeignKey("hospitals.id", ondelete="CASCADE"), nullable=False
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
+    name_km: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     address: Mapped[str] = mapped_column(String(512), nullable=False)
     phone: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
     latitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
@@ -104,6 +106,7 @@ class Department(Base):
         UUID(as_uuid=True), ForeignKey("hospital_branches.id", ondelete="CASCADE"), nullable=True
     )
     name: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    name_km: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
     code: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)  # e.g., "CARDIO", "DERM"
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     floor_room: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
@@ -136,6 +139,7 @@ class Service(Base):
         UUID(as_uuid=True), ForeignKey("departments.id", ondelete="CASCADE"), nullable=False
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
+    name_km: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     duration_minutes: Mapped[int] = mapped_column(Integer, default=20, nullable=False)
     price: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
