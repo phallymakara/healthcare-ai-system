@@ -690,7 +690,8 @@ export const km: Record<TranslationKey, string> = {
   hero_clinic_network_desc: "ប្រៀបធៀបរយៈពេលរង់ចាំរវាងមន្ទីរពេទ្យ និងគ្លីនិកជាច្រើន។",
 
   // Landing Page - Patient Features
-  pf_section_title: "ការទទួលសេវាសុខាភិបាលប្រកបដោយភាពងាយស្រួល",
+  pf_section_badge: "01. សម្រាប់អ្នកជំងឺ",
+  pf_section_title: "",
   pf_section_subtitle: "ចំណាយពេលតិចក្នុងបន្ទប់រង់ចាំដែលមានមនុស្សកកកុញ និងមានពេលច្រើននៅកន្លែងដែលអ្នកមានផាសុកភាព",
   pf_card1_title: "ការកក់ផ្លូវនៅពីចម្ងាយ",
   pf_card1_desc: "កក់សំបុត្រលេខរង់ចាំសម្រាប់ផ្នែកពិនិត្យ ឬវេជ្ជបណ្ឌិតណាមួយជាមួយឈ្មោះ និងលេខទូរស័ព្ទរបស់អ្នកមុនពេលមកដល់។",
@@ -706,7 +707,9 @@ export const km: Record<TranslationKey, string> = {
   pf_card4_tag: "Direct AI Interaction",
 
   // Landing Page - Hospital Operations Features
-  hf_section_title: "បង្កើនប្រសិទ្ធភាពប្រតិបត្តិការប្រចាំថ្ងៃរបស់មន្ទីរពេទ្យ និង គ្លីនិច",
+  hf_section_badge: "02. សម្រាប់មន្ទីរពេទ្យ និងគ្លីនិក",
+  hf_section_title: "",
+  hf_section_subtitle: "ប្រព័ន្ធគ្រប់គ្រងវេជ្ជបណ្ឌិត តុល្យភាពជួររង់ចាំ និងស្តុកឱសថឆ្លាតវៃ ដើម្បីលើកកម្ពស់គុណភាពសេវាព្យាបាល។",
   hf_card1_title: "វេជ្ជបណ្ឌិតជំនាញ",
   hf_card1_desc: "វេជ្ជបណ្ឌិត និងបុគ្គលិក រៀបចំកាលវិភាគពិនិត្យ និងបន្ទប់ពិគ្រោះឱ្យស្របតាមជំនាញ",
   hf_card1_bullet1: "✓ ធ្វើសមកាលកម្មវត្តមានជាក់ស្តែងរបស់វេជ្ជបណ្ឌិត",
@@ -740,8 +743,9 @@ export const km: Record<TranslationKey, string> = {
   testimonial_4_role: "អ្នកជំងឺផ្នែកទន្តសាស្ត្រ",
 
   // Landing Page - How It Works
-  how_section_title: "របៀបដំណើរការរបស់ Health AI Assistant ជា ៤ ជំហាន",
-  how_section_subtitle: "និងងាយស្រួលដោយគ្រាន់តែប្រើប្រាស់តាមទូរស័ព្ទដៃ ឬកុំព្យូទ័ររបស់អ្នក",
+  how_section_badge: "03. របៀបដំណើរការ",
+  how_section_title: "",
+  how_section_subtitle: "រហ័សទាន់ចិត្ត និងងាយស្រួលប្រើប្រាស់តាមទូរស័ព្ទដៃ ឬកុំព្យូទ័ររបស់អ្នក",
   how_step1_title: "ស្វែងរកមន្ទីរពេទ្យ & ផ្នែកឯកទេស",
   how_step1_desc: "ស្វែងរកមន្ទីរពេទ្យដៃគូដែលនៅជិត ពិនិត្យផ្នែកឯកទេសដែលមាន និងមើលរយៈពេលរង់ចាំបច្ចុប្បន្ន។",
   how_step2_title: "កក់សំបុត្រលេខរង់ចាំ",

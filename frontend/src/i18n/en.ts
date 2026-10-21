@@ -688,7 +688,8 @@ export const en = {
   hero_clinic_network_desc: "Compare waiting times across multiple hospitals.",
 
   // Landing Page - Patient Features
-  pf_section_title: "Convenient and effortless healthcare access",
+  pf_section_badge: "01. For Patients",
+  pf_section_title: "",
   pf_section_subtitle: "Spend less time in crowded waiting rooms and more time where you feel comfortable and at ease.",
   pf_card1_title: "Remote Queue Booking",
   pf_card1_desc: "Reserve your consultation queue ticket for any department or doctor with your phone before leaving home.",
@@ -701,10 +702,12 @@ export const en = {
   pf_card3_tag: "Community & Peer Support",
   pf_card4_title: "Consult Healthcare AI",
   pf_card4_desc: "Ask symptom questions, receive instant clinical triage guidance, and chat directly with AI healthcare assistants.",
-  pf_card4_tag: "Direct AI Interaction",
+  pf_card4_tag: "Active Now",
 
   // Landing Page - Hospital Operations Features
-  hf_section_title: "Enhance daily operations for hospitals and clinics",
+  hf_section_badge: "02. For Hospitals & Clinics",
+  hf_section_title: "",
+  hf_section_subtitle: "Streamline specialist scheduling, balance department queues, and automate pharmacy inventory.",
   hf_card1_title: "Doctor Specialists & Rosters",
   hf_card1_desc: "Doctors and staff organize consultation schedules and specialty room assignments efficiently.",
   hf_card1_bullet1: "✓ Live doctor attendance and shift synchronization",
@@ -738,7 +741,8 @@ export const en = {
   testimonial_4_role: "Dental Clinic Patient",
 
   // Landing Page - How It Works
-  how_section_title: "How Health AI Assistant works in 4 steps",
+  how_section_badge: "03. How It Works",
+  how_section_title: "",
   how_section_subtitle: "Simple and seamless right from your smartphone or computer.",
   how_step1_title: "Find Clinic & Department",
   how_step1_desc: "Search nearby partner hospitals, check available medical departments, and view current waiting times.",

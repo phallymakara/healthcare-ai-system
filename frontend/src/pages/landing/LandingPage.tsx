@@ -26,11 +26,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth, currentUse
         onStartChatWithQuery={onStartChatWithQuery}
       />
 
-      {/* Full-width Patient Experience Section with Emerald Gradient */}
+      {/* Full-width Patient Experience Section continuous from below hero section with transparency gradient */}
       <PatientFeatures />
 
       {/* Structured Content Sections in Responsive Centered Container */}
-      <div className="landing-inner-container" style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem', marginTop: '0', paddingBottom: '0.75rem', background: '#ffffff' }}>
+      <div className="landing-inner-container" style={{ display: 'flex', flexDirection: 'column', gap: '3rem', marginTop: 0, paddingBottom: '0.75rem', background: '#ffffff' }}>
         <HospitalFeatures />
         <HowItWorks />
       </div>

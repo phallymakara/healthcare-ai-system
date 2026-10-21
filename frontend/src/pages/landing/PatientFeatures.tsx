@@ -1,13 +1,49 @@
 import React from 'react';
+import { Ticket, Clock, Users, Sparkles } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 
-import patientCommuteImg from '../../assets/patient_commute_relax.jpg';
-import queueClockImg from '../../assets/queue_clock_flow.jpg';
-import communitySupportImg from '../../assets/community_peer_support.jpg';
-import aiRobotImg from '../../assets/ai_robot_consult.jpg';
+import remoteBookingImg from '../../assets/patient_remote_booking.jpg';
+import queueTrackingImg from '../../assets/patient_queue_tracking.jpg';
+import communitySupportImg from '../../assets/patient_community_support.jpg';
+import aiConsultImg from '../../assets/patient_ai_consultation.jpg';
 
 export const PatientFeatures: React.FC = () => {
   const { t, language } = useLanguage();
+
+  const cards = [
+    {
+      id: 'remote-booking',
+      icon: Ticket,
+      image: remoteBookingImg,
+      title: t('pf_card1_title'),
+      desc: t('pf_card1_desc'),
+      isComingSoon: true,
+    },
+    {
+      id: 'queue-tracking',
+      icon: Clock,
+      image: queueTrackingImg,
+      title: t('pf_card2_title'),
+      desc: t('pf_card2_desc'),
+      isComingSoon: true,
+    },
+    {
+      id: 'patient-community',
+      icon: Users,
+      image: communitySupportImg,
+      title: t('pf_card3_title'),
+      desc: t('pf_card3_desc'),
+      isComingSoon: true,
+    },
+    {
+      id: 'ai-consult',
+      icon: Sparkles,
+      image: aiConsultImg,
+      title: t('pf_card4_title'),
+      desc: t('pf_card4_desc'),
+      isComingSoon: false,
+    },
+  ];
 
   return (
     <section
@@ -15,584 +51,189 @@ export const PatientFeatures: React.FC = () => {
       style={{
         width: '100%',
         position: 'relative',
-        background: 'linear-gradient(180deg, #11402e 0%, #154c37 5%, #257053 11%, #55a383 18%, #a0dcbe 26%, #e6f6ee 33%, #ffffff 38%, #ffffff 100%)',
-        color: '#ffffff',
-        padding: '4.5rem 1.5rem 3rem 1.5rem',
-        overflow: 'hidden',
-        border: 'none',
-        outline: 'none',
-        borderTop: 'none',
-        marginTop: '-2px',
+        background: '#ffffff',
+        padding: '2.5rem 0 2rem 0',
       }}
     >
-      {/* Decorative ambient radial glows concentrated at the upper green area */}
       <div
         style={{
-          position: 'absolute',
-          top: '8%',
-          left: '15%',
-          width: '480px',
-          height: '480px',
-          background: 'radial-gradient(circle, rgba(45, 212, 191, 0.1) 0%, transparent 70%)',
-          pointerEvents: 'none',
-          zIndex: 0,
-        }}
-      />
-      <div
-        style={{
-          position: 'absolute',
-          top: '20%',
-          right: '10%',
-          width: '500px',
-          height: '500px',
-          background: 'radial-gradient(circle, rgba(34, 197, 94, 0.08) 0%, transparent 70%)',
-          pointerEvents: 'none',
-          zIndex: 0,
-        }}
-      />
-
-      <div
-        style={{
-          maxWidth: '1240px',
+          maxWidth: '1280px',
+          width: '100%',
           margin: '0 auto',
-          position: 'relative',
-          zIndex: 1,
+          padding: '0 1.5rem',
+          boxSizing: 'border-box',
         }}
       >
-        {/* Section Header */}
-        <div style={{ textAlign: 'center', maxWidth: '820px', margin: '0 auto 3.5rem auto' }}>
+        {/* Section Header matching HospitalFeatures clean style */}
+        <div style={{ maxWidth: '860px', marginBottom: '2.25rem' }}>
           <h2
             style={{
-              fontSize: 'clamp(1.75rem, 3.2vw, 2.45rem)',
-              fontWeight: 800,
-              color: '#ffffff',
-              letterSpacing: '-0.02em',
-              lineHeight: 1.35,
-              textShadow: '0 2px 10px rgba(0, 0, 0, 0.3)',
+              fontSize: 'clamp(1.35rem, 2.4vw, 1.75rem)',
+              fontWeight: 700,
+              color: '#0c2f27',
+              letterSpacing: '-0.01em',
+              lineHeight: 1.3,
+              marginBottom: '0.65rem',
+              fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
             }}
           >
-            {t('pf_section_title')}
+            {t('pf_section_badge')}
           </h2>
+
           <p
             style={{
-              color: 'rgba(255, 255, 255, 0.86)',
-              fontSize: 'clamp(0.98rem, 1.5vw, 1.12rem)',
-              marginTop: '0.85rem',
-              lineHeight: 1.65,
+              color: '#64748b',
+              fontSize: 'clamp(0.92rem, 1.3vw, 1rem)',
+              lineHeight: 1.6,
               fontWeight: 400,
+              margin: 0,
+              fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
             }}
           >
             {t('pf_section_subtitle')}
           </p>
         </div>
 
-        {/* 2x2 Grid of Feature Cards matching reference */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 540px), 1fr))',
-            gap: '1.75rem',
-          }}
-        >
-          {/* Card 1: Remote Queue Booking (Woman in Train) — Coming Soon */}
-          <div
-            className="patient-feature-card"
-            style={{
-              position: 'relative',
-              borderRadius: '20px',
-              overflow: 'hidden',
-              minHeight: '255px',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              boxShadow: '0 12px 32px rgba(0, 0, 0, 0.2)',
-              display: 'flex',
-              alignItems: 'flex-start',
-              transition: 'transform 0.25s ease, box-shadow 0.25s ease',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-4px)';
-              e.currentTarget.style.boxShadow = '0 20px 42px rgba(0, 0, 0, 0.28)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 12px 32px rgba(0, 0, 0, 0.2)';
-            }}
-          >
-            {/* Full Illustration as Card Background */}
-            <img
-              src={patientCommuteImg}
-              alt={t('pf_card1_title')}
-              className="patient-card-img-layer"
-              style={{
-                position: 'absolute',
-                inset: 0,
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-                objectPosition: 'right center',
-                zIndex: 0,
-                opacity: 0.72,
-              }}
-            />
-
-            {/* Gradient Overlay: Deep color over text, slightly stronger to signal unavailable */}
+      {/* 4 Cards Grid (matching Hospital Features layout) */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
+          gap: '1.85rem',
+        }}
+      >
+        {cards.map((card) => {
+          const Icon = card.icon;
+          return (
             <div
+              key={card.id}
               style={{
-                position: 'absolute',
-                inset: 0,
-                background: 'linear-gradient(to right, #0d382c 0%, #0d382c 20%, rgba(13, 56, 44, 0.88) 38%, rgba(13, 56, 44, 0.35) 52%, rgba(13, 56, 44, 0.12) 62%)',
-                zIndex: 1,
-                pointerEvents: 'none',
-              }}
-            />
-
-            {/* Coming Soon Badge — Top Right */}
-            <div
-              style={{
-                position: 'absolute',
-                top: '1rem',
-                right: '1rem',
-                zIndex: 5,
-                background: 'rgba(255, 255, 255, 0.15)',
-                backdropFilter: 'blur(8px)',
-                border: '1px solid rgba(255, 255, 255, 0.35)',
-                borderRadius: '100px',
-                padding: '0.28rem 0.78rem',
-                fontSize: language === 'km' ? '0.82rem' : '0.75rem',
-                fontWeight: 600,
-                color: '#ffffff',
-                letterSpacing: '0.02em',
-                fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {t('coming_soon_title')}
-            </div>
-
-            {/* Text Content */}
-            <div
-              className="patient-card-text"
-              style={{
-                position: 'relative',
-                zIndex: 2,
-                width: '56%',
-                maxWidth: '340px',
-                padding: '1.75rem 1.65rem',
+                background: '#ffffff',
+                borderRadius: '20px',
+                overflow: 'hidden',
+                border: '1px solid #e2e8f0',
                 display: 'flex',
                 flexDirection: 'column',
-                justifyContent: 'flex-start',
+                transition: 'transform 0.25s ease, border-color 0.25s ease',
+                cursor: 'default',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.borderColor = '#10b981';
+                const img = e.currentTarget.querySelector('img');
+                if (img) img.style.transform = 'scale(1.05)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.borderColor = '#e2e8f0';
+                const img = e.currentTarget.querySelector('img');
+                if (img) img.style.transform = 'scale(1)';
               }}
             >
-              <h3
-                className="text-truncate"
+              {/* Top Image Preview Frame with Status Badge */}
+              <div
                 style={{
-                  fontSize: language === 'km' ? '1.32rem' : '1.25rem',
-                  fontWeight: 700,
-                  color: '#ffffff',
-                  marginBottom: '0.45rem',
-                  lineHeight: 1.35,
-                  textShadow: '0 1px 3px rgba(0, 0, 0, 0.4)',
+                  width: '100%',
+                  height: '240px',
+                  overflow: 'hidden',
+                  position: 'relative',
+                  background: '#f8fafc',
+                  borderBottom: '1px solid #edf2f7',
                 }}
               >
-                {t('pf_card1_title')}
-              </h3>
-              <p
-                className="text-clamp-3"
-                style={{
-                  fontSize: language === 'km' ? '0.98rem' : '0.92rem',
-                  color: 'rgba(255, 255, 255, 0.85)',
-                  lineHeight: language === 'km' ? 1.65 : 1.55,
-                  margin: 0,
-                }}
-              >
-                {t('pf_card1_desc')}
-              </p>
-              <span
-                style={{
-                  display: 'inline-block',
-                  marginTop: '0.7rem',
-                  fontSize: language === 'km' ? '0.84rem' : '0.78rem',
-                  color: 'rgba(255, 255, 255, 0.6)',
-                  fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
-                  fontStyle: 'italic',
-                }}
-              >
-                {language === 'km' ? 'នឹងមកដល់ក្នុងដំណាក់កាលបន្ទាប់' : 'Available in the next phase'}
-              </span>
-            </div>
-          </div>
-
-          {/* Card 2: Live Queue Tracking (Clinic Clock on Left, Text on Right) — Coming Soon */}
-          <div
-            className="patient-feature-card"
-            style={{
-              position: 'relative',
-              borderRadius: '20px',
-              overflow: 'hidden',
-              minHeight: '255px',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              boxShadow: '0 12px 32px rgba(0, 0, 0, 0.2)',
-              display: 'flex',
-              alignItems: 'flex-start',
-              transition: 'transform 0.25s ease, box-shadow 0.25s ease',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-4px)';
-              e.currentTarget.style.boxShadow = '0 20px 42px rgba(0, 0, 0, 0.28)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 12px 32px rgba(0, 0, 0, 0.2)';
-            }}
-          >
-            {/* Full Illustration as Card Background */}
-            <img
-              src={queueClockImg}
-              alt={t('pf_card2_title')}
-              className="patient-card-img-layer"
-              style={{
-                position: 'absolute',
-                inset: 0,
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-                objectPosition: 'left center',
-                zIndex: 0,
-                opacity: 0.72,
-              }}
-            />
-
-            {/* Gradient Overlay: Deep color over text on the right, slightly stronger to signal unavailable */}
-            <div
-              style={{
-                position: 'absolute',
-                inset: 0,
-                background: 'linear-gradient(to left, #124e40 0%, #124e40 20%, rgba(18, 78, 64, 0.88) 38%, rgba(18, 78, 64, 0.35) 52%, rgba(18, 78, 64, 0.12) 62%)',
-                zIndex: 1,
-                pointerEvents: 'none',
-              }}
-            />
-
-            {/* Coming Soon Badge — Top Left */}
-            <div
-              style={{
-                position: 'absolute',
-                top: '1rem',
-                left: '1rem',
-                zIndex: 5,
-                background: 'rgba(255, 255, 255, 0.15)',
-                backdropFilter: 'blur(8px)',
-                border: '1px solid rgba(255, 255, 255, 0.35)',
-                borderRadius: '100px',
-                padding: '0.28rem 0.78rem',
-                fontSize: language === 'km' ? '0.82rem' : '0.75rem',
-                fontWeight: 600,
-                color: '#ffffff',
-                letterSpacing: '0.02em',
-                fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {t('coming_soon_title')}
-            </div>
-
-            {/* Text Content on Right */}
-            <div
-              className="patient-card-text"
-              style={{
-                position: 'relative',
-                zIndex: 2,
-                width: '56%',
-                maxWidth: '340px',
-                marginLeft: 'auto',
-                padding: '1.75rem 1.65rem',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'flex-start',
-              }}
-            >
-              <h3
-                className="text-truncate"
-                style={{
-                  fontSize: language === 'km' ? '1.32rem' : '1.25rem',
-                  fontWeight: 700,
-                  color: '#ffffff',
-                  marginBottom: '0.45rem',
-                  lineHeight: 1.35,
-                  textShadow: '0 1px 3px rgba(0, 0, 0, 0.4)',
-                }}
-              >
-                {t('pf_card2_title')}
-              </h3>
-              <p
-                className="text-clamp-3"
-                style={{
-                  fontSize: language === 'km' ? '0.98rem' : '0.92rem',
-                  color: 'rgba(255, 255, 255, 0.85)',
-                  lineHeight: language === 'km' ? 1.65 : 1.55,
-                  margin: 0,
-                }}
-              >
-                {t('pf_card2_desc')}
-              </p>
-              <span
-                style={{
-                  display: 'inline-block',
-                  marginTop: '0.7rem',
-                  fontSize: language === 'km' ? '0.84rem' : '0.78rem',
-                  color: 'rgba(255, 255, 255, 0.6)',
-                  fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
-                  fontStyle: 'italic',
-                }}
-              >
-                {language === 'km' ? 'នឹងមកដល់ក្នុងដំណាក់កាលបន្ទាប់' : 'Available in the next phase'}
-              </span>
-            </div>
-          </div>
-
-          {/* Card 3: Patient Community (Group with Chat Bubbles on Right) */}
-          <div
-            className="patient-feature-card"
-            style={{
-              position: 'relative',
-              borderRadius: '20px',
-              overflow: 'hidden',
-              minHeight: '255px',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              boxShadow: '0 12px 32px rgba(0, 0, 0, 0.2)',
-              display: 'flex',
-              alignItems: 'flex-start',
-              transition: 'transform 0.25s ease, box-shadow 0.25s ease',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-4px)';
-              e.currentTarget.style.boxShadow = '0 20px 42px rgba(0, 0, 0, 0.28)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 12px 32px rgba(0, 0, 0, 0.2)';
-            }}
-          >
-            {/* Full Illustration as Card Background */}
-            <img
-              src={communitySupportImg}
-              alt={t('pf_card3_title')}
-              className="patient-card-img-layer"
-              style={{
-                position: 'absolute',
-                inset: 0,
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-                objectPosition: 'right center',
-                zIndex: 0,
-                opacity: 0.72,
-              }}
-            />
-
-            {/* Gradient Overlay: Deep color on left, matching Card 1 & 2 */}
-            <div
-              style={{
-                position: 'absolute',
-                inset: 0,
-                background: 'linear-gradient(to right, #0e4436 0%, #0e4436 20%, rgba(14, 68, 54, 0.88) 38%, rgba(14, 68, 54, 0.35) 52%, rgba(14, 68, 54, 0.12) 62%)',
-                zIndex: 1,
-                pointerEvents: 'none',
-              }}
-            />
-
-            {/* Coming Soon Badge — Top Right */}
-            <div
-              style={{
-                position: 'absolute',
-                top: '1rem',
-                right: '1rem',
-                zIndex: 5,
-                background: 'rgba(255, 255, 255, 0.15)',
-                backdropFilter: 'blur(8px)',
-                border: '1px solid rgba(255, 255, 255, 0.35)',
-                borderRadius: '100px',
-                padding: '0.28rem 0.78rem',
-                fontSize: language === 'km' ? '0.82rem' : '0.75rem',
-                fontWeight: 600,
-                color: '#ffffff',
-                letterSpacing: '0.02em',
-                fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {t('coming_soon_title')}
-            </div>
-
-            {/* Text Content */}
-            <div
-              className="patient-card-text"
-              style={{
-                position: 'relative',
-                zIndex: 2,
-                width: '56%',
-                maxWidth: '340px',
-                padding: '1.75rem 1.65rem',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'flex-start',
-              }}
-            >
-              <h3
-                className="text-truncate"
-                style={{
-                  fontSize: language === 'km' ? '1.32rem' : '1.25rem',
-                  fontWeight: 700,
-                  color: '#ffffff',
-                  marginBottom: '0.45rem',
-                  lineHeight: 1.35,
-                  textShadow: '0 1px 3px rgba(0, 0, 0, 0.4)',
-                }}
-              >
-                {t('pf_card3_title')}
-              </h3>
-              <p
-                className="text-clamp-3"
-                style={{
-                  fontSize: language === 'km' ? '0.98rem' : '0.92rem',
-                  color: 'rgba(255, 255, 255, 0.85)',
-                  lineHeight: language === 'km' ? 1.65 : 1.55,
-                  margin: 0,
-                }}
-              >
-                {t('pf_card3_desc')}
-              </p>
-              {language === 'km' && (
-                <span
+                <img
+                  src={card.image}
+                  alt=""
+                  role="presentation"
                   style={{
-                    fontSize: '0.92rem',
-                    color: 'rgba(255, 255, 255, 0.85)',
-                    fontWeight: 600,
-                    marginTop: '0.45rem',
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    objectPosition: 'center',
                     display: 'block',
+                    transition: 'transform 0.35s ease',
+                  }}
+                />
+
+                {/* Status Badge (Only for Coming Soon) */}
+                {card.isComingSoon && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: '0.75rem',
+                      right: '0.75rem',
+                      zIndex: 2,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      background: '#0c2f27',
+                      border: '1px solid #15803d',
+                      borderRadius: '100px',
+                      padding: '0.26rem 0.76rem',
+                      fontSize: language === 'km' ? '0.78rem' : '0.72rem',
+                      fontWeight: 600,
+                      color: '#ffffff',
+                      letterSpacing: '0.02em',
+                      fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {t('coming_soon_title')}
+                  </div>
+                )}
+              </div>
+
+              {/* Bottom Content Area */}
+              <div
+                style={{
+                  padding: '0.9rem 1.15rem 1.1rem 1.15rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  flex: 1,
+                  justifyContent: 'flex-start',
+                }}
+              >
+                {/* Title with Prefix Icon */}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    marginBottom: '0.35rem',
                   }}
                 >
-                  Community & peer support
-                </span>
-              )}
-              <span
-                style={{
-                  display: 'inline-block',
-                  marginTop: '0.7rem',
-                  fontSize: language === 'km' ? '0.84rem' : '0.78rem',
-                  color: 'rgba(255, 255, 255, 0.6)',
-                  fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
-                  fontStyle: 'italic',
-                }}
-              >
-                {language === 'km' ? 'នឹងមកដល់ក្នុងដំណាក់កាលបន្ទាប់' : 'Available in the next phase'}
-              </span>
-            </div>
-          </div>
+                  <Icon size={19} color="#0c2f27" style={{ flexShrink: 0 }} />
+                  <h3
+                    className="text-truncate"
+                    style={{
+                      fontSize: language === 'km' ? '1.16rem' : '1.1rem',
+                      fontWeight: 700,
+                      color: '#0f172a',
+                      margin: 0,
+                      lineHeight: 1.3,
+                      fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
+                    }}
+                  >
+                    {card.title}
+                  </h3>
+                </div>
 
-          {/* Card 4: Consult Healthcare AI (Robot on Right) */}
-          <div
-            className="patient-feature-card"
-            style={{
-              position: 'relative',
-              borderRadius: '20px',
-              overflow: 'hidden',
-              minHeight: '255px',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              boxShadow: '0 12px 32px rgba(0, 0, 0, 0.2)',
-              display: 'flex',
-              alignItems: 'flex-start',
-              transition: 'transform 0.25s ease, box-shadow 0.25s ease',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-4px)';
-              e.currentTarget.style.boxShadow = '0 20px 42px rgba(0, 0, 0, 0.28)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 12px 32px rgba(0, 0, 0, 0.2)';
-            }}
-          >
-            {/* Full Illustration as Card Background */}
-            <img
-              src={aiRobotImg}
-              alt={t('pf_card4_title')}
-              className="patient-card-img-layer"
-              style={{
-                position: 'absolute',
-                inset: 0,
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-                objectPosition: 'right center',
-                zIndex: 0,
-              }}
-            />
-
-            {/* Gradient Overlay: Deep dark teal on left, reduced length to reveal glowing robot */}
-            <div
-              style={{
-                position: 'absolute',
-                inset: 0,
-                background: 'linear-gradient(to right, #0d2634 0%, #0d2634 16%, rgba(13, 38, 52, 0.82) 32%, rgba(13, 38, 52, 0.2) 46%, rgba(13, 38, 52, 0) 56%)',
-                zIndex: 1,
-                pointerEvents: 'none',
-              }}
-            />
-
-            {/* Text Content */}
-            <div
-              className="patient-card-text"
-              style={{
-                position: 'relative',
-                zIndex: 2,
-                width: '56%',
-                maxWidth: '340px',
-                padding: '1.75rem 1.65rem',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'flex-start',
-              }}
-            >
-              <h3
-                className="text-truncate"
-                style={{
-                  fontSize: language === 'km' ? '1.32rem' : '1.25rem',
-                  fontWeight: 700,
-                  color: '#ffffff',
-                  marginBottom: '0.45rem',
-                  lineHeight: 1.35,
-                  textShadow: '0 1px 3px rgba(0, 0, 0, 0.4)',
-                }}
-              >
-                {t('pf_card4_title')}
-              </h3>
-              <p
-                className="text-clamp-3"
-                style={{
-                  fontSize: language === 'km' ? '0.98rem' : '0.92rem',
-                  color: 'rgba(255, 255, 255, 0.92)',
-                  lineHeight: language === 'km' ? 1.65 : 1.55,
-                  margin: 0,
-                }}
-              >
-                {t('pf_card4_desc')}
-              </p>
-              {language === 'km' && (
-                <span
+                <p
+                  className="text-clamp-3"
                   style={{
-                    fontSize: '0.92rem',
-                    color: 'rgba(255, 255, 255, 0.85)',
-                    fontWeight: 600,
-                    marginTop: '0.45rem',
-                    display: 'block',
+                    fontSize: language === 'km' ? '0.92rem' : '0.88rem',
+                    color: '#475569',
+                    lineHeight: language === 'km' ? 1.55 : 1.5,
+                    margin: 0,
+                    fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
                   }}
                 >
-                  Direct AI Interaction
-                </span>
-              )}
+                  {card.desc}
+                </p>
+              </div>
             </div>
-          </div>
-        </div>
+          );
+        })}
+      </div>
       </div>
     </section>
   );
