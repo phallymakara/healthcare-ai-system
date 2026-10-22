@@ -88,8 +88,8 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
           alignItems: 'center',
           justifyContent: isSidebar ? 'flex-start' : 'center',
           gap: isSidebar ? '8px' : '7px',
-          padding: isSidebar ? '0.45rem 0.65rem' : '0.45rem 0.75rem',
-          fontSize: isSidebar ? '0.95rem' : '1.08rem',
+          padding: isSidebar ? '0.38rem 0.55rem' : '0.45rem 0.75rem',
+          fontSize: isSidebar ? '0.88rem' : '1.08rem',
           fontWeight: 700,
           fontFamily: isKm ? kmFont : 'inherit',
           width: isSidebar ? '100%' : 'auto',
@@ -101,7 +101,7 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
         aria-haspopup="true"
       >
         <Globe
-          size={isSidebar ? 18 : 20}
+          size={isSidebar ? 16 : 20}
           color="var(--accent-primary)"
           className="globe-icon"
           style={{ flexShrink: 0 }}

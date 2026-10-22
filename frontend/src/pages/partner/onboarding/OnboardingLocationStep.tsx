@@ -32,18 +32,18 @@ export const OnboardingLocationStep: React.FC<OnboardingLocationStepProps> = ({
 }) => {
   return (
     <div>
-      <div style={{ marginBottom: '1.35rem' }}>
+      <div style={{ marginBottom: '0.85rem' }}>
         <h2
           style={{
-            fontSize: '1.25rem',
+            fontSize: '1.15rem',
             fontWeight: 700,
             color: 'var(--text-main)',
-            margin: '0 0 0.35rem 0',
+            margin: '0 0 0.2rem 0',
           }}
         >
           {t('onboard_step_3_title')}
         </h2>
-        <p style={{ fontSize: '0.95rem', color: 'var(--text-muted)', margin: 0 }}>
+        <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', margin: 0 }}>
           {t('onboard_step_3_desc')}
         </p>
       </div>
@@ -73,7 +73,7 @@ export const OnboardingLocationStep: React.FC<OnboardingLocationStepProps> = ({
             width: '100%',
             padding: '0.85rem 1.1rem',
             border: `1px solid ${errors.address ? '#dc2626' : 'var(--border-color)'}`,
-            borderRadius: 'var(--radius-md, 8px)',
+            borderRadius: '12px',
             fontSize: '1.05rem',
             color: 'var(--text-main)',
             background: 'var(--bg-primary, #ffffff)',
@@ -121,7 +121,7 @@ export const OnboardingLocationStep: React.FC<OnboardingLocationStepProps> = ({
             width: '100%',
             padding: '0.85rem 1.1rem',
             border: `1px solid ${errors.city ? '#dc2626' : 'var(--border-color)'}`,
-            borderRadius: 'var(--radius-md, 8px)',
+            borderRadius: '12px',
             fontSize: '1.05rem',
             color: 'var(--text-main)',
             background: 'var(--bg-primary, #ffffff)',
@@ -169,7 +169,7 @@ export const OnboardingLocationStep: React.FC<OnboardingLocationStepProps> = ({
             width: '100%',
             padding: '0.85rem 1.1rem',
             border: `1px solid ${errors.map ? '#dc2626' : 'var(--border-color)'}`,
-            borderRadius: 'var(--radius-md, 8px)',
+            borderRadius: '12px',
             fontSize: '0.98rem',
             color: 'var(--text-main)',
             background: 'var(--bg-primary, #ffffff)',
@@ -229,7 +229,7 @@ export const OnboardingLocationStep: React.FC<OnboardingLocationStepProps> = ({
               marginTop: '0.65rem',
               padding: '0.55rem 0.85rem',
               backgroundColor: 'var(--bg-secondary, #f8fafc)',
-              borderRadius: 'var(--radius-md, 8px)',
+              borderRadius: '12px',
               fontSize: '0.86rem',
               color: 'var(--text-muted)',
               display: 'flex',
@@ -251,7 +251,7 @@ export const OnboardingLocationStep: React.FC<OnboardingLocationStepProps> = ({
           <div
             style={{
               border: '1px solid var(--border-color)',
-              borderRadius: 'var(--radius-md, 8px)',
+              borderRadius: '12px',
               overflow: 'hidden',
             }}
           >

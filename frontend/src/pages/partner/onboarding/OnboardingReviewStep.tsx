@@ -39,18 +39,18 @@ export const OnboardingReviewStep: React.FC<OnboardingReviewStepProps> = ({
 }) => {
   return (
     <div>
-      <div style={{ marginBottom: '1.5rem' }}>
+      <div style={{ marginBottom: '0.85rem' }}>
         <h2
           style={{
-            fontSize: '1.25rem',
+            fontSize: '1.15rem',
             fontWeight: 700,
             color: 'var(--text-main)',
-            margin: '0 0 0.35rem 0',
+            margin: '0 0 0.2rem 0',
           }}
         >
           {t('onboard_step_4_title')}
         </h2>
-        <p style={{ fontSize: '0.95rem', color: 'var(--text-muted)', margin: 0 }}>
+        <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', margin: 0 }}>
           {t('onboard_step_4_desc')}
         </p>
       </div>

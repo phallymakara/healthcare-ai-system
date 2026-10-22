@@ -500,8 +500,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  padding: '0.55rem 0.5rem',
-                  fontSize: '0.95rem',
+                  padding: '0.42rem 0.5rem',
+                  fontSize: '0.88rem',
                   background: 'transparent',
                   border: 'none',
                   cursor: 'pointer',
@@ -511,7 +511,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 }}
               >
                 <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Bell size={18} color="var(--accent-primary)" className="sidebar-bell-icon" />
+                  <Bell size={16} color="var(--accent-primary)" className="sidebar-bell-icon" />
                   <span style={{ fontWeight: 500 }}>{t('notifications')}</span>
                 </span>
                 {notifications.length > 0 && (
@@ -521,8 +521,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       background: 'var(--accent-primary)',
                       color: '#fff',
                       borderRadius: '9999px',
-                      padding: '2px 7px',
-                      fontSize: '0.78rem',
+                      padding: '2px 6px',
+                      fontSize: '0.74rem',
                       fontWeight: 700,
                     }}
                   >
@@ -594,19 +594,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
           )}
 
           {/* Language Switcher in Sidebar Footer - Under Notification button, left aligned, no container fill */}
-          <div style={{ width: '100%', marginBottom: '0.65rem' }}>
+          <div style={{ width: '100%', marginBottom: '0.5rem' }}>
             <LanguageSwitcher dropUp={!isMobile} variant="sidebar" style={{ width: '100%' }} />
           </div>
 
           {/* User Profile or Sign In Button - Displays clean user profile without Patient badge */}
           {currentUser ? (
-            <div className="sidebar-user-card" style={{ background: 'transparent', border: 'none', padding: '0.5rem 0', boxShadow: 'none' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+            <div className="sidebar-user-card" style={{ background: 'transparent', border: 'none', padding: '0.35rem 0', boxShadow: 'none' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
                 <div
                   className="sidebar-user-avatar"
                   style={{
-                    width: '34px',
-                    height: '34px',
+                    width: '30px',
+                    height: '30px',
                     borderRadius: '50%',
                     border: '1px solid var(--border-color)',
                     display: 'flex',
@@ -627,11 +627,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       }}
                     />
                   ) : (
-                    <User size={17} />
+                    <User size={15} />
                   )}
                 </div>
                 <div style={{
-                  fontSize: '0.98rem',
+                  fontSize: '0.9rem',
                   fontWeight: 600,
                   color: 'var(--text-main)',
                   whiteSpace: 'nowrap',

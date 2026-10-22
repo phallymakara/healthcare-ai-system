@@ -188,7 +188,7 @@ export const HospitalLocationSection: React.FC<HospitalLocationSectionProps> = (
                 setGoogleMapsUrl(`https://maps.google.com/?q=${e.target.value},${longitude}`);
               }
             }}
-            placeholder="11.5564"
+            placeholder={isKm ? 'រយៈទទឹង' : 'Latitude'}
             style={{
               width: '100%',
               padding: '0.62rem 1.05rem',
@@ -228,7 +228,7 @@ export const HospitalLocationSection: React.FC<HospitalLocationSectionProps> = (
                 setGoogleMapsUrl(`https://maps.google.com/?q=${latitude},${e.target.value}`);
               }
             }}
-            placeholder="104.9282"
+            placeholder={isKm ? 'រយៈបណ្តោយ' : 'Longitude'}
             style={{
               width: '100%',
               padding: '0.62rem 1.05rem',

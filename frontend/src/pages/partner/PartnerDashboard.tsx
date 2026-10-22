@@ -8,6 +8,221 @@ interface PartnerDashboardProps {
   onNavigateToQueue?: (deptId?: string) => void;
 }
 
+interface DonutSegment {
+  value: number;
+  color: string;
+  label: string;
+}
+
+const DonutChart: React.FC<{
+  size?: number;
+  strokeWidth?: number;
+  segments: DonutSegment[];
+  centerValue: string | number;
+  centerLabel: string;
+  kmFont?: string;
+}> = ({ size = 112, strokeWidth = 11, segments, centerValue, centerLabel, kmFont }) => {
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const total = segments.reduce((sum, s) => sum + Math.max(0, s.value), 0);
+
+  let accumulatedPercent = 0;
+
+  return (
+    <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="#e2e8f0"
+          strokeWidth={strokeWidth}
+        />
+        {total > 0 &&
+          segments.map((seg, idx) => {
+            if (seg.value <= 0) return null;
+            const percent = seg.value / total;
+            const strokeDasharray = `${percent * circumference} ${circumference}`;
+            const strokeDashoffset = -accumulatedPercent * circumference;
+            accumulatedPercent += percent;
+
+            return (
+              <circle
+                key={idx}
+                cx={size / 2}
+                cy={size / 2}
+                r={radius}
+                fill="none"
+                stroke={seg.color}
+                strokeWidth={strokeWidth}
+                strokeDasharray={strokeDasharray}
+                strokeDashoffset={strokeDashoffset}
+                strokeLinecap="round"
+                transform={`rotate(-90 ${size / 2} ${size / 2})`}
+                style={{ transition: 'stroke-dasharray 0.35s ease, stroke-dashoffset 0.35s ease' }}
+              />
+            );
+          })}
+      </svg>
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          pointerEvents: 'none',
+          fontFamily: kmFont,
+        }}
+      >
+        <span style={{ fontSize: '1.28rem', fontWeight: 800, color: 'var(--text-main)', lineHeight: 1 }}>
+          {centerValue}
+        </span>
+        <span style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-muted)', marginTop: '2px' }}>
+          {centerLabel}
+        </span>
+      </div>
+    </div>
+  );
+};
+
+const HourlyFlowBarGraph: React.FC<{
+  data?: Array<{ hour: string; count: number }>;
+  kmFont?: string;
+}> = ({ data, kmFont }) => {
+  const points = data && data.length > 0 ? data : [
+    { hour: '08:00', count: 0 },
+    { hour: '10:00', count: 0 },
+    { hour: '12:00', count: 0 },
+    { hour: '14:00', count: 0 },
+    { hour: '16:00', count: 0 },
+    { hour: '18:00', count: 0 },
+  ];
+
+  const maxVal = Math.max(...points.map((p) => p.count), 4);
+  const width = 340;
+  const height = 100;
+  const padLeft = 14;
+  const padRight = 14;
+  const padTop = 18;
+  const padBottom = 22;
+
+  const chartWidth = width - padLeft - padRight;
+  const chartHeight = height - padTop - padBottom;
+  const slotWidth = chartWidth / points.length;
+  const barWidth = Math.min(16, Math.max(9, slotWidth - 6));
+
+  return (
+    <div style={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
+      <svg
+        viewBox={`0 0 ${width} ${height}`}
+        style={{ width: '100%', height: 'auto', maxHeight: '100px', overflow: 'visible' }}
+      >
+        <defs>
+          <linearGradient id="hourlyBarGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#059669" />
+            <stop offset="100%" stopColor="var(--accent-primary, #185339)" />
+          </linearGradient>
+        </defs>
+
+        {/* Subtle horizontal grid lines */}
+        <line
+          x1={padLeft}
+          y1={padTop}
+          x2={width - padRight}
+          y2={padTop}
+          stroke="#f1f5f9"
+          strokeDasharray="3 3"
+          strokeWidth="1"
+        />
+        <line
+          x1={padLeft}
+          y1={padTop + chartHeight / 2}
+          x2={width - padRight}
+          y2={padTop + chartHeight / 2}
+          stroke="#f1f5f9"
+          strokeDasharray="3 3"
+          strokeWidth="1"
+        />
+        {/* Baseline */}
+        <line
+          x1={padLeft}
+          y1={padTop + chartHeight}
+          x2={width - padRight}
+          y2={padTop + chartHeight}
+          stroke="#e2e8f0"
+          strokeWidth="1"
+        />
+
+        {points.map((p, i) => {
+          const slotX = padLeft + i * slotWidth;
+          const barX = slotX + (slotWidth - barWidth) / 2;
+          const barH = p.count > 0 ? Math.max(6, (p.count / maxVal) * chartHeight) : 3;
+          const barY = padTop + chartHeight - barH;
+          const isNonZero = p.count > 0;
+          const showLabel = points.length <= 7 || i % 2 === 0 || i === points.length - 1;
+
+          return (
+            <g key={i}>
+              {/* Bar */}
+              <rect
+                x={barX}
+                y={barY}
+                width={barWidth}
+                height={barH}
+                rx={isNonZero ? 4 : 1.5}
+                ry={isNonZero ? 4 : 1.5}
+                fill={isNonZero ? 'url(#hourlyBarGrad)' : '#e2e8f0'}
+                style={{
+                  transition: 'height 0.3s ease, y 0.3s ease',
+                  cursor: isNonZero ? 'pointer' : 'default',
+                }}
+              >
+                <title>{`${p.hour}: ${p.count} ${p.count === 1 ? 'patient' : 'patients'}`}</title>
+              </rect>
+
+              {/* Number tag above bar if count > 0 */}
+              {isNonZero && (
+                <text
+                  x={barX + barWidth / 2}
+                  y={barY - 4}
+                  textAnchor="middle"
+                  fontSize="8.5"
+                  fontWeight="700"
+                  fill="var(--accent-primary, #185339)"
+                  fontFamily={kmFont}
+                >
+                  {p.count}
+                </text>
+              )}
+
+              {/* X-axis Hour Label */}
+              {showLabel && (
+                <text
+                  x={slotX + slotWidth / 2}
+                  y={height - 5}
+                  textAnchor="middle"
+                  fontSize="8"
+                  fontWeight="500"
+                  fill="var(--text-muted)"
+                  fontFamily={kmFont}
+                >
+                  {p.hour}
+                </text>
+              )}
+            </g>
+          );
+        })}
+      </svg>
+    </div>
+  );
+};
+
 export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateToQueue: _onNavigateToQueue }) => {
   const { language, t } = useLanguage();
   const isKm = language === 'km';
@@ -137,429 +352,295 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onNavigateTo
             const totalServices = metrics?.total_services ?? 0;
 
             return (
-              <>
-                {/* 1. Facility Capacity & Resources Overview (3 Separate Rounded Cards) */}
+              <div
+                className="partner-analytics-panel"
+                style={{
+                  background: '#ffffff',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '16px',
+                  padding: '1.35rem 1.5rem',
+                  marginBottom: '1.5rem',
+                  boxShadow: 'none',
+                }}
+              >
+                {/* Top: Header & Resources Row */}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: '1rem',
+                    paddingBottom: '1.15rem',
+                    borderBottom: '1px solid var(--border-color)',
+                  }}
+                >
+                  {/* Title */}
+                  <div>
+                    <h2
+                      style={{
+                        fontSize: '1.05rem',
+                        fontWeight: 700,
+                        color: 'var(--text-main)',
+                        margin: 0,
+                        lineHeight: 1.25,
+                        fontFamily: kmFont,
+                      }}
+                    >
+                      {isKm ? 'ការវិភាគប្រតិបត្តិការ' : 'Operations Analytics'}
+                    </h2>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontFamily: kmFont }}>
+                      {isKm ? 'ទិន្នន័យជាក់ស្តែងពេលនេះ' : 'Live Real-time Operations'}
+                    </span>
+                  </div>
+
+                  {/* Capacity & Resources Badges */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.65rem',
+                      flexWrap: 'wrap',
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.45rem',
+                        padding: '0.3rem 0.75rem',
+                        background: 'var(--bg-secondary, #f8fafc)',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: '8px',
+                      }}
+                    >
+                      <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontFamily: kmFont }}>
+                        {t('pd_total_departments')}:
+                      </span>
+                      <strong style={{ fontSize: '0.95rem', color: 'var(--text-main)' }}>
+                        {totalDepts}
+                      </strong>
+                    </div>
+
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.45rem',
+                        padding: '0.3rem 0.75rem',
+                        background: 'var(--bg-secondary, #f8fafc)',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: '8px',
+                      }}
+                    >
+                      <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontFamily: kmFont }}>
+                        {t('pd_total_staff')}:
+                      </span>
+                      <strong style={{ fontSize: '0.95rem', color: 'var(--text-main)' }}>
+                        {totalStaff}
+                      </strong>
+                    </div>
+
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.45rem',
+                        padding: '0.3rem 0.75rem',
+                        background: 'var(--bg-secondary, #f8fafc)',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: '8px',
+                      }}
+                    >
+                      <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontFamily: kmFont }}>
+                        {t('pd_total_services')}:
+                      </span>
+                      <strong style={{ fontSize: '0.95rem', color: 'var(--text-main)' }}>
+                        {totalServices}
+                      </strong>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Analytics Grid: 3 Modern Segmented Cards */}
                 <div
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-                    gap: '0.75rem',
-                    marginBottom: '0.85rem',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                    gap: '1rem',
+                    paddingTop: '1.25rem',
                   }}
                 >
-                  {/* Container 1: Departments */}
+                  {/* Module 1: Donut Chart - ស្ថានភាពជួរផ្ទាល់ (Live Floor Activity) */}
                   <div
-                    className="kpi-stat-card"
                     style={{
-                      background: '#ffffff',
+                      background: 'var(--bg-secondary, #f8fafc)',
                       border: '1px solid var(--border-color)',
-                      borderRadius: '16px',
-                      padding: '1.25rem 1.5rem',
-                      boxShadow: 'none',
+                      borderRadius: '12px',
+                      padding: '1.15rem 1.25rem',
+                      display: 'flex',
+                      flexDirection: 'column',
                     }}
                   >
-                    <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)', fontWeight: 500, fontFamily: kmFont, marginBottom: '0.35rem' }}>
-                      {t('pd_total_departments')}
+                    <div style={{ marginBottom: '0.85rem' }}>
+                      <span style={{ fontSize: '0.92rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: kmFont, display: 'block' }}>
+                        {t('pd_live_floor_activity')}
+                      </span>
+                      <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontFamily: kmFont }}>
+                        {isKm ? 'អ្នកជំងឺកំពុងស្ថិតក្នុងគ្លីនិកជាក់ស្តែង' : 'Active patients on clinic floor'}
+                      </span>
                     </div>
-                    <div style={{ fontSize: '1.65rem', fontWeight: 800, color: 'var(--text-main)', lineHeight: 1.15 }}>
-                      {totalDepts}
-                    </div>
-                  </div>
 
-                  {/* Container 2: Staff & Doctors */}
-                  <div
-                    className="kpi-stat-card"
-                    style={{
-                      background: '#ffffff',
-                      border: '1px solid var(--border-color)',
-                      borderRadius: '16px',
-                      padding: '1.25rem 1.5rem',
-                      boxShadow: 'none',
-                    }}
-                  >
-                    <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)', fontWeight: 500, fontFamily: kmFont, marginBottom: '0.35rem' }}>
-                      {t('pd_total_staff')}
-                    </div>
-                    <div style={{ fontSize: '1.65rem', fontWeight: 800, color: 'var(--text-main)', lineHeight: 1.15 }}>
-                      {totalStaff}
-                    </div>
-                  </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.15rem', flex: 1 }}>
+                      <DonutChart
+                        size={100}
+                        strokeWidth={11}
+                        segments={[
+                          { value: servingCount, color: '#059669', label: t('pd_currently_serving') },
+                          { value: waitingCount, color: '#d97706', label: t('pd_currently_waiting') },
+                        ]}
+                        centerValue={activePatients}
+                        centerLabel={isKm ? 'សកម្ម' : 'Active'}
+                        kmFont={kmFont}
+                      />
 
-                  {/* Container 3: Medical Services */}
-                  <div
-                    className="kpi-stat-card"
-                    style={{
-                      background: '#ffffff',
-                      border: '1px solid var(--border-color)',
-                      borderRadius: '16px',
-                      padding: '1.25rem 1.5rem',
-                      boxShadow: 'none',
-                    }}
-                  >
-                    <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)', fontWeight: 500, fontFamily: kmFont, marginBottom: '0.35rem' }}>
-                      {t('pd_total_services')}
-                    </div>
-                    <div style={{ fontSize: '1.65rem', fontWeight: 800, color: 'var(--text-main)', lineHeight: 1.15 }}>
-                      {totalServices}
-                    </div>
-                  </div>
-                </div>
-
-                {/* 2. Operational Compound Metric Cards: 3 Columns on Desktop (Queue, Intake, Resolution) */}
-                <div className="dashboard-metrics-tri-grid">
-                  {/* Column 1: Live Floor Queue Activity (1 Main Card + 2 Stacked Sub Cards) */}
-                  <div className="live-floor-compound-container">
-                    <div className="live-floor-compound-grid">
-                      {/* MAIN CARD (Left): Live Floor Activity Status */}
-                      <div className="dashboard-card live-floor-main-card">
-                        {/* Ambient background accent */}
-                        <div
-                          style={{
-                            position: 'absolute',
-                            top: 0,
-                            right: 0,
-                            width: '240px',
-                            height: '240px',
-                            background: 'radial-gradient(circle, rgba(24, 83, 57, 0.06) 0%, transparent 70%)',
-                            pointerEvents: 'none',
-                          }}
-                        />
-
-                        {/* Header (No Badge, No Icon) */}
-                        <div>
-                          <div style={{ marginBottom: '0.45rem' }}>
-                            <span
-                              className="text-truncate"
-                              style={{
-                                fontSize: '0.92rem',
-                                fontWeight: 400,
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.02em',
-                                fontFamily: kmFont,
-                                color: 'var(--text-main)',
-                                display: 'block',
-                              }}
-                            >
-                              {t('pd_live_floor_activity')}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem', flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', minWidth: 0 }}>
+                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#059669', flexShrink: 0 }} />
+                            <span style={{ fontSize: '0.84rem', color: 'var(--text-main)', fontFamily: kmFont, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {t('pd_currently_serving')}
                             </span>
                           </div>
-
-                          {/* Hero Metric: Active in Clinic */}
-                          <div style={{ margin: '0.15rem 0 0 0' }}>
-                            <div
-                              style={{
-                                fontSize: 'clamp(1.65rem, 2vw, 2rem)',
-                                fontWeight: 800,
-                                color: '#0c2f27',
-                                lineHeight: 1.1,
-                                letterSpacing: '-0.03em',
-                              }}
-                            >
-                              {activePatients}
-                            </div>
-                          </div>
-                        </div>
-
-                      </div>
-
-                      {/* SUB CARDS COLUMN (Right): Serving & In Line */}
-                      <div className="live-floor-sub-column">
-                        {/* SUB CARD 1: Serving Now */}
-                        <div className="dashboard-card live-floor-sub-card">
-                          <div
-                            className="text-truncate"
-                            style={{
-                              fontSize: '0.82rem',
-                              fontWeight: 600,
-                              color: 'var(--text-muted)',
-                              fontFamily: kmFont,
-                              lineHeight: 1.25,
-                              width: '100%',
-                            }}
-                            title={t('pd_currently_serving')}
-                          >
-                            {t('pd_currently_serving')}
-                          </div>
-                          <div
-                            style={{
-                              fontSize: '1.5rem',
-                              fontWeight: 800,
-                              color: '#059669',
-                              lineHeight: 1,
-                              marginTop: '0.3rem',
-                            }}
-                          >
+                          <span style={{ fontSize: '0.95rem', fontWeight: 700, color: '#059669', marginLeft: '0.5rem' }}>
                             {servingCount}
-                          </div>
+                          </span>
                         </div>
 
-                        {/* SUB CARD 2: In Queue */}
-                        <div className="dashboard-card live-floor-sub-card">
-                          <div
-                            className="text-truncate"
-                            style={{
-                              fontSize: '0.82rem',
-                              fontWeight: 600,
-                              color: 'var(--text-muted)',
-                              fontFamily: kmFont,
-                              lineHeight: 1.25,
-                              width: '100%',
-                            }}
-                            title={t('pd_currently_waiting')}
-                          >
-                            {t('pd_currently_waiting')}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', minWidth: 0 }}>
+                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#d97706', flexShrink: 0 }} />
+                            <span style={{ fontSize: '0.84rem', color: 'var(--text-main)', fontFamily: kmFont, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {t('pd_currently_waiting')}
+                            </span>
                           </div>
-                          <div
-                            style={{
-                              fontSize: '1.5rem',
-                              fontWeight: 800,
-                              color: '#d97706',
-                              lineHeight: 1,
-                              marginTop: '0.3rem',
-                            }}
-                          >
+                          <span style={{ fontSize: '0.95rem', fontWeight: 700, color: '#d97706', marginLeft: '0.5rem' }}>
                             {waitingCount}
-                          </div>
+                          </span>
+                        </div>
+
+                        <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', fontFamily: kmFont, borderTop: '1px solid var(--border-color)', paddingTop: '0.45rem', marginTop: '0.15rem' }}>
+                          {activePatients > 0
+                            ? `${Math.round((servingCount / activePatients) * 100)}% ${isKm ? 'កំពុងទទួលការពិគ្រោះ' : 'in consultation'}`
+                            : (isKm ? 'គ្មានអ្នករង់ចាំ' : 'No active queue')}
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Column 2: Today's Patient Intake & Channels (1 Main Card + 2 Stacked Sub Cards) */}
-                  <div className="live-floor-compound-container">
-                    <div className="live-floor-compound-grid">
-                      {/* MAIN CARD (Left): Today's Total Visits */}
-                      <div className="dashboard-card live-floor-main-card">
-                        {/* Ambient background accent */}
-                        <div
-                          style={{
-                            position: 'absolute',
-                            top: 0,
-                            right: 0,
-                            width: '240px',
-                            height: '240px',
-                            background: 'radial-gradient(circle, rgba(15, 23, 42, 0.04) 0%, transparent 70%)',
-                            pointerEvents: 'none',
-                          }}
-                        />
-
-                        <div>
-                          <div style={{ marginBottom: '0.45rem' }}>
-                            <span
-                              className="text-truncate"
-                              style={{
-                                fontSize: '0.92rem',
-                                fontWeight: 400,
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.02em',
-                                fontFamily: kmFont,
-                                color: 'var(--text-main)',
-                                display: 'block',
-                              }}
-                            >
-                              {t('pd_total_visits')}
-                            </span>
-                          </div>
-
-                          {/* Hero Metric: Total Visits Today */}
-                          <div style={{ margin: '0.15rem 0 0 0' }}>
-                            <div
-                              style={{
-                                fontSize: 'clamp(1.65rem, 2vw, 2rem)',
-                                fontWeight: 800,
-                                color: 'var(--text-main)',
-                                lineHeight: 1.1,
-                                letterSpacing: '-0.03em',
-                              }}
-                            >
-                              {totalTickets}
-                            </div>
-                          </div>
-                        </div>
-
-                      </div>
-
-                      {/* SUB CARDS COLUMN (Right): Online Bookings & Walk-in Arrivals */}
-                      <div className="live-floor-sub-column">
-                        {/* SUB CARD 1: Online Bookings */}
-                        <div className="dashboard-card live-floor-sub-card">
-                          <div
-                            className="text-truncate"
-                            style={{
-                              fontSize: '0.82rem',
-                              fontWeight: 600,
-                              color: 'var(--text-muted)',
-                              fontFamily: kmFont,
-                              lineHeight: 1.25,
-                              width: '100%',
-                            }}
-                            title={t('pd_online_bookings')}
-                          >
-                            {t('pd_online_bookings')}
-                          </div>
-                          <div
-                            style={{
-                              fontSize: '1.5rem',
-                              fontWeight: 800,
-                              color: 'var(--text-main)',
-                              lineHeight: 1,
-                              marginTop: '0.3rem',
-                            }}
-                          >
-                            {onlineTickets}
-                          </div>
-                        </div>
-
-                        {/* SUB CARD 2: Walk-in Arrivals */}
-                        <div className="dashboard-card live-floor-sub-card">
-                          <div
-                            className="text-truncate"
-                            style={{
-                              fontSize: '0.82rem',
-                              fontWeight: 600,
-                              color: 'var(--text-muted)',
-                              fontFamily: kmFont,
-                              lineHeight: 1.25,
-                              width: '100%',
-                            }}
-                            title={t('pd_walkin_arrivals')}
-                          >
-                            {t('pd_walkin_arrivals')}
-                          </div>
-                          <div
-                            style={{
-                              fontSize: '1.5rem',
-                              fontWeight: 800,
-                              color: 'var(--accent-primary, #0284c7)',
-                              lineHeight: 1,
-                              marginTop: '0.3rem',
-                            }}
-                          >
-                            {walkinTickets}
-                          </div>
-                        </div>
-                      </div>
+                  {/* Module 2: Donut Chart - ប្រសិទ្ធភាព និងអត្រាបញ្ចប់ (Resolution & Clearance) */}
+                  <div
+                    style={{
+                      background: 'var(--bg-secondary, #f8fafc)',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: '12px',
+                      padding: '1.15rem 1.25rem',
+                      display: 'flex',
+                      flexDirection: 'column',
+                    }}
+                  >
+                    <div style={{ marginBottom: '0.85rem' }}>
+                      <span style={{ fontSize: '0.92rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: kmFont, display: 'block' }}>
+                        {t('pd_clearance_rate')}
+                      </span>
+                      <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontFamily: kmFont }}>
+                        {isKm ? 'អត្រាសម្រេចការពិគ្រោះថ្ងៃនេះ' : 'Daily consultation resolution efficiency'}
+                      </span>
                     </div>
-                  </div>
 
-                  {/* Column 3: Resolution & Operational Efficiency (1 Main Card + 2 Stacked Sub Cards) */}
-                  <div className="live-floor-compound-container">
-                    <div className="live-floor-compound-grid">
-                      {/* MAIN CARD (Left): Clearance Rate */}
-                      <div className="dashboard-card live-floor-main-card">
-                        {/* Ambient background accent */}
-                        <div
-                          style={{
-                            position: 'absolute',
-                            top: 0,
-                            right: 0,
-                            width: '240px',
-                            height: '240px',
-                            background: 'radial-gradient(circle, rgba(5, 150, 105, 0.06) 0%, transparent 70%)',
-                            pointerEvents: 'none',
-                          }}
-                        />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.15rem', flex: 1 }}>
+                      <DonutChart
+                        size={100}
+                        strokeWidth={11}
+                        segments={[
+                          { value: completedCount, color: '#059669', label: t('pd_completed_consultations') },
+                          { value: skippedCount, color: '#94a3b8', label: t('pd_skipped_no_shows') },
+                        ]}
+                        centerValue={`${clearanceRate}%`}
+                        centerLabel={isKm ? 'អត្រាសម្រេច' : 'Resolved'}
+                        kmFont={kmFont}
+                      />
 
-                        <div>
-                          <div style={{ marginBottom: '0.45rem' }}>
-                            <span
-                              className="text-truncate"
-                              style={{
-                                fontSize: '0.92rem',
-                                fontWeight: 400,
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.02em',
-                                fontFamily: kmFont,
-                                color: 'var(--text-main)',
-                                display: 'block',
-                              }}
-                            >
-                              {t('pd_clearance_rate')}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem', flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', minWidth: 0 }}>
+                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#059669', flexShrink: 0 }} />
+                            <span style={{ fontSize: '0.84rem', color: 'var(--text-main)', fontFamily: kmFont, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {t('pd_completed_consultations')}
                             </span>
                           </div>
-
-                          {/* Hero Metric: Clearance Rate */}
-                          <div style={{ margin: '0.15rem 0 0 0' }}>
-                            <div
-                              style={{
-                                fontSize: 'clamp(1.65rem, 2vw, 2rem)',
-                                fontWeight: 800,
-                                color: 'var(--accent-emerald, #059669)',
-                                lineHeight: 1.1,
-                                letterSpacing: '-0.03em',
-                              }}
-                            >
-                              {clearanceRate}%
-                            </div>
-                          </div>
-                        </div>
-
-                      </div>
-
-                      {/* SUB CARDS COLUMN (Right): Completed Consultations & Skipped / No-Shows */}
-                      <div className="live-floor-sub-column">
-                        {/* SUB CARD 1: Completed Consultations */}
-                        <div className="dashboard-card live-floor-sub-card">
-                          <div
-                            className="text-truncate"
-                            style={{
-                              fontSize: '0.82rem',
-                              fontWeight: 600,
-                              color: 'var(--text-muted)',
-                              fontFamily: kmFont,
-                              lineHeight: 1.25,
-                              width: '100%',
-                            }}
-                            title={t('pd_completed_consultations')}
-                          >
-                            {t('pd_completed_consultations')}
-                          </div>
-                          <div
-                            style={{
-                              fontSize: '1.5rem',
-                              fontWeight: 800,
-                              color: 'var(--accent-emerald, #059669)',
-                              lineHeight: 1,
-                              marginTop: '0.3rem',
-                            }}
-                          >
+                          <span style={{ fontSize: '0.95rem', fontWeight: 700, color: '#059669', marginLeft: '0.5rem' }}>
                             {completedCount}
-                          </div>
+                          </span>
                         </div>
 
-                        {/* SUB CARD 2: Skipped / No-Shows */}
-                        <div className="dashboard-card live-floor-sub-card">
-                          <div
-                            className="text-truncate"
-                            style={{
-                              fontSize: '0.82rem',
-                              fontWeight: 600,
-                              color: 'var(--text-muted)',
-                              fontFamily: kmFont,
-                              lineHeight: 1.25,
-                              width: '100%',
-                            }}
-                            title={t('pd_skipped_no_shows')}
-                          >
-                            {t('pd_skipped_no_shows')}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', minWidth: 0 }}>
+                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#94a3b8', flexShrink: 0 }} />
+                            <span style={{ fontSize: '0.84rem', color: 'var(--text-main)', fontFamily: kmFont, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {t('pd_skipped_no_shows')}
+                            </span>
                           </div>
-                          <div
-                            style={{
-                              fontSize: '1.5rem',
-                              fontWeight: 800,
-                              color: 'var(--text-main)',
-                              lineHeight: 1,
-                              marginTop: '0.3rem',
-                            }}
-                          >
+                          <span style={{ fontSize: '0.95rem', fontWeight: 700, color: '#94a3b8', marginLeft: '0.5rem' }}>
                             {skippedCount}
-                          </div>
+                          </span>
+                        </div>
+
+                        <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', fontFamily: kmFont, borderTop: '1px solid var(--border-color)', paddingTop: '0.45rem', marginTop: '0.15rem' }}>
+                          {totalTickets > 0
+                            ? `${completedCount} ${isKm ? 'នាក់បានបញ្ចប់' : 'completed'} / ${totalTickets} ${isKm ? 'សរុប' : 'total'}`
+                            : (isKm ? 'រង់ចាំការចាប់ផ្តើម' : 'Awaiting start')}
                         </div>
                       </div>
                     </div>
+                  </div>
+
+                  {/* Module 3: Graph Chart - លំហូរអ្នកជំងឺតាមម៉ោង និងបណ្តាញមកដល់ (Hourly Inflow & Channels) */}
+                  <div
+                    style={{
+                      background: 'var(--bg-secondary, #f8fafc)',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: '12px',
+                      padding: '1.15rem 1.25rem',
+                      display: 'flex',
+                      flexDirection: 'column',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.65rem' }}>
+                      <div>
+                        <span style={{ fontSize: '0.92rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: kmFont, display: 'block' }}>
+                          {t('pd_hourly_flow')}
+                        </span>
+                        <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontFamily: kmFont }}>
+                          {t('pd_total_visits')}: <strong style={{ color: 'var(--text-main)' }}>{totalTickets}</strong>
+                        </span>
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '0.45rem' }}>
+                        <span style={{ fontSize: '0.74rem', padding: '2px 8px', borderRadius: '12px', background: '#ffffff', border: '1px solid var(--border-color)', color: 'var(--accent-primary)', fontWeight: 600, fontFamily: kmFont }}>
+                          {t('pd_online_bookings')}: {onlineTickets}
+                        </span>
+                        <span style={{ fontSize: '0.74rem', padding: '2px 8px', borderRadius: '12px', background: '#ffffff', border: '1px solid var(--border-color)', color: '#0284c7', fontWeight: 600, fontFamily: kmFont }}>
+                          {t('pd_walkin_arrivals')}: {walkinTickets}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* SVG Flow Bar Graph */}
+                    <HourlyFlowBarGraph data={metrics?.hourly_flow} kmFont={kmFont} />
                   </div>
                 </div>
-              </>
+              </div>
             );
           })()}
 

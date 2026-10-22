@@ -29,17 +29,15 @@ export const HeroSection: React.FC<HeroSectionProps> = () => {
         marginBottom: 0,
       }}
     >
-      {/* Background Hero Picture with ~8% Blur */}
+      {/* Background Hero Picture */}
       <div
         style={{
           position: 'absolute',
-          inset: '-8px',
+          inset: 0,
           backgroundImage: `url(${heroLandscapeBg})`,
           backgroundPosition: 'center bottom',
           backgroundSize: 'cover',
           backgroundRepeat: 'no-repeat',
-          filter: 'blur(3px)',
-          transform: 'scale(1.03)',
           pointerEvents: 'none',
           zIndex: 1,
         }}

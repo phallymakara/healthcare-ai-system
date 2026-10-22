@@ -186,7 +186,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
                 height: '52px', 
                 width: 'auto', 
                 objectFit: 'contain',
-                filter: 'drop-shadow(0 3px 8px rgba(24, 83, 57, 0.16))',
                 display: 'block',
                 margin: '0 auto',
               }} 

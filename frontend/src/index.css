@@ -24,9 +24,9 @@
   --accent-rose: #e11d48;
   --error-color: #dc2626;
 
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 10px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
   --radius-full: 9999px;
 
   /* Smooth Animation & Motion System */
@@ -53,8 +53,18 @@ html {
   font-family: var(--font-main);
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: auto;
+  -moz-osx-font-smoothing: auto;
+}
+
+body {
+  font-family: var(--font-main);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: auto;
+  -moz-osx-font-smoothing: auto;
+  color: var(--text-main);
+  background: var(--bg-primary);
 }
 
 /* Remove default number input up/down stepper/spin buttons */
@@ -150,12 +160,12 @@ textarea {
 }
 
 .sidebar-container {
-  width: 275px;
+  width: 260px;
   flex-shrink: 0;
   position: sticky;
   top: 0;
   height: 100vh;
-  background: #ffffff;
+  background: #f6faf6;
   border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
@@ -165,25 +175,26 @@ textarea {
 }
 
 .sidebar-header {
-  padding: 1.35rem 1.25rem 1.15rem 1.25rem;
+  padding: 1rem 1rem 0.85rem 1rem;
   border-bottom: 1px solid var(--border-color);
+  background: #f6faf6;
 }
 
 .sidebar-nav {
-  padding: 0.85rem 0.75rem;
+  padding: 0.55rem 0.6rem;
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.2rem;
   flex: 1;
 }
 
 .sidebar-section-label {
-  font-size: 0.82rem;
+  font-size: 0.74rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--text-dim);
   font-weight: 700;
-  margin: 1rem 0 0.45rem 0.5rem;
+  margin: 0.65rem 0 0.35rem 0.5rem;
 }
 
 /* Sidebar Navigation Micro-Animations */
@@ -202,13 +213,13 @@ textarea {
 .sidebar-nav-item {
   display: flex;
   align-items: center;
-  gap: 0.85rem;
-  padding: 0.7rem 1.15rem;
+  gap: 0.65rem;
+  padding: 0.48rem 0.82rem;
   border-radius: var(--radius-full);
   border: none;
   background: transparent;
   color: var(--text-muted);
-  font-size: 1.02rem;
+  font-size: 0.91rem;
   font-weight: 500;
   cursor: pointer;
   text-align: left;
@@ -222,22 +233,24 @@ textarea {
 }
 
 .sidebar-nav-item svg {
+  width: 17px;
+  height: 17px;
   transition: transform var(--transition-base), color var(--transition-base);
   flex-shrink: 0;
 }
 
 .sidebar-nav-item:hover:not(.active) {
-  background: rgba(24, 83, 57, 0.06);
+  background: rgba(24, 83, 57, 0.07);
   color: var(--text-main);
-  transform: translateX(4px);
+  transform: translateX(3px);
 }
 
 .sidebar-nav-item:hover:not(.active) svg {
-  transform: scale(1.1);
+  transform: scale(1.08);
 }
 
 .sidebar-nav-item:active {
-  transform: scale(0.98) translateX(2px);
+  transform: scale(0.98) translateX(1px);
 }
 
 .sidebar-nav-item.active {
@@ -253,7 +266,7 @@ textarea {
 .sidebar-nav-item.active svg {
   color: #ffffff !important;
   stroke: #ffffff !important;
-  transform: scale(1.04);
+  transform: scale(1.02);
 }
 
 /* Sidebar Brand Header Hover Micro-Animation */
@@ -340,9 +353,9 @@ textarea {
 
 .sidebar-footer {
   margin-top: auto;
-  padding: 1rem;
+  padding: 0.75rem 0.85rem;
   border-top: 1px solid var(--border-color);
-  background: #ffffff;
+  background: #f6faf6;
 }
 
 /* Sidebar User Profile Card & Logout Micro-Animations */
@@ -520,9 +533,7 @@ textarea {
     display: block;
     position: fixed;
     inset: 0;
-    background: rgba(12, 47, 39, 0.4);
-    backdrop-filter: blur(3px);
-    -webkit-backdrop-filter: blur(3px);
+    background: rgba(12, 47, 39, 0.45);
     z-index: 90;
     animation: sidebarBackdropFade var(--transition-base) both;
   }
@@ -681,7 +692,6 @@ textarea {
   background-color: #f6faf6;
   border-bottom: none;
   margin-bottom: 0;
-  backdrop-filter: blur(10px);
   overflow: visible;
   padding-top: env(safe-area-inset-top, 0px);
 }
@@ -1286,9 +1296,7 @@ button:not(.brand-logo):not(.nav-brand-btn):not(.btn-text-only):not(.hospital-fa
 .responsive-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(12, 47, 39, 0.58);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(12, 47, 39, 0.65);
   z-index: 99999;
   display: flex;
   align-items: center;
@@ -1310,8 +1318,7 @@ button:not(.brand-logo):not(.nav-brand-btn):not(.btn-text-only):not(.hospital-fa
   overflow: hidden;
   box-shadow: none;
   position: relative;
-  animation: modalPopupScaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
-  will-change: transform, opacity;
+  animation: modalPopupScaleUp 0.24s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @keyframes modalOverlayFadeIn {
@@ -1327,12 +1334,12 @@ button:not(.brand-logo):not(.nav-brand-btn):not(.btn-text-only):not(.hospital-fa
 @keyframes modalPopupScaleUp {
   0% {
     opacity: 0;
-    transform: scale(0.92) translateY(16px);
+    transform: translateY(12px);
   }
 
   100% {
     opacity: 1;
-    transform: scale(1) translateY(0);
+    transform: translateY(0);
   }
 }
 
@@ -1349,12 +1356,12 @@ button:not(.brand-logo):not(.nav-brand-btn):not(.btn-text-only):not(.hospital-fa
 @keyframes modalPopupScaleDown {
   0% {
     opacity: 1;
-    transform: scale(1) translateY(0);
+    transform: translateY(0);
   }
 
   100% {
     opacity: 0;
-    transform: scale(0.92) translateY(14px);
+    transform: translateY(12px);
   }
 }
 
@@ -1802,177 +1809,23 @@ select:focus:not(:disabled) {
 }
 
 /* ==========================================================================
-   DASHBOARD METRICS 3-COLUMN COMPOUND GRID & STATIC CARDS (NO ANIMATIONS)
+   PARTNER DASHBOARD OPERATIONS ANALYTICS PANEL
    ========================================================================== */
-.dashboard-metrics-tri-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.75rem;
-  margin-bottom: 1.25rem;
-  align-items: stretch;
-}
-
-.live-floor-compound-container {
-  container-type: inline-size;
-  height: 100%;
-}
-
-.live-floor-compound-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 240px) 130px;
-  gap: 0.45rem;
-  height: 100%;
-  align-items: stretch;
-  max-width: 385px;
-}
-
-.live-floor-sub-column {
-  display: grid;
-  grid-template-rows: 1fr 1fr;
-  gap: 0.35rem;
-  height: 100%;
-  width: 130px;
-}
-
-.live-floor-main-card {
+.partner-analytics-panel {
   background: #ffffff;
   border: 1px solid var(--border-color);
   border-radius: 16px;
-  padding: 0.95rem 1.15rem 1rem 1.15rem;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  box-shadow: 0 2px 8px rgba(12, 47, 39, 0.03);
-  position: relative;
-  overflow: hidden;
+  padding: 1.35rem 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: none !important;
   transition: none !important;
   transform: none !important;
-  max-width: 240px;
-  min-width: 0;
 }
 
-.live-floor-sub-card {
-  background: #ffffff;
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 0.75rem 0.85rem;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: flex-start;
-  text-align: start;
-  box-shadow: 0 1px 3px rgba(12, 47, 39, 0.02);
-  transition: none !important;
-  transform: none !important;
-  min-width: 0;
-  overflow: hidden;
-}
-
-/* Container query: If a column is compact (<320px), stack sub-cards below main card */
-@container (max-width: 320px) {
-  .live-floor-compound-grid {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto;
-    max-width: 100%;
+@media (max-width: 768px) {
+  .partner-analytics-panel {
+    padding: 1.15rem 1rem;
   }
-
-  .live-floor-main-card {
-    max-width: 100%;
-  }
-
-  .live-floor-sub-column {
-    width: 100%;
-    grid-template-rows: auto;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.35rem;
-  }
-}
-
-/* Tablet Breakpoint for Tri-Grid */
-@media (max-width: 1024px) {
-  .dashboard-metrics-tri-grid {
-    grid-template-columns: 1fr;
-    gap: 0.75rem;
-  }
-
-  .live-floor-compound-grid {
-    grid-template-columns: minmax(0, 260px) 135px;
-    max-width: 410px;
-    gap: 0.5rem;
-  }
-
-  .live-floor-main-card {
-    max-width: 260px;
-  }
-
-  .live-floor-sub-column {
-    width: 135px;
-    gap: 0.35rem;
-  }
-}
-
-/* Mobile Breakpoint */
-@media (max-width: 640px) {
-  .live-floor-compound-grid {
-    grid-template-columns: 1fr;
-    max-width: 100%;
-    gap: 0.5rem;
-  }
-
-  .live-floor-main-card {
-    max-width: 100%;
-    padding: 1rem;
-  }
-
-  .live-floor-sub-column {
-    width: 100%;
-    grid-template-rows: auto;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.35rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .live-floor-sub-column {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .live-floor-main-card {
-    padding: 0.95rem;
-  }
-
-  .live-floor-sub-card {
-    padding: 0.45rem 0.5rem;
-  }
-}
-
-/* Strictly Disable All Card Hover Animations on Dashboard Page */
-.partner-dashboard-container .dashboard-card,
-.partner-dashboard-container .kpi-stat-card,
-.partner-dashboard-container .live-floor-main-card,
-.partner-dashboard-container .live-floor-sub-card {
-  transition: none !important;
-  transform: none !important;
-  will-change: auto !important;
-}
-
-.partner-dashboard-container .dashboard-card:hover,
-.partner-dashboard-container .kpi-stat-card:hover,
-.partner-dashboard-container .live-floor-main-card:hover,
-.partner-dashboard-container .live-floor-sub-card:hover {
-  transform: none !important;
-  box-shadow: 0 2px 10px rgba(12, 47, 39, 0.03) !important;
-  border-color: var(--border-color) !important;
-}
-
-.partner-dashboard-container .kpi-stat-card svg,
-.partner-dashboard-container .kpi-stat-card:hover svg,
-.partner-dashboard-container .live-floor-main-card svg,
-.partner-dashboard-container .live-floor-main-card:hover svg,
-.partner-dashboard-container .live-floor-sub-card svg,
-.partner-dashboard-container .live-floor-sub-card:hover svg {
-  transform: none !important;
-  transition: none !important;
 }
 
 /* Flat Human-Friendly Error Text (No containers, no filled backgrounds, no shadows) */
@@ -1992,7 +1845,7 @@ textarea {
   background: #ffffff;
   color: var(--text-main);
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   transition: border-color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
     box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1),
     background-color 0.2s ease,

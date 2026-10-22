@@ -29,18 +29,18 @@ export const OnboardingContactStep: React.FC<OnboardingContactStepProps> = ({
 }) => {
   return (
     <div>
-      <div style={{ marginBottom: '1.35rem' }}>
+      <div style={{ marginBottom: '0.85rem' }}>
         <h2
           style={{
-            fontSize: '1.25rem',
+            fontSize: '1.15rem',
             fontWeight: 700,
             color: 'var(--text-main)',
-            margin: '0 0 0.35rem 0',
+            margin: '0 0 0.2rem 0',
           }}
         >
           {t('onboard_step_2_title')}
         </h2>
-        <p style={{ fontSize: '0.95rem', color: 'var(--text-muted)', margin: 0 }}>
+        <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', margin: 0 }}>
           {t('onboard_step_2_desc')}
         </p>
       </div>
@@ -73,12 +73,12 @@ export const OnboardingContactStep: React.FC<OnboardingContactStepProps> = ({
               setHospitalPhone(e.target.value);
               if (errors.hospitalPhone) setErrors((p) => ({ ...p, hospitalPhone: '' }));
             }}
-            placeholder="023 888 999"
+            placeholder={t('facility_phone_placeholder')}
             style={{
               width: '100%',
               padding: '0.85rem 1.1rem',
               border: `1px solid ${errors.hospitalPhone ? '#dc2626' : 'var(--border-color)'}`,
-              borderRadius: 'var(--radius-md, 8px)',
+              borderRadius: '12px',
               fontSize: '1.05rem',
               color: 'var(--text-main)',
               background: 'var(--bg-primary, #ffffff)',
@@ -120,12 +120,12 @@ export const OnboardingContactStep: React.FC<OnboardingContactStepProps> = ({
               setHospitalEmail(e.target.value);
               if (errors.hospitalEmail) setErrors((p) => ({ ...p, hospitalEmail: '' }));
             }}
-            placeholder="info@hospital.kh"
+            placeholder={t('facility_email_placeholder')}
             style={{
               width: '100%',
               padding: '0.85rem 1.1rem',
               border: `1px solid ${errors.hospitalEmail ? '#dc2626' : 'var(--border-color)'}`,
-              borderRadius: 'var(--radius-md, 8px)',
+              borderRadius: '12px',
               fontSize: '1.05rem',
               color: 'var(--text-main)',
               background: 'var(--bg-primary, #ffffff)',
@@ -171,7 +171,7 @@ export const OnboardingContactStep: React.FC<OnboardingContactStepProps> = ({
             width: '100%',
             padding: '0.85rem 1.1rem',
             border: '1px solid var(--border-color)',
-            borderRadius: 'var(--radius-md, 8px)',
+            borderRadius: '12px',
             fontSize: '1.05rem',
             color: 'var(--text-main)',
             background: 'var(--bg-primary, #ffffff)',

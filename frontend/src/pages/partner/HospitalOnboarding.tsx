@@ -288,96 +288,73 @@ export const HospitalOnboarding: React.FC<HospitalOnboardingProps> = ({
     <div
       style={{
         width: '100%',
-        maxWidth: '720px',
+        maxWidth: '760px',
+        maxHeight: '100%',
         margin: '0 auto',
         backgroundColor: 'var(--bg-primary, #ffffff)',
         border: '1px solid var(--border-color)',
-        borderRadius: 'var(--radius-lg, 10px)',
-        padding: '2.5rem 2.5rem',
+        borderRadius: '16px',
+        display: 'flex',
+        flexDirection: 'column',
         boxShadow: 'none',
         boxSizing: 'border-box',
         fontFamily: kmFont,
+        overflowY: 'auto',
       }}
     >
-      {/* Onboarding Header */}
-      <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginBottom: '0.85rem',
-          }}
-        >
-          {logoUrl.trim() ? (
-            <div
-              style={{
-                width: '64px',
-                height: '64px',
-                borderRadius: '50%',
-                border: '1.5px solid var(--border-color)',
-                backgroundColor: 'var(--bg-secondary, #f8fafc)',
-                overflow: 'hidden',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: 'none',
-              }}
-            >
-              <img
-                src={logoUrl.trim()}
-                alt={hospitalName || 'Hospital Logo'}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  display: 'block',
-                }}
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).src = prosethLogo;
-                }}
-              />
-            </div>
-          ) : (
+      {/* 1. Header (Logo, Welcome Title, Stepper Indicator) */}
+      <div
+        style={{
+          padding: '1.75rem 2rem 1rem 2rem',
+          backgroundColor: 'var(--bg-primary, #ffffff)',
+          flexShrink: 0,
+        }}
+      >
+        {/* Centered Logo & Welcome Title */}
+        <div style={{ textAlign: 'center', marginBottom: '1.25rem' }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: '0.65rem',
+            }}
+          >
             <img
               src={prosethLogo}
               alt="Proseth Logo"
               style={{
-                width: '52px',
-                height: '52px',
+                width: '46px',
+                height: '46px',
                 objectFit: 'contain',
                 display: 'block',
               }}
             />
-          )}
-        </div>
-        <h1
-          style={{
-            fontSize: '1.75rem',
-            fontWeight: 700,
-            color: 'var(--text-main)',
-            margin: 0,
-            lineHeight: 1.3,
-          }}
-        >
-          {t('onboard_welcome_title')}
-        </h1>
-        {hospitalName.trim() && (
-          <p
+          </div>
+          <h1
             style={{
-              fontSize: '1rem',
-              fontWeight: 600,
-              color: 'var(--accent-primary)',
-              margin: '0.35rem 0 0 0',
+              fontSize: '1.35rem',
+              fontWeight: 700,
+              color: 'var(--text-main)',
+              margin: 0,
+              lineHeight: 1.3,
             }}
           >
-            {hospitalName}
-          </p>
-        )}
+            {t('onboard_welcome_title')}
+          </h1>
+        </div>
+
+        {/* Modern Stepper Indicator */}
+        <OnboardingStepIndicator currentStep={currentStep} steps={stepsMetadata} t={t} />
       </div>
 
-      {/* Stepper Indicator */}
-      <OnboardingStepIndicator currentStep={currentStep} steps={stepsMetadata} t={t} />
+      {/* 2. Step Views */}
+      <div
+        style={{
+          padding: '1rem 2rem 1.25rem 2rem',
+          boxSizing: 'border-box',
+        }}
+      >
 
       {/* Step Views */}
       {currentStep === 1 && (
@@ -462,131 +439,128 @@ export const HospitalOnboarding: React.FC<HospitalOnboardingProps> = ({
         </div>
       )}
 
-      {/* Stepper Navigation Buttons */}
-      <div
-        style={{
-          display: 'flex',
-          gap: '1rem',
-          alignItems: 'center',
-          marginTop: '1.75rem',
-        }}
-      >
-        {currentStep > 1 && (
-          <button
-            type="button"
-            onClick={handlePrevStep}
-            disabled={loading}
-            style={{
-              flex: 1,
-              padding: '0.9rem 1.25rem',
-              background: 'transparent',
-              border: '1px solid var(--border-color)',
-              borderRadius: 'var(--radius-md, 8px)',
-              color: 'var(--text-main)',
-              fontSize: '1.06rem',
-              fontWeight: 600,
-              cursor: loading ? 'not-allowed' : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.5rem',
-              boxShadow: 'none',
-              fontFamily: kmFont,
-            }}
-          >
-            <ArrowLeft size={18} />
-            <span>{t('btn_prev_step')}</span>
-          </button>
-        )}
-
-        {currentStep < 4 ? (
-          <button
-            type="button"
-            onClick={handleNextStep}
-            disabled={loading}
-            style={{
-              flex: 2,
-              padding: '0.9rem 1.35rem',
-              backgroundColor: 'var(--accent-primary)',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: 'var(--radius-md, 8px)',
-              fontSize: '1.1rem',
-              fontWeight: 600,
-              cursor: loading ? 'not-allowed' : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.65rem',
-              boxShadow: 'none',
-              fontFamily: kmFont,
-            }}
-          >
-            <span>{t('btn_next_step')}</span>
-            <ArrowRight size={18} />
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={handleFinishOnboarding}
-            disabled={loading}
-            style={{
-              flex: 2,
-              padding: '0.95rem 1.35rem',
-              backgroundColor: 'var(--accent-primary)',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: 'var(--radius-md, 8px)',
-              fontSize: '1.1rem',
-              fontWeight: 600,
-              cursor: loading ? 'not-allowed' : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.65rem',
-              boxShadow: 'none',
-              fontFamily: kmFont,
-            }}
-          >
-            <span>{loading ? t('chat_processing') : t('btn_complete_onboard')}</span>
-            <Check size={20} />
-          </button>
-        )}
       </div>
 
-      {/* Skip Onboarding Option */}
+      {/* 3. Footer Action Buttons */}
       <div
         style={{
-          marginTop: '1.75rem',
-          paddingTop: '1.25rem',
-          borderTop: '1px solid var(--border-color)',
-          textAlign: 'center',
+          padding: '1rem 2rem 1.75rem 2rem',
+          backgroundColor: 'var(--bg-primary, #ffffff)',
+          marginTop: 'auto',
+          flexShrink: 0,
         }}
       >
-        <button
-          type="button"
-          onClick={handleSkip}
-          style={{
-            background: 'transparent',
-            border: 'none',
-            color: 'var(--text-muted)',
-            fontSize: '0.95rem',
-            fontWeight: 500,
-            cursor: 'pointer',
-            textDecoration: 'underline',
-            fontFamily: kmFont,
-            padding: '6px 12px',
-            display: 'inline-block',
-          }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.color = 'var(--accent-primary)';
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.color = 'var(--text-muted)';
-          }}
-        >
-          {t('onboard_skip_btn')}
-        </button>
+        <div style={{ display: 'flex', gap: '0.85rem', alignItems: 'center' }}>
+          {currentStep > 1 && (
+            <button
+              type="button"
+              onClick={handlePrevStep}
+              disabled={loading}
+              style={{
+                flex: 1,
+                padding: '0.85rem 1.35rem',
+                background: 'transparent',
+                border: '1px solid var(--border-color)',
+                borderRadius: 'var(--radius-md, 8px)',
+                color: 'var(--text-main)',
+                fontSize: '1rem',
+                fontWeight: 600,
+                cursor: loading ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
+                boxShadow: 'none',
+                fontFamily: kmFont,
+              }}
+            >
+              <ArrowLeft size={18} />
+              <span>{t('btn_prev_step')}</span>
+            </button>
+          )}
+
+          {currentStep < 4 ? (
+            <button
+              type="button"
+              onClick={handleNextStep}
+              disabled={loading}
+              style={{
+                flex: 2,
+                padding: '0.85rem 1.45rem',
+                backgroundColor: 'var(--accent-primary)',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: 'var(--radius-md, 8px)',
+                fontSize: '1.02rem',
+                fontWeight: 600,
+                cursor: loading ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.55rem',
+                boxShadow: 'none',
+                fontFamily: kmFont,
+              }}
+            >
+              <span>{t('btn_next_step')}</span>
+              <ArrowRight size={18} />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleFinishOnboarding}
+              disabled={loading}
+              style={{
+                flex: 2,
+                padding: '0.85rem 1.45rem',
+                backgroundColor: 'var(--accent-primary)',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: 'var(--radius-md, 8px)',
+                fontSize: '1.02rem',
+                fontWeight: 600,
+                cursor: loading ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.55rem',
+                boxShadow: 'none',
+                fontFamily: kmFont,
+              }}
+            >
+              <span>{loading ? t('chat_processing') : t('btn_complete_onboard')}</span>
+              <Check size={20} />
+            </button>
+          )}
+        </div>
+
+        {/* Skip Onboarding Option */}
+        <div style={{ textAlign: 'center', marginTop: '0.65rem' }}>
+          <button
+            type="button"
+            onClick={handleSkip}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: 'var(--text-muted)',
+              fontSize: '0.88rem',
+              fontWeight: 500,
+              cursor: 'pointer',
+              textDecoration: 'underline',
+              fontFamily: kmFont,
+              padding: '4px 10px',
+              display: 'inline-block',
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.color = 'var(--accent-primary)';
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.color = 'var(--text-muted)';
+            }}
+          >
+            {t('onboard_skip_btn')}
+          </button>
+        </div>
       </div>
     </div>
   );

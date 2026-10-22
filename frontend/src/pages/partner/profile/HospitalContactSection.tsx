@@ -97,7 +97,7 @@ export const HospitalContactSection: React.FC<HospitalContactSectionProps> = ({
                 setContactPhone(e.target.value);
                 if (phoneError) setPhoneError(null);
               }}
-              placeholder="023 888 999"
+              placeholder={t('facility_phone_placeholder') || (isKm ? 'លេខទូរស័ព្ទទាក់ទង' : 'Contact Phone Number')}
               style={{
                 width: '100%',
                 padding: '0.62rem 1.05rem 0.62rem 2.6rem',
@@ -152,7 +152,7 @@ export const HospitalContactSection: React.FC<HospitalContactSectionProps> = ({
                 setContactEmail(e.target.value);
                 if (emailError) setEmailError(null);
               }}
-              placeholder="info@hospital.kh"
+              placeholder={t('facility_email_placeholder') || (isKm ? 'អាសយដ្ឋានអ៊ីមែលផ្លូវការ' : 'Official Email Address')}
               style={{
                 width: '100%',
                 padding: '0.62rem 1.05rem 0.62rem 2.6rem',
@@ -207,7 +207,7 @@ export const HospitalContactSection: React.FC<HospitalContactSectionProps> = ({
                 setEmergencyPhone(e.target.value);
                 if (emergencyPhoneError) setEmergencyPhoneError(null);
               }}
-              placeholder="119 / 012 999 119"
+              placeholder={isKm ? 'លេខទូរស័ព្ទបន្ទាន់' : 'Emergency Hotline Number'}
               style={{
                 width: '100%',
                 padding: '0.62rem 1.05rem 0.62rem 2.6rem',

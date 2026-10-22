@@ -229,7 +229,7 @@ export const HospitalIdentitySection: React.FC<HospitalIdentitySectionProps> = (
               setName(e.target.value);
               if (nameError) setNameError(null);
             }}
-            placeholder="Clinic / Hospital Name"
+            placeholder={isKm ? 'ឈ្មោះផ្លូវការរបស់មន្ទីរពេទ្យ ឬ គ្លីនិក' : 'Official Hospital or Clinic Name'}
             style={{
               width: '100%',
               padding: '0.62rem 1.05rem',

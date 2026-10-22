@@ -78,7 +78,6 @@ export const Header: React.FC<HeaderProps> = ({
                 maxHeight: '38px',
                 objectFit: 'contain', 
                 flexShrink: 0,
-                filter: 'drop-shadow(0 2px 5px rgba(24, 83, 57, 0.15))',
                 display: 'block',
               }} 
             />

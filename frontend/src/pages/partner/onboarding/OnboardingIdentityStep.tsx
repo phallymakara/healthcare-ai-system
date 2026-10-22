@@ -32,18 +32,18 @@ export const OnboardingIdentityStep: React.FC<OnboardingIdentityStepProps> = ({
 
   return (
     <div>
-      <div style={{ marginBottom: '1.35rem' }}>
+      <div style={{ marginBottom: '0.85rem' }}>
         <h2
           style={{
-            fontSize: '1.25rem',
+            fontSize: '1.15rem',
             fontWeight: 700,
             color: 'var(--text-main)',
-            margin: '0 0 0.35rem 0',
+            margin: '0 0 0.2rem 0',
           }}
         >
           {t('onboard_step_1_title')}
         </h2>
-        <p style={{ fontSize: '0.95rem', color: 'var(--text-muted)', margin: 0 }}>
+        <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', margin: 0 }}>
           {t('onboard_step_1_desc')}
         </p>
       </div>
@@ -55,7 +55,7 @@ export const OnboardingIdentityStep: React.FC<OnboardingIdentityStepProps> = ({
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          marginBottom: '2rem',
+          marginBottom: '1.5rem',
         }}
       >
         <input
@@ -69,8 +69,8 @@ export const OnboardingIdentityStep: React.FC<OnboardingIdentityStepProps> = ({
         <div
           onClick={() => fileInputRef.current?.click()}
           style={{
-            width: '120px',
-            height: '120px',
+            width: '105px',
+            height: '105px',
             borderRadius: '50%',
             border: '2px dashed var(--border-color)',
             backgroundColor: 'var(--bg-secondary, #f8fafc)',
@@ -142,8 +142,8 @@ export const OnboardingIdentityStep: React.FC<OnboardingIdentityStepProps> = ({
                 color: 'var(--text-muted)',
               }}
             >
-              <Camera size={32} strokeWidth={1.5} color="var(--accent-primary)" />
-              <span style={{ fontSize: '0.78rem', fontWeight: 500 }}>
+              <Camera size={26} strokeWidth={1.5} color="var(--accent-primary)" />
+              <span style={{ fontSize: '0.74rem', fontWeight: 500 }}>
                 {isKm ? 'រូបសញ្ញា' : 'Logo'}
               </span>
             </div>
@@ -205,12 +205,12 @@ export const OnboardingIdentityStep: React.FC<OnboardingIdentityStepProps> = ({
             setHospitalName(e.target.value);
             if (errors.hospitalName) setErrors((p) => ({ ...p, hospitalName: '' }));
           }}
-          placeholder={isKm ? 'ឈ្មោះមន្ទីរពេទ្យ ឬ គ្លីនិក' : 'Hospital or Clinic Name'}
+          placeholder={isKm ? 'ឈ្មោះផ្លូវការរបស់មន្ទីរពេទ្យ ឬ គ្លីនិក' : 'Official Hospital or Clinic Name'}
           style={{
             width: '100%',
             padding: '0.85rem 1.1rem',
             border: `1px solid ${errors.hospitalName ? '#dc2626' : 'var(--border-color)'}`,
-            borderRadius: 'var(--radius-md, 8px)',
+            borderRadius: '12px',
             fontSize: '1.05rem',
             color: 'var(--text-main)',
             background: 'var(--bg-primary, #ffffff)',

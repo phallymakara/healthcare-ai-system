@@ -178,7 +178,9 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
   return (
     <div
       style={{
-        minHeight: '100vh',
+        height: '100vh',
+        maxHeight: '100vh',
+        overflow: 'hidden',
         backgroundColor: 'var(--bg-secondary, #f8fafc)',
         display: 'flex',
         flexDirection: 'column',
@@ -336,7 +338,6 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                     height: '52px', 
                     width: 'auto', 
                     objectFit: 'contain',
-                    filter: 'drop-shadow(0 3px 8px rgba(24, 83, 57, 0.16))',
                     display: 'block',
                     margin: '0 auto',
                   }} 
