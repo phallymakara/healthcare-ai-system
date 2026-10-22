@@ -253,22 +253,11 @@ export const App: React.FC = () => {
           onSuccess={handleUserLoginSuccess}
           onSwitchToPatient={() => {
             setIsPartner(false);
-            const url = new URL(window.location.href);
-            if (url.searchParams.has('portal')) {
-              url.searchParams.delete('portal');
-              const targetUrl = url.pathname + (url.search ? url.search : '') + url.hash;
-              try {
-                window.history.pushState({ portal: 'patient' }, '', targetUrl);
-              } catch {
-                window.location.href = targetUrl;
-              }
-            } else {
-              const targetUrl = getPortalSwitchUrl('patient');
-              try {
-                window.history.pushState({ portal: 'patient' }, '', targetUrl);
-              } catch {
-                window.location.href = targetUrl;
-              }
+            const targetUrl = getPortalSwitchUrl('patient');
+            try {
+              window.history.pushState({ portal: 'patient' }, '', targetUrl);
+            } catch {
+              window.location.href = targetUrl;
             }
           }}
         />
