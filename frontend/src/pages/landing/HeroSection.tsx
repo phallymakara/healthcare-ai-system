@@ -11,7 +11,7 @@ interface HeroSectionProps {
   onStartChatWithQuery?: (query: string) => void;
 }
 
-export const HeroSection: React.FC<HeroSectionProps> = () => {
+export const HeroSection: React.FC<HeroSectionProps> = ({ onSelectTab }) => {
   const { t, language } = useLanguage();
 
   return (
@@ -89,10 +89,18 @@ export const HeroSection: React.FC<HeroSectionProps> = () => {
 
         {/* 3 Floating White Feature Highlight Cards */}
         <div className="hero-highlight-cards">
-          {/* Card 1: AI & Clinic Integration (Moved to Beginning) */}
+          {/* Card 1: AI & Clinic Integration */}
           <div
             className="hero-glass-card"
-            style={{ textAlign: 'left', cursor: 'default', justifyContent: 'flex-start' }}
+            onClick={() => onSelectTab?.('patient_triage')}
+            style={{
+              textAlign: 'left',
+              cursor: onSelectTab ? 'pointer' : 'default',
+              justifyContent: 'flex-start',
+              boxShadow: 'none',
+              transition: 'transform 0.2s ease',
+            }}
+            title={t('hero_card_ai_clinic_title')}
           >
             <div
               className="hero-card-title text-truncate"
@@ -119,10 +127,18 @@ export const HeroSection: React.FC<HeroSectionProps> = () => {
             </div>
           </div>
 
-          {/* Card 2: Live Wait Times (Coming Soon) */}
+          {/* Card 2: Live Wait Times */}
           <div
             className="hero-glass-card"
-            style={{ textAlign: 'left', cursor: 'default', justifyContent: 'flex-start' }}
+            onClick={() => onSelectTab?.('patient_live_ticket')}
+            style={{
+              textAlign: 'left',
+              cursor: onSelectTab ? 'pointer' : 'default',
+              justifyContent: 'flex-start',
+              boxShadow: 'none',
+              transition: 'transform 0.2s ease',
+            }}
+            title={t('hero_live_wait_title')}
           >
             <div
               className="hero-card-title text-truncate"
@@ -149,10 +165,18 @@ export const HeroSection: React.FC<HeroSectionProps> = () => {
             </div>
           </div>
 
-          {/* Card 3: Remote Tickets (Coming Soon) */}
+          {/* Card 3: Remote Tickets */}
           <div
             className="hero-glass-card"
-            style={{ textAlign: 'left', cursor: 'default', justifyContent: 'flex-start' }}
+            onClick={() => onSelectTab?.('patient_discovery')}
+            style={{
+              textAlign: 'left',
+              cursor: onSelectTab ? 'pointer' : 'default',
+              justifyContent: 'flex-start',
+              boxShadow: 'none',
+              transition: 'transform 0.2s ease',
+            }}
+            title={t('hero_remote_ticket_title')}
           >
             <div
               className="hero-card-title text-truncate"

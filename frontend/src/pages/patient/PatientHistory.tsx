@@ -17,7 +17,7 @@ export const PatientHistory: React.FC<PatientHistoryProps> = ({
   const isKm = language === 'km';
   const kmFont = isKm ? 'var(--font-khmer), sans-serif' : 'inherit';
 
-  const [records, setRecords] = useState<MedicalRecord[]>(DEMO_MEDICAL_RECORDS);
+  const [records, setRecords] = useState<MedicalRecord[]>([]);
   const [selectedRecord, setSelectedRecord] = useState<MedicalRecord | null>(null);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -28,7 +28,10 @@ export const PatientHistory: React.FC<PatientHistoryProps> = ({
   useEffect(() => {
     const fetchPatientTickets = async () => {
       const currentUser = AuthService.getStoredUser();
-      if (!currentUser) return;
+      if (!currentUser) {
+        setRecords([]);
+        return;
+      }
 
       setLoading(true);
       try {
@@ -57,7 +60,7 @@ export const PatientHistory: React.FC<PatientHistoryProps> = ({
                 room_number: tk.room_number || 'Room 101',
                 patient_name: tk.patient_name || currentUser.full_name,
                 patient_phone: tk.patient_phone || currentUser.phone_number,
-                visited_date: tk.appointment_date || tk.created_at?.split('T')[0] || '2026-08-25',
+                visited_date: tk.appointment_date || tk.created_at?.split('T')[0] || new Date().toISOString().split('T')[0],
                 consultation_start: tk.serving_started_at ? new Date(tk.serving_started_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '09:15 AM',
                 consultation_end: tk.completed_at ? new Date(tk.completed_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '09:40 AM',
                 duration_minutes: tk.status === 'COMPLETED' ? 25 : 0,
@@ -71,10 +74,15 @@ export const PatientHistory: React.FC<PatientHistoryProps> = ({
               };
             });
             setRecords(liveRecords);
+          } else {
+            setRecords([]);
           }
+        } else {
+          setRecords([]);
         }
       } catch (err) {
-        console.warn('Unable to load live tickets from backend, displaying cached medical records.', err);
+        console.warn('Unable to load patient tickets from backend:', err);
+        setRecords([]);
       } finally {
         setLoading(false);
       }

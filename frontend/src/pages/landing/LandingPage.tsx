@@ -27,7 +27,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth, currentUse
       />
 
       {/* Full-width Patient Experience Section continuous from below hero section with transparency gradient */}
-      <PatientFeatures />
+      <PatientFeatures onSelectTab={onSelectTab} />
 
       {/* Structured Content Sections in Responsive Centered Container */}
       <div className="landing-inner-container" style={{ display: 'flex', flexDirection: 'column', gap: '3rem', marginTop: 0, paddingBottom: '0.75rem', background: '#ffffff' }}>

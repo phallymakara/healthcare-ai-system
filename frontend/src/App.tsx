@@ -9,13 +9,13 @@ import { useLanguage } from './context/LanguageContext';
 import { AuthService, UserProfile } from './services/auth';
 import { API_BASE } from './services/api';
 import { RealTimeQueueClient } from './services/websocket';
-import { ComingSoonView } from './components/common/ComingSoonView';
 import { isPartnerPortal, getPortalSwitchUrl } from './utils/subdomain';
-
 // Lazy-loaded route components for high performance and minimal initial bundle size
 const LandingPage = React.lazy(() => import('./pages/landing/LandingPage').then(m => ({ default: m.LandingPage })));
 const HospitalDiscovery = React.lazy(() => import('./pages/patient/HospitalDiscovery').then(m => ({ default: m.HospitalDiscovery })));
 const HealthcareAssistant = React.lazy(() => import('./pages/patient/HealthcareAssistant').then(m => ({ default: m.HealthcareAssistant })));
+const LiveTicketTracker = React.lazy(() => import('./pages/patient/LiveTicketTracker').then(m => ({ default: m.LiveTicketTracker })));
+const PatientHistory = React.lazy(() => import('./pages/patient/PatientHistory').then(m => ({ default: m.PatientHistory })));
 const PartnerDashboard = React.lazy(() => import('./pages/partner/PartnerDashboard').then(m => ({ default: m.PartnerDashboard })));
 const QueueManagement = React.lazy(() => import('./pages/partner/QueueManagement').then(m => ({ default: m.QueueManagement })));
 const DoctorManagement = React.lazy(() => import('./pages/partner/DoctorManagement').then(m => ({ default: m.DoctorManagement })));
@@ -154,7 +154,7 @@ export const App: React.FC = () => {
     // 2. Initialize WebSocket connection for background alerts
     const ws = new RealTimeQueueClient('global');
     ws.connect();
-    const unsubscribe = ws.subscribe((data) => {
+    const unsubscribe = ws.subscribe((data: any) => {
       if (data && typeof data === 'object') {
         if (data.event === 'TICKET_CALLED' || data.event === 'TICKET_SERVING') {
           setActiveBanner({
@@ -405,11 +405,17 @@ export const App: React.FC = () => {
                   )}
 
                   {activeTab === 'patient_live_ticket' && (
-                    <ComingSoonView type="ticket" />
+                    <LiveTicketTracker
+                      initialTicketId={selectedTicketId}
+                      onExploreHospitals={() => setActiveTab('patient_discovery')}
+                      onConsultAi={() => setActiveTab('patient_triage')}
+                    />
                   )}
 
                   {activeTab === 'patient_history' && (
-                    <ComingSoonView type="history" />
+                    <PatientHistory
+                      onExploreHospitals={() => setActiveTab('patient_discovery')}
+                    />
                   )}
 
                   {activeTab === 'partner_dashboard' && (

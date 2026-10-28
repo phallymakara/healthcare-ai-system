@@ -7,7 +7,13 @@ import queueTrackingImg from '../../assets/patient_queue_tracking.jpg';
 import communitySupportImg from '../../assets/patient_community_support.jpg';
 import aiConsultImg from '../../assets/patient_ai_consultation.jpg';
 
-export const PatientFeatures: React.FC = () => {
+import { NavTab } from '../../components/Sidebar';
+
+interface PatientFeaturesProps {
+  onSelectTab?: (tab: NavTab) => void;
+}
+
+export const PatientFeatures: React.FC<PatientFeaturesProps> = ({ onSelectTab }) => {
   const { t, language } = useLanguage();
 
   const cards = [
@@ -17,7 +23,8 @@ export const PatientFeatures: React.FC = () => {
       image: remoteBookingImg,
       title: t('pf_card1_title'),
       desc: t('pf_card1_desc'),
-      isComingSoon: true,
+      isComingSoon: false,
+      tab: 'patient_discovery' as NavTab,
     },
     {
       id: 'queue-tracking',
@@ -25,7 +32,8 @@ export const PatientFeatures: React.FC = () => {
       image: queueTrackingImg,
       title: t('pf_card2_title'),
       desc: t('pf_card2_desc'),
-      isComingSoon: true,
+      isComingSoon: false,
+      tab: 'patient_live_ticket' as NavTab,
     },
     {
       id: 'patient-community',
@@ -34,6 +42,7 @@ export const PatientFeatures: React.FC = () => {
       title: t('pf_card3_title'),
       desc: t('pf_card3_desc'),
       isComingSoon: true,
+      tab: undefined,
     },
     {
       id: 'ai-consult',
@@ -42,6 +51,7 @@ export const PatientFeatures: React.FC = () => {
       title: t('pf_card4_title'),
       desc: t('pf_card4_desc'),
       isComingSoon: false,
+      tab: 'patient_triage' as NavTab,
     },
   ];
 
@@ -107,6 +117,11 @@ export const PatientFeatures: React.FC = () => {
           return (
             <div
               key={card.id}
+              onClick={() => {
+                if (card.tab && onSelectTab) {
+                  onSelectTab(card.tab);
+                }
+              }}
               style={{
                 background: '#ffffff',
                 borderRadius: '20px',
@@ -115,7 +130,7 @@ export const PatientFeatures: React.FC = () => {
                 display: 'flex',
                 flexDirection: 'column',
                 transition: 'transform 0.25s ease, border-color 0.25s ease',
-                cursor: 'default',
+                cursor: card.tab && onSelectTab ? 'pointer' : 'default',
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = 'translateY(-4px)';
