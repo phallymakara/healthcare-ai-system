@@ -48,10 +48,12 @@ export const HospitalDiscovery: React.FC<HospitalDiscoveryProps> = ({
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [selectedHospital, setSelectedHospital] = useState<any>(null);
   const [selectedDept, setSelectedDept] = useState<any>(null);
+  const [selectedService, setSelectedService] = useState<any>(null);
   const [patientName, setPatientName] = useState('');
   const [patientPhone, setPatientPhone] = useState('');
   const [appointmentDate, setAppointmentDate] = useState(getTodayDateStr());
   const [appointmentTime, setAppointmentTime] = useState(TIME_SLOTS[1]);
+  const [deptError, setDeptError] = useState<string | null>(null);
   const [nameError, setNameError] = useState<string | null>(null);
   const [phoneError, setPhoneError] = useState<string | null>(null);
   const [dateError, setDateError] = useState<string | null>(null);
@@ -98,14 +100,26 @@ export const HospitalDiscovery: React.FC<HospitalDiscoveryProps> = ({
     loadHospitals(searchQuery, userLocation);
   };
 
-  const handleOpenBooking = (hosp: any, dept: any) => {
+  const handleOpenBooking = (hosp: any, dept: any, service?: any) => {
     const user = AuthService.getStoredUser();
     setSelectedHospital(hosp);
-    setSelectedDept(dept);
+
+    // Resolve target department from service if dept not given
+    let targetDept = dept;
+    if (!targetDept && service?.department_id && hosp?.departments) {
+      targetDept = hosp.departments.find((d: any) => d.id === service.department_id);
+    }
+    if (!targetDept && hosp?.departments && hosp.departments.length > 0) {
+      targetDept = hosp.departments[0];
+    }
+
+    setSelectedDept(targetDept || null);
+    setSelectedService(service || null);
     setPatientName(user?.full_name || '');
     setPatientPhone(user?.phone_number || '');
     setAppointmentDate(getTodayDateStr());
     setAppointmentTime(TIME_SLOTS[1]);
+    setDeptError(null);
     setNameError(null);
     setPhoneError(null);
     setDateError(null);
@@ -115,12 +129,17 @@ export const HospitalDiscovery: React.FC<HospitalDiscoveryProps> = ({
 
   const handleConfirmBooking = async (e: React.FormEvent) => {
     e.preventDefault();
+    setDeptError(null);
     setNameError(null);
     setPhoneError(null);
     setDateError(null);
     setFormError(null);
 
     let hasError = false;
+    if (!selectedDept?.id) {
+      setDeptError(language === 'km' ? 'សូមជ្រើសរើសផ្នែកពិគ្រោះជំងឺ' : 'Please select a clinical department.');
+      hasError = true;
+    }
     if (!patientName.trim()) {
       setNameError(language === 'km' ? 'សូមបញ្ចូលឈ្មោះពេញរបស់អ្នក' : 'Please enter your full name.');
       hasError = true;
@@ -150,6 +169,7 @@ export const HospitalDiscovery: React.FC<HospitalDiscoveryProps> = ({
         body: JSON.stringify({
           hospital_id: selectedHospital.id,
           department_id: selectedDept.id,
+          service_id: selectedService?.id || undefined,
           patient_name: patientName.trim(),
           patient_phone: patientPhone.trim(),
           appointment_date: appointmentDate,
@@ -262,6 +282,11 @@ export const HospitalDiscovery: React.FC<HospitalDiscoveryProps> = ({
         onClose={() => setBookingModalOpen(false)}
         selectedHospital={selectedHospital}
         selectedDept={selectedDept}
+        setSelectedDept={setSelectedDept}
+        selectedService={selectedService}
+        setSelectedService={setSelectedService}
+        deptError={deptError}
+        setDeptError={setDeptError}
         patientName={patientName}
         setPatientName={setPatientName}
         nameError={nameError}

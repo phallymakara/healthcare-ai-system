@@ -228,7 +228,7 @@ export const ServerConfigModal: React.FC<ServerConfigModalProps> = ({
                 type="text"
                 value={inputUrl}
                 onChange={(e) => setInputUrl(e.target.value)}
-                placeholder="http://192.168.x.x:9000/api/v1"
+                placeholder={isKm ? 'បញ្ចូលអាសយដ្ឋាន API ម៉ាស៊ីនបម្រើ' : 'Enter API server base URL'}
                 className="flex-1 px-3.5 py-2.5 text-xs font-mono rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#185339]"
               />
               <button

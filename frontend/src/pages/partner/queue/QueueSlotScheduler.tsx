@@ -1,6 +1,6 @@
 import React from 'react';
 import { Calendar, Clock } from 'lucide-react';
-import { StandardTimeSlot, BookingItem, STANDARD_TIME_SLOTS } from './types';
+import { StandardTimeSlot, BookingItem } from './types';
 import { QueueTicketItem } from './QueueTicketItem';
 
 export interface SlotGroupData {
@@ -132,9 +132,9 @@ export const QueueSlotScheduler: React.FC<QueueSlotSchedulerProps> = ({
         {/* Slot Quick Filter Tabs */}
         <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap' }}>
           {[
-            { key: 'ALL', label: `${t('cbs_filter_all_slots')} (${STANDARD_TIME_SLOTS.length})` },
-            { key: 'AVAILABLE', label: `${t('cbs_filter_available_only')} (${availableSlotsCount})` },
-            { key: 'UNAVAILABLE', label: `${t('cbs_filter_booked_only')} (${bookedSlotsCount})` },
+            { key: 'ALL', label: t('cbs_filter_all_slots') },
+            { key: 'AVAILABLE', label: t('cbs_filter_available_only') },
+            { key: 'UNAVAILABLE', label: t('cbs_filter_booked_only') },
           ].map((tab) => (
             <button
               key={tab.key}

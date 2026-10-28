@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useLanguage } from '../../../context/LanguageContext';
 import { formatFacilityName, formatDepartmentName } from '../../../i18n/formatters';
 import { AppointmentSlotPicker } from '../../../components/AppointmentSlotPicker';
@@ -9,6 +9,11 @@ interface BookingModalProps {
   onClose: () => void;
   selectedHospital: any;
   selectedDept: any;
+  setSelectedDept: (dept: any) => void;
+  selectedService: any;
+  setSelectedService: (service: any) => void;
+  deptError?: string | null;
+  setDeptError?: (val: string | null) => void;
   patientName: string;
   setPatientName: (val: string) => void;
   nameError: string | null;
@@ -35,6 +40,11 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   onClose,
   selectedHospital,
   selectedDept,
+  setSelectedDept,
+  selectedService,
+  setSelectedService,
+  deptError,
+  setDeptError,
   patientName,
   setPatientName,
   nameError,
@@ -62,17 +72,24 @@ export const BookingModal: React.FC<BookingModalProps> = ({
     if (!open) onClose();
   });
 
-  if (!modal.shouldRender || !selectedHospital || !selectedDept) return null;
+  const availableServices = useMemo(() => {
+    const srvs = selectedHospital?.services || [];
+    if (!selectedDept?.id) return srvs;
+    return srvs.filter((s: any) => !s.department_id || s.department_id === selectedDept.id);
+  }, [selectedHospital?.services, selectedDept?.id]);
+
+  if (!modal.shouldRender || !selectedHospital) return null;
 
   return (
     <div className={modal.overlayClass} onClick={(e) => { if (e.target === e.currentTarget) modal.close(); }}>
-      <div className={modal.cardClass} style={{ maxWidth: '520px', fontFamily: kmFont }}>
+      <div className={modal.cardClass} style={{ maxWidth: '540px', fontFamily: kmFont }}>
         <div className="responsive-modal-body" style={{ padding: '1.6rem 1.75rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             <h3 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 700, color: 'var(--text-main)', fontFamily: kmFont }}>
               {t('confirm_booking')}
             </h3>
             <button
+              type="button"
               onClick={modal.close}
               style={{
                 background: 'transparent',
@@ -86,14 +103,107 @@ export const BookingModal: React.FC<BookingModalProps> = ({
             </button>
           </div>
 
-          <div style={{ fontSize: '0.92rem', color: 'var(--text-muted)', marginBottom: '1.35rem', fontFamily: kmFont }}>
-            {formatFacilityName(selectedHospital.name, language)} • {formatDepartmentName(selectedDept.name, language)} ({selectedDept.code || 'DEPT'})
+          <div style={{ fontSize: '0.92rem', color: 'var(--text-muted)', marginBottom: '1.25rem', fontFamily: kmFont }}>
+            <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>
+              {formatFacilityName(selectedHospital.name, language)}
+            </span>
+            {selectedDept?.name && (
+              <span> • {formatDepartmentName(selectedDept.name, language)} {selectedDept.code ? `(${selectedDept.code})` : ''}</span>
+            )}
           </div>
 
           <form onSubmit={onConfirmBooking} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
+            {/* Department Selection */}
             <div>
               <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, marginBottom: '6px', color: 'var(--text-main)', fontFamily: kmFont }}>
-                {t('patient_full_name')}
+                {language === 'km' ? 'ផ្នែកពិគ្រោះជំងឺ' : 'Clinical Department'} <span style={{ color: '#dc2626' }}>*</span>
+              </label>
+              <select
+                value={selectedDept?.id || ''}
+                onChange={(e) => {
+                  const dept = (selectedHospital.departments || []).find((d: any) => d.id === e.target.value) || null;
+                  setSelectedDept(dept);
+                  if (setDeptError) setDeptError(null);
+                  if (formError) setFormError(null);
+                }}
+                style={{
+                  width: '100%',
+                  padding: '0.72rem 0.85rem',
+                  border: deptError ? '1px solid #dc2626' : '1px solid var(--border-color)',
+                  borderRadius: '4px',
+                  fontSize: '0.95rem',
+                  background: '#ffffff',
+                  color: 'var(--text-main)',
+                  outline: 'none',
+                  boxShadow: 'none',
+                  boxSizing: 'border-box',
+                  fontFamily: kmFont,
+                }}
+              >
+                <option value="">{language === 'km' ? '-- ជ្រើសរើសផ្នែកពិគ្រោះជំងឺ --' : '-- Select Department --'}</option>
+                {(selectedHospital.departments || []).map((d: any) => (
+                  <option key={d.id} value={d.id}>
+                    {formatDepartmentName(d.name, language)} {d.code ? `(${d.code})` : ''}
+                  </option>
+                ))}
+              </select>
+              {deptError && (
+                <div style={{ color: '#dc2626', fontSize: '0.85rem', marginTop: '5px', fontFamily: kmFont }}>
+                  {deptError}
+                </div>
+              )}
+            </div>
+
+            {/* Medical Service Selection (Optional) */}
+            {(selectedHospital.services && selectedHospital.services.length > 0) && (
+              <div>
+                <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, marginBottom: '6px', color: 'var(--text-main)', fontFamily: kmFont }}>
+                  {language === 'km' ? 'សេវាកម្មវេជ្ជសាស្ត្រ' : 'Medical Service'}{' '}
+                  <span style={{ fontSize: '0.82rem', fontWeight: 400, color: 'var(--text-muted)' }}>
+                    ({language === 'km' ? 'ស្រេចចិត្ត' : 'Optional'})
+                  </span>
+                </label>
+                <select
+                  value={selectedService?.id || ''}
+                  onChange={(e) => {
+                    const srv = (selectedHospital.services || []).find((s: any) => s.id === e.target.value) || null;
+                    setSelectedService(srv);
+                    if (srv?.department_id && (!selectedDept || selectedDept.id !== srv.department_id)) {
+                      const d = (selectedHospital.departments || []).find((dept: any) => dept.id === srv.department_id);
+                      if (d) {
+                        setSelectedDept(d);
+                        if (setDeptError) setDeptError(null);
+                      }
+                    }
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '0.72rem 0.85rem',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '4px',
+                    fontSize: '0.95rem',
+                    background: '#ffffff',
+                    color: 'var(--text-main)',
+                    outline: 'none',
+                    boxShadow: 'none',
+                    boxSizing: 'border-box',
+                    fontFamily: kmFont,
+                  }}
+                >
+                  <option value="">{language === 'km' ? '-- ការពិគ្រោះជំងឺទូទៅ / តម្រង់ជួរ --' : '-- General Consultation / Standard Queue --'}</option>
+                  {availableServices.map((s: any) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name} {s.price > 0 ? `($${Number(s.price).toFixed(2)})` : `(${language === 'km' ? 'ឥតគិតថ្លៃ' : 'Free'})`} - {s.duration_minutes || 20} {language === 'km' ? 'នាទី' : 'mins'}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Patient Name */}
+            <div>
+              <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, marginBottom: '6px', color: 'var(--text-main)', fontFamily: kmFont }}>
+                {t('patient_full_name')} <span style={{ color: '#dc2626' }}>*</span>
               </label>
               <input
                 type="text"
@@ -122,9 +232,10 @@ export const BookingModal: React.FC<BookingModalProps> = ({
               )}
             </div>
 
+            {/* Phone Number */}
             <div>
               <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, marginBottom: '6px', color: 'var(--text-main)', fontFamily: kmFont }}>
-                {t('phone_number')}
+                {t('phone_number')} <span style={{ color: '#dc2626' }}>*</span>
               </label>
               <input
                 type="text"
@@ -153,10 +264,11 @@ export const BookingModal: React.FC<BookingModalProps> = ({
               )}
             </div>
 
+            {/* Appointment Date & Slot Picker */}
             <div>
               <div style={{ marginBottom: '1rem' }}>
                 <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 600, marginBottom: '6px', color: 'var(--text-main)', fontFamily: kmFont }}>
-                  {t('appointment_date')}
+                  {t('appointment_date')} <span style={{ color: '#dc2626' }}>*</span>
                 </label>
                 <input
                   type="date"
@@ -188,17 +300,23 @@ export const BookingModal: React.FC<BookingModalProps> = ({
               </div>
 
               {/* Real-time Live Appointment Time Slot Grid */}
-              <AppointmentSlotPicker
-                hospitalId={selectedHospital?.id}
-                departmentId={selectedDept?.id}
-                selectedDate={appointmentDate}
-                selectedSlot={appointmentTime}
-                onSelectSlot={(slot) => {
-                  setAppointmentTime(slot);
-                  if (formError) setFormError(null);
-                }}
-                onSlotError={(err) => setFormError(err)}
-              />
+              {selectedDept?.id ? (
+                <AppointmentSlotPicker
+                  hospitalId={selectedHospital?.id}
+                  departmentId={selectedDept?.id}
+                  selectedDate={appointmentDate}
+                  selectedSlot={appointmentTime}
+                  onSelectSlot={(slot) => {
+                    setAppointmentTime(slot);
+                    if (formError) setFormError(null);
+                  }}
+                  onSlotError={(err) => setFormError(err)}
+                />
+              ) : (
+                <div style={{ fontSize: '0.86rem', color: 'var(--text-muted)', fontFamily: kmFont, padding: '0.5rem 0' }}>
+                  {language === 'km' ? 'សូមជ្រើសរើសផ្នែកពិគ្រោះជំងឺដើម្បីពិនិត្យម៉ោងទំនេរ' : 'Please select a clinical department above to view available time slots.'}
+                </div>
+              )}
             </div>
 
             {formError && (

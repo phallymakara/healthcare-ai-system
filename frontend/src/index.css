@@ -53,16 +53,16 @@ html {
   font-family: var(--font-main);
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: auto;
-  -moz-osx-font-smoothing: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: geometricPrecision;
 }
 
 body {
   font-family: var(--font-main);
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: auto;
-  -moz-osx-font-smoothing: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: geometricPrecision;
   color: var(--text-main);
   background: var(--bg-primary);
 }
@@ -346,9 +346,8 @@ textarea {
 }
 
 .sidebar-notif-menu {
-  animation: notifMenuDrop 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: notifMenuDrop 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   transform-origin: bottom center;
-  will-change: transform, opacity;
 }
 
 .sidebar-footer {
@@ -479,7 +478,6 @@ textarea {
     z-index: 100;
     transform: translateX(-100%);
     transition: transform var(--transition-smooth);
-    will-change: transform;
     box-shadow: none !important;
   }
 
@@ -1416,15 +1414,13 @@ button:not(.brand-logo):not(.nav-brand-btn):not(.btn-text-only):not(.hospital-fa
 }
 
 .lang-dropdown-animate {
-  animation: langDropdownScale 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: langDropdownScale 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   transform-origin: top right;
-  will-change: transform, opacity;
 }
 
 .lang-dropdown-exit {
   animation: langDropdownScaleExit 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   transform-origin: top right;
-  will-change: transform, opacity;
   pointer-events: none;
 }
 
@@ -1432,10 +1428,9 @@ button:not(.brand-logo):not(.nav-brand-btn):not(.btn-text-only):not(.hospital-fa
 input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="button"]):not([type="submit"]),
 textarea,
 select {
-  transition: border-color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1),
-    background-color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
-    transform 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  transition: border-color 0.18s ease,
+    background-color 0.18s ease,
+    color 0.18s ease !important;
   outline: none !important;
 }
 
@@ -1450,7 +1445,6 @@ textarea:not(.chat-ai-textarea):focus:not(:disabled),
 select:focus:not(:disabled) {
   border-color: var(--accent-primary) !important;
   box-shadow: none !important;
-  transform: translateY(-1px);
 }
 
 /* Language Switcher Button Animation */
@@ -1522,37 +1516,33 @@ select:focus:not(:disabled) {
   cursor: pointer;
   box-shadow: none;
   border-radius: var(--radius-full) !important;
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-    background-color 0.2s ease,
-    border-color 0.2s ease,
-    color 0.2s ease,
-    box-shadow 0.2s ease !important;
+  transition: background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease !important;
   user-select: none;
-  will-change: transform;
 }
 
 .category-filter-pill:hover:not(.active) {
   border-color: #94a3b8 !important;
   background-color: rgba(24, 83, 57, 0.06) !important;
-  transform: translateY(-2px);
 }
 
 .category-filter-pill:active {
-  transform: scale(0.95) translateY(0) !important;
+  transform: scale(0.98) !important;
 }
 
 .category-filter-pill.active {
-  animation: pillSelectPop 0.26s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 4px 14px rgba(24, 83, 57, 0.25) !important;
+  animation: pillSelectPop 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: none !important;
 }
 
 @keyframes pillSelectPop {
   0% {
-    transform: scale(0.92);
+    transform: scale(0.96);
   }
 
   50% {
-    transform: scale(1.05);
+    transform: scale(1.02);
   }
 
   100% {
@@ -1565,18 +1555,14 @@ select:focus:not(:disabled) {
   position: relative;
   z-index: 1;
   box-shadow: none !important;
-  transition: transform var(--transition-base),
-    box-shadow var(--transition-base),
-    border-color var(--transition-base),
+  transition: border-color var(--transition-base),
     background-color var(--transition-base) !important;
-  will-change: transform;
   cursor: pointer;
 }
 
 .hospital-facility-card:hover {
   position: relative;
   z-index: 30 !important;
-  transform: translateY(-1px);
   box-shadow: none !important;
   border-color: var(--accent-primary) !important;
   background-color: #ffffff !important;
@@ -1585,7 +1571,6 @@ select:focus:not(:disabled) {
 .hospital-facility-card:active {
   position: relative;
   z-index: 30 !important;
-  transform: translateY(0) scale(0.99);
   box-shadow: none !important;
 }
 
@@ -1593,35 +1578,29 @@ select:focus:not(:disabled) {
 @keyframes facilityDetailEnter {
   0% {
     opacity: 0;
-    transform: translateY(16px) scale(0.99);
   }
 
   100% {
     opacity: 1;
-    transform: translateY(0) scale(1);
   }
 }
 
 .facility-detail-animate {
-  animation: facilityDetailEnter 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
-  will-change: transform, opacity;
+  animation: facilityDetailEnter 0.2s ease-out;
 }
 
 @keyframes facilityListEnter {
   0% {
     opacity: 0;
-    transform: translateY(12px);
   }
 
   100% {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
 .facility-list-animate {
-  animation: facilityListEnter 0.26s cubic-bezier(0.16, 1, 0.3, 1) both;
-  will-change: transform, opacity;
+  animation: facilityListEnter 0.18s ease-out;
 }
 
 /* Back Navigation Button (frameless, direct, no outer container) */
@@ -2058,34 +2037,71 @@ textarea.input-error {
    SYSTEM-WIDE PAGE TRANSITIONS & DYNAMIC INTERACTION ANIMATIONS
    ========================================================================== */
 
-/* Page View Fluid Entrance */
-@keyframes pageFadeInUp {
+/* Page View Fluid Entrance - Crisp & Smooth (Pure Opacity Fade - No GPU Blurring) */
+@keyframes pageFadeIn {
   0% {
     opacity: 0;
-    transform: translateY(14px);
   }
 
   100% {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
 .page-transition-enter {
-  animation: pageFadeInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
-  will-change: transform, opacity;
+  animation: pageFadeIn 0.16s ease-out;
+}
+
+/* View & Sub-panel Fluid Entrance */
+@keyframes viewFadeIn {
+  0% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+.view-fade-enter {
+  animation: viewFadeIn 0.15s ease-out;
+}
+
+/* Global Subtle Interactive Physics: Buttons, Rows & Form Controls */
+button:not(:disabled) {
+  transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease, opacity 0.16s ease, transform 0.12s ease;
+}
+
+button:not(:disabled):active {
+  transform: scale(0.985);
+}
+
+table tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+input:not([type="checkbox"]):not([type="radio"]),
+select,
+textarea {
+  transition: border-color 0.18s ease, background-color 0.18s ease, color 0.18s ease;
+}
+
+.hospital-facility-card {
+  transition: border-color 0.18s ease, transform 0.2s cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+
+.hospital-facility-card:hover {
+  transform: translateY(-2px);
 }
 
 /* Chat Assistant Messages Entrance Animation */
 @keyframes chatBubbleEnter {
   0% {
     opacity: 0;
-    transform: translateY(8px) scale(0.985);
   }
 
   100% {
     opacity: 1;
-    transform: translateY(0) scale(1);
   }
 }
 
@@ -2097,8 +2113,7 @@ textarea.input-error {
 }
 
 .chat-bubble-animate {
-  animation: chatBubbleEnter 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
-  will-change: transform, opacity;
+  animation: chatBubbleEnter 0.2s ease-out;
   contain: layout style;
 }
 
@@ -2128,7 +2143,6 @@ textarea.input-error {
   vertical-align: -0.15em;
   border-radius: 1px;
   animation: streamCursorPulse 0.75s ease-in-out infinite;
-  will-change: opacity;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2150,18 +2164,15 @@ textarea.input-error {
 @keyframes bannerSlideDown {
   0% {
     opacity: 0;
-    transform: translateY(-20px) scale(0.96);
   }
 
   100% {
     opacity: 1;
-    transform: translateY(0) scale(1);
   }
 }
 
 .notification-banner-animate {
-  animation: bannerSlideDown 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
-  will-change: transform, opacity;
+  animation: bannerSlideDown 0.24s ease-out;
 }
 
 /* ==========================================================================
@@ -2171,64 +2182,47 @@ textarea.input-error {
 @keyframes cardItemFadeIn {
   0% {
     opacity: 0;
-    transform: translateY(14px);
   }
 
   100% {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
 .appointment-ticket-card,
 .patient-record-card {
-  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1),
-    border-color 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
-  animation: cardItemFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
-  will-change: transform, opacity;
+  transition: border-color 0.2s ease,
+    background-color 0.2s ease !important;
+  animation: cardItemFadeIn 0.2s ease-out;
+  box-shadow: none !important;
   user-select: none;
 }
 
 .appointment-ticket-card:hover,
 .patient-record-card:hover {
-  transform: translateY(-3.5px);
   border-color: var(--accent-primary) !important;
-  box-shadow: 0 12px 28px rgba(12, 47, 39, 0.1) !important;
+  box-shadow: none !important;
 }
 
 .appointment-ticket-card:active,
 .patient-record-card:active {
-  transform: translateY(-1px) scale(0.99);
-}
-
-.appointment-ticket-card img,
-.patient-record-card img {
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.appointment-ticket-card:hover img,
-.patient-record-card:hover img {
-  transform: scale(1.08);
+  transform: none;
 }
 
 /* Detail Pass Cards Slide & Fade in */
 @keyframes detailSlideInUp {
   0% {
     opacity: 0;
-    transform: translateY(16px) scale(0.99);
   }
 
   100% {
     opacity: 1;
-    transform: translateY(0) scale(1);
   }
 }
 
 .appointment-detail-animate,
 .record-detail-animate {
-  animation: detailSlideInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
-  will-change: transform, opacity;
+  animation: detailSlideInUp 0.2s ease-out;
 }
 
 /* History Filter Pills */
@@ -2238,13 +2232,12 @@ textarea.input-error {
 }
 
 .history-filter-pill:hover:not(.active) {
-  transform: translateY(-1.5px);
   background: rgba(24, 83, 57, 0.08) !important;
   color: var(--text-main) !important;
 }
 
 .history-filter-pill:active {
-  transform: scale(0.96);
+  transform: scale(0.98);
 }
 
 .history-filter-pill.active {
@@ -2254,25 +2247,23 @@ textarea.input-error {
 /* Universal Dashboard & KPI Stat Card Animations */
 .dashboard-card,
 .kpi-stat-card {
-  transition: transform var(--transition-base),
-    border-color var(--transition-base);
-  will-change: transform;
+  transition: border-color var(--transition-base),
+    background-color var(--transition-base);
   box-shadow: none !important;
 }
 
 .dashboard-card:hover,
 .kpi-stat-card:hover {
-  transform: translateY(-3px);
   border-color: var(--accent-primary) !important;
   box-shadow: none !important;
 }
 
 .kpi-stat-card svg {
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.2s ease;
 }
 
 .kpi-stat-card:hover svg {
-  transform: scale(1.12) rotate(-4deg);
+  transform: scale(1.08);
 }
 
 /* Queue Management KPI Stats Cards (One Row Only, Fit Full Width of Page) */
@@ -2302,7 +2293,6 @@ textarea.input-error {
   min-height: 92px;
   transition: none !important;
   transform: none !important;
-  will-change: auto !important;
 }
 
 .queue-stat-kpi-card:hover {
@@ -2959,6 +2949,130 @@ textarea {
   -moz-appearance: none !important;
   appearance: none !important;
   background: transparent !important;
+}
+
+/* Super Admin Responsive Single-Row Control Bar */
+.admin-control-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 1rem;
+  width: 100%;
+}
+
+.admin-pills-track {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.admin-pills-track::-webkit-scrollbar {
+  display: none;
+}
+
+.admin-filter-pill {
+  padding: 0 12px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 10px;
+  font-size: 0.83rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+}
+
+.admin-search-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.admin-search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  height: 38px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  min-width: 260px;
+  max-width: 340px;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease;
+}
+
+.admin-select-input {
+  padding: 0 12px;
+  height: 38px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-main);
+  font-size: 0.85rem;
+  outline: none;
+  cursor: pointer;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+/* Tablet & Mobile Breakpoints */
+@media (max-width: 1024px) {
+  .admin-control-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .admin-pills-track {
+    width: 100%;
+    padding-bottom: 2px;
+  }
+
+  .admin-search-actions {
+    width: 100%;
+    display: flex;
+    gap: 8px;
+  }
+
+  .admin-select-input {
+    flex: 0 0 auto;
+    min-width: 110px;
+  }
+
+  .admin-search-box {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-search-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-select-input {
+    width: 100%;
+  }
+
+  .admin-search-box {
+    width: 100%;
+    min-width: 0;
+  }
 }
 
 /* Global Prefers Reduced Motion Accessibility */

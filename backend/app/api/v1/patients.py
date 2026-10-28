@@ -20,6 +20,7 @@ from app.models import (
     HospitalBranch,
     Department,
     Doctor,
+    Service,
     QueueSession,
     Ticket,
     User,
@@ -38,6 +39,8 @@ router = APIRouter(prefix="/patients", tags=["Patient Platform"])
 
 class ServiceDiscoveryItem(BaseModel):
     id: uuid.UUID
+    department_id: Optional[uuid.UUID] = None
+    department_name: Optional[str] = None
     name: str
     description: Optional[str] = None
     price: float
@@ -139,17 +142,21 @@ async def search_hospitals(
     db: AsyncSession = Depends(get_db),
 ):
     """Public search and discovery of verified hospitals, branches, and live department queues"""
+    user_lat = lat if isinstance(lat, (int, float)) else None
+    user_lng = lng if isinstance(lng, (int, float)) else None
+    sort_by_dist = bool(sort_by_distance) if isinstance(sort_by_distance, bool) else False
+
     query = (
         select(Hospital)
         .where(Hospital.is_active == True)
         .options(
             selectinload(Hospital.departments).selectinload(Department.queue_sessions),
             selectinload(Hospital.departments).selectinload(Department.doctors),
-            selectinload(Hospital.services),
+            selectinload(Hospital.services).selectinload(Service.department),
         )
     )
 
-    if q:
+    if isinstance(q, str) and q.strip():
         search_term = f"%{q.strip().lower()}%"
         query = query.where(
             or_(
@@ -160,6 +167,29 @@ async def search_hospitals(
 
     res = await db.execute(query)
     hospitals = res.scalars().all()
+
+    # Batch query waiting ticket counts for all active sessions in ONE SQL query
+    active_session_ids = [
+        s.id
+        for h in hospitals
+        for d in h.departments
+        if getattr(d, "is_active", True)
+        for s in getattr(d, "queue_sessions", [])
+        if s.status == QueueStatus.ACTIVE
+    ]
+    waiting_counts_by_session = {}
+    if active_session_ids:
+        t_counts_res = await db.execute(
+            select(Ticket.queue_session_id, func.count(Ticket.id))
+            .where(
+                and_(
+                    Ticket.queue_session_id.in_(active_session_ids),
+                    Ticket.status.in_([TicketStatus.WAITING, TicketStatus.CALLED]),
+                )
+            )
+            .group_by(Ticket.queue_session_id)
+        )
+        waiting_counts_by_session = dict(t_counts_res.all())
 
     result = []
     for h in hospitals:
@@ -183,7 +213,7 @@ async def search_hospitals(
         else:
             cat = "General Hospital"
 
-        if category and category.lower() not in "all":
+        if isinstance(category, str) and category.lower() not in "all":
             if category.lower() in ("kids", "pediatric", "child", "children", "កុមារ"):
                 if cat != "Kids":
                     continue
@@ -196,17 +226,7 @@ async def search_hospitals(
                 continue
             # Find active session if any
             active_session = next((s for s in d.queue_sessions if s.status == QueueStatus.ACTIVE), None)
-            waiting_count = 0
-            if active_session:
-                t_res = await db.execute(
-                    select(func.count(Ticket.id)).where(
-                        and_(
-                            Ticket.queue_session_id == active_session.id,
-                            Ticket.status.in_([TicketStatus.WAITING, TicketStatus.CALLED]),
-                        )
-                    )
-                )
-                waiting_count = t_res.scalar() or 0
+            waiting_count = waiting_counts_by_session.get(active_session.id, 0) if active_session else 0
 
             est_wait = WaitTimeCalculator.calculate_wait_time(
                 position_ahead=waiting_count,
@@ -244,6 +264,8 @@ async def search_hospitals(
         service_items = [
             ServiceDiscoveryItem(
                 id=s.id,
+                department_id=s.department_id,
+                department_name=getattr(s.department, "name", None) if getattr(s, "department", None) else None,
                 name=s.name,
                 description=s.description,
                 price=float(s.price),
@@ -254,7 +276,7 @@ async def search_hospitals(
             if s.is_active
         ]
 
-        dist_km = calculate_distance_km(lat, lng, h.latitude, h.longitude)
+        dist_km = calculate_distance_km(user_lat, user_lng, h.latitude, h.longitude)
 
         result.append(
             HospitalDiscoveryResponse(
@@ -275,7 +297,7 @@ async def search_hospitals(
             )
         )
 
-    if lat is not None and lng is not None and result:
+    if user_lat is not None and user_lng is not None and result:
         # 1. Initial fast sort by straight-line Haversine proximity
         result.sort(key=lambda x: (x.distance_km is None, x.distance_km if x.distance_km is not None else 99999))
 
@@ -283,7 +305,7 @@ async def search_hospitals(
         top_count = min(len(result), 15)
         top_candidates = result[:top_count]
         dest_coords = [(h.latitude, h.longitude) for h in top_candidates]
-        driving_infos = await calculate_driving_distances_batch(lat, lng, dest_coords, timeout_seconds=1.8)
+        driving_infos = await calculate_driving_distances_batch(user_lat, user_lng, dest_coords, timeout_seconds=1.8)
 
         for idx, h_resp in enumerate(top_candidates):
             d_info = driving_infos[idx] if idx < len(driving_infos) else None
@@ -293,13 +315,14 @@ async def search_hospitals(
                 h_resp.is_driving_distance = True
 
         # Re-sort top candidates by real driving distance
-        if sort_by_distance:
+        if sort_by_dist:
             top_candidates.sort(key=lambda x: (x.distance_km is None, x.distance_km if x.distance_km is not None else 99999))
             result[:top_count] = top_candidates
-    elif sort_by_distance:
+    elif sort_by_dist:
         result.sort(key=lambda x: (x.distance_km is None, x.distance_km if x.distance_km is not None else 99999))
 
-    return result[:limit]
+    effective_limit = limit if isinstance(limit, int) else 200
+    return result[:effective_limit]
 
 
 @router.get("/discovery/doctors", response_model=List[DoctorDiscoveryResponse])

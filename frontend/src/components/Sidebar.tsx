@@ -15,6 +15,8 @@ import {
   Bell, 
   X, 
   Menu,
+  FileText,
+  Sparkles,
 } from 'lucide-react';
 import { UserProfile, AuthService } from '../services/auth';
 import { useLanguage } from '../context/LanguageContext';
@@ -35,7 +37,11 @@ export type NavTab =
   | 'partner_departments'
   | 'partner_staff'
   | 'partner_profile'
-  | 'admin_center';
+  | 'admin_center'
+  | 'admin_audit_logs'
+  | 'admin_partners'
+  | 'admin_users'
+  | 'admin_ai_guardrails';
 
 interface SidebarProps {
   currentUser: UserProfile | null;
@@ -132,6 +138,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
     setMobileOpen(false);
   };
 
+  const getHomeTab = (): NavTab => {
+    if (!currentUser) return 'landing';
+    if (currentUser.role === 'SUPER_ADMIN') return 'admin_center';
+    if (['DOCTOR', 'HOSPITAL_ADMIN', 'RECEPTIONIST', 'NURSE'].includes(currentUser.role)) {
+      return 'partner_dashboard';
+    }
+    return 'patient_triage';
+  };
+
   return (
     <>
         {/* Mobile Top Header */}
@@ -185,7 +200,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
           ) : (
             <button
-              onClick={() => handleNavClick('landing')}
+              onClick={() => handleNavClick(getHomeTab())}
               className="brand-logo"
               style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: '0.65rem' }}
             >
@@ -316,7 +331,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
           ) : (
             <button
-              onClick={() => handleNavClick('landing')}
+              onClick={() => handleNavClick(getHomeTab())}
               className="brand-logo sidebar-brand-btn"
               style={{
                 background: 'none',
@@ -480,8 +495,36 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onClick={() => handleNavClick('admin_center')}
                 className={`sidebar-nav-item ${activeTab === 'admin_center' ? 'active' : ''}`}
               >
-                <Shield size={20} />
+                <LayoutDashboard size={20} />
                 <span>{t('nav_admin')}</span>
+              </button>
+              <button
+                onClick={() => handleNavClick('admin_audit_logs')}
+                className={`sidebar-nav-item ${activeTab === 'admin_audit_logs' ? 'active' : ''}`}
+              >
+                <FileText size={20} />
+                <span>{t('nav_audit_logs')}</span>
+              </button>
+              <button
+                onClick={() => handleNavClick('admin_partners')}
+                className={`sidebar-nav-item ${activeTab === 'admin_partners' ? 'active' : ''}`}
+              >
+                <Building2 size={20} />
+                <span>{t('nav_admin_partners')}</span>
+              </button>
+              <button
+                onClick={() => handleNavClick('admin_users')}
+                className={`sidebar-nav-item ${activeTab === 'admin_users' ? 'active' : ''}`}
+              >
+                <Users size={20} />
+                <span>{t('nav_admin_users')}</span>
+              </button>
+              <button
+                onClick={() => handleNavClick('admin_ai_guardrails')}
+                className={`sidebar-nav-item ${activeTab === 'admin_ai_guardrails' ? 'active' : ''}`}
+              >
+                <Sparkles size={20} />
+                <span>{t('nav_admin_ai')}</span>
               </button>
             </>
           )}
@@ -785,8 +828,40 @@ export const Sidebar: React.FC<SidebarProps> = ({
               className={`mobile-tab-btn ${activeTab === 'admin_center' ? 'active' : ''}`}
               aria-label={t('nav_admin')}
             >
-              <Shield size={20} />
+              <LayoutDashboard size={20} />
               <span className="mobile-tab-label">{t('nav_admin')}</span>
+            </button>
+            <button
+              onClick={() => handleNavClick('admin_audit_logs')}
+              className={`mobile-tab-btn ${activeTab === 'admin_audit_logs' ? 'active' : ''}`}
+              aria-label={t('nav_audit_logs')}
+            >
+              <FileText size={20} />
+              <span className="mobile-tab-label">{t('nav_audit_logs')}</span>
+            </button>
+            <button
+              onClick={() => handleNavClick('admin_partners')}
+              className={`mobile-tab-btn ${activeTab === 'admin_partners' ? 'active' : ''}`}
+              aria-label={t('nav_admin_partners')}
+            >
+              <Building2 size={20} />
+              <span className="mobile-tab-label">{t('nav_admin_partners')}</span>
+            </button>
+            <button
+              onClick={() => handleNavClick('admin_users')}
+              className={`mobile-tab-btn ${activeTab === 'admin_users' ? 'active' : ''}`}
+              aria-label={t('nav_admin_users')}
+            >
+              <Users size={20} />
+              <span className="mobile-tab-label">{t('nav_admin_users')}</span>
+            </button>
+            <button
+              onClick={() => handleNavClick('admin_ai_guardrails')}
+              className={`mobile-tab-btn ${activeTab === 'admin_ai_guardrails' ? 'active' : ''}`}
+              aria-label={t('nav_admin_ai')}
+            >
+              <Sparkles size={20} />
+              <span className="mobile-tab-label">{t('nav_admin_ai')}</span>
             </button>
           </>
         )}

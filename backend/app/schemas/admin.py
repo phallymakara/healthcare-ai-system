@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, date
-from typing import Optional, List
+from typing import Optional, List, Dict
 from pydantic import BaseModel, EmailStr
 
 from app.models.enums import UserRole, VerificationStatus, TicketStatus
@@ -70,7 +70,30 @@ class AdminDashboardSummaryResponse(BaseModel):
     pending_hospital_approvals: int
     total_doctors: int
     total_patients: int
-    total_tickets_issued_today: int
-    total_completed_today: int
-    active_queue_sessions_today: int
-    recent_hospitals: List[AdminHospitalItemResponse]
+    total_tickets_issued_today: int = 0
+    total_completed_today: int = 0
+    active_queue_sessions_today: int = 0
+    total_users: int = 0
+    active_users: int = 0
+    facility_status_breakdown: Dict[str, int] = {}
+    user_role_distribution: Dict[str, int] = {}
+    audit_category_breakdown: Dict[str, int] = {}
+    guest_patients_count: int = 0
+    registered_patients_count: int = 0
+    recent_hospitals: List[AdminHospitalItemResponse] = []
+
+
+class ActivityAuditLogItem(BaseModel):
+    id: str
+    event_type: str
+    action: str
+    actor_name: str
+    actor_role: str
+    actor_email: Optional[str] = None
+    target_entity: Optional[str] = None
+    details: Optional[str] = None
+    ip_address: Optional[str] = None
+    status: str = "SUCCESS"
+    timestamp: datetime
+
+    model_config = {"from_attributes": True}

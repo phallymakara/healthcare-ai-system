@@ -215,7 +215,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
               </label>
               <input
                 type="text"
-                placeholder={language === 'km' ? 'អ៊ីមែល ឬ លេខទូរស័ព្ទ' : 'email or phone'}
+                placeholder={language === 'km' ? 'បញ្ចូលអ៊ីមែល ឬ លេខទូរស័ព្ទ' : 'Enter email or phone number'}
                 value={account}
                 onChange={(e) => { setAccount(e.target.value); setError(null); }}
                 required

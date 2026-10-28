@@ -9,19 +9,45 @@ import { useLanguage } from './context/LanguageContext';
 import { AuthService, UserProfile } from './services/auth';
 import { API_BASE } from './services/api';
 import { RealTimeQueueClient } from './services/websocket';
-import { LandingPage } from './pages/landing/LandingPage';
-import { HospitalDiscovery } from './pages/patient/HospitalDiscovery';
-import { HealthcareAssistant } from './pages/patient/HealthcareAssistant';
 import { ComingSoonView } from './components/common/ComingSoonView';
-import { PartnerDashboard } from './pages/partner/PartnerDashboard';
-import { QueueManagement } from './pages/partner/QueueManagement';
-import { DoctorManagement } from './pages/partner/DoctorManagement';
-import { DepartmentManagement } from './pages/partner/DepartmentManagement';
-import { StaffManagement } from './pages/partner/StaffManagement';
-import { HospitalProfile } from './pages/partner/HospitalProfile';
-import { AdminDashboard } from './pages/admin/AdminDashboard';
-import { HospitalPartnerAuth } from './pages/partner/HospitalPartnerAuth';
 import { isPartnerPortal, getPortalSwitchUrl } from './utils/subdomain';
+
+// Lazy-loaded route components for high performance and minimal initial bundle size
+const LandingPage = React.lazy(() => import('./pages/landing/LandingPage').then(m => ({ default: m.LandingPage })));
+const HospitalDiscovery = React.lazy(() => import('./pages/patient/HospitalDiscovery').then(m => ({ default: m.HospitalDiscovery })));
+const HealthcareAssistant = React.lazy(() => import('./pages/patient/HealthcareAssistant').then(m => ({ default: m.HealthcareAssistant })));
+const PartnerDashboard = React.lazy(() => import('./pages/partner/PartnerDashboard').then(m => ({ default: m.PartnerDashboard })));
+const QueueManagement = React.lazy(() => import('./pages/partner/QueueManagement').then(m => ({ default: m.QueueManagement })));
+const DoctorManagement = React.lazy(() => import('./pages/partner/DoctorManagement').then(m => ({ default: m.DoctorManagement })));
+const DepartmentManagement = React.lazy(() => import('./pages/partner/DepartmentManagement').then(m => ({ default: m.DepartmentManagement })));
+const StaffManagement = React.lazy(() => import('./pages/partner/StaffManagement').then(m => ({ default: m.StaffManagement })));
+const HospitalProfile = React.lazy(() => import('./pages/partner/HospitalProfile').then(m => ({ default: m.HospitalProfile })));
+const AdminDashboard = React.lazy(() => import('./pages/admin/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
+const AdminAuditLogs = React.lazy(() => import('./pages/admin/AdminAuditLogs').then(m => ({ default: m.AdminAuditLogs })));
+const AdminPartners = React.lazy(() => import('./pages/admin/AdminPartners').then(m => ({ default: m.AdminPartners })));
+const AdminUsers = React.lazy(() => import('./pages/admin/AdminUsers').then(m => ({ default: m.AdminUsers })));
+const AdminAIGuardrails = React.lazy(() => import('./pages/admin/AdminAIGuardrails').then(m => ({ default: m.AdminAIGuardrails })));
+const HospitalPartnerAuth = React.lazy(() => import('./pages/partner/HospitalPartnerAuth').then(m => ({ default: m.HospitalPartnerAuth })));
+
+const LazyPageFallback: React.FC = () => (
+  <div
+    style={{
+      flex: 1,
+      width: '100%',
+      minHeight: '300px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      color: 'var(--text-muted)',
+      fontSize: '0.88rem',
+    }}
+  >
+    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+      <span className="streaming-cursor" style={{ width: '3px', height: '1.1em' }} />
+      <span>Loading...</span>
+    </div>
+  </div>
+);
 import { App as CapApp } from '@capacitor/app';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { SplashScreen } from '@capacitor/splash-screen';
@@ -189,6 +215,7 @@ export const App: React.FC = () => {
   }, [serverConfigOpen, authModalOpen, selectedTicketId, activeTab]);
 
   const handleLogout = () => {
+    AuthService.logout().catch(() => {});
     AuthService.clearSession();
     setCurrentUser(null);
     setNotifications([]);
@@ -229,12 +256,29 @@ export const App: React.FC = () => {
       'partner_staff',
       'partner_profile',
       'admin_center',
+      'admin_audit_logs',
+      'admin_partners',
+      'admin_users',
+      'admin_ai_guardrails',
     ];
 
     if (!currentUser && protectedTabs.includes(tab)) {
       setAuthModalOpen(true);
       return;
     }
+
+    // If user is already logged in, do not allow routing to the public landing page
+    if (currentUser && tab === 'landing') {
+      if (currentUser.role === 'SUPER_ADMIN') {
+        setActiveTab('admin_center');
+      } else if (['DOCTOR', 'HOSPITAL_ADMIN', 'RECEPTIONIST', 'NURSE'].includes(currentUser.role)) {
+        setActiveTab('partner_dashboard');
+      } else {
+        setActiveTab('patient_triage');
+      }
+      return;
+    }
+
     setActiveTab(tab);
   };
 
@@ -249,18 +293,20 @@ export const App: React.FC = () => {
     return (
       <div className="page-transition-enter" style={{ minHeight: '100vh' }}>
         <MaintenanceBanner />
-        <HospitalPartnerAuth
-          onSuccess={handleUserLoginSuccess}
-          onSwitchToPatient={() => {
-            setIsPartner(false);
-            const targetUrl = getPortalSwitchUrl('patient');
-            try {
-              window.history.pushState({ portal: 'patient' }, '', targetUrl);
-            } catch {
-              window.location.href = targetUrl;
-            }
-          }}
-        />
+        <React.Suspense fallback={<LazyPageFallback />}>
+          <HospitalPartnerAuth
+            onSuccess={handleUserLoginSuccess}
+            onSwitchToPatient={() => {
+              setIsPartner(false);
+              const targetUrl = getPortalSwitchUrl('patient');
+              try {
+                window.history.pushState({ portal: 'patient' }, '', targetUrl);
+              } catch {
+                window.location.href = targetUrl;
+              }
+            }}
+          />
+        </React.Suspense>
       </div>
     );
   }
@@ -289,12 +335,14 @@ export const App: React.FC = () => {
           />
 
           <main className="landing-content-container page-transition-enter">
-            <LandingPage
-              onOpenAuth={() => setAuthModalOpen(true)}
-              currentUser={currentUser}
-              onSelectTab={handleSelectTab}
-              onStartChatWithQuery={handleStartChatWithQuery}
-            />
+            <React.Suspense fallback={<LazyPageFallback />}>
+              <LandingPage
+                onOpenAuth={() => setAuthModalOpen(true)}
+                currentUser={currentUser}
+                onSelectTab={handleSelectTab}
+                onStartChatWithQuery={handleStartChatWithQuery}
+              />
+            </React.Suspense>
           </main>
         </div>
       ) : (
@@ -323,7 +371,7 @@ export const App: React.FC = () => {
             />
 
             <main className="app-content-inner">
-              {/* --- PORTAL VIEW ROUTING WITH FLUID PAGE-TRANSITION --- */}
+              {/* --- PORTAL VIEW ROUTING WITH FLUID PAGE-TRANSITION & LAZY SUSPENSE --- */}
               <div
                 key={activeTab}
                 className="page-transition-enter"
@@ -335,61 +383,79 @@ export const App: React.FC = () => {
                   minHeight: 0,
                 }}
               >
-                {activeTab === 'patient_discovery' && (
-                  <HospitalDiscovery
-                    onTicketBooked={handleTicketBooked}
-                    onNavigateToTriage={() => setActiveTab('patient_triage')}
-                    onNavigateToTracker={() => setActiveTab('patient_live_ticket')}
-                  />
-                )}
+                <React.Suspense fallback={<LazyPageFallback />}>
+                  {activeTab === 'patient_discovery' && (
+                    <HospitalDiscovery
+                      onTicketBooked={handleTicketBooked}
+                      onNavigateToTriage={() => setActiveTab('patient_triage')}
+                      onNavigateToTracker={() => setActiveTab('patient_live_ticket')}
+                    />
+                  )}
 
-                {activeTab === 'patient_triage' && (
-                  <HealthcareAssistant
-                    initialQuery={pendingChatQuery}
-                    onClearInitialQuery={() => setPendingChatQuery(undefined)}
-                    onTicketBooked={handleTicketBooked}
-                    onNavigateToDiscovery={() => setActiveTab('patient_discovery')}
-                    onNavigateToTracker={() => setActiveTab('patient_live_ticket')}
-                    currentUser={currentUser}
-                    onOpenAuth={() => setAuthModalOpen(true)}
-                  />
-                )}
+                  {activeTab === 'patient_triage' && (
+                    <HealthcareAssistant
+                      initialQuery={pendingChatQuery}
+                      onClearInitialQuery={() => setPendingChatQuery(undefined)}
+                      onTicketBooked={handleTicketBooked}
+                      onNavigateToDiscovery={() => setActiveTab('patient_discovery')}
+                      onNavigateToTracker={() => setActiveTab('patient_live_ticket')}
+                      currentUser={currentUser}
+                      onOpenAuth={() => setAuthModalOpen(true)}
+                    />
+                  )}
 
-                {activeTab === 'patient_live_ticket' && (
-                  <ComingSoonView type="ticket" />
-                )}
+                  {activeTab === 'patient_live_ticket' && (
+                    <ComingSoonView type="ticket" />
+                  )}
 
-                {activeTab === 'patient_history' && (
-                  <ComingSoonView type="history" />
-                )}
+                  {activeTab === 'patient_history' && (
+                    <ComingSoonView type="history" />
+                  )}
 
-                {activeTab === 'partner_dashboard' && (
-                  <PartnerDashboard onNavigateToQueue={() => setActiveTab('partner_counter')} />
-                )}
+                  {activeTab === 'partner_dashboard' && (
+                    <PartnerDashboard onNavigateToQueue={() => setActiveTab('partner_counter')} />
+                  )}
 
-                {activeTab === 'partner_counter' && (
-                  <QueueManagement />
-                )}
+                  {activeTab === 'partner_counter' && (
+                    <QueueManagement />
+                  )}
 
-                {activeTab === 'partner_doctors' && (
-                  <DoctorManagement />
-                )}
+                  {activeTab === 'partner_doctors' && (
+                    <DoctorManagement />
+                  )}
 
-                {activeTab === 'partner_departments' && (
-                  <DepartmentManagement />
-                )}
+                  {activeTab === 'partner_departments' && (
+                    <DepartmentManagement />
+                  )}
 
-                {activeTab === 'partner_staff' && (
-                  <StaffManagement />
-                )}
+                  {activeTab === 'partner_staff' && (
+                    <StaffManagement />
+                  )}
 
-                {activeTab === 'partner_profile' && (
-                  <HospitalProfile />
-                )}
+                  {activeTab === 'partner_profile' && (
+                    <HospitalProfile />
+                  )}
 
-                {activeTab === 'admin_center' && (
-                  <AdminDashboard />
-                )}
+                  {activeTab === 'admin_center' && (
+                    <AdminDashboard />
+                  )}
+
+                  {activeTab === 'admin_audit_logs' && (
+                    <AdminAuditLogs />
+                  )}
+
+                  {activeTab === 'admin_partners' && (
+                    <AdminPartners />
+                  )}
+
+                  {activeTab === 'admin_users' && (
+                    <AdminUsers />
+                  )}
+
+                  {activeTab === 'admin_ai_guardrails' && (
+                    <AdminAIGuardrails />
+                  )}
+                </React.Suspense>
               </div>
             </main>
           </div>

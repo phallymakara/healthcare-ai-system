@@ -60,6 +60,20 @@ export class AuthService {
     localStorage.removeItem(STORAGE_KEY_USER);
   }
 
+  static async logout(): Promise<void> {
+    try {
+      await fetch(`${API_BASE}/auth/logout`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...this.getAuthHeaders(),
+        },
+      });
+    } catch {
+      // Background cleanup
+    }
+  }
+
   static async login(account: string, password: string): Promise<AuthTokens> {
     const res = await fetch(`${API_BASE}/auth/login`, {
       method: 'POST',

@@ -1,9 +1,11 @@
-from fastapi import APIRouter, Depends, status, UploadFile, File, HTTPException
+from fastapi import APIRouter, Depends, status, UploadFile, File, HTTPException, Request
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import get_current_user, require_roles
+from app.core.deps import get_current_user, get_optional_current_user, require_roles
 from app.models.user import User
+from app.models.hospital import Hospital
 from app.models.enums import UserRole
 from app.schemas.auth import (
     LoginRequest,
@@ -20,14 +22,77 @@ from app.schemas.partner import (
 )
 from app.services.auth_service import AuthService
 from app.services.azure_storage import azure_storage_service
+from app.services.audit_service import AuditService
 
 router = APIRouter(prefix="/auth", tags=["Authentication & Accounts"])
 
 
 @router.post("/login", response_model=TokenResponse)
-async def login(data: LoginRequest, db: AsyncSession = Depends(get_db)):
+async def login(data: LoginRequest, request: Request, db: AsyncSession = Depends(get_db)):
     """Unified login for Patients, Hospital Staff, and Admins using email or phone"""
-    return await AuthService.authenticate_user(db, data)
+    res = await AuthService.authenticate_user(db, data)
+
+    # Record login audit log
+    try:
+        user = res.user
+        hosp_name = None
+        if user.hospital_id:
+            h_res = await db.execute(select(Hospital.name).where(Hospital.id == user.hospital_id))
+            hosp_name = h_res.scalar_one_or_none()
+
+        ip = request.client.host if request.client else "127.0.0.1"
+        role_str = user.role.value if hasattr(user.role, "value") else str(user.role)
+        if role_str.startswith("UserRole."):
+            role_str = role_str.replace("UserRole.", "")
+        action_name = "Super Admin Authentication" if role_str == "SUPER_ADMIN" else f"Partner {role_str} Login"
+        await AuditService.record_log(
+            event_type="LOGIN",
+            action=action_name,
+            actor_name=user.full_name,
+            actor_role=role_str,
+            actor_email=user.email or user.phone_number,
+            target_entity=hosp_name or ("Admin Security Center" if role_str == "SUPER_ADMIN" else "Platform Portal"),
+            details="User authenticated successfully via credentials",
+            ip_address=ip,
+            status="SUCCESS",
+        )
+    except Exception:
+        pass
+
+    return res
+
+
+@router.post("/logout")
+async def logout(
+    request: Request,
+    current_user: Optional[User] = Depends(get_optional_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Log out current user and record activity audit log"""
+    if current_user:
+        hosp_name = None
+        if current_user.hospital_id:
+            h_res = await db.execute(select(Hospital.name).where(Hospital.id == current_user.hospital_id))
+            hosp_name = h_res.scalar_one_or_none()
+
+        ip = request.client.host if request.client else "127.0.0.1"
+        action_name = "Super Admin Signed Out" if current_user.role == UserRole.SUPER_ADMIN else f"Partner {current_user.role.value} Logout"
+        try:
+            await AuditService.record_log(
+                event_type="LOGOUT",
+                action=action_name,
+                actor_name=current_user.full_name,
+                actor_role=current_user.role.value,
+                actor_email=current_user.email or current_user.phone_number,
+                target_entity=hosp_name or "System Portal",
+                details="User session closed cleanly",
+                ip_address=ip,
+                status="INFO",
+            )
+        except Exception:
+            pass
+
+    return {"status": "ok", "message": "Successfully logged out"}
 
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)

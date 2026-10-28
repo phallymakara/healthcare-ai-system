@@ -17,7 +17,11 @@ export type NavTab =
   | 'partner_departments'
   | 'partner_staff'
   | 'partner_profile'
-  | 'admin_center';
+  | 'admin_center'
+  | 'admin_audit_logs'
+  | 'admin_partners'
+  | 'admin_users'
+  | 'admin_ai_guardrails';
 
 interface HeaderProps {
   currentUser: UserProfile | null;
@@ -48,14 +52,22 @@ export const Header: React.FC<HeaderProps> = ({
   const isAdmin = currentUser && currentUser.role === 'SUPER_ADMIN';
   const isPatient = currentUser && currentUser.role === 'PATIENT';
 
+  const getHomeTab = (): NavTab => {
+    if (!currentUser) return 'landing';
+    if (currentUser.role === 'SUPER_ADMIN') return 'admin_center';
+    if (['DOCTOR', 'HOSPITAL_ADMIN', 'RECEPTIONIST', 'NURSE'].includes(currentUser.role)) {
+      return 'partner_dashboard';
+    }
+    return 'patient_triage';
+  };
+
   return (
     <header className="header-wrapper" style={{ fontFamily: kmFont }}>
       <div className="header-content">
-        {/* Brand Logo - Navigates to Landing page (Left) */}
-        {/* Brand Logo - Navigates to Landing page (Left) */}
+        {/* Brand Logo - Navigates to Dashboard if logged in, Landing if guest */}
         <div className="header-brand">
           <button 
-            onClick={() => onSelectTab('landing')} 
+            onClick={() => onSelectTab(getHomeTab())} 
             className="brand-logo"
             style={{ 
               background: 'none', 
@@ -371,22 +383,88 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Super Admin Navigation */}
           {isAdmin && (
-            <button
-              onClick={() => onSelectTab('admin_center')}
-              style={{
-                background: activeTab === 'admin_center' ? 'var(--accent-primary)' : 'transparent',
-                border: 'none',
-                borderRadius: 'var(--radius-full)',
-                color: activeTab === 'admin_center' ? '#ffffff' : 'var(--text-muted)',
-                fontWeight: activeTab === 'admin_center' ? 700 : 500,
-                padding: '0.45rem 1.05rem',
-                fontSize: '0.96rem',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              {t('nav_admin')}
-            </button>
+            <>
+              <button
+                onClick={() => onSelectTab('admin_center')}
+                style={{
+                  background: activeTab === 'admin_center' ? 'var(--accent-primary)' : 'transparent',
+                  border: 'none',
+                  borderRadius: 'var(--radius-full)',
+                  color: activeTab === 'admin_center' ? '#ffffff' : 'var(--text-muted)',
+                  fontWeight: activeTab === 'admin_center' ? 700 : 500,
+                  padding: '0.45rem 1.05rem',
+                  fontSize: '0.96rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                {t('nav_admin')}
+              </button>
+              <button
+                onClick={() => onSelectTab('admin_audit_logs')}
+                style={{
+                  background: activeTab === 'admin_audit_logs' ? 'var(--accent-primary)' : 'transparent',
+                  border: 'none',
+                  borderRadius: 'var(--radius-full)',
+                  color: activeTab === 'admin_audit_logs' ? '#ffffff' : 'var(--text-muted)',
+                  fontWeight: activeTab === 'admin_audit_logs' ? 700 : 500,
+                  padding: '0.45rem 1.05rem',
+                  fontSize: '0.96rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                {t('nav_audit_logs')}
+              </button>
+              <button
+                onClick={() => onSelectTab('admin_partners')}
+                style={{
+                  background: activeTab === 'admin_partners' ? 'var(--accent-primary)' : 'transparent',
+                  border: 'none',
+                  borderRadius: 'var(--radius-full)',
+                  color: activeTab === 'admin_partners' ? '#ffffff' : 'var(--text-muted)',
+                  fontWeight: activeTab === 'admin_partners' ? 700 : 500,
+                  padding: '0.45rem 1.05rem',
+                  fontSize: '0.96rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                {t('nav_admin_partners')}
+              </button>
+              <button
+                onClick={() => onSelectTab('admin_users')}
+                style={{
+                  background: activeTab === 'admin_users' ? 'var(--accent-primary)' : 'transparent',
+                  border: 'none',
+                  borderRadius: 'var(--radius-full)',
+                  color: activeTab === 'admin_users' ? '#ffffff' : 'var(--text-muted)',
+                  fontWeight: activeTab === 'admin_users' ? 700 : 500,
+                  padding: '0.45rem 1.05rem',
+                  fontSize: '0.96rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                {t('nav_admin_users')}
+              </button>
+              <button
+                onClick={() => onSelectTab('admin_ai_guardrails')}
+                style={{
+                  background: activeTab === 'admin_ai_guardrails' ? 'var(--accent-primary)' : 'transparent',
+                  border: 'none',
+                  borderRadius: 'var(--radius-full)',
+                  color: activeTab === 'admin_ai_guardrails' ? '#ffffff' : 'var(--text-muted)',
+                  fontWeight: activeTab === 'admin_ai_guardrails' ? 700 : 500,
+                  padding: '0.45rem 1.05rem',
+                  fontSize: '0.96rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                {t('nav_admin_ai')}
+              </button>
+            </>
           )}
         </nav>
 
