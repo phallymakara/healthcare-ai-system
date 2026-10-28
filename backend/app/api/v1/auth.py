@@ -1,3 +1,4 @@
+from typing import Optional
 from fastapi import APIRouter, Depends, status, UploadFile, File, HTTPException, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
