@@ -332,7 +332,7 @@ const MessageBubble = React.memo<MessageBubbleProps>(({
             marginTop: '0.85rem',
             paddingTop: '0.5rem',
           }}>
-            {msg.suggestedActions.map((action, aIdx) => {
+            {msg.suggestedActions.slice(0, 2).map((action, aIdx) => {
               const cleanAction = cleanActionText(action);
               if (!cleanAction) return null;
               const isActionKm = isKhmer(cleanAction);
