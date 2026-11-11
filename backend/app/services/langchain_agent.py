@@ -878,56 +878,87 @@ class HealthcareAgentService:
             return
 
         try:
-            # 1. Resolve tool calls if any
-            for _ in range(4):
-                ai_res: AIMessage = await llm_with_tools.ainvoke(messages)
-                if not ai_res.tool_calls:
-                    break
-
-                messages.append(ai_res)
-                for tc in ai_res.tool_calls:
-                    t_name = tc["name"]
-                    t_args = tc.get("args", {})
-                    t_id = tc.get("id", str(uuid.uuid4()))
-
-                    tool_fn = tool_map.get(t_name)
-                    if tool_fn:
-                        try:
-                            t_output = await tool_fn.ainvoke(t_args)
-                        except Exception as err:
-                            logger.error(f"Error executing tool {t_name}: {err}")
-                            t_output = f"Error executing tool {t_name}: {str(err)}"
-                    else:
-                        t_output = f"Tool {t_name} is not available in Phase 1."
-
-                    messages.append(ToolMessage(content=str(t_output), tool_call_id=t_id))
-
-            # 2. Stream the final response with llm.astream
+            markers = ("SUGGESTED_ACTIONS", "SUGGESTED ACTIONS", "REQUIRES_DISCLAIMER")
             full_text_buffer = ""
+            emitted_len = 0
             action_buffering = False
-            async for chunk in llm.astream(messages):
-                content = chunk.content if isinstance(chunk.content, str) else ""
-                if not content:
+
+            # Stream directly with tools bound so text replies emit on the first token
+            # instead of waiting on a duplicate non-streaming ainvoke() call.
+            for _ in range(4):
+                gathered = None
+                has_tool_chunks = False
+
+                async for chunk in llm_with_tools.astream(messages):
+                    gathered = chunk if gathered is None else gathered + chunk
+                    if getattr(chunk, "tool_call_chunks", None):
+                        has_tool_chunks = True
+
+                    content = chunk.content if isinstance(chunk.content, str) else ""
+                    if not content or has_tool_chunks or action_buffering:
+                        continue
+
+                    full_text_buffer += content
+
+                    # Stop streaming body text once any metadata marker starts
+                    marker_idx = -1
+                    for m in markers:
+                        idx = full_text_buffer.find(m, max(0, emitted_len - len(m)))
+                        if idx != -1 and (marker_idx == -1 or idx < marker_idx):
+                            marker_idx = idx
+
+                    if marker_idx != -1:
+                        if marker_idx > emitted_len:
+                            yield {"type": "token", "delta": full_text_buffer[emitted_len:marker_idx]}
+                            emitted_len = marker_idx
+                        action_buffering = True
+                        continue
+
+                    # Hold back only a strict prefix of a marker at the tail using emitted_len cursor
+                    # so single starting letters (like 'R' or 'S') are never dropped on subsequent chunks.
+                    hold_back = 0
+                    for m in markers:
+                        max_prefix = min(len(m) - 1, len(full_text_buffer))
+                        for i in range(max_prefix, 0, -1):
+                            if full_text_buffer.endswith(m[:i]):
+                                hold_back = max(hold_back, i)
+                                break
+
+                    safe_end = len(full_text_buffer) - hold_back
+                    if safe_end > emitted_len:
+                        yield {"type": "token", "delta": full_text_buffer[emitted_len:safe_end]}
+                        emitted_len = safe_end
+
+                if gathered and getattr(gathered, "tool_calls", None):
+                    messages.append(
+                        AIMessage(
+                            content=gathered.content if isinstance(gathered.content, str) else "",
+                            tool_calls=gathered.tool_calls,
+                        )
+                    )
+                    for tc in gathered.tool_calls:
+                        t_name = tc["name"]
+                        t_args = tc.get("args", {})
+                        t_id = tc.get("id", str(uuid.uuid4()))
+
+                        tool_fn = tool_map.get(t_name)
+                        if tool_fn:
+                            try:
+                                t_output = await tool_fn.ainvoke(t_args)
+                            except Exception as err:
+                                logger.error(f"Error executing tool {t_name}: {err}")
+                                t_output = f"Error executing tool {t_name}: {str(err)}"
+                        else:
+                            t_output = f"Tool {t_name} is not available in Phase 1."
+
+                        messages.append(ToolMessage(content=str(t_output), tool_call_id=t_id))
                     continue
 
-                full_text_buffer += content
+                break
 
-                if any(m in full_text_buffer for m in ["SUGGESTED_ACTIONS", "SUGGESTED ACTIONS", "REQUIRES_DISCLAIMER"]):
-                    action_buffering = True
-
-                if not action_buffering:
-                    markers = ["SUGGESTED_ACTIONS", "SUGGESTED ACTIONS", "REQUIRES_DISCLAIMER"]
-                    prefix_len = 0
-                    for m in markers:
-                        for i in range(1, len(m)):
-                            if full_text_buffer.endswith(m[:i]):
-                                prefix_len = max(prefix_len, i)
-                    if prefix_len > 0:
-                        safe = content[:-prefix_len] if len(content) >= prefix_len else ""
-                        if safe:
-                            yield {"type": "token", "delta": safe}
-                    else:
-                        yield {"type": "token", "delta": content}
+            # Flush any remaining non-marker characters held at the tail
+            if not action_buffering and emitted_len < len(full_text_buffer):
+                yield {"type": "token", "delta": full_text_buffer[emitted_len:]}
 
             final_reply = full_text_buffer
         except Exception as llm_err:

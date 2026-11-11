@@ -1066,48 +1066,82 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
         content: m.text,
       }));
 
-      // Read SSE stream with smooth progressive display queue via apiClient
+      // Read SSE stream with smooth grapheme-safe progressive display queue
       let rawTargetText = '';
       let displayedText = '';
       let streamStarted = false;
       let metadata: any = null;
-      let isStreamingActive = true;
+      let isNetworkDone = false;
       let rafId: number | null = null;
+      let lastPaintAt = 0;
 
-      // Silky-smooth 60fps progressive text renderer
-      const pumpStream = () => {
-        if (!isStreamingActive && displayedText.length >= rawTargetText.length) {
+      // Advance index cleanly past Khmer combining marks / subscripts / UTF-16 surrogates
+      // so glyphs never break into dotted-circle placeholders while streaming.
+      const snapToSafeBoundary = (text: string, idx: number): number => {
+        if (idx >= text.length) return text.length;
+        let i = idx;
+        while (i < text.length) {
+          const code = text.charCodeAt(i);
+          // Khmer vowel signs / diacritics / coeng (U+17B4..U+17D3, U+17DD) or UTF-16 low surrogate
+          const isKhmerCombining = (code >= 0x17b4 && code <= 0x17d3) || code === 0x17dd;
+          const isLowSurrogate = code >= 0xdc00 && code <= 0xdfff;
+          const prevWasCoeng = i > 0 && text.charCodeAt(i - 1) === 0x17d2;
+          if (isKhmerCombining || isLowSurrogate || prevWasCoeng) {
+            i += 1;
+          } else {
+            break;
+          }
+        }
+        return i;
+      };
+
+      const renderProgress = (nextText: string) => {
+        if (!streamStarted) {
+          streamStarted = true;
+          setStreamingMsgId(streamMsgId);
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: streamMsgId,
+              role: 'assistant',
+              text: nextText,
+              timestamp: new Date(),
+            },
+          ]);
+        } else {
+          setMessages((prev) =>
+            prev.map((m) => (m.id === streamMsgId ? { ...m, text: nextText } : m))
+          );
+        }
+        if (isNearBottomRef.current && messagesContainerRef.current) {
+          const container = messagesContainerRef.current;
+          container.scrollTop = container.scrollHeight;
+        }
+      };
+
+      let resolveDrain: () => void = () => {};
+      const drainDonePromise = new Promise<void>((resolve) => {
+        resolveDrain = resolve;
+      });
+
+      const pumpStream = (now: number) => {
+        const remaining = rawTargetText.length - displayedText.length;
+
+        if (isNetworkDone && remaining <= 0) {
+          rafId = null;
+          resolveDrain();
           return;
         }
 
-        if (displayedText.length < rawTargetText.length) {
-          // Dynamic adaptive pace: smooth progressive reveal without network burst stutter
-          const gap = rawTargetText.length - displayedText.length;
-          const step = Math.min(gap, Math.max(2, Math.floor(gap / 5) + 1));
-          displayedText = rawTargetText.slice(0, displayedText.length + step);
-
-          if (!streamStarted) {
-            streamStarted = true;
-            setStreamingMsgId(streamMsgId);
-            setMessages((prev) => [
-              ...prev,
-              {
-                id: streamMsgId,
-                role: 'assistant',
-                text: displayedText,
-                timestamp: new Date(),
-              },
-            ]);
-          } else {
-            setMessages((prev) =>
-              prev.map((m) => (m.id === streamMsgId ? { ...m, text: displayedText } : m))
-            );
-          }
-
-          if (isNearBottomRef.current && messagesContainerRef.current) {
-            const container = messagesContainerRef.current;
-            container.scrollTop = container.scrollHeight;
-          }
+        // Throttle React markdown re-renders (~30fps = 32ms) so UI stays responsive
+        if (remaining > 0 && now - lastPaintAt >= 32) {
+          lastPaintAt = now;
+          const step = isNetworkDone
+            ? Math.max(8, Math.ceil(remaining / 4))
+            : Math.min(remaining, Math.max(2, Math.ceil(remaining / 10)));
+          const safeEnd = snapToSafeBoundary(rawTargetText, displayedText.length + step);
+          displayedText = rawTargetText.slice(0, safeEnd);
+          renderProgress(displayedText);
         }
 
         rafId = requestAnimationFrame(pumpStream);
@@ -1137,27 +1171,31 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
           }
         );
 
-        if (streamResult.fullText) {
-          rawTargetText = streamResult.fullText;
-        }
         if (streamResult.metadata) {
           metadata = streamResult.metadata;
         }
+        if (metadata?.reply) {
+          rawTargetText = metadata.reply;
+        } else if (streamResult.fullText) {
+          rawTargetText = streamResult.fullText;
+        }
+
+        isNetworkDone = true;
+        // Wait briefly for the visual queue to finish draining cleanly instead of snapping
+        await Promise.race([
+          drainDonePromise,
+          new Promise<void>((resolve) => window.setTimeout(resolve, 260)),
+        ]);
       } finally {
-        isStreamingActive = false;
+        isNetworkDone = true;
         if (rafId) {
           cancelAnimationFrame(rafId);
           rafId = null;
         }
-        // Ensure final displayed text is synchronized with all received tokens
+        resolveDrain();
         if (rawTargetText && displayedText !== rawTargetText) {
           displayedText = rawTargetText;
-          setMessages((prev) =>
-            prev.map((m) => (m.id === streamMsgId ? { ...m, text: rawTargetText } : m))
-          );
-          if (isNearBottomRef.current && messagesContainerRef.current) {
-            messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
-          }
+          renderProgress(rawTargetText);
         }
       }
 
