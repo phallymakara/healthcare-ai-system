@@ -1,6 +1,8 @@
 import os
+import re
 import uuid
 import logging
+from pathlib import Path
 from typing import Optional, Dict, Any, List
 from urllib.parse import urlparse, unquote
 from fastapi import UploadFile, HTTPException, status
@@ -11,14 +13,47 @@ logger = logging.getLogger("azure_storage")
 ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
 
+ALLOWED_DOCUMENT_TYPES = {"application/pdf", "image/jpeg", "image/png", "image/webp"}
+MAX_DOCUMENT_SIZE = 10 * 1024 * 1024  # 10 MB
+
+_DOC_EXT_BY_MIME = {
+    "application/pdf": "pdf",
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/webp": "webp",
+}
+
+
+def sanitize_document_filename(filename: Optional[str]) -> str:
+    """Sanitize a user-supplied filename for safe storage and Content-Disposition headers."""
+    base = Path(filename or "document").name
+    cleaned = re.sub(r"[^A-Za-z0-9._\- ]+", "_", base).strip(" .")
+    return (cleaned or "document")[:200]
+
+
+def validate_document_magic_bytes(content: bytes, content_type: str) -> bool:
+    """Verify leading file signature bytes match the declared PDF or image MIME type."""
+    ct = (content_type or "").lower()
+    if ct == "application/pdf":
+        return content.startswith(b"%PDF-")
+    if ct == "image/jpeg":
+        return content.startswith(b"\xff\xd8\xff")
+    if ct == "image/png":
+        return content.startswith(b"\x89PNG\r\n\x1a\n")
+    if ct == "image/webp":
+        return len(content) >= 12 and content[:4] == b"RIFF" and content[8:12] == b"WEBP"
+    return False
+
 
 class AzureBlobStorageService:
     def __init__(self):
         self.connection_string = settings.AZURE_STORAGE_CONNECTION_STRING
         self.container_name = settings.AZURE_STORAGE_CONTAINER_NAME or "public-profiles"
+        self.private_container_name = settings.AZURE_STORAGE_PRIVATE_CONTAINER_NAME or "private-documents"
         self.custom_domain = settings.AZURE_STORAGE_CUSTOM_DOMAIN
         self._client = None
         self._container_client = None
+        self._private_container_client = None
 
     @property
     def is_configured(self) -> bool:
@@ -343,6 +378,221 @@ class AzureBlobStorageService:
     @staticmethod
     def user_avatar_prefix(user_id: str) -> str:
         return f"users/{user_id}"
+
+    @staticmethod
+    def hospital_document_prefix(hospital_id: str) -> str:
+        """Generate isolated private storage prefix for hospital enrollment documents."""
+        return f"hospitals/{hospital_id}/documents"
+
+    def _get_private_base_dir(self) -> Path:
+        configured = (settings.PRIVATE_UPLOADS_DIR or "").strip()
+        if configured:
+            return Path(configured).resolve()
+        docker_app_dir = Path("/app")
+        if docker_app_dir.exists() and os.name != "nt":
+            return Path("/app/private_uploads").resolve()
+        return (Path(__file__).resolve().parents[2] / ".private_uploads").resolve()
+
+    def _resolve_private_local_path(self, blob_name: str) -> Path:
+        base_dir = self._get_private_base_dir()
+        target = (base_dir / blob_name).resolve()
+        try:
+            target.relative_to(base_dir)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Invalid document storage path.",
+            )
+        return target
+
+    def _get_private_container_client(self):
+        """Lazy-initialize private Azure Blob Container Client (no public access)."""
+        if not self.is_configured:
+            return None
+
+        if self._private_container_client is None:
+            try:
+                from azure.storage.blob import BlobServiceClient
+                if self._client is None:
+                    self._client = BlobServiceClient.from_connection_string(self.connection_string)
+                self._private_container_client = self._client.get_container_client(
+                    self.private_container_name
+                )
+                try:
+                    if not self._private_container_client.exists():
+                        # Private container: omit public_access so blobs are never publicly readable
+                        self._private_container_client.create_container()
+                except Exception as ex:
+                    logger.warning(
+                        f"Could not verify/create private container '{self.private_container_name}': {ex}"
+                    )
+            except Exception as e:
+                logger.error(f"Failed to initialize private Azure Blob Client: {e}")
+                self._private_container_client = None
+
+        return self._private_container_client
+
+    async def upload_private_document(
+        self,
+        file: UploadFile,
+        owner_prefix: str,
+    ) -> Dict[str, Any]:
+        """Store an enrollment document in private storage (never public /app/uploads)."""
+        content_type = (file.content_type or "").lower().strip()
+        if content_type not in ALLOWED_DOCUMENT_TYPES:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid document type '{content_type}'. Allowed types: PDF, JPEG, PNG, WEBP.",
+            )
+
+        content = await file.read()
+        await file.seek(0)
+
+        if not content:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Uploaded document file is empty.",
+            )
+        if len(content) > MAX_DOCUMENT_SIZE:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Document exceeds maximum size of 10MB ({len(content)} bytes).",
+            )
+        if not validate_document_magic_bytes(content, content_type):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="File content does not match the declared PDF or image format.",
+            )
+
+        ext = _DOC_EXT_BY_MIME[content_type]
+        clean_prefix = owner_prefix.strip("/")
+        blob_name = f"{clean_prefix}/{uuid.uuid4().hex}.{ext}"
+        safe_filename = sanitize_document_filename(file.filename)
+
+        if not self.is_configured:
+            local_path = self._resolve_private_local_path(blob_name)
+            try:
+                local_path.parent.mkdir(parents=True, exist_ok=True)
+                local_path.write_bytes(content)
+                logger.info(f"Saved private enrollment document to {local_path}")
+            except Exception as e:
+                logger.error(f"Failed to save private document to {local_path}: {e}")
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Failed to save uploaded document. Please try again.",
+                )
+            return {
+                "blob_name": blob_name,
+                "original_filename": safe_filename,
+                "content_type": content_type,
+                "size": len(content),
+                "is_mock": True,
+            }
+
+        container_client = self._get_private_container_client()
+        if not container_client:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Private document storage is temporarily unavailable.",
+            )
+
+        try:
+            from azure.storage.blob import ContentSettings
+            blob_client = container_client.get_blob_client(blob_name)
+            blob_client.upload_blob(
+                content,
+                overwrite=True,
+                content_settings=ContentSettings(content_type=content_type),
+            )
+            return {
+                "blob_name": blob_name,
+                "original_filename": safe_filename,
+                "content_type": content_type,
+                "size": len(content),
+                "is_mock": False,
+            }
+        except Exception as e:
+            logger.error(f"Failed to upload private document '{blob_name}': {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to upload document to secure storage.",
+            )
+
+    async def read_private_document(
+        self,
+        blob_name: str,
+        required_prefix: str,
+    ) -> bytes:
+        """Read private document bytes after verifying strict tenant prefix containment."""
+        clean_prefix = required_prefix.strip("/")
+        if not blob_name or not blob_name.startswith(clean_prefix):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied: Document does not belong to this facility.",
+            )
+
+        if not self.is_configured:
+            local_path = self._resolve_private_local_path(blob_name)
+            if not local_path.exists():
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Document file not found in secure storage.",
+                )
+            return local_path.read_bytes()
+
+        container_client = self._get_private_container_client()
+        if not container_client:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Private document storage is temporarily unavailable.",
+            )
+
+        try:
+            blob_client = container_client.get_blob_client(blob_name)
+            return blob_client.download_blob().readall()
+        except Exception as e:
+            logger.error(f"Failed to read private document '{blob_name}': {e}")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Document file not found in secure storage.",
+            )
+
+    async def delete_private_document(
+        self,
+        blob_name: str,
+        required_prefix: str,
+    ) -> bool:
+        """Delete a private enrollment document with strict tenant isolation."""
+        clean_prefix = required_prefix.strip("/")
+        if not blob_name or not blob_name.startswith(clean_prefix):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied: Cannot delete documents outside your facility scope.",
+            )
+
+        if not self.is_configured:
+            local_path = self._resolve_private_local_path(blob_name)
+            try:
+                if local_path.exists():
+                    local_path.unlink()
+                return True
+            except Exception as e:
+                logger.warning(f"Could not delete private document {local_path}: {e}")
+                return False
+
+        container_client = self._get_private_container_client()
+        if not container_client:
+            return False
+
+        try:
+            blob_client = container_client.get_blob_client(blob_name)
+            if blob_client.exists():
+                blob_client.delete_blob()
+                return True
+            return False
+        except Exception as e:
+            logger.error(f"Failed to delete private document '{blob_name}': {e}")
+            return False
 
     @staticmethod
     def chat_attachment_prefix(session_or_user_id: str) -> str:

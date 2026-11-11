@@ -90,6 +90,8 @@ async def create_partner_staff(
         hashed_password=get_password_hash(raw_password),
         is_active=True,
         is_verified=True,
+        terms_accepted=False,
+        terms_audience="PARTNER",
     )
     db.add(new_staff)
     await db.commit()

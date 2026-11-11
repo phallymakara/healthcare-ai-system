@@ -2,10 +2,10 @@ import React from 'react';
 import { UserCheck, LayoutDashboard, CalendarClock, Pill, Check } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 
-import specialistDoctorImg from '../../assets/hospital_doctor_specialist.jpg';
-import opsReceptionImg from '../../assets/hospital_ops_reception.jpg';
-import deptRoomsImg from '../../assets/hospital_dept_rooms.jpg';
-import pharmacyInventoryImg from '../../assets/hospital_pharmacy_inventory.jpg';
+import specialistDoctorImg from '../../assets/hospital_doctor_specialist.webp';
+import opsReceptionImg from '../../assets/hospital_ops_reception.webp';
+import deptRoomsImg from '../../assets/hospital_dept_rooms.webp';
+import pharmacyInventoryImg from '../../assets/hospital_pharmacy_inventory.webp';
 
 export const HospitalFeatures: React.FC = () => {
   const { t, language } = useLanguage();
@@ -127,6 +127,8 @@ export const HospitalFeatures: React.FC = () => {
                   src={card.image}
                   alt=""
                   role="presentation"
+                  loading="lazy"
+                  decoding="async"
                   style={{
                     width: '100%',
                     height: '100%',

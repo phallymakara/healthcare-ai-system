@@ -2,8 +2,9 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { AuthService, UserProfile } from '../services/auth';
 import { X, Eye, EyeOff } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
-import prosethLogo from '../assets/ProsethBot.png';
+import prosethLogo from '../assets/ProsethBot.webp';
 import { getPortalSwitchUrl } from '../utils/subdomain';
+import { TermsModal } from './TermsModal';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -13,7 +14,7 @@ interface AuthModalProps {
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, onOpenHospitalPortal }) => {
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const [tab, setTab] = useState<'login' | 'register'>('login');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -23,6 +24,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
   useEffect(() => {
     if (isOpen) {
       setIsClosing(false);
+      setAcceptTerms(false);
+      setTermsError(null);
       if (closeTimerRef.current) {
         clearTimeout(closeTimerRef.current);
         closeTimerRef.current = null;
@@ -57,6 +60,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
   // Password visibility
   const [showPassword, setShowPassword] = useState(false);
   const [showRegPassword, setShowRegPassword] = useState(false);
+
+  // Patient Terms & Conditions acceptance
+  const [acceptTerms, setAcceptTerms] = useState(false);
+  const [termsError, setTermsError] = useState<string | null>(null);
+  const [termsModalOpen, setTermsModalOpen] = useState(false);
 
   if (!isOpen && !isClosing) return null;
 
@@ -98,6 +106,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setTermsError(null);
 
     if (!fullName.trim()) {
       setError(language === 'km' ? 'សូមបញ្ចូលឈ្មោះពេញរបស់អ្នក។' : 'Please enter your full name.');
@@ -109,6 +118,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
     }
     if (!regPassword || regPassword.length < 6) {
       setError(language === 'km' ? 'ពាក្យសម្ងាត់ត្រូវតែមានយ៉ាងតិច ៦ តួអក្សរ។' : 'Password must be at least 6 characters long.');
+      return;
+    }
+    if (!acceptTerms) {
+      setTermsError(t('terms_required_error'));
       return;
     }
 
@@ -123,6 +136,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
         password: regPassword,
         gender: 'Other',
         blood_type: 'Unknown',
+        accept_terms: true,
       });
       onSuccess(res.user);
       handleClose();
@@ -454,6 +468,69 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
               </div>
             </div>
 
+            {/* Patient Terms & Conditions Checkbox */}
+            <div>
+              <label
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '0.5rem',
+                  fontSize: '0.84rem',
+                  color: 'var(--text-main)',
+                  cursor: 'pointer',
+                  lineHeight: 1.45,
+                  fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={acceptTerms}
+                  onChange={(e) => {
+                    setAcceptTerms(e.target.checked);
+                    if (e.target.checked) setTermsError(null);
+                  }}
+                  style={{
+                    marginTop: '3px',
+                    width: '16px',
+                    height: '16px',
+                    accentColor: '#185339',
+                    cursor: 'pointer',
+                    flexShrink: 0,
+                  }}
+                />
+                <span>
+                  {t('terms_checkbox_prefix')}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setTermsModalOpen(true);
+                    }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      padding: 0,
+                      color: '#185339',
+                      fontWeight: 600,
+                      textDecoration: 'underline',
+                      cursor: 'pointer',
+                      fontSize: 'inherit',
+                      fontFamily: 'inherit',
+                      display: 'inline',
+                    }}
+                  >
+                    {t('terms_patient_link_label')}
+                  </button>
+                </span>
+              </label>
+              {termsError && (
+                <span className="error-text" style={{ fontSize: '0.82rem', marginTop: '5px', display: 'block' }}>
+                  {termsError}
+                </span>
+              )}
+            </div>
+
             {/* Inline Error at form location */}
             {error && <span className="error-text" style={{ fontSize: '0.82rem', marginTop: '5px', display: 'block' }}>{error}</span>}
 
@@ -575,6 +652,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
         </div>
         </div>
       </div>
+
+      <TermsModal
+        isOpen={termsModalOpen}
+        onClose={() => setTermsModalOpen(false)}
+        mode="view"
+        audience="patient"
+      />
     </div>
   );
 };

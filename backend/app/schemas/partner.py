@@ -3,7 +3,7 @@ from datetime import time, date, datetime
 from typing import Optional, List
 from pydantic import BaseModel, Field, EmailStr, field_validator
 
-from app.models.enums import OverrideType, QueueStatus, UserRole
+from app.models.enums import OverrideType, QueueStatus, UserRole, EnrollmentDocumentType, VerificationStatus
 
 
 # --- Department Schemas ---
@@ -251,6 +251,18 @@ class StaffResponse(BaseModel):
 
 # --- Hospital Profile Schemas ---
 
+class HospitalDocumentResponse(BaseModel):
+    id: uuid.UUID
+    hospital_id: uuid.UUID
+    document_type: EnrollmentDocumentType
+    original_filename: str
+    content_type: str
+    file_size: int
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
 class HospitalProfileResponse(BaseModel):
     id: uuid.UUID
     name: str
@@ -267,6 +279,10 @@ class HospitalProfileResponse(BaseModel):
     longitude: Optional[float] = None
     is_active: bool
     is_verified: bool
+    verification_status: VerificationStatus = VerificationStatus.PENDING
+    rejection_reason: Optional[str] = None
+    documents_count: int = 0
+    documents: List[HospitalDocumentResponse] = []
 
     model_config = {"from_attributes": True}
 

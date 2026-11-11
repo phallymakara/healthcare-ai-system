@@ -80,6 +80,8 @@ export const SimulatedHospitalLogo: React.FC<{ name: string; logoUrl?: string; s
       <img
         src={logoUrl}
         alt={name}
+        loading="lazy"
+        decoding="async"
         onError={() => setImgError(true)}
         style={{
           width: `${size}px`,
@@ -156,6 +158,8 @@ export const SimulatedDoctorAvatar: React.FC<{ name: string; photoUrl?: string; 
       <img
         src={photoUrl}
         alt={name}
+        loading="lazy"
+        decoding="async"
         onError={() => setImgError(true)}
         style={{
           width: `${size}px`,

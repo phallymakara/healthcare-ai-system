@@ -40,7 +40,6 @@ export const MedicalRecordList: React.FC<MedicalRecordListProps> = ({
   setSearchError,
   onSearchSubmit,
   onSelectRecord,
-  onExploreHospitals,
 }) => {
   const { language, t } = useLanguage();
   const isKm = language === 'km';
@@ -173,58 +172,27 @@ export const MedicalRecordList: React.FC<MedicalRecordListProps> = ({
       ) : records.length === 0 ? (
         <div
           style={{
-            background: '#ffffff',
-            border: '1px solid var(--border-color)',
-            borderRadius: '16px',
-            padding: '3rem 2rem',
+            minHeight: '42vh',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '2rem 1rem',
             textAlign: 'center',
-            boxShadow: 'none',
           }}
         >
-          <FileText size={42} color="var(--text-muted)" style={{ margin: '0 auto 1rem auto' }} />
-          <h3
+          <FileText size={34} color="var(--text-muted)" style={{ marginBottom: '0.75rem' }} />
+          <p
             style={{
-              fontSize: '1.25rem',
-              fontWeight: 700,
-              color: 'var(--text-main)',
-              margin: '0 0 0.5rem 0',
+              fontSize: '0.98rem',
+              fontWeight: 400,
+              color: 'var(--text-muted)',
+              margin: 0,
               fontFamily: kmFont,
             }}
           >
             {t('history_no_records_title')}
-          </h3>
-          <p
-            style={{
-              fontSize: '0.95rem',
-              color: 'var(--text-muted)',
-              maxWidth: '520px',
-              margin: '0 auto 1.5rem auto',
-              lineHeight: 1.6,
-              fontFamily: kmFont,
-            }}
-          >
-            {t('history_no_records_desc')}
           </p>
-          {onExploreHospitals && (
-            <button
-              type="button"
-              onClick={onExploreHospitals}
-              style={{
-                padding: '0.55rem 1.35rem',
-                fontSize: '0.94rem',
-                fontWeight: 600,
-                border: '1px solid var(--border-color)',
-                borderRadius: 'var(--radius-full)',
-                background: 'transparent',
-                color: 'var(--text-main)',
-                cursor: 'pointer',
-                boxShadow: 'none',
-                fontFamily: kmFont,
-              }}
-            >
-              {t('appt_book_now')}
-            </button>
-          )}
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>

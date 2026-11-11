@@ -1,6 +1,11 @@
 import React from 'react';
-import { Building2, ExternalLink } from 'lucide-react';
+import { Building2, ExternalLink, FileText } from 'lucide-react';
 import { UserProfile } from '../../../services/auth';
+import {
+  HospitalDocumentItem,
+  getDocumentTypeLabel,
+  formatDocumentSize,
+} from '../../../components/PartnerDocumentsManager';
 
 export interface OnboardingReviewStepProps {
   hospitalName: string;
@@ -14,7 +19,8 @@ export interface OnboardingReviewStepProps {
   city: string;
   latitude: string;
   longitude: string;
-  onEditStep: (stepNumber: 1 | 2 | 3) => void;
+  documents: HospitalDocumentItem[];
+  onEditStep: (stepNumber: 1 | 2 | 3 | 4) => void;
   isKm: boolean;
   kmFont: string;
   t: (key: string) => string;
@@ -32,6 +38,7 @@ export const OnboardingReviewStep: React.FC<OnboardingReviewStepProps> = ({
   city,
   latitude,
   longitude,
+  documents,
   onEditStep,
   isKm,
   kmFont,
@@ -48,10 +55,10 @@ export const OnboardingReviewStep: React.FC<OnboardingReviewStepProps> = ({
             margin: '0 0 0.2rem 0',
           }}
         >
-          {t('onboard_step_4_title')}
+          {t('onboard_step_5_title')}
         </h2>
         <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', margin: 0 }}>
-          {t('onboard_step_4_desc')}
+          {t('onboard_step_5_desc')}
         </p>
       </div>
 
@@ -359,6 +366,84 @@ export const OnboardingReviewStep: React.FC<OnboardingReviewStepProps> = ({
                   src={`https://maps.google.com/maps?q=${latitude},${longitude}&hl=${isKm ? 'km' : 'en'}&z=15&output=embed`}
                 />
               </div>
+            </div>
+          )}
+        </div>
+
+        {/* Section 4: Supporting Documents */}
+        <div
+          style={{
+            border: '1px solid var(--border-color)',
+            borderRadius: 'var(--radius-md, 8px)',
+            padding: '1.25rem',
+            backgroundColor: 'var(--bg-primary, #ffffff)',
+            boxShadow: 'none',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '0.85rem',
+              paddingBottom: '0.5rem',
+              borderBottom: '1px solid var(--border-color)',
+            }}
+          >
+            <span
+              style={{
+                fontSize: '0.9rem',
+                fontWeight: 700,
+                color: 'var(--text-muted)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+              }}
+            >
+              4. {t('onboard_section_documents')}
+            </span>
+            <button
+              type="button"
+              onClick={() => onEditStep(4)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--accent-primary)',
+                fontSize: '0.88rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                textDecoration: 'underline',
+                fontFamily: kmFont,
+                padding: '2px 4px',
+              }}
+            >
+              {t('btn_edit_step')}
+            </button>
+          </div>
+
+          {documents.length === 0 ? (
+            <div style={{ fontSize: '0.88rem', color: '#dc2626' }}>
+              {t('doc_empty_state')}
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+              {documents.map((doc) => (
+                <div
+                  key={doc.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    fontSize: '0.9rem',
+                    color: 'var(--text-main)',
+                  }}
+                >
+                  <FileText size={15} color="var(--accent-primary)" />
+                  <span style={{ fontWeight: 600 }}>{doc.original_filename}</span>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                    ({getDocumentTypeLabel(doc.document_type, t)} · {formatDocumentSize(doc.file_size)})
+                  </span>
+                </div>
+              ))}
             </div>
           )}
         </div>

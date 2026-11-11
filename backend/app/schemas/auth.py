@@ -31,6 +31,7 @@ class PatientRegisterRequest(BaseModel):
     blood_type: Optional[str] = None
     emergency_contact_name: Optional[str] = None
     emergency_contact_phone: Optional[str] = None
+    accept_terms: bool = False
 
 
 class PartnerRegisterRequest(BaseModel):
@@ -58,6 +59,12 @@ class PartnerRegisterRequest(BaseModel):
     # Initial Department Setup (Optional during onboarding)
     initial_department_name: Optional[str] = None
     initial_department_room: Optional[str] = None
+    accept_terms: bool = False
+
+
+class AcceptTermsRequest(BaseModel):
+    accepted: bool = True
+    version: Optional[str] = None
 
 
 class RefreshTokenRequest(BaseModel):
@@ -85,6 +92,10 @@ class UserResponse(BaseModel):
     role: UserRole
     is_active: bool
     is_verified: bool
+    terms_accepted: bool = False
+    terms_accepted_at: Optional[datetime] = None
+    terms_version: Optional[str] = None
+    terms_audience: Optional[str] = None
     profile_photo_url: Optional[str] = None
     hospital_id: Optional[uuid.UUID] = None
     branch_id: Optional[uuid.UUID] = None

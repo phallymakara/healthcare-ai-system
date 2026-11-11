@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="km">
 
 <head>
   <meta charset="UTF-8" />
@@ -22,9 +22,14 @@
     rel="stylesheet">
   <script>
     try {
-      var savedLang = localStorage.getItem('health_ai_language');
-      if (savedLang === 'km') {
-        document.documentElement.lang = 'km';
+      var urlLang = new URLSearchParams(window.location.search).get('lang');
+      var userHasChosen = localStorage.getItem('health_ai_language_user_set') === '1';
+      var savedLang = userHasChosen ? localStorage.getItem('health_ai_language') : null;
+      var activeLang = (urlLang === 'en' || urlLang === 'km')
+        ? urlLang
+        : ((savedLang === 'en' || savedLang === 'km') ? savedLang : 'km');
+      document.documentElement.lang = activeLang;
+      if (activeLang === 'km') {
         document.addEventListener('DOMContentLoaded', function() {
           if (document.body) document.body.classList.add('lang-km');
         });

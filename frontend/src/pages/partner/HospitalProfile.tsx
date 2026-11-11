@@ -3,9 +3,11 @@ import { RefreshCw } from 'lucide-react';
 import { AuthService } from '../../services/auth';
 import { API_BASE } from '../../services/api';
 import { useLanguage } from '../../context/LanguageContext';
+import { convertImageFileToWebp } from '../../utils/imageWebp';
 import { HospitalIdentitySection } from './profile/HospitalIdentitySection';
 import { HospitalContactSection } from './profile/HospitalContactSection';
 import { HospitalLocationSection } from './profile/HospitalLocationSection';
+import { PartnerDocumentsManager, HospitalDocumentItem } from '../../components/PartnerDocumentsManager';
 
 export const HospitalProfile: React.FC = () => {
   const { language, t } = useLanguage();
@@ -30,6 +32,9 @@ export const HospitalProfile: React.FC = () => {
   const [googleMapsUrl, setGoogleMapsUrl] = useState('');
   const [latitude, setLatitude] = useState('');
   const [longitude, setLongitude] = useState('');
+  const [verificationStatus, setVerificationStatus] = useState<'PENDING' | 'APPROVED' | 'REJECTED' | string>('PENDING');
+  const [rejectionReason, setRejectionReason] = useState<string | null>(null);
+  const [documents, setDocuments] = useState<HospitalDocumentItem[]>([]);
 
   // Inline Field Errors
   const [nameError, setNameError] = useState<string | null>(null);
@@ -109,6 +114,13 @@ export const HospitalProfile: React.FC = () => {
         if (data.latitude != null && data.longitude != null) {
           setGoogleMapsUrl(`https://maps.google.com/?q=${data.latitude},${data.longitude}`);
         }
+        if (data.verification_status) {
+          setVerificationStatus(data.verification_status);
+        }
+        setRejectionReason(data.rejection_reason || null);
+        if (Array.isArray(data.documents)) {
+          setDocuments(data.documents);
+        }
       }
     } catch (err) {
       console.error('Failed to load partner profile:', err);
@@ -134,8 +146,9 @@ export const HospitalProfile: React.FC = () => {
     setUploadingLogo(true);
 
     try {
+      const optimizedLogo = await convertImageFileToWebp(file, { maxDim: 512, quality: 0.86 });
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', optimizedLogo);
 
       const res = await fetch(`${API_BASE}/partners/profile/logo`, {
         method: 'POST',
@@ -392,6 +405,57 @@ export const HospitalProfile: React.FC = () => {
             successMessage={successMessage}
             submitError={submitError}
           />
+
+          {/* Supporting Enrollment Documents Section */}
+          <div
+            style={{
+              marginTop: '1.75rem',
+              paddingTop: '1.5rem',
+              borderTop: '1px solid var(--border-color)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.75rem' }}>
+              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                {t('onboard_section_documents')}
+              </h3>
+              <span
+                style={{
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                  color:
+                    verificationStatus === 'APPROVED'
+                      ? '#059669'
+                      : verificationStatus === 'REJECTED'
+                      ? '#dc2626'
+                      : '#d97706',
+                }}
+              >
+                {verificationStatus === 'APPROVED'
+                  ? t('doc_verification_approved')
+                  : verificationStatus === 'REJECTED'
+                  ? t('doc_verification_rejected')
+                  : t('doc_verification_pending')}
+              </span>
+            </div>
+
+            {verificationStatus === 'REJECTED' && rejectionReason && (
+              <div
+                style={{
+                  fontSize: '0.86rem',
+                  color: '#dc2626',
+                  marginBottom: '0.85rem',
+                  lineHeight: 1.5,
+                }}
+              >
+                {rejectionReason}
+              </div>
+            )}
+
+            <PartnerDocumentsManager
+              documents={documents}
+              onDocumentsChange={setDocuments}
+            />
+          </div>
         </form>
       )}
     </div>

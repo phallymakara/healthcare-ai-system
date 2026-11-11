@@ -2,10 +2,10 @@ import React from 'react';
 import { MapPin, Ticket, Clock, Stethoscope } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 
-import step1Img from '../../assets/how_step_1_find.jpg';
-import step2Img from '../../assets/how_step_2_book.jpg';
-import step3Img from '../../assets/how_step_3_track.jpg';
-import step4Img from '../../assets/how_step_4_consult.jpg';
+import step1Img from '../../assets/how_step_1_find.webp';
+import step2Img from '../../assets/how_step_2_book.webp';
+import step3Img from '../../assets/how_step_3_track.webp';
+import step4Img from '../../assets/how_step_4_consult.webp';
 
 export const HowItWorks: React.FC = () => {
   const { t, language } = useLanguage();
@@ -124,6 +124,8 @@ export const HowItWorks: React.FC = () => {
                   src={step.image}
                   alt=""
                   role="presentation"
+                  loading="lazy"
+                  decoding="async"
                   style={{
                     width: '100%',
                     height: '100%',

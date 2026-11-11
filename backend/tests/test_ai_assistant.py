@@ -141,3 +141,35 @@ async def test_conversations_crud_and_auto_persistence():
         )
         assert get_deleted_res.status_code == 404
 
+
+def test_parse_khmer_suggested_actions_and_filtering():
+    """Verify Khmer SUGGESTED_ACTIONS extraction, booking phrase filtering, and Khmer fallback."""
+    from app.services.langchain_agent import HealthcareAgentService
+
+    raw_reply = (
+        "សូមសម្រាកឱ្យបានគ្រប់គ្រាន់ និងផឹកទឹកឱ្យបានច្រើន។\n\n"
+        "SUGGESTED_ACTIONS:\n"
+        "- [វិធីរក្សាកក់ក្តៅនៅផ្ទះ](#)\n"
+        "- កក់សំបុត្រជួររង់ចាំ\n"
+        "- ស្វែងរកមន្ទីរពេទ្យនៅជិតខ្ញុំ\n"
+        "REQUIRES_DISCLAIMER: YES"
+    )
+    reply, actions, requires_disc = HealthcareAgentService._parse_reply_metadata(
+        raw_reply, detected_lang="km"
+    )
+    assert "SUGGESTED_ACTIONS" not in reply
+    assert "REQUIRES_DISCLAIMER" not in reply
+    assert requires_disc is True
+    assert "វិធីរក្សាកក់ក្តៅនៅផ្ទះ" in actions
+    assert "ស្វែងរកមន្ទីរពេទ្យនៅជិតខ្ញុំ" in actions
+    assert all("កក់សំបុត្រ" not in a for a in actions)
+
+    # Verify fallback when SUGGESTED_ACTIONS is missing
+    fallback_reply, fallback_actions, _ = HealthcareAgentService._parse_reply_metadata(
+        "សួស្តី! តើខ្ញុំអាចជួយអ្វីបាន?", detected_lang="km"
+    )
+    assert fallback_reply == "សួស្តី! តើខ្ញុំអាចជួយអ្វីបាន?"
+    assert len(fallback_actions) == 3
+    assert any("ស្វែងរកមន្ទីរពេទ្យនៅជិតខ្ញុំ" in a for a in fallback_actions)
+
+

@@ -30,6 +30,10 @@ class User(Base):
     
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    terms_accepted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    terms_accepted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    terms_version: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
+    terms_audience: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
     profile_photo_url: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
     
     # Associated hospital for staff / doctors

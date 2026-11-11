@@ -2,10 +2,10 @@ import React from 'react';
 import { Ticket, Clock, Users, Sparkles } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 
-import remoteBookingImg from '../../assets/patient_remote_booking.jpg';
-import queueTrackingImg from '../../assets/patient_queue_tracking.jpg';
-import communitySupportImg from '../../assets/patient_community_support.jpg';
-import aiConsultImg from '../../assets/patient_ai_consultation.jpg';
+import remoteBookingImg from '../../assets/patient_remote_booking.webp';
+import queueTrackingImg from '../../assets/patient_queue_tracking.webp';
+import communitySupportImg from '../../assets/patient_community_support.webp';
+import aiConsultImg from '../../assets/patient_ai_consultation.webp';
 
 import { NavTab } from '../../components/Sidebar';
 
@@ -160,6 +160,8 @@ export const PatientFeatures: React.FC<PatientFeaturesProps> = ({ onSelectTab })
                   src={card.image}
                   alt=""
                   role="presentation"
+                  loading="lazy"
+                  decoding="async"
                   style={{
                     width: '100%',
                     height: '100%',

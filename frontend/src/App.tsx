@@ -5,6 +5,7 @@ import { AuthModal } from './components/AuthModal';
 import { NotificationBanner } from './components/NotificationBanner';
 import { MaintenanceBanner } from './components/MaintenanceBanner';
 import { ServerConfigModal } from './components/ServerConfigModal';
+import { TermsModal } from './components/TermsModal';
 import { useLanguage } from './context/LanguageContext';
 import { AuthService, UserProfile } from './services/auth';
 import { API_BASE } from './services/api';
@@ -77,13 +78,15 @@ export const App: React.FC = () => {
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const isKm = language === 'km';
   const storedUser = AuthService.getStoredUser();
   const { isKeyboardOpen, viewportHeight } = useVisualViewport();
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(storedUser);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [serverConfigOpen, setServerConfigOpen] = useState(false);
+  const [termsAcceptLoading, setTermsAcceptLoading] = useState(false);
+  const [termsAcceptError, setTermsAcceptError] = useState<string | null>(null);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [activeBanner, setActiveBanner] = useState<any | null>(null);
   const [activeTab, setActiveTab] = useState<NavTab>(() => {
@@ -282,6 +285,33 @@ export const App: React.FC = () => {
     setActiveTab(tab);
   };
 
+  const handleAcceptTerms = async () => {
+    setTermsAcceptLoading(true);
+    setTermsAcceptError(null);
+    try {
+      const updatedUser = await AuthService.acceptTerms();
+      setCurrentUser(updatedUser);
+    } catch {
+      setTermsAcceptError(t('terms_accept_failed'));
+    } finally {
+      setTermsAcceptLoading(false);
+    }
+  };
+
+  const blockingTermsModal =
+    currentUser && currentUser.terms_accepted === false ? (
+      <TermsModal
+        isOpen={true}
+        onClose={() => {}}
+        mode="accept"
+        audience={currentUser.role === 'PATIENT' ? 'patient' : 'partner'}
+        onAccept={handleAcceptTerms}
+        onSignOut={handleLogout}
+        loading={termsAcceptLoading}
+        error={termsAcceptError}
+      />
+    ) : null;
+
   const isPartnerUser =
     currentUser &&
     (currentUser.role === 'HOSPITAL_ADMIN' ||
@@ -307,6 +337,7 @@ export const App: React.FC = () => {
             }}
           />
         </React.Suspense>
+        {blockingTermsModal}
       </div>
     );
   }
@@ -489,6 +520,8 @@ export const App: React.FC = () => {
         onClose={() => setServerConfigOpen(false)}
         isKm={isKm}
       />
+
+      {blockingTermsModal}
     </>
   );
 };

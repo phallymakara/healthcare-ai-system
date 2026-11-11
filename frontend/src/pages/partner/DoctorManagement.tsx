@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { AuthService } from '../../services/auth';
 import { useLanguage } from '../../context/LanguageContext';
 import { API_BASE } from '../../services/api';
+import { convertImageFileToWebp } from '../../utils/imageWebp';
 import { DoctorModal } from './doctors/DoctorModal';
 import { DoctorScheduleModal } from './doctors/DoctorScheduleModal';
 import { DoctorList } from './doctors/DoctorList';
@@ -134,8 +135,9 @@ export const DoctorManagement: React.FC = () => {
     if (editingDocId) {
       setDocUploadingPhoto(true);
       try {
+        const optimizedPhoto = await convertImageFileToWebp(file, { maxDim: 720, quality: 0.84 });
         const formData = new FormData();
-        formData.append('file', file);
+        formData.append('file', optimizedPhoto);
         const res = await fetch(`${API_BASE}/partners/doctors/${editingDocId}/photo`, {
           method: 'POST',
           headers: AuthService.getAuthHeaders(),
@@ -155,12 +157,13 @@ export const DoctorManagement: React.FC = () => {
         setDocUploadingPhoto(false);
       }
     } else {
-      setDocPhotoFile(file);
+      const optimizedPhoto = await convertImageFileToWebp(file, { maxDim: 720, quality: 0.84 });
+      setDocPhotoFile(optimizedPhoto);
       const reader = new FileReader();
       reader.onloadend = () => {
         setDocPhotoUrl(reader.result as string);
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(optimizedPhoto);
     }
   };
 
@@ -220,8 +223,9 @@ export const DoctorManagement: React.FC = () => {
     setRowUploadingDocId(targetDocId);
 
     try {
+      const optimizedPhoto = await convertImageFileToWebp(file, { maxDim: 720, quality: 0.84 });
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', optimizedPhoto);
       const res = await fetch(`${API_BASE}/partners/doctors/${targetDocId}/photo`, {
         method: 'POST',
         headers: AuthService.getAuthHeaders(),

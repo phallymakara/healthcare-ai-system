@@ -126,3 +126,15 @@ async def test_patient_forbidden_from_partner_endpoints():
             headers={"Authorization": f"Bearer {patient_token}"},
         )
         assert response.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_partner_documents_require_authentication():
+    """Private enrollment document endpoints must reject unauthenticated callers."""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        list_res = await client.get("/api/v1/partners/profile/documents")
+        assert list_res.status_code in (401, 403)
+
+        dl_res = await client.get(f"/api/v1/partners/profile/documents/{uuid.uuid4()}/download")
+        assert dl_res.status_code in (401, 403)
+

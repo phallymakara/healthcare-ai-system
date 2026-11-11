@@ -78,6 +78,7 @@ services:
       DEBUG: ${DEBUG:-false}
       SECRET_KEY: ${SECRET_KEY}
       ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-1440}
+      TERMS_VERSION: ${TERMS_VERSION:-1.0}
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
@@ -93,8 +94,14 @@ services:
       MICROSOFT_FOUNDRY_API_KEY: ${MICROSOFT_FOUNDRY_API_KEY:-}
       MICROSOFT_FOUNDRY_BASE_URL: ${MICROSOFT_FOUNDRY_BASE_URL:-}
       MICROSOFT_FOUNDRY_MODEL: ${MICROSOFT_FOUNDRY_MODEL:-gpt-4o}
+      MICROSOFT_FOUNDRY_STT_MODEL: ${MICROSOFT_FOUNDRY_STT_MODEL:-}
+      AZURE_SPEECH_KEY: ${AZURE_SPEECH_KEY:-}
+      AZURE_SPEECH_REGION: ${AZURE_SPEECH_REGION:-}
+      AZURE_SPEECH_ENDPOINT: ${AZURE_SPEECH_ENDPOINT:-}
       AZURE_STORAGE_CONNECTION_STRING: ${AZURE_STORAGE_CONNECTION_STRING:-}
       AZURE_STORAGE_CONTAINER_NAME: ${AZURE_STORAGE_CONTAINER_NAME:-publicprofile}
+      AZURE_STORAGE_PRIVATE_CONTAINER_NAME: ${AZURE_STORAGE_PRIVATE_CONTAINER_NAME:-private-documents}
+      PRIVATE_UPLOADS_DIR: ${PRIVATE_UPLOADS_DIR:-/app/private_uploads}
       AZURE_STORAGE_CUSTOM_DOMAIN: ${AZURE_STORAGE_CUSTOM_DOMAIN:-}
       CORS_ORIGINS: ${CORS_ORIGINS:-["*"]}
       UVICORN_WORKERS: ${UVICORN_WORKERS:-2}
@@ -103,6 +110,7 @@ services:
       - "${BACKEND_PORT:-9000}:8000"
     volumes:
       - uploads_data:/app/uploads
+      - private_uploads_data:/app/private_uploads
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8000/api/v1/health || exit 1"]
       interval: 10s
@@ -154,6 +162,8 @@ volumes:
   redis_data:
     driver: local
   uploads_data:
+    driver: local
+  private_uploads_data:
     driver: local
 
 networks:

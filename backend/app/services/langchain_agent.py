@@ -82,11 +82,11 @@ SUGGESTED_ACTIONS:
 (Do NOT use square brackets, markdown links, or dummy URLs like (#) in SUGGESTED_ACTIONS).
 
 ANALYSIS & PREDICTION GUIDELINES:
-1. When the user asks about an illness, disease, cold, flu, fever, or symptom (e.g. ផ្តាសាយ, ក្អក, គ្រុនក្តៅ, dengue, diarrhea, skin rash, headaches, etc.):
+1. When the user asks about an illness, disease, cold, flu, fever, skin issue, or symptom (e.g. ផ្តាសាយ, ក្អក, គ្រុនក្តៅ, កន្ទួលរមាស់, dengue, diarrhea, headaches, etc.):
    Analyze what the patient or caregiver urgently wants to know next, and predict follow-up questions such as:
-   - Medication or home remedy inquiry (e.g. "តើត្រូវញ៉ាំថ្នាំអ្វី?", "ថ្នាំបញ្ចុះកម្តៅអ្វីខ្លះដែលត្រូវប្រើ?")
+   - Topical care or home care inquiry (e.g. "តើមានថ្នាំលាបអ្វីជួយបាន?", "វិធីថែទាំនៅផ្ទះមានអ្វីខ្លះ?")
    - Danger signs / when to visit a hospital (e.g. "ពេលណាត្រូវទៅជួបវេជ្ជបណ្ឌិត?", "រោគសញ្ញាគ្រោះថ្នាក់ដែលត្រូវប្រយ័ត្ន")
-   - Finding specialized medical facilities for this condition (e.g. "ស្វែងរកមន្ទីរពេទ្យនៅជិតខ្ញុំ", "ស្វែងរកគ្លីនិកព្យាបាលជំងឺផ្តាសាយ")
+   - Finding specialized medical facilities for this condition (e.g. "ស្វែងរកមន្ទីរពេទ្យនៅជិតខ្ញុំ", "ស្វែងរកគ្លីនិកកុមារនៅជិតខ្ញុំ")
 2. When the user asks about a specific hospital, clinic, or doctor:
    Analyze the facility context and predict follow-up questions such as:
    - Emergency or operating hours (e.g. "តើមានសេវាសង្គ្រោះបន្ទាន់ ២៤/៧ ទេ?")
@@ -97,12 +97,12 @@ ANALYSIS & PREDICTION GUIDELINES:
 4. When the user sends a bare greeting with NO health question yet (e.g. 'hello', 'hi', 'សួស្តី'):
    Provide the 3 core triage questions:
    If Khmer:
-   - ពិគ្រោះរោគសញ្ញាជំងឺ
+   - ខ្ញុំមានអាការៈក្តៅខ្លួន និងក្អក តើគួរធ្វើដូចម្តេច?
    - ស្វែងរកមន្ទីរពេទ្យនៅជិតខ្ញុំ
    - សេវាសង្គ្រោះបន្ទាន់ ២៤/៧
    If English:
-   - Check My Symptoms
-   - Find Hospitals Near Me
+   - I have fever and cough, what should I do?
+   - Find hospitals near me
    - 24/7 Emergency Services
 5. Voice and Perspective:
    - Formulate every predicted follow-up question directly from the user's perspective (as if the user is asking it to you), so when they click the button, it immediately sends that question to you.
@@ -619,6 +619,21 @@ class HealthcareAgentService:
         )
 
     @classmethod
+    def _get_default_suggested_actions(cls, detected_lang: str) -> List[str]:
+        """Return localized fallback suggested prompts when the LLM emits none or hits a guardrail."""
+        if (detected_lang or "").lower() == "km":
+            return [
+                "ខ្ញុំមានអាការៈក្តៅខ្លួន និងក្អក តើគួរធ្វើដូចម្តេច?",
+                "ស្វែងរកមន្ទីរពេទ្យនៅជិតខ្ញុំ",
+                "សេវាសង្គ្រោះបន្ទាន់ ២៤/៧",
+            ]
+        return [
+            "I have fever and cough, what should I do?",
+            "Find hospitals near me",
+            "24/7 Emergency Services",
+        ]
+
+    @classmethod
     def _parse_reply_metadata(
         cls, final_reply: str, detected_lang: str, has_tool_calls: bool = False
     ) -> Tuple[str, List[str], bool]:
@@ -670,39 +685,30 @@ class HealthcareAgentService:
 
         suggested_actions = extracted_actions
         if not suggested_actions:
-            if detected_lang == "km":
-                suggested_actions = [
-                    "ពិគ្រោះរោគសញ្ញាជំងឺ",
-                    "ស្វែងរកមន្ទីរពេទ្យនៅជិតខ្ញុំ",
-                    "សេវាសង្គ្រោះបន្ទាន់ ២៤/៧",
-                ]
-            else:
-                suggested_actions = [
-                    "Check My Symptoms",
-                    "Find Hospitals Near Me",
-                    "24/7 Emergency Services",
-                ]
+            suggested_actions = cls._get_default_suggested_actions(detected_lang)
 
+        blocked_action_phrases = [
+            "ask another question",
+            "ask a question",
+            "none",
+            "n/a",
+            "book ticket",
+            "book a ticket",
+            "book appointment",
+            "reserve ticket",
+            "queue ticket",
+            "កក់សំបុត្រ",
+            "កក់ការណាត់",
+            "កក់លេខ",
+            "កក់ជួរ",
+        ]
         suggested_actions = [
             a
             for a in suggested_actions
-            if not any(
-                bad in a.lower()
-                for bad in [
-                    "ask another question",
-                    "ask a question",
-                    "none",
-                    "n/a",
-                    "book ticket",
-                    "book a ticket",
-                    "book appointment",
-                    "reserve ticket",
-                    "queue ticket",
-                    "កក់សំបុត្រ",
-                    "កក់",
-                ]
-            )
+            if not any(bad in a.lower() for bad in blocked_action_phrases)
         ]
+        if not suggested_actions:
+            suggested_actions = cls._get_default_suggested_actions(detected_lang)
         return final_reply.strip(), suggested_actions, requires_disclaimer
 
     @classmethod
@@ -751,15 +757,7 @@ class HealthcareAgentService:
                 "booked_ticket": None,
                 "matching_hospitals": [],
                 "cited_sources": [],
-                "suggested_actions": [
-                    "ពិគ្រោះរោគសញ្ញាជំងឺ",
-                    "ស្វែងរកមន្ទីរពេទ្យនៅជិតខ្ញុំ",
-                    "សេវាសង្គ្រោះបន្ទាន់ ២៤/៧",
-                ] if detected_lang == "km" else [
-                    "Check My Symptoms",
-                    "Find Hospitals Near Me",
-                    "24/7 Emergency Services",
-                ],
+                "suggested_actions": cls._get_default_suggested_actions(detected_lang),
                 "detected_language": detected_lang,
                 "requires_disclaimer": False,
             }
@@ -867,15 +865,7 @@ class HealthcareAgentService:
                 token = w if i == len(words) - 1 else w + " "
                 yield {"type": "token", "delta": token}
                 await asyncio.sleep(0.02)
-            actions = [
-                "ពិគ្រោះរោគសញ្ញាជំងឺ",
-                "ស្វែងរកមន្ទីរពេទ្យនៅជិតខ្ញុំ",
-                "សេវាសង្គ្រោះបន្ទាន់ ២៤/៧",
-            ] if detected_lang == "km" else [
-                "Check My Symptoms",
-                "Find Hospitals Near Me",
-                "24/7 Emergency Services",
-            ]
+            actions = cls._get_default_suggested_actions(detected_lang)
             yield {
                 "type": "metadata",
                 "reply": refusal_reply,
@@ -966,114 +956,4 @@ class HealthcareAgentService:
             "detected_language": detected_lang,
             "requires_disclaimer": requires_disclaimer or bool(cited_sources_data),
         }
-
-    @classmethod
-    async def predict_image_questions(
-        cls,
-        image_url: str,
-        language: str = "km",
-    ) -> List[str]:
-        """Analyze an uploaded medical image using LLM vision analysis and predict 3-4 likely follow-up questions for the patient.
-
-        Inspects visual manifestations (rash, lesion, wound, swelling, infection, medication)
-        and returns concise, actionable patient questions in the specified language (Khmer or English).
-        Returns empty list if image is invalid or LLM analysis produces no results (no mock data).
-        """
-        detected_lang = "km" if language == "km" else "en"
-
-        if not image_url or not (image_url.startswith("http") or image_url.startswith("data:image/")):
-            return []
-
-        try:
-            llm = ChatOpenAI(
-                model=settings.MICROSOFT_FOUNDRY_MODEL,
-                openai_api_key=settings.MICROSOFT_FOUNDRY_API_KEY,
-                openai_api_base=settings.MICROSOFT_FOUNDRY_BASE_URL,
-                temperature=0.3,
-                max_tokens=220,
-            )
-
-            if detected_lang == "km":
-                prompt_instruction = (
-                    "You are an expert clinical triage assistant. "
-                    "Analyze the provided medical symptom/condition image (such as skin rash, lesion, wound, burn, eye redness, swelling, insect bite, medication, etc.). "
-                    "Predict exactly 3 to 4 concise, high-priority questions that this patient is most likely to ask about this specific visual presentation. "
-                    "Language requirement: You MUST respond strictly in Khmer (ភាសាខ្មែរ). All questions must be written in natural, fluent Khmer. "
-                    "Keep each question short (under 45 characters). "
-                    "Output ONLY a valid JSON list of strings, with no markdown code blocks and no conversational text, for example:\n"
-                    '["តើកន្ទួលនេះអាចជាអ្វី?", "តើមានថ្នាំលាបអ្វីជួយបាន?", "តើគួរជួបគ្រូពេទ្យជំនាញណា?"]'
-                )
-            else:
-                prompt_instruction = (
-                    "You are an expert clinical triage assistant. "
-                    "Analyze the provided medical symptom/condition image (such as skin rash, lesion, wound, burn, eye redness, swelling, insect bite, medication, etc.). "
-                    "Predict exactly 3 to 4 concise, high-priority questions that this patient is most likely to ask about this specific visual presentation. "
-                    "Language requirement: You MUST respond strictly in English. "
-                    "Keep each question short (under 45 characters). "
-                    "Output ONLY a valid JSON list of strings, with no markdown code blocks and no conversational text, for example:\n"
-                    '["What could this rash be?", "What topical treatments can soothe this?", "Which specialist should I see?"]'
-                )
-
-            messages = [
-                HumanMessage(
-                    content=[
-                        {"type": "text", "text": prompt_instruction},
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": image_url,
-                                "detail": "low",
-                            },
-                        },
-                    ]
-                )
-            ]
-
-            response = await llm.ainvoke(messages)
-            raw_text = response.content if hasattr(response, "content") else str(response)
-            if isinstance(raw_text, list):
-                raw_text = " ".join(
-                    part.get("text", "") if isinstance(part, dict) else str(part)
-                    for part in raw_text
-                )
-
-            clean_text = raw_text.strip()
-            if clean_text.startswith("```"):
-                clean_text = re.sub(r"^```(?:json)?\s*", "", clean_text)
-                clean_text = re.sub(r"\s*```$", "", clean_text)
-
-            match = re.search(r"\[.*\]", clean_text, re.DOTALL)
-            if match:
-                parsed = json.loads(match.group(0))
-                if isinstance(parsed, list):
-                    questions = []
-                    for q in parsed:
-                        c = re.sub(r"\[([^\]]+)\](?:\([^)]*\))?", r"\1", str(q))
-                        c = re.sub(r"\(#[^)]*\)", "", c)
-                        c = re.sub(r"[\[\]#]", "", c).strip(" '\"`-").strip()
-                        if len(c) > 3:
-                            questions.append(c)
-                    if questions:
-                        return questions[:4]
-
-            lines = [
-                re.sub(r"^[\d\.\-\*\•\s]+", "", l).strip(' "\',')
-                for l in clean_text.splitlines()
-                if l.strip() and not l.strip().startswith("[") and not l.strip().startswith("]")
-            ]
-            valid_lines = []
-            for l in lines:
-                c = re.sub(r"\[([^\]]+)\](?:\([^)]*\))?", r"\1", l)
-                c = re.sub(r"\(#[^)]*\)", "", c)
-                c = re.sub(r"[\[\]#]", "", c).strip(" '\"`-").strip()
-                if len(c) > 3 and not c.lower().startswith("here are"):
-                    valid_lines.append(c)
-            if valid_lines:
-                return valid_lines[:4]
-
-            return []
-
-        except Exception as err:
-            logger.warning(f"Error predicting image questions with LLM: {err}")
-            return []
 

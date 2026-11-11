@@ -124,7 +124,7 @@ export const CtaSection: React.FC<CtaSectionProps> = ({ currentUser, onSelectTab
                 e.currentTarget.style.backgroundColor = '#ffffff';
               }}
             >
-              <span>{currentUser ? t('cta_btn_portal') : 'Get Started'}</span>
+              <span>{currentUser ? t('cta_btn_portal') : t('cta_btn_start')}</span>
               <ArrowRight size={18} strokeWidth={2.5} color="#0c2f27" />
             </button>
           </div>

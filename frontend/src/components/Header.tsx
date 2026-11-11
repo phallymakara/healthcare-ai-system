@@ -3,7 +3,7 @@ import { LogIn, LogOut, User, Bell, X, Menu } from 'lucide-react';
 import { UserProfile } from '../services/auth';
 import { useLanguage } from '../context/LanguageContext';
 import { LanguageSwitcher } from './LanguageSwitcher';
-import prosethLogo from '../assets/ProsethBot.png';
+import prosethLogo from '../assets/ProsethBot.webp';
 
 export type NavTab = 
   | 'landing'

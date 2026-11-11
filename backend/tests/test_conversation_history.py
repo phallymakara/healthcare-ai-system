@@ -42,6 +42,7 @@ async def test_conversations_user_isolation():
                 "email": f"patient.alpha.{suffix_a}@carequeue.ai",
                 "password": "Password123!",
                 "phone_number": f"+85599{uuid.uuid4().int % 1000000:06d}",
+                "accept_terms": True,
             },
         )
         assert res_a.status_code == 201
@@ -57,6 +58,7 @@ async def test_conversations_user_isolation():
                 "email": f"patient.beta.{suffix_b}@carequeue.ai",
                 "password": "Password123!",
                 "phone_number": f"+85598{uuid.uuid4().int % 1000000:06d}",
+                "accept_terms": True,
             },
         )
         assert res_b.status_code == 201

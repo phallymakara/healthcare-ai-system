@@ -4,6 +4,7 @@ import { API_BASE } from '../../services/api';
 import { useLanguage } from '../../context/LanguageContext';
 import { Eye, EyeOff, User, Camera, RefreshCw } from 'lucide-react';
 import { useModalClose } from '../../hooks/useModalClose';
+import { convertImageFileToWebp } from '../../utils/imageWebp';
 
 interface StaffMember {
   id: string;
@@ -134,15 +135,16 @@ export const StaffManagement: React.FC = () => {
     setModalOpen(true);
   };
 
-  const handleModalPhotoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleModalPhotoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
       setSubmitError(isKm ? 'ទំហំរូបភាពត្រូវតែតូចជាង 5MB' : 'Image size must be under 5MB');
       return;
     }
-    setModalPhotoFile(file);
-    setModalPhotoUrl(URL.createObjectURL(file));
+    const optimizedPhoto = await convertImageFileToWebp(file, { maxDim: 512, quality: 0.84 });
+    setModalPhotoFile(optimizedPhoto);
+    setModalPhotoUrl(URL.createObjectURL(optimizedPhoto));
     setRemoveModalPhoto(false);
   };
 
@@ -182,8 +184,9 @@ export const StaffManagement: React.FC = () => {
     setRowUploadingStaffId(targetStaffId);
 
     try {
+      const optimizedPhoto = await convertImageFileToWebp(file, { maxDim: 512, quality: 0.84 });
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', optimizedPhoto);
       const res = await fetch(`${API_BASE}/partners/staff/${targetStaffId}/photo`, {
         method: 'POST',
         headers: AuthService.getAuthHeaders(),

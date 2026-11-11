@@ -104,3 +104,13 @@ async def test_non_admin_forbidden():
 
         res = await client.get("/api/v1/admin/dashboard", headers=p_headers)
         assert res.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_admin_document_download_requires_auth():
+    """Super Admin document download endpoint must reject unauthenticated callers."""
+    import uuid
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        res = await client.get(f"/api/v1/admin/partners/{uuid.uuid4()}/documents/{uuid.uuid4()}/download")
+        assert res.status_code in (401, 403)
+

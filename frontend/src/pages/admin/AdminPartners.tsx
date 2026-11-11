@@ -6,11 +6,19 @@ import {
   Building2,
   Search,
   X,
+  FileText,
+  Eye,
 } from 'lucide-react';
 import { API_BASE } from '../../services/api';
+import {
+  HospitalDocumentItem,
+  getDocumentTypeLabel,
+  formatDocumentSize,
+  openAuthenticatedDocument,
+} from '../../components/PartnerDocumentsManager';
 
 export const AdminPartners: React.FC = () => {
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const isKm = language === 'km';
   const kmFont = isKm ? 'var(--font-khmer)' : 'inherit';
 
@@ -22,6 +30,9 @@ export const AdminPartners: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [rejectingHospId, setRejectingHospId] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
+  const [reviewingPartner, setReviewingPartner] = useState<any | null>(null);
+  const [docViewError, setDocViewError] = useState<string | null>(null);
+  const [viewingDocId, setViewingDocId] = useState<string | null>(null);
 
   const loadPartners = async (silent: boolean = false) => {
     if (!silent) setLoading(true);
@@ -265,6 +276,9 @@ export const AdminPartners: React.FC = () => {
                 <th style={{ padding: '10px 14px', fontWeight: 600, color: 'var(--text-muted)', width: '110px' }}>
                   Doctors
                 </th>
+                <th style={{ padding: '10px 14px', fontWeight: 600, color: 'var(--text-muted)', width: '130px' }}>
+                  Documents
+                </th>
                 <th style={{ padding: '10px 14px', fontWeight: 600, color: 'var(--text-muted)', width: '110px' }}>
                   Status
                 </th>
@@ -276,13 +290,13 @@ export const AdminPartners: React.FC = () => {
             <tbody>
               {loading && partners.length === 0 ? (
                 <tr>
-                  <td colSpan={7} style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--text-muted)', height: '100%', verticalAlign: 'middle' }}>
+                  <td colSpan={8} style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--text-muted)', height: '100%', verticalAlign: 'middle' }}>
                     Loading partner facilities...
                   </td>
                 </tr>
               ) : filteredPartners.length === 0 ? (
                 <tr>
-                  <td colSpan={7} style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--text-muted)', height: '100%', verticalAlign: 'middle' }}>
+                  <td colSpan={8} style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--text-muted)', height: '100%', verticalAlign: 'middle' }}>
                     No partner facilities match the criteria.
                   </td>
                 </tr>
@@ -345,6 +359,33 @@ export const AdminPartners: React.FC = () => {
 
                     <td style={{ padding: '10px 14px', verticalAlign: 'middle', color: 'var(--text-main)' }}>
                       <span style={{ fontWeight: 500 }}>{hosp.doctors_count}</span> doctors
+                    </td>
+
+                    <td style={{ padding: '10px 14px', verticalAlign: 'middle' }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDocViewError(null);
+                          setReviewingPartner(hosp);
+                        }}
+                        style={{
+                          padding: '4px 10px',
+                          borderRadius: '6px',
+                          border: '1px solid var(--border-color)',
+                          background: 'transparent',
+                          color: (hosp.documents_count || 0) > 0 ? 'var(--accent-primary)' : 'var(--text-muted)',
+                          fontWeight: 600,
+                          fontSize: '0.78rem',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '5px',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        <FileText size={13} />
+                        <span>{hosp.documents_count || 0} {t('doc_admin_review_btn')}</span>
+                      </button>
                     </td>
 
                     <td style={{ padding: '10px 14px', verticalAlign: 'middle' }}>
@@ -430,6 +471,141 @@ export const AdminPartners: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Partner Documents Inspection Modal */}
+      {reviewingPartner && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: '1rem',
+          }}
+          onClick={() => setReviewingPartner(null)}
+        >
+          <div
+            style={{
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '14px',
+              maxWidth: '540px',
+              width: '100%',
+              padding: '1.25rem',
+              boxShadow: 'none',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                  {t('doc_admin_modal_title')}
+                </h3>
+                <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                  {reviewingPartner.name}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setReviewingPartner(null)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '4px' }}
+                aria-label="Close"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {docViewError && (
+              <div style={{ color: '#dc2626', fontSize: '0.82rem', marginBottom: '0.75rem' }}>
+                {docViewError}
+              </div>
+            )}
+
+            {(!reviewingPartner.documents || reviewingPartner.documents.length === 0) ? (
+              <div
+                style={{
+                  padding: '1.25rem',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '10px',
+                  textAlign: 'center',
+                  color: 'var(--text-muted)',
+                  fontSize: '0.86rem',
+                }}
+              >
+                {t('doc_admin_no_docs')}
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem', maxHeight: '320px', overflowY: 'auto' }}>
+                {(reviewingPartner.documents as HospitalDocumentItem[]).map((doc) => (
+                  <div
+                    key={doc.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: '0.75rem',
+                      padding: '0.7rem 0.85rem',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: '10px',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', minWidth: 0, flex: 1 }}>
+                      <FileText size={16} color="var(--accent-primary)" style={{ flexShrink: 0 }} />
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: '0.86rem', fontWeight: 600, color: 'var(--text-main)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {doc.original_filename}
+                        </div>
+                        <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>
+                          {getDocumentTypeLabel(doc.document_type, t)} · {formatDocumentSize(doc.file_size)}
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      disabled={viewingDocId === doc.id}
+                      onClick={async () => {
+                        setDocViewError(null);
+                        setViewingDocId(doc.id);
+                        try {
+                          await openAuthenticatedDocument(
+                            `/admin/partners/${reviewingPartner.id}/documents/${doc.id}/download`,
+                            doc.original_filename
+                          );
+                        } catch (err: any) {
+                          setDocViewError(err?.message || 'Unable to open document');
+                        } finally {
+                          setViewingDocId(null);
+                        }
+                      }}
+                      style={{
+                        padding: '5px 10px',
+                        borderRadius: '6px',
+                        border: '1px solid var(--accent-primary)',
+                        background: 'transparent',
+                        color: 'var(--accent-primary)',
+                        fontWeight: 600,
+                        fontSize: '0.78rem',
+                        cursor: viewingDocId === doc.id ? 'not-allowed' : 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Eye size={13} />
+                      <span>{t('doc_view_btn')}</span>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Rejection Note Modal */}
       {rejectingHospId && (

@@ -6,7 +6,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.core.database import Base
-from app.models.enums import VerificationStatus
+from app.models.enums import VerificationStatus, EnrollmentDocumentType
 
 if TYPE_CHECKING:
     from app.models.doctor import Doctor
@@ -41,6 +41,7 @@ class Hospital(Base):
         nullable=False,
         index=True,
     )
+    rejection_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     emergency_service_available: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     rating: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
     total_reviews: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
@@ -60,6 +61,37 @@ class Hospital(Base):
     services: Mapped[List["Service"]] = relationship(
         "Service", back_populates="hospital", cascade="all, delete-orphan"
     )
+    documents: Mapped[List["HospitalDocument"]] = relationship(
+        "HospitalDocument", back_populates="hospital", cascade="all, delete-orphan"
+    )
+
+
+class HospitalDocument(Base):
+    """Private supporting documents uploaded by a hospital/clinic during enrollment or profile updates."""
+
+    __tablename__ = "hospital_documents"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True
+    )
+    hospital_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("hospitals.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    uploaded_by_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    document_type: Mapped[EnrollmentDocumentType] = mapped_column(
+        Enum(EnrollmentDocumentType, name="enrollment_document_type_enum"),
+        default=EnrollmentDocumentType.MOH_LICENSE,
+        nullable=False,
+    )
+    original_filename: Mapped[str] = mapped_column(String(255), nullable=False)
+    blob_name: Mapped[str] = mapped_column(String(512), nullable=False)
+    content_type: Mapped[str] = mapped_column(String(128), nullable=False)
+    file_size: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+    hospital: Mapped["Hospital"] = relationship("Hospital", back_populates="documents")
 
 
 class HospitalBranch(Base):

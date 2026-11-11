@@ -66,5 +66,7 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Microphone access lets you speak your health questions to the AI Healthcare Assistant.</string>
 </dict>
 </plist>

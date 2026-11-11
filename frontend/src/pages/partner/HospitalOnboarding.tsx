@@ -7,13 +7,16 @@ import {
 import { AuthService, UserProfile } from '../../services/auth';
 import { apiClient } from '../../services/apiClient';
 import { useLanguage } from '../../context/LanguageContext';
-import prosethLogo from '../../assets/ProsethBot.png';
+import { convertImageFileToWebp } from '../../utils/imageWebp';
+import prosethLogo from '../../assets/ProsethBot.webp';
 
 import { OnboardingStepIndicator } from './onboarding/OnboardingStepIndicator';
 import { OnboardingIdentityStep } from './onboarding/OnboardingIdentityStep';
 import { OnboardingContactStep } from './onboarding/OnboardingContactStep';
 import { OnboardingLocationStep } from './onboarding/OnboardingLocationStep';
+import { OnboardingDocumentsStep } from './onboarding/OnboardingDocumentsStep';
 import { OnboardingReviewStep } from './onboarding/OnboardingReviewStep';
+import { HospitalDocumentItem } from '../../components/PartnerDocumentsManager';
 
 interface HospitalOnboardingProps {
   currentUser: UserProfile;
@@ -28,7 +31,7 @@ export const HospitalOnboarding: React.FC<HospitalOnboardingProps> = ({
   const isKm = language === 'km';
   const kmFont = isKm ? 'var(--font-khmer)' : 'inherit';
 
-  const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4>(1);
+  const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4 | 5>(1);
   const [loading, setLoading] = useState(false);
 
   // Step 1: Hospital Identity & Logo
@@ -48,6 +51,9 @@ export const HospitalOnboarding: React.FC<HospitalOnboardingProps> = ({
   const [googleMapsUrl, setGoogleMapsUrl] = useState('');
   const [latitude, setLatitude] = useState('');
   const [longitude, setLongitude] = useState('');
+
+  // Step 4: Supporting Documents
+  const [documents, setDocuments] = useState<HospitalDocumentItem[]>([]);
 
   // Inline Validation Errors
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -75,6 +81,9 @@ export const HospitalOnboarding: React.FC<HospitalOnboardingProps> = ({
             setGoogleMapsUrl(`https://maps.google.com/?q=${data.latitude},${data.longitude}`);
           }
         }
+        if (Array.isArray(data.documents)) {
+          setDocuments(data.documents);
+        }
       } catch (err) {
         console.warn('[HospitalOnboarding] Failed to load hospital profile:', err);
       }
@@ -101,8 +110,9 @@ export const HospitalOnboarding: React.FC<HospitalOnboardingProps> = ({
     setErrors((p) => ({ ...p, logo: '' }));
     setUploadingLogo(true);
     try {
+      const optimizedLogo = await convertImageFileToWebp(file, { maxDim: 512, quality: 0.86 });
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', optimizedLogo);
 
       const data = await apiClient.post<any>('/partners/profile/logo', formData);
       if (data?.url) {
@@ -183,6 +193,10 @@ export const HospitalOnboarding: React.FC<HospitalOnboardingProps> = ({
       if (!googleMapsUrl.trim() && (!latitude || !longitude)) {
         errs.map = isKm ? 'សូមបញ្ចូលតំណភ្ជាប់ Google Maps ឬកូអរដោនេទីតាំង។' : 'Please provide a Google Maps link or coordinates.';
       }
+    } else if (step === 4) {
+      if (documents.length === 0) {
+        errs.documents = t('doc_required_error');
+      }
     }
 
     if (Object.keys(errs).length > 0) {
@@ -196,19 +210,24 @@ export const HospitalOnboarding: React.FC<HospitalOnboardingProps> = ({
 
   const handleNextStep = () => {
     if (validateStep(currentStep)) {
-      setCurrentStep((prev) => (prev < 4 ? ((prev + 1) as 1 | 2 | 3 | 4) : 4));
+      setCurrentStep((prev) => (prev < 5 ? ((prev + 1) as 1 | 2 | 3 | 4 | 5) : 5));
     }
   };
 
   const handlePrevStep = () => {
     setErrors({});
-    setCurrentStep((prev) => (prev > 1 ? ((prev - 1) as 1 | 2 | 3 | 4) : 1));
+    setCurrentStep((prev) => (prev > 1 ? ((prev - 1) as 1 | 2 | 3 | 4 | 5) : 1));
   };
 
   const handleSkip = (e?: React.MouseEvent) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
+    }
+    if (documents.length === 0) {
+      setCurrentStep(4);
+      setErrors({ documents: t('doc_required_error') });
+      return;
     }
     setErrors({});
 
@@ -243,7 +262,10 @@ export const HospitalOnboarding: React.FC<HospitalOnboardingProps> = ({
   };
 
   const handleFinishOnboarding = async () => {
-    if (!validateStep(1) || !validateStep(2) || !validateStep(3)) {
+    if (!validateStep(1) || !validateStep(2) || !validateStep(3) || !validateStep(4)) {
+      if (documents.length === 0) {
+        setCurrentStep(4);
+      }
       return;
     }
 
@@ -282,6 +304,7 @@ export const HospitalOnboarding: React.FC<HospitalOnboardingProps> = ({
     { number: 2, title: t('onboard_step_2_title') },
     { number: 3, title: t('onboard_step_3_title') },
     { number: 4, title: t('onboard_step_4_title') },
+    { number: 5, title: t('onboard_step_5_title') },
   ];
 
   return (
@@ -407,6 +430,21 @@ export const HospitalOnboarding: React.FC<HospitalOnboardingProps> = ({
       )}
 
       {currentStep === 4 && (
+        <OnboardingDocumentsStep
+          documents={documents}
+          onDocumentsChange={(nextDocs) => {
+            setDocuments(nextDocs);
+            if (nextDocs.length > 0 && errors.documents) {
+              setErrors((p) => ({ ...p, documents: '' }));
+            }
+          }}
+          error={errors.documents}
+          onClearError={() => setErrors((p) => ({ ...p, documents: '' }))}
+          t={t}
+        />
+      )}
+
+      {currentStep === 5 && (
         <OnboardingReviewStep
           hospitalName={hospitalName}
           logoUrl={logoUrl}
@@ -419,6 +457,7 @@ export const HospitalOnboarding: React.FC<HospitalOnboardingProps> = ({
           city={city}
           latitude={latitude}
           longitude={longitude}
+          documents={documents}
           onEditStep={(step) => setCurrentStep(step)}
           isKm={isKm}
           kmFont={kmFont}
@@ -479,7 +518,7 @@ export const HospitalOnboarding: React.FC<HospitalOnboardingProps> = ({
             </button>
           )}
 
-          {currentStep < 4 ? (
+          {currentStep < 5 ? (
             <button
               type="button"
               onClick={handleNextStep}

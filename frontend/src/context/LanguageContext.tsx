@@ -14,6 +14,7 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 const LANGUAGE_STORAGE_KEY = 'health_ai_language';
+const LANGUAGE_USER_SET_KEY = 'health_ai_language_user_set';
 
 export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<Language>(() => {
@@ -22,13 +23,15 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
       const urlLang = params.get('lang')?.toLowerCase();
       if (urlLang === 'km' || urlLang === 'en') return urlLang;
     }
+    const userHasChosen = localStorage.getItem(LANGUAGE_USER_SET_KEY) === '1';
     const saved = localStorage.getItem(LANGUAGE_STORAGE_KEY);
-    return (saved === 'km' || saved === 'en') ? saved : 'en';
+    return userHasChosen && (saved === 'km' || saved === 'en') ? saved : 'km';
   });
 
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
     localStorage.setItem(LANGUAGE_STORAGE_KEY, lang);
+    localStorage.setItem(LANGUAGE_USER_SET_KEY, '1');
   };
 
   const toggleLanguage = () => {

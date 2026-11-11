@@ -1,11 +1,14 @@
 import logging
 import uuid
 import re
+from datetime import datetime
 from typing import Optional
 from sqlalchemy import select, or_
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, status
+
+from app.core.config import settings
 
 from app.models import (
     User,
@@ -36,6 +39,28 @@ def generate_slug(name: str) -> str:
 
 
 class AuthService:
+    @staticmethod
+    def resolve_terms_audience(role: UserRole) -> str:
+        """Map user role to the applicable Terms & Conditions agreement audience."""
+        return "PATIENT" if role == UserRole.PATIENT else "PARTNER"
+
+    @staticmethod
+    def _ensure_terms_accepted(accept_terms: bool) -> None:
+        if not accept_terms:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="You must accept the Terms & Conditions and Agreement before creating an account.",
+            )
+
+    @staticmethod
+    def _stamp_terms_acceptance(
+        user: User, audience: str, version: Optional[str] = None
+    ) -> None:
+        user.terms_accepted = True
+        user.terms_accepted_at = datetime.utcnow()
+        user.terms_version = (version or settings.TERMS_VERSION).strip()
+        user.terms_audience = audience
+
     @staticmethod
     async def authenticate_user(session: AsyncSession, data: LoginRequest) -> TokenResponse:
         account_clean = data.identifier
@@ -85,6 +110,8 @@ class AuthService:
 
     @staticmethod
     async def register_patient(session: AsyncSession, data: PatientRegisterRequest) -> TokenResponse:
+        AuthService._ensure_terms_accepted(data.accept_terms)
+
         # Resolve email or phone
         raw_contact = (data.contact_identifier or "").strip()
         is_email = "@" in raw_contact
@@ -123,6 +150,7 @@ class AuthService:
             is_active=True,
             is_verified=True,
         )
+        AuthService._stamp_terms_acceptance(new_user, audience="PATIENT")
         session.add(new_user)
         await session.flush()
 
@@ -153,6 +181,8 @@ class AuthService:
 
     @staticmethod
     async def register_partner(session: AsyncSession, data: PartnerRegisterRequest) -> TokenResponse:
+        AuthService._ensure_terms_accepted(data.accept_terms)
+
         # Resolve contact identifier (email or phone)
         raw_contact = (data.contact_identifier or "").strip()
         is_email = "@" in raw_contact
@@ -271,6 +301,7 @@ class AuthService:
             admin_user.hashed_password = get_password_hash(password)
             admin_user.is_verified = True
             admin_user.is_active = True
+            AuthService._stamp_terms_acceptance(admin_user, audience="PARTNER")
         else:
             admin_user = User(
                 id=uuid.uuid4(),
@@ -284,6 +315,7 @@ class AuthService:
                 is_active=True,
                 is_verified=True,
             )
+            AuthService._stamp_terms_acceptance(admin_user, audience="PARTNER")
             session.add(admin_user)
         await session.commit()
 
@@ -341,6 +373,21 @@ class AuthService:
             refresh_token=new_refresh_token,
             user=UserResponse.model_validate(user),
         )
+
+    @staticmethod
+    async def accept_terms(
+        session: AsyncSession,
+        user: User,
+        accepted: bool = True,
+        version: Optional[str] = None,
+    ) -> User:
+        """Record Terms & Conditions agreement acceptance for a newly created user account."""
+        AuthService._ensure_terms_accepted(accepted)
+        audience = AuthService.resolve_terms_audience(user.role)
+        AuthService._stamp_terms_acceptance(user, audience=audience, version=version)
+        await session.commit()
+        await session.refresh(user)
+        return user
 
     @staticmethod
     async def get_user_by_id(session: AsyncSession, user_id: uuid.UUID) -> Optional[User]:

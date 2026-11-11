@@ -32,8 +32,6 @@ export const TicketListView: React.FC<TicketListViewProps> = ({
   setLookupError,
   onLookupSubmit,
   onSelectTicket,
-  onExploreHospitals,
-  onConsultAi,
 }) => {
   const { language, t } = useLanguage();
   const isKm = language === 'km';
@@ -131,79 +129,27 @@ export const TicketListView: React.FC<TicketListViewProps> = ({
       ) : myTickets.length === 0 ? (
         <div
           style={{
-            background: '#ffffff',
-            border: '1px solid var(--border-color)',
-            borderRadius: '16px',
-            padding: '3.5rem 2rem',
+            minHeight: '42vh',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '2rem 1rem',
             textAlign: 'center',
-            boxShadow: 'none',
           }}
         >
-          <Calendar size={48} color="var(--text-muted)" style={{ margin: '0 auto 1.25rem auto' }} />
-          <h3
+          <Calendar size={34} color="var(--text-muted)" style={{ marginBottom: '0.75rem' }} />
+          <p
             style={{
-              fontSize: '1.35rem',
-              fontWeight: 700,
-              color: 'var(--text-main)',
-              margin: '0 0 0.6rem 0',
+              fontSize: '0.98rem',
+              fontWeight: 400,
+              color: 'var(--text-muted)',
+              margin: 0,
               fontFamily: kmFont,
             }}
           >
             {t('appt_no_active_title')}
-          </h3>
-          <p
-            style={{
-              fontSize: '1.02rem',
-              color: 'var(--text-muted)',
-              maxWidth: '560px',
-              margin: '0 auto 2rem auto',
-              lineHeight: 1.65,
-              fontFamily: kmFont,
-            }}
-          >
-            {t('appt_no_active_desc')}
           </p>
-
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-            {onExploreHospitals && (
-              <button
-                onClick={onExploreHospitals}
-                style={{
-                  padding: '0.65rem 1.45rem',
-                  fontSize: '1rem',
-                  fontWeight: 600,
-                  border: '1px solid var(--border-color)',
-                  borderRadius: 'var(--radius-full)',
-                  background: 'transparent',
-                  color: 'var(--text-main)',
-                  cursor: 'pointer',
-                  boxShadow: 'none',
-                  fontFamily: kmFont,
-                }}
-              >
-                {t('appt_book_now')}
-              </button>
-            )}
-            {onConsultAi && (
-              <button
-                onClick={onConsultAi}
-                style={{
-                  padding: '0.65rem 1.45rem',
-                  fontSize: '1rem',
-                  fontWeight: 600,
-                  border: '1px solid var(--border-color)',
-                  borderRadius: 'var(--radius-full)',
-                  background: 'transparent',
-                  color: 'var(--text-main)',
-                  cursor: 'pointer',
-                  boxShadow: 'none',
-                  fontFamily: kmFont,
-                }}
-              >
-                {t('appt_consult_ai')}
-              </button>
-            )}
-          </div>
         </div>
       ) : (
         /* Ticket Rows List */
@@ -253,6 +199,8 @@ export const TicketListView: React.FC<TicketListViewProps> = ({
                     <img
                       src={tk.hospital_logo_url}
                       alt={tk.hospital_name || 'Hospital'}
+                      loading="lazy"
+                      decoding="async"
                       style={{
                         width: '54px',
                         height: '54px',

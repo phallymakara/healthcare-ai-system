@@ -22,7 +22,7 @@ export const OnboardingStepIndicator: React.FC<OnboardingStepIndicatorProps> = (
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
+          gridTemplateColumns: `repeat(${steps.length}, 1fr)`,
           gap: '10px',
           width: '100%',
         }}

@@ -9,6 +9,7 @@ from app.models.user import User
 from app.models.hospital import Hospital
 from app.models.enums import UserRole
 from app.schemas.auth import (
+    AcceptTermsRequest,
     LoginRequest,
     PatientRegisterRequest,
     PartnerRegisterRequest,
@@ -58,7 +59,7 @@ async def login(data: LoginRequest, request: Request, db: AsyncSession = Depends
             status="SUCCESS",
         )
     except Exception:
-        pass
+        pass 
 
     return res
 
@@ -97,15 +98,85 @@ async def logout(
 
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
-async def register_patient(data: PatientRegisterRequest, db: AsyncSession = Depends(get_db)):
-    """Patient self-registration with profile creation"""
-    return await AuthService.register_patient(db, data)
+async def register_patient(
+    data: PatientRegisterRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """Patient self-registration with profile creation and Terms acceptance"""
+    res = await AuthService.register_patient(db, data)
+    try:
+        ip = request.client.host if request.client else "127.0.0.1"
+        await AuditService.record_log(
+            event_type="TERMS_ACCEPTED",
+            action="Patient Terms & Conditions Accepted",
+            actor_name=res.user.full_name,
+            actor_role=res.user.role.value if hasattr(res.user.role, "value") else str(res.user.role),
+            actor_email=res.user.email or res.user.phone_number,
+            target_entity=f"Patient Agreement v{res.user.terms_version or '1.0'}",
+            details="Accepted during patient account registration",
+            ip_address=ip,
+            status="SUCCESS",
+        )
+    except Exception:
+        pass
+    return res
 
 
 @router.post("/partner-register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
-async def register_partner(data: PartnerRegisterRequest, db: AsyncSession = Depends(get_db)):
-    """Hospital / Clinic partner onboarding with organization profile and admin user"""
-    return await AuthService.register_partner(db, data)
+async def register_partner(
+    data: PartnerRegisterRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """Hospital / Clinic partner onboarding with organization profile, admin user, and Partner Agreement acceptance"""
+    res = await AuthService.register_partner(db, data)
+    try:
+        ip = request.client.host if request.client else "127.0.0.1"
+        await AuditService.record_log(
+            event_type="TERMS_ACCEPTED",
+            action="Partner Agreement Accepted",
+            actor_name=res.user.full_name,
+            actor_role=res.user.role.value if hasattr(res.user.role, "value") else str(res.user.role),
+            actor_email=res.user.email or res.user.phone_number,
+            target_entity=f"Partner Agreement v{res.user.terms_version or '1.0'}",
+            details="Accepted during partner clinic registration",
+            ip_address=ip,
+            status="SUCCESS",
+        )
+    except Exception:
+        pass
+    return res
+
+
+@router.post("/accept-terms", response_model=UserResponse)
+async def accept_terms(
+    data: AcceptTermsRequest,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Record Terms & Conditions agreement acceptance for the currently authenticated user"""
+    updated_user = await AuthService.accept_terms(
+        db, current_user, accepted=data.accepted, version=data.version
+    )
+    try:
+        ip = request.client.host if request.client else "127.0.0.1"
+        role_str = updated_user.role.value if hasattr(updated_user.role, "value") else str(updated_user.role)
+        await AuditService.record_log(
+            event_type="TERMS_ACCEPTED",
+            action=f"{updated_user.terms_audience or 'USER'} Agreement Accepted",
+            actor_name=updated_user.full_name,
+            actor_role=role_str,
+            actor_email=updated_user.email or updated_user.phone_number,
+            target_entity=f"{updated_user.terms_audience or 'USER'} Agreement v{updated_user.terms_version or '1.0'}",
+            details="Accepted on first sign-in",
+            ip_address=ip,
+            status="SUCCESS",
+        )
+    except Exception:
+        pass
+    return UserResponse.model_validate(updated_user)
 
 
 @router.post("/refresh", response_model=TokenResponse)

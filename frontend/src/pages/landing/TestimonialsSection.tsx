@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Star } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 
-import doctorConsultImg from '../../assets/testimonial_doctor_1.jpg';
-import doctorSmileImg from '../../assets/testimonial_doctor_2.jpg';
+import doctorConsultImg from '../../assets/testimonial_doctor_1.webp';
+import doctorSmileImg from '../../assets/testimonial_doctor_2.webp';
 
 interface TestimonialItem {
   id: number;
@@ -200,6 +200,8 @@ export const TestimonialsSection: React.FC = () => {
               <img
                 src={currentItem.image}
                 alt="Doctor consultation"
+                loading="lazy"
+                decoding="async"
                 style={{
                   width: '100%',
                   height: '100%',
@@ -292,6 +294,8 @@ export const TestimonialsSection: React.FC = () => {
               <img
                 src={nextItem.image}
                 alt="Next doctor consultation"
+                loading="lazy"
+                decoding="async"
                 style={{
                   width: '100%',
                   height: '100%',

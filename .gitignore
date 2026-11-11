@@ -80,6 +80,8 @@ nosetests.xml
 # --- 6. Database & Local Storage Volumes ---
 postgres_data/
 redis_data/
+.private_uploads/
+backend/.private_uploads/
 *.sqlite
 *.sqlite3
 *.db

@@ -5,7 +5,8 @@ import { useLanguage } from '../../context/LanguageContext';
 import { LanguageSwitcher } from '../../components/LanguageSwitcher';
 import { getPortalSwitchUrl } from '../../utils/subdomain';
 import { HospitalOnboarding } from './HospitalOnboarding';
-import prosethLogo from '../../assets/ProsethBot.png';
+import { TermsModal } from '../../components/TermsModal';
+import prosethLogo from '../../assets/ProsethBot.webp';
 
 interface HospitalPartnerAuthProps {
   onSuccess: (user: UserProfile) => void;
@@ -45,6 +46,10 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Partner Terms & Agreement acceptance
+  const [acceptTerms, setAcceptTerms] = useState(false);
+  const [termsModalOpen, setTermsModalOpen] = useState(false);
 
   // Handle Staff / Hospital Login
   const handleLoginSubmit = async (e: React.FormEvent) => {
@@ -118,6 +123,9 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
     if (registerPassword !== confirmPassword) {
       errors.confirmPassword = t('err_password_mismatch');
     }
+    if (!acceptTerms) {
+      errors.acceptTerms = t('terms_required_error');
+    }
 
     if (Object.keys(errors).length > 0) {
       setRegisterErrors(errors);
@@ -132,6 +140,7 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
         admin_full_name: adminFullName.trim(),
         contact_identifier: officialContact.trim(),
         password: registerPassword,
+        accept_terms: true,
       });
 
       // Registration successful -> immediately display the Onboarding flow!
@@ -889,6 +898,78 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
                   )}
                 </div>
 
+                {/* Partner Agreement Checkbox */}
+                <div style={{ marginBottom: '1rem' }}>
+                  <label
+                    style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '0.5rem',
+                      fontSize: '0.84rem',
+                      color: 'var(--text-main)',
+                      cursor: 'pointer',
+                      lineHeight: 1.45,
+                      fontFamily: kmFont,
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={acceptTerms}
+                      onChange={(e) => {
+                        setAcceptTerms(e.target.checked);
+                        if (e.target.checked && registerErrors.acceptTerms) {
+                          setRegisterErrors((p) => ({ ...p, acceptTerms: '' }));
+                        }
+                      }}
+                      style={{
+                        marginTop: '3px',
+                        width: '16px',
+                        height: '16px',
+                        accentColor: '#185339',
+                        cursor: 'pointer',
+                        flexShrink: 0,
+                      }}
+                    />
+                    <span>
+                      {t('terms_checkbox_prefix')}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setTermsModalOpen(true);
+                        }}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          padding: 0,
+                          color: '#185339',
+                          fontWeight: 600,
+                          textDecoration: 'underline',
+                          cursor: 'pointer',
+                          fontSize: 'inherit',
+                          fontFamily: 'inherit',
+                          display: 'inline',
+                        }}
+                      >
+                        {t('terms_partner_link_label')}
+                      </button>
+                    </span>
+                  </label>
+                  {registerErrors.acceptTerms && (
+                    <span
+                      style={{
+                        color: '#dc2626',
+                        fontSize: '0.82rem',
+                        marginTop: '4px',
+                        display: 'block',
+                      }}
+                    >
+                      {registerErrors.acceptTerms}
+                    </span>
+                  )}
+                </div>
+
                 {/* General Register Error */}
                 {registerErrors.general && (
                   <div
@@ -1002,6 +1083,13 @@ export const HospitalPartnerAuth: React.FC<HospitalPartnerAuthProps> = ({
           </div>
         )}
       </main>
+
+      <TermsModal
+        isOpen={termsModalOpen}
+        onClose={() => setTermsModalOpen(false)}
+        mode="view"
+        audience="partner"
+      />
     </div>
   );
 };

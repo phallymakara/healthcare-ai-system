@@ -62,6 +62,8 @@ async def create_partner_doctor(
             branch_id=data.branch_id,
             is_active=True,
             is_verified=True,
+            terms_accepted=False,
+            terms_audience="PARTNER",
         )
         db.add(doc_user)
         await db.flush()

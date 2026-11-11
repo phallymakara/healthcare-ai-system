@@ -8,6 +8,10 @@ export interface UserProfile {
   role: 'PATIENT' | 'HOSPITAL_ADMIN' | 'RECEPTIONIST' | 'DOCTOR' | 'NURSE' | 'SUPER_ADMIN';
   is_active: boolean;
   is_verified: boolean;
+  terms_accepted?: boolean;
+  terms_accepted_at?: string | null;
+  terms_version?: string | null;
+  terms_audience?: 'PATIENT' | 'PARTNER' | null;
   profile_photo_url?: string;
   hospital_id?: string;
   branch_id?: string;
@@ -105,6 +109,7 @@ export class AuthService {
     password: string;
     gender?: string;
     blood_type?: string;
+    accept_terms?: boolean;
   }): Promise<AuthTokens> {
     const res = await fetch(`${API_BASE}/auth/register`, {
       method: 'POST',
@@ -146,6 +151,7 @@ export class AuthService {
     admin_password?: string;
     initial_department_name?: string;
     initial_department_room?: string;
+    accept_terms?: boolean;
   }): Promise<AuthTokens> {
     const res = await fetch(`${API_BASE}/auth/partner-register`, {
       method: 'POST',
@@ -167,6 +173,27 @@ export class AuthService {
     const data: AuthTokens = await res.json();
     this.setSession(data);
     return data;
+  }
+
+  static async acceptTerms(version?: string): Promise<UserProfile> {
+    const res = await fetch(`${API_BASE}/auth/accept-terms`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...this.getAuthHeaders(),
+      },
+      body: JSON.stringify({ accepted: true, version }),
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      const msg = typeof errorData.detail === 'string' ? errorData.detail : 'Unable to record terms acceptance';
+      throw new Error(msg);
+    }
+
+    const user: UserProfile = await res.json();
+    localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(user));
+    return user;
   }
 
   static async fetchMe(): Promise<UserProfile | null> {

@@ -167,7 +167,7 @@ export const FacilityCardList: React.FC<FacilityCardListProps> = ({
         </form>
 
         {/* Category Selection Tabs */}
-        <div style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
           {[
             { label: t('cat_all'), value: 'All' },
             { label: t('filter_nearby'), value: 'Nearby' },
@@ -219,16 +219,12 @@ export const FacilityCardList: React.FC<FacilityCardListProps> = ({
             alignItems: 'center',
             justifyContent: 'center',
             textAlign: 'center',
-            padding: '3rem 1rem',
-            background: '#ffffff',
-            border: '1px solid var(--border-color)',
-            borderRadius: '16px',
+            padding: '2.5rem 1rem',
             color: 'var(--text-muted)',
-            fontSize: '0.875rem',
-            boxShadow: 'none',
+            fontSize: '0.9rem',
           }}
         >
-          {language === 'km' ? 'មិនមានទីតាំងត្រូវនឹងការស្វែងរករបស់អ្នកឡើយ' : 'No facilities found matching your selected category or query.'}
+          {language === 'km' ? 'រកមិនឃើញទីតាំងដែលត្រូវគ្នាទេ។' : 'No matching facilities found.'}
         </div>
       ) : (
         <>

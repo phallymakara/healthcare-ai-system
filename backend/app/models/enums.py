@@ -43,3 +43,10 @@ class OverrideType(str, enum.Enum):
     LEAVE = "LEAVE"
     HOLIDAY = "HOLIDAY"
     SPECIAL_HOURS = "SPECIAL_HOURS"
+
+
+class EnrollmentDocumentType(str, enum.Enum):
+    MOH_LICENSE = "MOH_LICENSE"
+    BUSINESS_REGISTRATION = "BUSINESS_REGISTRATION"
+    REPRESENTATIVE_ID = "REPRESENTATIVE_ID"
+    OTHER = "OTHER"

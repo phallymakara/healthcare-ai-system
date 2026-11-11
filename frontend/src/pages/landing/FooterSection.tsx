@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Facebook, Instagram, Youtube } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
+import { TermsModal } from '../../components/TermsModal';
 
 export const FooterSection: React.FC = () => {
   const { t } = useLanguage();
+  const [policyModalOpen, setPolicyModalOpen] = useState(false);
 
   return (
     <footer
@@ -58,6 +60,10 @@ export const FooterSection: React.FC = () => {
 
           <a
             href="#policy"
+            onClick={(e) => {
+              e.preventDefault();
+              setPolicyModalOpen(true);
+            }}
             style={{
               fontSize: '1.05rem',
               fontWeight: 700,
@@ -169,6 +175,14 @@ export const FooterSection: React.FC = () => {
           </a>
         </div>
       </div>
+
+      <TermsModal
+        isOpen={policyModalOpen}
+        onClose={() => setPolicyModalOpen(false)}
+        mode="view"
+        audience="patient"
+        allowAudienceSwitch={true}
+      />
     </footer>
   );
 };

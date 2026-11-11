@@ -1,7 +1,7 @@
 import uuid
 from datetime import date
 from typing import List, Optional
-from fastapi import APIRouter, Depends, status, HTTPException, Query
+from fastapi import APIRouter, Depends, status, HTTPException, Query, Response
 from sqlalchemy import select, and_, or_, func
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,6 +11,7 @@ from app.core.deps import require_roles, get_current_user
 from app.core.websocket import manager
 from app.models import (
     Hospital,
+    HospitalDocument,
     Department,
     Doctor,
     QueueSession,
@@ -32,13 +33,36 @@ from app.schemas.admin import (
     HospitalVerificationRequest,
     UserStatusUpdateRequest,
 )
+from app.schemas.partner import HospitalDocumentResponse
 from app.services.audit_service import AuditService
+from app.services.azure_storage import azure_storage_service, sanitize_document_filename
 
 router = APIRouter(
     prefix="/admin",
     tags=["Platform Administration (Super Admin)"],
     dependencies=[Depends(require_roles([UserRole.SUPER_ADMIN]))],
 )
+
+
+def _build_admin_hospital_item(h: Hospital, doctors_count: int) -> AdminHospitalItemResponse:
+    docs = sorted(getattr(h, "documents", []) or [], key=lambda d: d.created_at, reverse=True)
+    return AdminHospitalItemResponse(
+        id=h.id,
+        name=h.name,
+        slug=h.slug,
+        phone=h.phone,
+        email=h.email,
+        address=h.address,
+        is_active=h.is_active,
+        is_verified=h.is_verified,
+        verification_status=h.verification_status,
+        rejection_reason=h.rejection_reason,
+        departments_count=len(h.departments),
+        doctors_count=doctors_count,
+        documents_count=len(docs),
+        documents=[HospitalDocumentResponse.model_validate(d) for d in docs],
+        created_at=h.created_at,
+    )
 
 
 @router.get("/dashboard", response_model=AdminDashboardSummaryResponse)
@@ -131,7 +155,7 @@ async def get_admin_dashboard(db: AsyncSession = Depends(get_db)):
     # 8. Format recent hospitals (load only recent 10, batch doctor count)
     recent_res = await db.execute(
         select(Hospital)
-        .options(selectinload(Hospital.departments))
+        .options(selectinload(Hospital.departments), selectinload(Hospital.documents))
         .order_by(Hospital.created_at.desc())
         .limit(10)
     )
@@ -147,20 +171,7 @@ async def get_admin_dashboard(db: AsyncSession = Depends(get_db)):
         doc_counts = dict(doc_c.all())
 
     recent_hosp_items: List[AdminHospitalItemResponse] = [
-        AdminHospitalItemResponse(
-            id=h.id,
-            name=h.name,
-            slug=h.slug,
-            phone=h.phone,
-            email=h.email,
-            address=h.address,
-            is_active=h.is_active,
-            is_verified=h.is_verified,
-            verification_status=h.verification_status,
-            departments_count=len(h.departments),
-            doctors_count=doc_counts.get(h.id, 0),
-            created_at=h.created_at,
-        )
+        _build_admin_hospital_item(h, doc_counts.get(h.id, 0))
         for h in recent_hospitals
     ]
 
@@ -190,10 +201,10 @@ async def list_admin_partners(
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
 ):
-    """List registered hospitals with batched counts and verification status"""
+    """List registered hospitals with batched counts, verification status, and supporting documents"""
     query = (
         select(Hospital)
-        .options(selectinload(Hospital.departments))
+        .options(selectinload(Hospital.departments), selectinload(Hospital.documents))
         .order_by(Hospital.created_at.desc())
     )
     if status_filter:
@@ -217,23 +228,41 @@ async def list_admin_partners(
         )
         doc_counts = dict(doc_c.all())
 
-    return [
-        AdminHospitalItemResponse(
-            id=h.id,
-            name=h.name,
-            slug=h.slug,
-            phone=h.phone,
-            email=h.email,
-            address=h.address,
-            is_active=h.is_active,
-            is_verified=h.is_verified,
-            verification_status=h.verification_status,
-            departments_count=len(h.departments),
-            doctors_count=doc_counts.get(h.id, 0),
-            created_at=h.created_at,
+    return [_build_admin_hospital_item(h, doc_counts.get(h.id, 0)) for h in hospitals]
+
+
+@router.get("/partners/{hospital_id}/documents/{document_id}/download")
+async def admin_download_partner_document(
+    hospital_id: uuid.UUID,
+    document_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    """Super Admin authenticated download/preview of a partner hospital's private enrollment document."""
+    res = await db.execute(
+        select(HospitalDocument).where(
+            HospitalDocument.id == document_id,
+            HospitalDocument.hospital_id == hospital_id,
         )
-        for h in hospitals
-    ]
+    )
+    doc = res.scalar_one_or_none()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    owner_prefix = azure_storage_service.hospital_document_prefix(str(hospital_id))
+    content = await azure_storage_service.read_private_document(
+        blob_name=doc.blob_name,
+        required_prefix=owner_prefix,
+    )
+    safe_name = sanitize_document_filename(doc.original_filename)
+    return Response(
+        content=content,
+        media_type=doc.content_type,
+        headers={
+            "Content-Disposition": f'inline; filename="{safe_name}"',
+            "Cache-Control": "private, no-store",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
 
 
 @router.post("/partners/{hospital_id}/verify", response_model=AdminHospitalItemResponse)
@@ -247,7 +276,7 @@ async def verify_partner_hospital(
     res = await db.execute(
         select(Hospital)
         .where(Hospital.id == hospital_id)
-        .options(selectinload(Hospital.departments))
+        .options(selectinload(Hospital.departments), selectinload(Hospital.documents))
     )
     hospital = res.scalar_one_or_none()
     if not hospital:
@@ -256,6 +285,10 @@ async def verify_partner_hospital(
     hospital.verification_status = data.status
     hospital.is_verified = data.status == VerificationStatus.APPROVED
     hospital.is_active = data.status == VerificationStatus.APPROVED
+    if data.status == VerificationStatus.REJECTED:
+        hospital.rejection_reason = (data.rejection_reason or "").strip() or None
+    elif data.status == VerificationStatus.APPROVED:
+        hospital.rejection_reason = None
 
     await db.commit()
     await db.refresh(hospital)
@@ -285,20 +318,7 @@ async def verify_partner_hospital(
         select(func.count(Doctor.id)).where(Doctor.hospital_id == hospital.id)
     )
 
-    return AdminHospitalItemResponse(
-        id=hospital.id,
-        name=hospital.name,
-        slug=hospital.slug,
-        phone=hospital.phone,
-        email=hospital.email,
-        address=hospital.address,
-        is_active=hospital.is_active,
-        is_verified=hospital.is_verified,
-        verification_status=hospital.verification_status,
-        departments_count=len(hospital.departments),
-        doctors_count=doc_c.scalar() or 0,
-        created_at=hospital.created_at,
-    )
+    return _build_admin_hospital_item(hospital, doc_c.scalar() or 0)
 
 
 @router.get("/users", response_model=List[AdminUserItemResponse])

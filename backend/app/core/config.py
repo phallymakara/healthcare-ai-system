@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str = ""
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 1 day
+    TERMS_VERSION: str = "1.0"
     
     # PostgreSQL
     POSTGRES_HOST: str = "127.0.0.1"
@@ -64,6 +65,12 @@ class Settings(BaseSettings):
     MICROSOFT_FOUNDRY_API_KEY: str = ""
     MICROSOFT_FOUNDRY_BASE_URL: str = ""
     MICROSOFT_FOUNDRY_MODEL: str = "gpt-4o"
+    MICROSOFT_FOUNDRY_STT_MODEL: str = ""
+
+    # Optional Azure AI Speech STT (set in .env for native km-KH / en-US recognition)
+    AZURE_SPEECH_KEY: str = ""
+    AZURE_SPEECH_REGION: str = ""
+    AZURE_SPEECH_ENDPOINT: str = ""
 
     # LangGraph Configuration (set in .env)
     LANGGRAPH_CHECKPOINT_DATABASE_URL: str = ""
@@ -72,6 +79,8 @@ class Settings(BaseSettings):
     # Azure Blob Storage Configuration (set in .env)
     AZURE_STORAGE_CONNECTION_STRING: str = ""
     AZURE_STORAGE_CONTAINER_NAME: str = "public-profiles"
+    AZURE_STORAGE_PRIVATE_CONTAINER_NAME: str = "private-documents"
+    PRIVATE_UPLOADS_DIR: str = ""
     AZURE_STORAGE_CUSTOM_DOMAIN: Optional[str] = None
     AZURE_STORAGE_ACCOUNT_NAME: str = ""
     AZURE_STORAGE_ACCOUNT_KEY: str = ""
@@ -116,6 +125,13 @@ class Settings(BaseSettings):
         """Check if Microsoft Foundry / Azure OpenAI API key is properly set."""
         key = (self.MICROSOFT_FOUNDRY_API_KEY or "").strip()
         return bool(key and key != "your-api-key-here" and len(key) >= 10)
+
+    @property
+    def is_voice_stt_configured(self) -> bool:
+        """Check if either Foundry Whisper STT or Azure AI Speech STT is configured."""
+        speech_key = (self.AZURE_SPEECH_KEY or "").strip()
+        speech_target = bool((self.AZURE_SPEECH_REGION or "").strip() or (self.AZURE_SPEECH_ENDPOINT or "").strip())
+        return bool((self.is_foundry_configured and (self.MICROSOFT_FOUNDRY_STT_MODEL or "").strip()) or (speech_key and speech_target))
 
     @property
     def is_azure_storage_configured(self) -> bool:

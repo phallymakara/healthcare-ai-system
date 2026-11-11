@@ -6,9 +6,10 @@ from app.models.enums import (
     TicketSource,
     QueueStatus,
     OverrideType,
+    EnrollmentDocumentType,
 )
 from app.models.user import User, PatientProfile
-from app.models.hospital import Hospital, HospitalBranch, Department, Service
+from app.models.hospital import Hospital, HospitalBranch, Department, Service, HospitalDocument
 from app.models.doctor import Doctor, DoctorSchedule, ScheduleOverride
 from app.models.queue import QueueSession, Ticket, TicketLog
 from app.models.chat import ChatConversation, ChatMessage
@@ -22,9 +23,11 @@ __all__ = [
     "TicketSource",
     "QueueStatus",
     "OverrideType",
+    "EnrollmentDocumentType",
     "User",
     "PatientProfile",
     "Hospital",
+    "HospitalDocument",
     "HospitalBranch",
     "Department",
     "Service",

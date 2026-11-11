@@ -701,7 +701,7 @@ textarea {
   left: 0;
   right: 0;
   bottom: 0;
-  background-image: url('./assets/header_pattern_bg.jpg');
+  background-image: url('./assets/header_pattern_bg.webp');
   background-position: center center;
   background-size: cover;
   background-repeat: no-repeat;
@@ -1510,9 +1510,9 @@ select:focus:not(:disabled) {
 .category-filter-pill {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.5rem 1.15rem;
-  font-size: 0.96rem;
+  gap: 0.35rem;
+  padding: 0.36rem 0.9rem;
+  font-size: 0.85rem;
   cursor: pointer;
   box-shadow: none;
   border-radius: var(--radius-full) !important;
@@ -2623,8 +2623,8 @@ textarea {
 
   /* ── Category filter pills ────────────────────────── */
   .category-filter-pill {
-    font-size: 0.82rem;
-    padding: 0.38rem 0.85rem;
+    font-size: 0.78rem;
+    padding: 0.3rem 0.75rem;
   }
 
   /* ── Discovery facilities grid ────────────────────── */
@@ -2792,8 +2792,8 @@ textarea::-webkit-input-placeholder {
   }
 
   .category-filter-pill {
-    font-size: 0.78rem;
-    padding: 0.32rem 0.72rem;
+    font-size: 0.74rem;
+    padding: 0.26rem 0.65rem;
   }
 
   .btn {

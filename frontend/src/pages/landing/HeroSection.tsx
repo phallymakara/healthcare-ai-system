@@ -2,7 +2,7 @@ import React from 'react';
 import { useLanguage } from '../../context/LanguageContext';
 import { UserProfile } from '../../services/auth';
 
-import heroLandscapeBg from '../../assets/hero_landscape_bg.jpg';
+import heroLandscapeBg from '../../assets/hero_landscape_bg.webp';
 
 interface HeroSectionProps {
   onOpenAuth: () => void;
@@ -30,14 +30,19 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSelectTab }) => {
       }}
     >
       {/* Background Hero Picture */}
-      <div
+      <img
+        src={heroLandscapeBg}
+        alt=""
+        aria-hidden="true"
+        fetchPriority="high"
+        decoding="async"
         style={{
           position: 'absolute',
           inset: 0,
-          backgroundImage: `url(${heroLandscapeBg})`,
-          backgroundPosition: 'center bottom',
-          backgroundSize: 'cover',
-          backgroundRepeat: 'no-repeat',
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+          objectPosition: 'center bottom',
           pointerEvents: 'none',
           zIndex: 1,
         }}

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { Plus, Mic, ArrowUp, X, Image as ImageIcon, Pencil, Trash2, Check, Clock, Loader2, Sparkles } from 'lucide-react';
+import { Plus, ArrowUp, X, Image as ImageIcon, Pencil, Trash2, Check, Clock, Sparkles } from 'lucide-react';
 import {
   getUserConversations,
   saveUserConversation,
@@ -23,6 +23,8 @@ import { API_BASE } from '../../services/api';
 import { useUserLocation } from '../../hooks/useUserLocation';
 import { getDeviceHeaders } from '../../services/deviceFingerprint';
 import apiClient, { ApiError } from '../../services/apiClient';
+import { convertImageFileToWebp } from '../../utils/imageWebp';
+import { useVoiceInput, VoiceMicButton } from '../../modules/voice';
 
 interface HealthcareAssistantProps {
   onTicketBooked: (ticket: any) => void;
@@ -78,10 +80,14 @@ const isKhmer = (text?: string): boolean => {
   return /[\u1780-\u17FF]/.test(text);
 };
 
-const getDefaultWelcomeActions = (isKm: boolean): string[] =>
-  isKm
-    ? ['ពិគ្រោះរោគសញ្ញាជំងឺ', 'ស្វែងរកមន្ទីរពេទ្យនៅជិតខ្ញុំ', 'សេវាសង្គ្រោះបន្ទាន់ ២៤/៧']
-    : ['Check My Symptoms', 'Find Hospitals Near Me', '24/7 Emergency Services'];
+const getDefaultWelcomeActions = (t: (key: string) => string): string[] => [
+  t('chat_prompt_symptoms'),
+  t('chat_prompt_nearby'),
+  t('chat_prompt_emergency'),
+  t('chat_prompt_pediatric'),
+  t('chat_prompt_topical'),
+  t('chat_prompt_vet'),
+];
 
 const cleanActionText = (action: string): string => {
   if (!action) return '';
@@ -287,7 +293,7 @@ const MessageBubble = React.memo<MessageBubbleProps>(({
         boxSizing: 'border-box',
       }}>
         {msg.imageUrl && (
-          <div style={{ marginBottom: '0.45rem' }}>
+          <div style={{ marginBottom: msg.text ? '0.45rem' : 0 }}>
             <img
               src={msg.imageUrl}
               alt="Attachment"
@@ -307,14 +313,16 @@ const MessageBubble = React.memo<MessageBubbleProps>(({
           </div>
         )}
 
-        <div style={{ color: 'var(--text-main)', lineHeight: isKm ? 1.75 : 1.6, fontFamily: isKm ? 'var(--font-khmer)' : 'inherit' }}>
-          <ReactMarkdown components={markdownComponents}>
-            {msg.text}
-          </ReactMarkdown>
-          {streamingMsgId === msg.id && (
-            <span className="streaming-cursor" aria-hidden="true" />
-          )}
-        </div>
+        {(msg.text || streamingMsgId === msg.id) && (
+          <div style={{ color: 'var(--text-main)', lineHeight: isKm ? 1.75 : 1.6, fontFamily: isKm ? 'var(--font-khmer)' : 'inherit' }}>
+            <ReactMarkdown components={markdownComponents}>
+              {msg.text}
+            </ReactMarkdown>
+            {streamingMsgId === msg.id && (
+              <span className="streaming-cursor" aria-hidden="true" />
+            )}
+          </div>
+        )}
 
         {msg.role === 'assistant' && msg.suggestedActions && msg.suggestedActions.length > 0 && (
           <div style={{
@@ -436,7 +444,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
         id: 'welcome',
         role: 'assistant',
         text: t('chat_welcome'),
-        suggestedActions: getDefaultWelcomeActions(language === 'km'),
+        suggestedActions: getDefaultWelcomeActions(t),
         timestamp: new Date(),
       },
     ];
@@ -463,7 +471,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
         return [{
           ...prev[0],
           text: t('chat_welcome'),
-          suggestedActions: getDefaultWelcomeActions(language === 'km'),
+          suggestedActions: getDefaultWelcomeActions(t),
         }];
       }
       return prev;
@@ -489,10 +497,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [hostedImageUrl, setHostedImageUrl] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
-  const [isAnalyzingImageQuestions, setIsAnalyzingImageQuestions] = useState(false);
-  const [imagePredictedQuestions, setImagePredictedQuestions] = useState<string[]>([]);
   const [enlargedImageUrl, setEnlargedImageUrl] = useState<string | null>(null);
-  const [isListening, setIsListening] = useState(false);
   const [isAttachMenuOpen, setIsAttachMenuOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const attachMenuRef = useRef<HTMLDivElement>(null);
@@ -588,7 +593,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
             id: 'welcome',
             role: 'assistant',
             text: t('chat_welcome'),
-            suggestedActions: getDefaultWelcomeActions(language === 'km'),
+            suggestedActions: getDefaultWelcomeActions(t),
             timestamp: new Date(),
           },
         ]
@@ -610,7 +615,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
         id: 'welcome',
         role: 'assistant',
         text: t('chat_welcome'),
-        suggestedActions: getDefaultWelcomeActions(language === 'km'),
+        suggestedActions: getDefaultWelcomeActions(t),
         timestamp: new Date(),
       },
     ]);
@@ -727,7 +732,8 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
           const ctx = canvas.getContext('2d');
           if (ctx) {
             ctx.drawImage(img, 0, 0, width, height);
-            resolve(canvas.toDataURL('image/jpeg', quality));
+            const webpDataUrl = canvas.toDataURL('image/webp', quality);
+            resolve(webpDataUrl.startsWith('data:image/webp') ? webpDataUrl : canvas.toDataURL('image/jpeg', quality));
           } else {
             resolve((e.target?.result as string) || '');
           }
@@ -738,31 +744,6 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
       reader.onerror = () => resolve('');
       reader.readAsDataURL(file);
     });
-  };
-
-  const fetchQuestionsForBase64 = async (imgDataUrl: string, lang = language) => {
-    try {
-      const res = await fetch(`${API_BASE}/assistant/predict-image-questions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...AuthService.getAuthHeaders(),
-          ...getDeviceHeaders(),
-        },
-        body: JSON.stringify({
-          image_url: imgDataUrl,
-          language: lang,
-        }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data.predicted_questions) && data.predicted_questions.length > 0) {
-          setImagePredictedQuestions(data.predicted_questions);
-        }
-      }
-    } catch {
-      // LLM unavailable or error - no mock questions
-    }
   };
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -779,19 +760,19 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
     setSelectedImage(file);
     setInputError(null);
     setIsAttachMenuOpen(false);
-    setImagePredictedQuestions([]);
 
-    // Fast local preview with compression
-    const compressedDataUrl = await compressImage(file, 1200, 0.85);
+    // Fast local preview + WebP optimization before upload so large camera photos load fast
+    const [compressedDataUrl, optimizedFile] = await Promise.all([
+      compressImage(file, 1200, 0.84),
+      convertImageFileToWebp(file, { maxDim: 1200, quality: 0.84 }),
+    ]);
     setImagePreviewUrl(compressedDataUrl);
 
-    // Upload to server and run LLM vision analysis to predict real questions
+    // Upload image directly without extra LLM prompt prediction calls
     setIsUploadingImage(true);
-    setIsAnalyzingImageQuestions(true);
     try {
       const formData = new FormData();
-      formData.append('file', file);
-      formData.append('language', language);
+      formData.append('file', optimizedFile);
       const res = await fetch(`${API_BASE}/assistant/upload-image`, {
         method: 'POST',
         headers: {
@@ -803,35 +784,13 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
       if (res.ok) {
         const data = await res.json();
         setHostedImageUrl(data.image_url);
-        if (Array.isArray(data.predicted_questions) && data.predicted_questions.length > 0) {
-          setImagePredictedQuestions(data.predicted_questions);
-        } else {
-          // If server didn't run questions or returned empty, query with compressed base64
-          await fetchQuestionsForBase64(compressedDataUrl, language);
-        }
-      } else {
-        // Fallback to predict via compressed preview
-        await fetchQuestionsForBase64(compressedDataUrl, language);
       }
     } catch {
-      // Fallback to local base64 data URL prediction
-      await fetchQuestionsForBase64(compressedDataUrl, language);
+      // Fallback to local compressed preview data URL on transient network error
     } finally {
       setIsUploadingImage(false);
-      setIsAnalyzingImageQuestions(false);
     }
   };
-
-  // Re-predict questions if language changes while an image is selected
-  useEffect(() => {
-    if (imagePreviewUrl) {
-      setImagePredictedQuestions([]);
-      setIsAnalyzingImageQuestions(true);
-      fetchQuestionsForBase64(imagePreviewUrl, language).finally(() => {
-        setIsAnalyzingImageQuestions(false);
-      });
-    }
-  }, [language]);
 
   const handleTextSelection = useCallback(() => {
     requestAnimationFrame(() => {
@@ -951,43 +910,47 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
     setImagePreviewUrl(null);
     setHostedImageUrl(null);
     setIsUploadingImage(false);
-    setIsAnalyzingImageQuestions(false);
-    setImagePredictedQuestions([]);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const handleToggleVoice = () => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      setInputError(language === 'km' ? 'កម្មវិធីរុករកមិនគាំទ្រការទទួលសំឡេងទេ' : 'Voice input is not supported in your browser.');
-      return;
-    }
+  const getVoiceHeaders = useCallback(
+    () => ({
+      ...AuthService.getAuthHeaders(),
+      ...getDeviceHeaders(),
+    }),
+    []
+  );
 
-    if (isListening) {
-      setIsListening(false);
-      return;
-    }
+  const voiceLabels = useMemo(
+    () => ({
+      listening: t('voice_listening'),
+      transcribing: t('voice_transcribing'),
+      stopAndSend: t('voice_stop'),
+      cancel: t('voice_cancel'),
+      micTitle: t('voice_mic_title'),
+      errPermission: t('voice_err_permission'),
+      errNoMic: t('voice_err_no_mic'),
+      errUnsupported: t('voice_err_unsupported'),
+      errEmpty: t('voice_err_empty'),
+      errFailed: t('voice_err_failed'),
+    }),
+    [t]
+  );
 
-    try {
-      const recognition = new SpeechRecognition();
-      recognition.lang = language === 'km' ? 'km-KH' : 'en-US';
-      recognition.interimResults = false;
-      recognition.maxAlternatives = 1;
-
-      recognition.onstart = () => setIsListening(true);
-      recognition.onend = () => setIsListening(false);
-      recognition.onerror = () => setIsListening(false);
-      recognition.onresult = (event: any) => {
-        const transcript = event.results?.[0]?.[0]?.transcript;
-        if (transcript) {
-          setInputText((prev) => (prev ? `${prev} ${transcript}` : transcript));
-        }
-      };
-      recognition.start();
-    } catch {
-      setIsListening(false);
-    }
-  };
+  const voiceInput = useVoiceInput({
+    language,
+    transcribeUrl: `${API_BASE}/assistant/voice/transcribe`,
+    capabilitiesUrl: `${API_BASE}/assistant/voice/capabilities`,
+    getHeaders: getVoiceHeaders,
+    labels: voiceLabels,
+    disabled: loading || hasReachedLimit,
+    onTranscript: (transcript) => {
+      setInputError(null);
+      setInputText((prev) => (prev ? `${prev.trimEnd()} ${transcript}` : transcript));
+      chatInputRef.current?.focus();
+    },
+    onError: (msg) => setInputError(msg),
+  });
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isNearBottomRef = useRef(true);
@@ -1043,7 +1006,7 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
     const userMsg: ChatMessage = {
       id: String(Date.now()),
       role: 'user',
-      text: query || (language === 'km' ? 'សូមវិភាគរោគសញ្ញារូបភាពនេះ' : 'Please analyze this symptom image'),
+      text: query,
       imageUrl: attachedImageUrl,
       timestamp: new Date(),
     };
@@ -1277,23 +1240,12 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
           : `Explain more about "${quotedText}"`;
       }
     } else {
-      textToSend = rawText || (
-        language === 'km'
-          ? 'សូមវិភាគរោគសញ្ញារូបភាពនេះ'
-          : 'Please analyze this symptom image'
-      );
+      textToSend = rawText;
     }
 
     handleSendQuery(textToSend, currentImg || undefined);
     removeSelectedImage();
     setQuotedText(null);
-  };
-
-  const handleChipClick = (chipText: string) => {
-    if (loading || isUploadingImage) return;
-    const currentImg = hostedImageUrl || imagePreviewUrl;
-    handleSendQuery(chipText, currentImg || undefined);
-    removeSelectedImage();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -1890,88 +1842,6 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
             )}
           </div>
         )}
-        {/* Dynamic Image Predicted Question Chips (above normal input bar) */}
-        {imagePreviewUrl && (
-          <>
-            {isAnalyzingImageQuestions && (
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  marginBottom: '8px',
-                  padding: '2px 4px',
-                  fontSize: '0.78rem',
-                  color: 'var(--text-muted)',
-                  fontFamily: language === 'km' ? 'var(--font-khmer)' : 'inherit',
-                }}
-              >
-                <Loader2
-                  size={13}
-                  style={{
-                    animation: 'spin 1s linear infinite',
-                    color: 'var(--primary-color)',
-                  }}
-                />
-                <span>
-                  {language === 'km'
-                    ? 'AI កំពុងវិភាគរូបភាព...'
-                    : 'AI is analyzing the image...'}
-                </span>
-              </div>
-            )}
-            {!isAnalyzingImageQuestions && imagePredictedQuestions.length > 0 && (
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  flexWrap: 'wrap',
-                  marginBottom: '8px',
-                  padding: '0 4px',
-                }}
-              >
-                {imagePredictedQuestions.map((chipText, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => handleChipClick(chipText)}
-                    disabled={loading || isUploadingImage}
-                    title={language === 'km' ? 'ចុចដើម្បីសួរភ្លាមៗ' : 'Click to ask immediately'}
-                    style={{
-                      background: 'var(--bg-secondary)',
-                      border: '1px solid var(--border-color)',
-                      borderRadius: 'var(--radius-full)',
-                      padding: '4px 12px',
-                      fontSize: '0.78rem',
-                      color: 'var(--text-main)',
-                      fontWeight: 500,
-                      cursor: (loading || isUploadingImage) ? 'not-allowed' : 'pointer',
-                      fontFamily: (language === 'km' || isKhmer(chipText)) ? 'var(--font-khmer)' : 'inherit',
-                      transition: 'all 0.15s ease',
-                      whiteSpace: 'nowrap',
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!loading && !isUploadingImage) {
-                        e.currentTarget.style.borderColor = 'var(--accent-primary)';
-                        e.currentTarget.style.color = 'var(--accent-primary)';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!loading && !isUploadingImage) {
-                        e.currentTarget.style.borderColor = 'var(--border-color)';
-                        e.currentTarget.style.color = 'var(--text-main)';
-                      }
-                    }}
-                  >
-                    {chipText}
-                  </button>
-                ))}
-              </div>
-            )}
-          </>
-        )}
-
         {/* Quoted / Selected Text Reference Chip */}
         {quotedText && (
           <div
@@ -2237,42 +2107,18 @@ export const HealthcareAssistant: React.FC<HealthcareAssistantProps> = ({
 
             {/* Right: Mic & Send Button */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleToggleVoice();
-                }}
+              <VoiceMicButton
+                status={voiceInput.status}
                 disabled={loading || hasReachedLimit}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: (loading || hasReachedLimit) ? 'not-allowed' : 'pointer',
-                  padding: '4px',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: isListening ? 'var(--accent-primary)' : '#64748b',
-                  transition: 'color var(--transition-fast), transform var(--transition-fast)',
-                  borderRadius: '4px',
-                }}
-                onMouseEnter={(e) => {
-                  if (!loading && !hasReachedLimit) {
-                    e.currentTarget.style.color = 'var(--accent-primary)';
-                    e.currentTarget.style.transform = 'scale(1.08)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isListening) {
-                    e.currentTarget.style.color = '#64748b';
-                  }
-                  e.currentTarget.style.transform = 'none';
-                }}
-                aria-label="Voice input"
-                title={language === 'km' ? 'និយាយជាសំឡេង' : 'Voice input'}
-              >
-                <Mic size={19} />
-              </button>
+                onClick={voiceInput.toggleVoice}
+                title={
+                  voiceInput.isRecording
+                    ? voiceInput.labels.stopAndSend
+                    : voiceInput.isTranscribing
+                      ? voiceInput.labels.transcribing
+                      : voiceInput.labels.micTitle
+                }
+              />
 
               {hasReachedLimit ? (
                 <button

@@ -4,6 +4,7 @@ from typing import Optional, List, Dict
 from pydantic import BaseModel, EmailStr
 
 from app.models.enums import UserRole, VerificationStatus, TicketStatus
+from app.schemas.partner import HospitalDocumentResponse
 
 
 # --- Request Schemas ---
@@ -29,8 +30,11 @@ class AdminHospitalItemResponse(BaseModel):
     is_active: bool
     is_verified: bool
     verification_status: VerificationStatus
+    rejection_reason: Optional[str] = None
     departments_count: int
     doctors_count: int
+    documents_count: int = 0
+    documents: List[HospitalDocumentResponse] = []
     created_at: datetime
 
     model_config = {"from_attributes": True}

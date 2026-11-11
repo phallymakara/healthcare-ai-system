@@ -22,7 +22,7 @@ import { UserProfile, AuthService } from '../services/auth';
 import { useLanguage } from '../context/LanguageContext';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { API_BASE } from '../services/api';
-import prosethLogo from '../assets/ProsethBot.png';
+import prosethLogo from '../assets/ProsethBot.webp';
 import { useVisualViewport } from '../hooks/useVisualViewport';
 
 export type NavTab = 
