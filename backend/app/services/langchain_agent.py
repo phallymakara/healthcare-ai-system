@@ -516,15 +516,19 @@ class HealthcareAgentService:
         tools = [search_hospitals_and_clinics, find_nearby_hospitals, search_official_health_sources]
         tool_map = {t.name: t for t in tools}
 
-        # 2. Setup LangChain ChatOpenAI model
-        llm = ChatOpenAI(
-            model=settings.MICROSOFT_FOUNDRY_MODEL,
-            openai_api_key=settings.MICROSOFT_FOUNDRY_API_KEY,
-            openai_api_base=settings.MICROSOFT_FOUNDRY_BASE_URL,
-            temperature=0.2,
-            max_tokens=1000,
-        )
-        llm_with_tools = llm.bind_tools(tools)
+        # 2. Setup LangChain ChatOpenAI model only when Foundry credentials are configured
+        # (newer openai SDK raises OpenAIError on init when api_key is empty, e.g. in CI)
+        llm = None
+        llm_with_tools = None
+        if settings.is_foundry_configured:
+            llm = ChatOpenAI(
+                model=settings.MICROSOFT_FOUNDRY_MODEL,
+                openai_api_key=settings.MICROSOFT_FOUNDRY_API_KEY,
+                openai_api_base=settings.MICROSOFT_FOUNDRY_BASE_URL,
+                temperature=0.2,
+                max_tokens=1000,
+            )
+            llm_with_tools = llm.bind_tools(tools)
 
         # 3. Build message list
         system_text = SYSTEM_PROMPT
@@ -617,6 +621,13 @@ class HealthcareAgentService:
             detected_lang,
             guardrail_violation,
         )
+
+    @classmethod
+    def _get_fallback_reply(cls, detected_lang: str) -> str:
+        """Return localized safe fallback message when the LLM backend is unavailable or unconfigured."""
+        if (detected_lang or "").lower() == "km":
+            return "សួស្តី! ប្រព័ន្ធជំនួយការសុខភាព AI កំពុងដំណើរការជាធម្មតា។ អ្នកអាចស្វែងរកមន្ទីរពេទ្យ និងស្វែងរកទីតាំងមន្ទីរពេទ្យដែលនៅជិតអ្នកបាន។"
+        return "Hello! I am your Healthcare AI Assistant. You can search hospitals and clinics, view locations, and find nearby medical facilities directly on the platform."
 
     @classmethod
     def _get_default_suggested_actions(cls, detected_lang: str) -> List[str]:
@@ -761,42 +772,42 @@ class HealthcareAgentService:
                 "requires_disclaimer": False,
             }
 
-        try:
-            for _ in range(4):
-                ai_res: AIMessage = await llm_with_tools.ainvoke(messages)
-                if not ai_res.tool_calls:
+        if not llm or not llm_with_tools:
+            final_reply = cls._get_fallback_reply(detected_lang)
+        else:
+            try:
+                for _ in range(4):
+                    ai_res: AIMessage = await llm_with_tools.ainvoke(messages)
+                    if not ai_res.tool_calls:
+                        final_reply = ai_res.content
+                        break
+
+                    messages.append(ai_res)
+                    for tc in ai_res.tool_calls:
+                        t_name = tc["name"]
+                        t_args = tc.get("args", {})
+                        t_id = tc.get("id", str(uuid.uuid4()))
+
+                        tool_fn = tool_map.get(t_name)
+                        if tool_fn:
+                            try:
+                                t_output = await tool_fn.ainvoke(t_args)
+                            except Exception as err:
+                                logger.error(f"Error executing tool {t_name}: {err}")
+                                t_output = f"Error executing tool {t_name}: {str(err)}"
+                        else:
+                            t_output = f"Tool {t_name} is not available in Phase 1."
+
+                        messages.append(
+                            ToolMessage(content=str(t_output), tool_call_id=t_id)
+                        )
+                else:
+                    ai_res = await llm.ainvoke(messages)
                     final_reply = ai_res.content
-                    break
 
-                messages.append(ai_res)
-                for tc in ai_res.tool_calls:
-                    t_name = tc["name"]
-                    t_args = tc.get("args", {})
-                    t_id = tc.get("id", str(uuid.uuid4()))
-
-                    tool_fn = tool_map.get(t_name)
-                    if tool_fn:
-                        try:
-                            t_output = await tool_fn.ainvoke(t_args)
-                        except Exception as err:
-                            logger.error(f"Error executing tool {t_name}: {err}")
-                            t_output = f"Error executing tool {t_name}: {str(err)}"
-                    else:
-                        t_output = f"Tool {t_name} is not available in Phase 1."
-
-                    messages.append(
-                        ToolMessage(content=str(t_output), tool_call_id=t_id)
-                    )
-            else:
-                ai_res = await llm.ainvoke(messages)
-                final_reply = ai_res.content
-
-        except Exception as llm_err:
-            logger.error(f"AI Agent execution error: {llm_err}")
-            if detected_lang == "km":
-                final_reply = "សួស្តី! ប្រព័ន្ធជំនួយការសុខភាព AI កំពុងដំណើរការជាធម្មតា។ អ្នកអាចស្វែងរកមន្ទីរពេទ្យ និងស្វែងរកទីតាំងមន្ទីរពេទ្យដែលនៅជិតអ្នកបាន។"
-            else:
-                final_reply = "Hello! I am your Healthcare AI Assistant. You can search hospitals and clinics, view locations, and find nearby medical facilities directly on the platform."
+            except Exception as llm_err:
+                logger.error(f"AI Agent execution error: {llm_err}")
+                final_reply = cls._get_fallback_reply(detected_lang)
 
         if isinstance(final_reply, list):
             final_reply = "\n".join(
@@ -877,99 +888,100 @@ class HealthcareAgentService:
             }
             return
 
-        try:
-            markers = ("SUGGESTED_ACTIONS", "SUGGESTED ACTIONS", "REQUIRES_DISCLAIMER")
-            full_text_buffer = ""
-            emitted_len = 0
-            action_buffering = False
-
-            # Stream directly with tools bound so text replies emit on the first token
-            # instead of waiting on a duplicate non-streaming ainvoke() call.
-            for _ in range(4):
-                gathered = None
-                has_tool_chunks = False
-
-                async for chunk in llm_with_tools.astream(messages):
-                    gathered = chunk if gathered is None else gathered + chunk
-                    if getattr(chunk, "tool_call_chunks", None):
-                        has_tool_chunks = True
-
-                    content = chunk.content if isinstance(chunk.content, str) else ""
-                    if not content or has_tool_chunks or action_buffering:
-                        continue
-
-                    full_text_buffer += content
-
-                    # Stop streaming body text once any metadata marker starts
-                    marker_idx = -1
-                    for m in markers:
-                        idx = full_text_buffer.find(m, max(0, emitted_len - len(m)))
-                        if idx != -1 and (marker_idx == -1 or idx < marker_idx):
-                            marker_idx = idx
-
-                    if marker_idx != -1:
-                        if marker_idx > emitted_len:
-                            yield {"type": "token", "delta": full_text_buffer[emitted_len:marker_idx]}
-                            emitted_len = marker_idx
-                        action_buffering = True
-                        continue
-
-                    # Hold back only a strict prefix of a marker at the tail using emitted_len cursor
-                    # so single starting letters (like 'R' or 'S') are never dropped on subsequent chunks.
-                    hold_back = 0
-                    for m in markers:
-                        max_prefix = min(len(m) - 1, len(full_text_buffer))
-                        for i in range(max_prefix, 0, -1):
-                            if full_text_buffer.endswith(m[:i]):
-                                hold_back = max(hold_back, i)
-                                break
-
-                    safe_end = len(full_text_buffer) - hold_back
-                    if safe_end > emitted_len:
-                        yield {"type": "token", "delta": full_text_buffer[emitted_len:safe_end]}
-                        emitted_len = safe_end
-
-                if gathered and getattr(gathered, "tool_calls", None):
-                    messages.append(
-                        AIMessage(
-                            content=gathered.content if isinstance(gathered.content, str) else "",
-                            tool_calls=gathered.tool_calls,
-                        )
-                    )
-                    for tc in gathered.tool_calls:
-                        t_name = tc["name"]
-                        t_args = tc.get("args", {})
-                        t_id = tc.get("id", str(uuid.uuid4()))
-
-                        tool_fn = tool_map.get(t_name)
-                        if tool_fn:
-                            try:
-                                t_output = await tool_fn.ainvoke(t_args)
-                            except Exception as err:
-                                logger.error(f"Error executing tool {t_name}: {err}")
-                                t_output = f"Error executing tool {t_name}: {str(err)}"
-                        else:
-                            t_output = f"Tool {t_name} is not available in Phase 1."
-
-                        messages.append(ToolMessage(content=str(t_output), tool_call_id=t_id))
-                    continue
-
-                break
-
-            # Flush any remaining non-marker characters held at the tail
-            if not action_buffering and emitted_len < len(full_text_buffer):
-                yield {"type": "token", "delta": full_text_buffer[emitted_len:]}
-
-            final_reply = full_text_buffer
-        except Exception as llm_err:
-            logger.error(f"AI Agent streaming error: {llm_err}")
-            fallback = (
-                "សួស្តី! ប្រព័ន្ធជំនួយការសុខភាព AI កំពុងដំណើរការជាធម្មតា។ អ្នកអាចស្វែងរកមន្ទីរពេទ្យ និងស្វែងរកទីតាំងមន្ទីរពេទ្យដែលនៅជិតអ្នកបាន។"
-                if detected_lang == "km"
-                else "Hello! I am your Healthcare AI Assistant. You can search hospitals and clinics, view locations, and find nearby medical facilities directly on the platform."
-            )
+        if not llm or not llm_with_tools:
+            fallback = cls._get_fallback_reply(detected_lang)
             yield {"type": "token", "delta": fallback}
             final_reply = fallback
+        else:
+            try:
+                markers = ("SUGGESTED_ACTIONS", "SUGGESTED ACTIONS", "REQUIRES_DISCLAIMER")
+                full_text_buffer = ""
+                emitted_len = 0
+                action_buffering = False
+
+                # Stream directly with tools bound so text replies emit on the first token
+                # instead of waiting on a duplicate non-streaming ainvoke() call.
+                for _ in range(4):
+                    gathered = None
+                    has_tool_chunks = False
+
+                    async for chunk in llm_with_tools.astream(messages):
+                        gathered = chunk if gathered is None else gathered + chunk
+                        if getattr(chunk, "tool_call_chunks", None):
+                            has_tool_chunks = True
+
+                        content = chunk.content if isinstance(chunk.content, str) else ""
+                        if not content or has_tool_chunks or action_buffering:
+                            continue
+
+                        full_text_buffer += content
+
+                        # Stop streaming body text once any metadata marker starts
+                        marker_idx = -1
+                        for m in markers:
+                            idx = full_text_buffer.find(m, max(0, emitted_len - len(m)))
+                            if idx != -1 and (marker_idx == -1 or idx < marker_idx):
+                                marker_idx = idx
+
+                        if marker_idx != -1:
+                            if marker_idx > emitted_len:
+                                yield {"type": "token", "delta": full_text_buffer[emitted_len:marker_idx]}
+                                emitted_len = marker_idx
+                            action_buffering = True
+                            continue
+
+                        # Hold back only a strict prefix of a marker at the tail using emitted_len cursor
+                        # so single starting letters (like 'R' or 'S') are never dropped on subsequent chunks.
+                        hold_back = 0
+                        for m in markers:
+                            max_prefix = min(len(m) - 1, len(full_text_buffer))
+                            for i in range(max_prefix, 0, -1):
+                                if full_text_buffer.endswith(m[:i]):
+                                    hold_back = max(hold_back, i)
+                                    break
+
+                        safe_end = len(full_text_buffer) - hold_back
+                        if safe_end > emitted_len:
+                            yield {"type": "token", "delta": full_text_buffer[emitted_len:safe_end]}
+                            emitted_len = safe_end
+
+                    if gathered and getattr(gathered, "tool_calls", None):
+                        messages.append(
+                            AIMessage(
+                                content=gathered.content if isinstance(gathered.content, str) else "",
+                                tool_calls=gathered.tool_calls,
+                            )
+                        )
+                        for tc in gathered.tool_calls:
+                            t_name = tc["name"]
+                            t_args = tc.get("args", {})
+                            t_id = tc.get("id", str(uuid.uuid4()))
+
+                            tool_fn = tool_map.get(t_name)
+                            if tool_fn:
+                                try:
+                                    t_output = await tool_fn.ainvoke(t_args)
+                                except Exception as err:
+                                    logger.error(f"Error executing tool {t_name}: {err}")
+                                    t_output = f"Error executing tool {t_name}: {str(err)}"
+                            else:
+                                t_output = f"Tool {t_name} is not available in Phase 1."
+
+                            messages.append(ToolMessage(content=str(t_output), tool_call_id=t_id))
+                        continue
+
+                    break
+
+                # Flush any remaining non-marker characters held at the tail
+                if not action_buffering and emitted_len < len(full_text_buffer):
+                    yield {"type": "token", "delta": full_text_buffer[emitted_len:]}
+
+                final_reply = full_text_buffer
+            except Exception as llm_err:
+                logger.error(f"AI Agent streaming error: {llm_err}")
+                fallback = cls._get_fallback_reply(detected_lang)
+                yield {"type": "token", "delta": fallback}
+                final_reply = fallback
 
         has_tool_calls = bool(matching_hospitals_data or cited_sources_data)
         final_reply, suggested_actions, requires_disclaimer = cls._parse_reply_metadata(
