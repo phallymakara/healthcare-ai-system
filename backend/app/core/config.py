@@ -33,6 +33,9 @@ class Settings(BaseSettings):
 
     # CORS
     CORS_ORIGINS: List[str] = [
+        "https://healthcarekh.com",
+        "https://www.healthcarekh.com",
+        "https://partner.healthcarekh.com",
         "https://medbot.bcietech.com",
         "https://partner.medbot.bcietech.com",
         "https://chumnouykar.bcietech.com",
